@@ -29,10 +29,9 @@ class VariantsReader(abc.ABC):
 
 class SnippyVariantsReader(VariantsReader):
 
-    def __init__(self, snippy_outputs: List[Path]):
+    def __init__(self, sample_dirs: List[Path]):
         super().__init__()
-        self._snippy_outputs = snippy_outputs
-        self._sample_dirs = [sample_dir for sample_dir in os.listdir(str(self._snippy_outputs))]
+        self._sample_dirs = sample_dirs
 
     def get_variants_table(self) -> pd.DataFrame:
         vcfs = [Path(d, 'snps.vcf.gz') for d in self._sample_dirs]
@@ -59,7 +58,7 @@ class SnippyVariantsReader(VariantsReader):
         aligned_fastas = [Path(d, 'snps.aligned.fa') for d in self._sample_dirs]
         core_masks = {}
         for file in aligned_fastas:
-            sample_name = os.path.dirname(file)
+            sample_name = os.path.basename(os.path.dirname(file))
             logger.debug(f'Loading core masks for sample=[{sample_name}]')
             core_masks[sample_name] = self.read_core_masks(Path(file))
 
