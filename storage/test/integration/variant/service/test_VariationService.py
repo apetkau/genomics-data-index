@@ -1,4 +1,6 @@
-import pandas as pd
+from typing import Dict, Any
+import pytest
+
 from pathlib import Path
 from os import path, listdir
 
@@ -12,29 +14,31 @@ data_dir = Path(path.dirname(__file__), '..', '..', 'data', 'snippy')
 sample_dirs = [data_dir / d for d in listdir(data_dir) if path.isdir(data_dir / d)]
 reference_file = data_dir / 'genome.fasta.gz'
 
-reader = SnippyVariantsReader(sample_dirs)
 
-variants = pd.DataFrame([
-    ['A', 'reference', 1, 'A', 'T', 'snp', 10, 100, 0, 10],
-    ['B', 'reference', 5, 'C', 'A', 'snp', 10, 100, 0, 10],
-], columns=['FILE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'DP', 'QUAL', 'RO', 'AO'])
-
-
-def test_insert_variants():
+@pytest.fixture
+def setup() -> Dict[str, Any]:
     database = DatabaseConnection('sqlite:///:memory:')
-    session = database.get_session()
-    reference_service = ReferenceService(database)
-    variation_service = VariationService(database)
 
-    reference_service.create_reference_genome(reference_file)
-    reference = reference_service.find_reference_genome('genome')
+    return {
+        'database': database,
+        'reader': SnippyVariantsReader(sample_dirs),
+        'reference_service': ReferenceService(database),
+        'variation_service': VariationService(database)
+    }
+
+
+def test_insert_variants(setup):
+    setup['reference_service'].create_reference_genome(reference_file)
+    reference = setup['reference_service'].find_reference_genome('genome')
 
     ref_contigs = {s.sequence_name: s for s in reference.sequences}
 
-    core_masks = reader.get_core_masks()
-    var_df = reader.get_variants_table()
+    core_masks = setup['reader'].get_core_masks()
+    var_df = setup['reader'].get_variants_table()
 
-    variation_service.insert_variants(var_df=var_df,
+    session = setup['database'].get_session()
+
+    setup['variation_service'].insert_variants(var_df=var_df,
                                       ref_contigs=ref_contigs,
                                       core_masks=core_masks)
 

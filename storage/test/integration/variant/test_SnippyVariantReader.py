@@ -1,3 +1,6 @@
+from typing import Dict, Any
+import pytest
+
 from os import path, listdir
 from pathlib import Path
 
@@ -7,11 +10,16 @@ data_dir = Path(path.dirname(__file__), '..', 'data', 'snippy')
 sample_dirs = [data_dir / d for d in listdir(data_dir) if path.isdir(data_dir / d)]
 
 
-def test_read_vcf():
-    reader = SnippyVariantsReader(sample_dirs)
+@pytest.fixture
+def setup() -> Dict[str, Any]:
+    return {
+        'reader': SnippyVariantsReader(sample_dirs)
+    }
+
+def test_read_vcf(setup):
     vcf_file = data_dir / 'SampleA' / 'snps.vcf.gz'
 
-    df = reader.read_vcf(vcf_file, 'SampleA')
+    df = setup['reader'].read_vcf(vcf_file, 'SampleA')
 
     assert 46 == len(df), 'Data fram has incorrect length'
 
@@ -30,20 +38,17 @@ def test_read_vcf():
     assert 'CATT' == v['REF'].values[0], 'Incorrect reference'
     assert 'C' == v['ALT'].values[0], 'Incorrect alt'
 
-def test_get_variants_table():
-    reader = SnippyVariantsReader(sample_dirs)
-
-    df = reader.get_variants_table()
+def test_get_variants_table(setup):
+    df = setup['reader'].get_variants_table()
 
     assert 129 == len(df), 'Data has incorrect length'
     assert {'SampleA', 'SampleB', 'SampleC'} == set(df['SAMPLE'].tolist()), 'Incorrect sample names'
 
 
-def test_read_core_masks():
-    reader = SnippyVariantsReader(sample_dirs)
+def test_read_core_masks(setup):
     sequence_file = data_dir / 'SampleA' / 'snps.aligned.fa'
 
-    core_masks = reader.read_core_masks(sequence_file)
+    core_masks = setup['reader'].read_core_masks(sequence_file)
 
     total_length = len(core_masks['reference'])
     assert 5180 == total_length, f'File has incorrect total length [{total_length}]'
@@ -52,12 +57,8 @@ def test_read_core_masks():
     assert 437 == missing_length, f'File has incorrect missing length [{missing_length}]'
 
 
-def test_get_core_masks():
-    print(f'sample_dirs={sample_dirs}')
-
-    reader = SnippyVariantsReader(sample_dirs)
-
-    core_masks = reader.get_core_masks()
+def test_get_core_masks(setup):
+    core_masks = setup['reader'].get_core_masks()
 
     assert {'SampleA', 'SampleB', 'SampleC'} == set(core_masks.keys()), 'Incorrect samples'
     assert 4743 == core_masks['SampleA']['reference'].core_length(), 'Incorrect core length for SampleA'
