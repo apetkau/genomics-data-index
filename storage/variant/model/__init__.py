@@ -1,8 +1,7 @@
+from bitarray import bitarray
+from sqlalchemy import Column, Integer, String, ForeignKey, Table, LargeBinary
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
-from sqlalchemy import Column, Integer, String, ForeignKey, Table, LargeBinary
-
-from bitarray import bitarray
 
 from storage.variant.CoreBitMask import CoreBitMask
 
@@ -12,6 +11,7 @@ association_table = Table('sample_variation_allele', Base.metadata,
                           Column('sample_id', Integer, ForeignKey('sample.id')),
                           Column('variantion_allele_id', String, ForeignKey('variation_allele.id')),
                           )
+
 
 class VariationAllele(Base):
     __tablename__ = 'variation_allele'

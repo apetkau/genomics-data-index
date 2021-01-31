@@ -1,11 +1,11 @@
-from typing import Dict, List
 import logging
-import pandas as pd
-import re
+from typing import Dict, List
 
-from storage.variant.service import DatabaseConnection
+import pandas as pd
+
 from storage.variant.CoreBitMask import CoreBitMask
 from storage.variant.model import ReferenceSequence, VariationAllele, Sample, SampleSequence
+from storage.variant.service import DatabaseConnection
 
 logger = logging.getLogger(__file__)
 

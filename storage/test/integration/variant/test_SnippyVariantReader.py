@@ -1,8 +1,8 @@
-from typing import Dict, Any
-import pytest
-
 from os import path, listdir
 from pathlib import Path
+from typing import Dict, Any
+
+import pytest
 
 from storage.variant.VariantsReader import SnippyVariantsReader
 
@@ -15,6 +15,7 @@ def setup() -> Dict[str, Any]:
     return {
         'reader': SnippyVariantsReader(sample_dirs)
     }
+
 
 def test_read_vcf(setup):
     vcf_file = data_dir / 'SampleA' / 'snps.vcf.gz'
@@ -37,6 +38,7 @@ def test_read_vcf(setup):
     v = df[df['POS'] == 3656]
     assert 'CATT' == v['REF'].values[0], 'Incorrect reference'
     assert 'C' == v['ALT'].values[0], 'Incorrect alt'
+
 
 def test_get_variants_table(setup):
     df = setup['reader'].get_variants_table()

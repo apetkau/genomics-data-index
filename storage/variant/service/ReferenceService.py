@@ -1,13 +1,14 @@
-from Bio import SeqIO
-from pathlib import Path
-from os.path import basename, splitext
 import gzip
-from mimetypes import guess_type
 from functools import partial
+from mimetypes import guess_type
+from os.path import basename, splitext
+from pathlib import Path
 
-from storage.variant.service import DatabaseConnection
-from storage.variant.model import ReferenceSequence
+from Bio import SeqIO
+
 from storage.variant.model import Reference
+from storage.variant.model import ReferenceSequence
+from storage.variant.service import DatabaseConnection
 
 
 class ReferenceService:

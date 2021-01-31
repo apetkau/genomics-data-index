@@ -1,5 +1,6 @@
-from Bio.Seq import Seq
 import math
+
+from Bio.Seq import Seq
 
 from storage.variant.CoreBitMask import CoreBitMask
 
@@ -15,4 +16,4 @@ def test_core_proportion():
     sequence = Seq('ATCG-NN')
     mask = CoreBitMask(sequence=sequence)
 
-    assert math.isclose((4/7),mask.core_proportion()), 'Invalid core proportion'
+    assert math.isclose((4 / 7), mask.core_proportion()), 'Invalid core proportion'

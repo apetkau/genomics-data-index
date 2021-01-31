@@ -1,14 +1,14 @@
+from os import path, listdir
+from pathlib import Path
 from typing import Dict, Any
+
 import pytest
 
-from pathlib import Path
-from os import path, listdir
-
-from storage.variant.service.VariationService import VariationService
-from storage.variant.service.ReferenceService import ReferenceService
-from storage.variant.service import DatabaseConnection
 from storage.variant.VariantsReader import SnippyVariantsReader
 from storage.variant.model import VariationAllele
+from storage.variant.service import DatabaseConnection
+from storage.variant.service.ReferenceService import ReferenceService
+from storage.variant.service.VariationService import VariationService
 
 data_dir = Path(path.dirname(__file__), '..', '..', 'data', 'snippy')
 sample_dirs = [data_dir / d for d in listdir(data_dir) if path.isdir(data_dir / d)]
@@ -39,8 +39,8 @@ def test_insert_variants(setup):
     session = setup['database'].get_session()
 
     setup['variation_service'].insert_variants(var_df=var_df,
-                                      ref_contigs=ref_contigs,
-                                      core_masks=core_masks)
+                                               ref_contigs=ref_contigs,
+                                               core_masks=core_masks)
 
     assert 112 == session.query(VariationAllele).count(), 'Incorrect number of variant entries'
 

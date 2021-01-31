@@ -1,12 +1,12 @@
-import pytest
+from os import path
+from pathlib import Path
 from typing import Dict, Any
 
-from pathlib import Path
-from os import path
+import pytest
 
-from storage.variant.service.ReferenceService import ReferenceService
 from storage.variant.model import Reference
 from storage.variant.service import DatabaseConnection
+from storage.variant.service.ReferenceService import ReferenceService
 
 data_dir = Path(path.dirname(__file__), '..', '..', 'data', 'snippy')
 reference_file = data_dir / 'genome.fasta.gz'
