@@ -11,9 +11,21 @@ def test_read_vcf():
     reader = SnippyVariantsReader(sample_dirs)
     vcf_file = data_dir / 'SampleA' / 'snps.vcf.gz'
 
-    df = reader.read_vcf(vcf_file)
+    df = reader.read_vcf(vcf_file, 'SampleA')
 
     assert 46 == len(df), 'Data fram has incorrect length'
+
+    assert {'snps.vcf.gz'} == set(df['FILE'].tolist()), 'Incorrect filename'
+    assert {'SampleA'} == set(df['SAMPLE'].tolist()), 'Incorrect sample name'
+
+
+def test_get_variants_table():
+    reader = SnippyVariantsReader(sample_dirs)
+
+    df = reader.get_variants_table()
+
+    assert 129 == len(df), 'Data has incorrect length'
+    assert {'SampleA', 'SampleB', 'SampleC'} == set(df['SAMPLE'].tolist()), 'Incorrect sample names'
 
 
 def test_read_core_masks():
