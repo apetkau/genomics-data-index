@@ -43,6 +43,22 @@ class SnippyVariantsReader(VariantsReader):
 
         return pd.concat(frames)
 
+    def _fix_alt(self, element: List[str]) -> str:
+        '''
+        Fix up the alternative string as the pyVCF package does not return them as a string.
+        :param element: The element to fix.
+        :return: The fixed element.
+        '''
+        return str(element[0])
+
+    def _fix_ref(self, element: List[str]) -> str:
+        '''
+        Fix up the reference string as the pyVCF package does not return them as a string.
+        :param element: The element to fix.
+        :return: The fixed element.
+        '''
+        return str(element)
+
     def read_vcf(self, file: Path, sample_name: str) -> pd.DataFrame:
         reader = vcf.Reader(filename=str(file))
         df = pd.DataFrame([vars(r) for r in reader])
@@ -51,9 +67,10 @@ class SnippyVariantsReader(VariantsReader):
         out = out[['CHROM', 'POS', 'REF', 'ALT', 'DP', 'QUAL', 'RO', 'AO', 'INFO']]
         out['TYPE'] = out['INFO'].map(lambda x: x['TYPE'][0])
         out = out.drop('INFO', axis='columns')
-        out['ALT'] = out['ALT'].map(lambda x: str(x[0]))
-        out['REF'] = out['REF'].map(lambda x: str(x[0]))
-        out['AO'] = out['AO'].map(lambda x: x[0])
+
+        out['ALT'] = out['ALT'].map(self._fix_alt)
+        out['REF'] = out['REF'].map(self._fix_ref)
+
         out['FILE'] = os.path.basename(file)
         cols = out.columns.tolist()
         out['SAMPLE'] = sample_name

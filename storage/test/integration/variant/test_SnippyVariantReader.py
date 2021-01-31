@@ -18,6 +18,17 @@ def test_read_vcf():
     assert {'snps.vcf.gz'} == set(df['FILE'].tolist()), 'Incorrect filename'
     assert {'SampleA'} == set(df['SAMPLE'].tolist()), 'Incorrect sample name'
 
+    v = df[df['POS'] == 1048]
+    assert 'C' == v['REF'].values[0], 'Incorrect reference'
+    assert 'G' == v['ALT'].values[0], 'Incorrect alt'
+
+    v = df[df['POS'] == 1253]
+    assert 'T' == v['REF'].values[0], 'Incorrect reference'
+    assert 'TAA' == v['ALT'].values[0], 'Incorrect alt'
+
+    v = df[df['POS'] == 3656]
+    assert 'CATT' == v['REF'].values[0], 'Incorrect reference'
+    assert 'C' == v['ALT'].values[0], 'Incorrect alt'
 
 def test_get_variants_table():
     reader = SnippyVariantsReader(sample_dirs)

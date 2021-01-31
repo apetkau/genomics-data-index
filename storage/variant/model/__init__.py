@@ -17,9 +17,9 @@ class VariationAllele(Base):
     __tablename__ = 'variation_allele'
     id = Column(String, primary_key=True)
     sequence_id = Column(String, ForeignKey('reference_sequence.id'))
-    position = Column(Integer, primary_key=True)
-    ref = Column(String(255), primary_key=True)
-    alt = Column(String(255), primary_key=True)
+    position = Column(Integer)
+    ref = Column(String(255))
+    alt = Column(String(255))
     var_type = Column(String(255))
 
     samples = relationship('Sample', secondary=association_table, back_populates='variants')
