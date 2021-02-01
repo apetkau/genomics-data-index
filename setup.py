@@ -15,7 +15,7 @@ Programming Language :: Python :: 3.8
 Operating System :: POSIX :: Linux
 """.strip().split('\n')
 
-setup(name='staramr',
+setup(name='thesis-index',
       version=__version__,
       description='Indexes genomes.',
       author='Aaron Petkau',
@@ -29,6 +29,8 @@ setup(name='staramr',
           'bitarray',
           'pyvcf',
           'sqlalchemy',
+          'ga4gh.vrs[extras]',
+          'biocommons.seqrepo',
           'pytest',
       ],
       packages=find_packages(),

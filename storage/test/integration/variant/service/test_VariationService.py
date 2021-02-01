@@ -1,7 +1,6 @@
 import math
 
 from os import path, listdir
-from pathlib import Path
 from typing import Dict, Any
 
 import pytest
@@ -11,16 +10,13 @@ from storage.variant.model import VariationAllele
 from storage.variant.service import DatabaseConnection
 from storage.variant.service.ReferenceService import ReferenceService
 from storage.variant.service.VariationService import VariationService
-
-data_dir = Path(path.dirname(__file__), '..', '..', 'data', 'snippy')
-sample_dirs = [data_dir / d for d in listdir(data_dir) if path.isdir(data_dir / d)]
-reference_file = data_dir / 'genome.fasta.gz'
+from storage.test.integration.variant import data_dir, sample_dirs, reference_file
 
 
 @pytest.fixture
 def setup() -> Dict[str, Any]:
     database = DatabaseConnection('sqlite:///:memory:')
-    reference_service = ReferenceService(database)
+    reference_service = ReferenceService(database, None)
     reference_service.create_reference_genome(reference_file)
     reference = reference_service.find_reference_genome('genome')
 
