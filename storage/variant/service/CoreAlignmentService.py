@@ -1,13 +1,11 @@
 from typing import List, Dict
 
-import ga4gh.vrs.dataproxy as dataproxy
 from Bio import Seq, SeqRecord, Align
-from sqlalchemy.orm.session import Session
 
 from storage.variant.CoreBitMask import CoreBitMask
+from storage.variant.model import Sample, SampleSequence, Reference, ReferenceSequence, VariationAllele
 from storage.variant.service import DatabaseConnection
 from storage.variant.service.ReferenceService import ReferenceService
-from storage.variant.model import Sample, SampleSequence, Reference, ReferenceSequence, VariationAllele
 
 
 class CoreAlignmentService:

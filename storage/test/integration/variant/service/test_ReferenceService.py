@@ -1,14 +1,15 @@
-from typing import Dict, Any
-import pytest
-import tempfile
 import gzip
-from Bio import SeqIO
+import tempfile
 from pathlib import Path
+from typing import Dict, Any
 
+import pytest
+from Bio import SeqIO
+
+from storage.test.integration.variant import reference_file
 from storage.variant.model import Reference
 from storage.variant.service import DatabaseConnection
 from storage.variant.service.ReferenceService import ReferenceService
-from storage.test.integration.variant import reference_file
 
 
 @pytest.fixture

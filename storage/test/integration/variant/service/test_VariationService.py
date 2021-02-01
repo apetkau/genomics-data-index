@@ -1,16 +1,14 @@
 import math
-
-from os import path, listdir
 from typing import Dict, Any
 
 import pytest
 
+from storage.test.integration.variant import sample_dirs, reference_file
 from storage.variant.VariantsReader import SnippyVariantsReader
 from storage.variant.model import VariationAllele
 from storage.variant.service import DatabaseConnection
 from storage.variant.service.ReferenceService import ReferenceService
 from storage.variant.service.VariationService import VariationService
-from storage.test.integration.variant import data_dir, sample_dirs, reference_file
 
 
 @pytest.fixture

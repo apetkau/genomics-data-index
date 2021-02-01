@@ -1,14 +1,11 @@
-import gzip
 import tempfile
-from typing import Dict, Any
-from pathlib import Path
 import warnings
+from pathlib import Path
+
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 import pytest
-import ga4gh.vrs.dataproxy as dataproxy
-from Bio import AlignIO, SeqIO
-from biocommons.seqrepo import SeqRepo
+from Bio import AlignIO
 
 from storage.test.integration.variant import data_dir, sample_dirs, reference_file
 from storage.variant.service import DatabaseConnection
@@ -22,6 +19,7 @@ from storage.variant.VariantsReader import SnippyVariantsReader
 def database() -> DatabaseConnection:
     return DatabaseConnection('sqlite:///:memory:')
 
+
 @pytest.fixture
 def reference_service(database) -> ReferenceService:
     seq_repo_root = Path(tempfile.mkdtemp(prefix='index-test'))
@@ -30,6 +28,7 @@ def reference_service(database) -> ReferenceService:
     reference_service.add_reference_genome(reference_file)
 
     return reference_service
+
 
 @pytest.fixture
 def variation_service(database, reference_service) -> VariationService:
@@ -45,10 +44,11 @@ def variation_service(database, reference_service) -> VariationService:
 
     var_service = VariationService(database)
     var_service.insert_variants(var_df=var_df,
-                                      ref_contigs=ref_contigs,
-                                      core_masks=core_masks)
+                                ref_contigs=ref_contigs,
+                                core_masks=core_masks)
 
     return var_service
+
 
 @pytest.fixture
 def core_alignment_service(database, reference_service) -> CoreAlignmentService:

@@ -1,15 +1,14 @@
-from typing import Tuple, List
-
 import gzip
 from functools import partial
 from mimetypes import guess_type
 from os.path import basename, splitext
 from pathlib import Path
+from typing import Tuple, List
 
+import ga4gh.vrs.dataproxy as dataproxy
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 from biocommons.seqrepo import SeqRepo
-import ga4gh.vrs.dataproxy as dataproxy
 
 from storage.variant.model import Reference
 from storage.variant.model import ReferenceSequence
