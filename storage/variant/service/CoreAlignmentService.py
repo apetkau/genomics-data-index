@@ -1,8 +1,8 @@
 from typing import List, Dict
 
 from Bio.Align import MultipleSeqAlignment
-from Bio.SeqRecord import SeqRecord
 from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
 
 from storage.variant.CoreBitMask import CoreBitMask
 from storage.variant.model import Sample, SampleSequence, Reference, ReferenceSequence, VariationAllele
