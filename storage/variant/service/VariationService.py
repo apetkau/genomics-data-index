@@ -48,10 +48,6 @@ class VariationService:
         file_variants = self._create_file_variants(var_df, ref_contigs)
 
         for s in file_variants:
-            for v in file_variants[s]:
-                if v.position == 1135:
-                    print(v)
-
             ref_objects = {ref_contigs[v.sequence.sequence_name] for v in file_variants[s]}
             sample_core_masks = core_masks[s]
             sample_sequences = []
