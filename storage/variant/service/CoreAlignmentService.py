@@ -1,6 +1,8 @@
 from typing import List, Dict
 
-from Bio import Seq, SeqRecord, Align
+from Bio.Align import MultipleSeqAlignment
+from Bio.SeqRecord import SeqRecord
+from Bio.Seq import Seq
 
 from storage.variant.CoreBitMask import CoreBitMask
 from storage.variant.model import Sample, SampleSequence, Reference, ReferenceSequence, VariationAllele
@@ -72,7 +74,7 @@ class CoreAlignmentService:
             return core_mask
 
     def construct_alignment(self, reference_name: str, samples: List[str] = None,
-                            include_reference: bool = True) -> Align.MultipleSeqAlignment:
+                            include_reference: bool = True) -> MultipleSeqAlignment:
         if samples is None or len(samples) == 0:
             samples = self._all_sample_names(reference_name)
 
@@ -88,7 +90,7 @@ class CoreAlignmentService:
             variants_dict = self._get_variants(sequence_name)
 
             for position in variants_dict:
-                ref = seq[position - 1:position]
+                ref = seq[position - 1:position].seq
 
                 # if in core
                 if core_mask[position]:
@@ -99,8 +101,10 @@ class CoreAlignmentService:
                     for sample in samples:
                         if sequence_name not in sample_seqs:
                             sample_seqs[sequence_name] = {}
+
                         if sample not in sample_seqs[sequence_name]:
-                            sample_seqs[sequence_name][sample] = Seq.Seq(data='')
+                            sample_seqs[sequence_name][sample] = SeqRecord(
+                                seq=Seq(''), id=sample, description='generated automatically')
 
                         if sample in variant_samples:
                             sample_seqs[sequence_name][sample] += variant_samples[sample].alt
@@ -110,14 +114,15 @@ class CoreAlignmentService:
                     if include_reference:
                         # Add the reference sequence in
                         if 'reference' not in sample_seqs[sequence_name]:
-                            sample_seqs[sequence_name]['reference'] = Seq.Seq(data='')
+                            sample_seqs[sequence_name]['reference'] = SeqRecord(
+                                seq=Seq(''), id='reference', description='generated automatically')
 
                         sample_seqs[sequence_name]['reference'] += ref
 
         for sequence_name in sample_seqs:
-            seq_records = [SeqRecord.SeqRecord(sample_seqs[sequence_name][sample], id=sample) for sample in
-                           sample_seqs[sequence_name]]
-            seq_alignments[sequence_name] = Align.MultipleSeqAlignment(seq_records)
+            seq_alignments[sequence_name] = MultipleSeqAlignment(
+                sample_seqs[sequence_name].values())
+            seq_alignments[sequence_name].sort()
 
         sequence_names = sorted(seq_alignments.keys())
         seq1 = sequence_names.pop()

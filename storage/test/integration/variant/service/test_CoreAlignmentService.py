@@ -6,6 +6,7 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 import pytest
 from Bio import AlignIO
+from Bio.Align import MultipleSeqAlignment
 
 from storage.test.integration.variant import data_dir, sample_dirs, reference_file
 from storage.variant.service import DatabaseConnection
@@ -55,17 +56,39 @@ def core_alignment_service(database, reference_service) -> CoreAlignmentService:
     return CoreAlignmentService(database, reference_service)
 
 
-def test_snippy_align(core_alignment_service, variation_service):
+@pytest.fixture
+def expected_alignment() -> MultipleSeqAlignment:
+    with open(data_dir / 'snippy.core.aln', 'r') as f:
+        alignments = list(AlignIO.parse(f, 'fasta'))
+        alignment = alignments[0]
+
+        # Change reference name
+        for s in alignment:
+            s.description = 'generated automatically'
+            if s.id == 'Reference':
+                s.id = 'reference'
+
+        alignment.sort()
+
+        return alignment
+
+
+def test_snippy_align(core_alignment_service, variation_service, expected_alignment):
     print(variation_service)
 
     actual_alignment = core_alignment_service.construct_alignment(reference_name='genome',
                                                                   samples=['SampleA', 'SampleB', 'SampleC'])
 
-    with open(data_dir / 'snippy.core.aln', 'r') as f:
-        alignments = list(AlignIO.parse(f, 'fasta'))
-        expected_alignment = alignments[0]
+    print(f'Expected type {type(expected_alignment)}')
+    print(f'{expected_alignment:fasta}')
+    print(f'Actual type {type(actual_alignment)}')
+    print(f'{actual_alignment:fasta}')
 
-    assert len(expected_alignment) == len(actual_alignment), 'Alignment has incorrect length'
+    assert len(expected_alignment) == len(actual_alignment), 'Alignment has incorrect number of samples'
+    assert expected_alignment[0].seq == actual_alignment[0].seq
+    assert expected_alignment.get_alignment_length() == actual_alignment.get_alignment_length(),\
+        'Alignment has incorrect length'
+    assert expected_alignment == actual_alignment, 'Alignments are not equal'
 
 
 def test_get_variants(core_alignment_service, variation_service):
