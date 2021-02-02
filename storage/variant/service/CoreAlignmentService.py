@@ -93,7 +93,7 @@ class CoreAlignmentService:
                 ref = seq[position - 1:position].seq
 
                 # if in core
-                if core_mask[position]:
+                if core_mask[position - 1]:
                     variant_samples = variants_dict[position]
                     if len(set(samples).intersection(set(variant_samples.keys()))) == 0:
                         continue
