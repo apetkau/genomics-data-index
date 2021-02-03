@@ -1,17 +1,12 @@
+import pytest
 import warnings
+
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-import pytest
 from Bio import AlignIO
 from Bio.Align import MultipleSeqAlignment
 
 from storage.test.integration.variant import data_dir
-from storage.variant.service.CoreAlignmentService import CoreAlignmentService
-
-
-@pytest.fixture
-def core_alignment_service(database, reference_service) -> CoreAlignmentService:
-    return CoreAlignmentService(database, reference_service)
 
 
 @pytest.fixture
@@ -24,6 +19,7 @@ def expected_alignment() -> MultipleSeqAlignment:
     by complex events. That way I can compare the alignments for equality.
     :return: The exepcted alignment as a MultipleSeqAlignment object.
     '''
+
     def remove_column(alignment: MultipleSeqAlignment, position: int) -> MultipleSeqAlignment:
         if position <= 0 or position > alignment.get_alignment_length():
             raise Exception(f'position [{position}] is in an invalid range')
@@ -41,8 +37,8 @@ def expected_alignment() -> MultipleSeqAlignment:
                 s.id = 'reference'
 
         # Remove SNVs/SNPs introduced by complex events
-        alignment = remove_column(alignment, 15) # Position 1325
-        alignment = remove_column(alignment, 23) # Position 1984
+        alignment = remove_column(alignment, 15)  # Position 1325
+        alignment = remove_column(alignment, 23)  # Position 1984
 
         alignment.sort()
 
@@ -54,18 +50,18 @@ def compare_alignments(a: MultipleSeqAlignment, b: MultipleSeqAlignment) -> None
     assert a.get_alignment_length() == b.get_alignment_length()
 
     alignment_length = a.get_alignment_length()
-    for i in range(0,alignment_length):
+    for i in range(0, alignment_length):
         assert a[0].id == b[0].id, 'Alignment ids are not equal'
         assert a[0].seq == b[0].seq, 'Alignment sequences are not equal'
-        
 
-def test_snippy_align(core_alignment_service, variation_service, expected_alignment):
+
+def test_snippy_align(core_alignment_service, expected_alignment):
     actual_alignment = core_alignment_service.construct_alignment(reference_name='genome',
                                                                   samples=['SampleA', 'SampleB', 'SampleC'])
     compare_alignments(expected_alignment, actual_alignment)
 
 
-def test_get_variants(core_alignment_service, variation_service):
+def test_get_variants(core_alignment_service):
     variants = core_alignment_service._get_variants(sequence_name='reference')
 
     assert 60 == len(variants.keys()), 'Incorrect number of variants returned (counting only SNV/SNPs)'
@@ -79,7 +75,7 @@ def test_get_variants(core_alignment_service, variation_service):
     assert 'SampleA' not in variants[839], 'Incorrect variant returned'
 
 
-def test_sample_sequence(core_alignment_service, variation_service):
+def test_sample_sequence(core_alignment_service):
     sample_sequences = core_alignment_service._sample_sequence(reference_name='genome',
                                                                samples=['SampleA', 'SampleB', 'SampleC'])
 
