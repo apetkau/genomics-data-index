@@ -24,9 +24,6 @@ def database() -> DatabaseConnection:
 def reference_service(database) -> ReferenceService:
     seq_repo_root = Path(tempfile.mkdtemp(prefix='index-test'))
     reference_service = ReferenceService(database, seq_repo_root)
-
-    reference_service.add_reference_genome(reference_file)
-
     return reference_service
 
 
@@ -37,7 +34,7 @@ def snippy_variants_reader() -> SnippyVariantsReader:
 
 @pytest.fixture
 def reference_service_with_data(reference_service) -> ReferenceService:
-    reference_service.create_reference_genome(reference_file)
+    reference_service.add_reference_genome(reference_file)
     return reference_service
 
 

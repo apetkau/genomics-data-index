@@ -49,6 +49,8 @@ class ReferenceService:
                                            [{'namespace': self._seq_repo_namespace, 'alias': record.id}])
         self._seq_repo_updatable.commit()
 
+        self._create_reference_genome_db(genome_file)
+
     def get_reference_contigs(self, reference_name: str):
         reference = self.find_reference_genome(reference_name)
         return {s.sequence_name: s for s in reference.sequences}
@@ -58,7 +60,7 @@ class ReferenceService:
         seq_string = self._seq_repo_proxy.get_sequence(f'{namespace}:{sequence_name}')
         return SeqRecord(seq_string, id=sequence_name)
 
-    def create_reference_genome(self, reference_file: Path):
+    def _create_reference_genome_db(self, reference_file: Path):
         ref_length = 0
         ref_contigs = {}
 
