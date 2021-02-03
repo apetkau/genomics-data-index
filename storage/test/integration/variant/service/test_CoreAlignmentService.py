@@ -1,54 +1,12 @@
-import tempfile
 import warnings
-from pathlib import Path
-
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 import pytest
 from Bio import AlignIO
 from Bio.Align import MultipleSeqAlignment
 
-from storage.test.integration.variant import data_dir, sample_dirs, reference_file
-from storage.variant.service import DatabaseConnection
+from storage.test.integration.variant import data_dir
 from storage.variant.service.CoreAlignmentService import CoreAlignmentService
-from storage.variant.service.ReferenceService import ReferenceService
-from storage.variant.service.VariationService import VariationService
-from storage.variant.VariantsReader import SnippyVariantsReader
-
-
-@pytest.fixture
-def database() -> DatabaseConnection:
-    return DatabaseConnection('sqlite:///:memory:')
-
-
-@pytest.fixture
-def reference_service(database) -> ReferenceService:
-    seq_repo_root = Path(tempfile.mkdtemp(prefix='index-test'))
-    reference_service = ReferenceService(database, seq_repo_root)
-
-    reference_service.add_reference_genome(reference_file)
-
-    return reference_service
-
-
-@pytest.fixture
-def variation_service(database, reference_service) -> VariationService:
-    reference_service.create_reference_genome(reference_file)
-    reference = reference_service.find_reference_genome('genome')
-
-    ref_contigs = {s.sequence_name: s for s in reference.sequences}
-
-    variants_reader = SnippyVariantsReader(sample_dirs)
-
-    var_df = variants_reader.get_variants_table()
-    core_masks = variants_reader.get_core_masks()
-
-    var_service = VariationService(database)
-    var_service.insert_variants(var_df=var_df,
-                                ref_contigs=ref_contigs,
-                                core_masks=core_masks)
-
-    return var_service
 
 
 @pytest.fixture

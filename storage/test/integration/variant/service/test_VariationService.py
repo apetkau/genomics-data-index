@@ -1,40 +1,17 @@
 import math
-from typing import Dict, Any
 
-import pytest
-
-from storage.test.integration.variant import sample_dirs, reference_file
-from storage.variant.VariantsReader import SnippyVariantsReader
 from storage.variant.model import VariationAllele
-from storage.variant.service import DatabaseConnection
-from storage.variant.service.ReferenceService import ReferenceService
 from storage.variant.service.VariationService import VariationService
 
 
-@pytest.fixture
-def setup() -> Dict[str, Any]:
-    database = DatabaseConnection('sqlite:///:memory:')
-    reference_service = ReferenceService(database, None)
-    reference_service.create_reference_genome(reference_file)
-    reference = reference_service.find_reference_genome('genome')
+def test_insert_variants(database, snippy_variants_reader, ref_contigs):
+    variation_service = VariationService(database)
 
-    ref_contigs = {s.sequence_name: s for s in reference.sequences}
+    core_masks = snippy_variants_reader.get_core_masks()
+    var_df = snippy_variants_reader.get_variants_table()
+    session = database.get_session()
 
-    return {
-        'database': database,
-        'reader': SnippyVariantsReader(sample_dirs),
-        'ref_contigs': ref_contigs,
-        'variation_service': VariationService(database)
-    }
-
-
-def test_insert_variants(setup):
-    core_masks = setup['reader'].get_core_masks()
-    var_df = setup['reader'].get_variants_table()
-    ref_contigs = setup['ref_contigs']
-    session = setup['database'].get_session()
-
-    setup['variation_service'].insert_variants(var_df=var_df,
+    variation_service.insert_variants(var_df=var_df,
                                                ref_contigs=ref_contigs,
                                                core_masks=core_masks)
 
@@ -60,11 +37,11 @@ def test_insert_variants(setup):
     assert 'del' == v.var_type, 'Type is incorrect'
 
 
-def test_pariwise_distance(setup):
-    core_masks = setup['reader'].get_core_masks()
-    var_df = setup['reader'].get_variants_table()
-    ref_contigs = setup['ref_contigs']
-    variation_service = setup['variation_service']
+def test_pariwise_distance(database, snippy_variants_reader, ref_contigs):
+    variation_service = VariationService(database)
+
+    core_masks = snippy_variants_reader.get_core_masks()
+    var_df = snippy_variants_reader.get_variants_table()
 
     variation_service.insert_variants(var_df=var_df,
                                       ref_contigs=ref_contigs,
