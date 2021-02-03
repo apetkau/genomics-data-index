@@ -49,6 +49,10 @@ class ReferenceService:
                                            [{'namespace': self._seq_repo_namespace, 'alias': record.id}])
         self._seq_repo_updatable.commit()
 
+    def get_reference_contigs(self, reference_name: str):
+        reference = self.find_reference_genome(reference_name)
+        return {s.sequence_name: s for s in reference.sequences}
+
     def get_sequence(self, sequence_name: str):
         namespace = self._seq_repo_namespace
         seq_string = self._seq_repo_proxy.get_sequence(f'{namespace}:{sequence_name}')

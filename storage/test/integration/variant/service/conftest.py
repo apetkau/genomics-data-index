@@ -36,27 +36,24 @@ def snippy_variants_reader() -> SnippyVariantsReader:
 
 
 @pytest.fixture
-def ref_contigs(reference_service) -> Dict[str, ReferenceSequence]:
+def reference_service_with_data(reference_service) -> ReferenceService:
     reference_service.create_reference_genome(reference_file)
-    reference = reference_service.find_reference_genome('genome')
-
-    return {s.sequence_name: s for s in reference.sequences}
+    return reference_service
 
 
 @pytest.fixture
-def variation_service(database, reference_service,
-                      snippy_variants_reader, ref_contigs) -> VariationService:
+def variation_service(database, reference_service_with_data,
+                      snippy_variants_reader) -> VariationService:
     var_df = snippy_variants_reader.get_variants_table()
     core_masks = snippy_variants_reader.get_core_masks()
 
-    var_service = VariationService(database)
+    var_service = VariationService(database, reference_service_with_data)
     var_service.insert_variants(var_df=var_df,
-                                ref_contigs=ref_contigs,
+                                reference_name='genome',
                                 core_masks=core_masks)
-
     return var_service
 
 
 @pytest.fixture
-def core_alignment_service(database, reference_service, variation_service) -> CoreAlignmentService:
-    return CoreAlignmentService(database, reference_service)
+def core_alignment_service(database, reference_service_with_data, variation_service) -> CoreAlignmentService:
+    return CoreAlignmentService(database, reference_service_with_data)

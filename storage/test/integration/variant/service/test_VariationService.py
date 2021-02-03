@@ -4,16 +4,16 @@ from storage.variant.model import VariationAllele
 from storage.variant.service.VariationService import VariationService
 
 
-def test_insert_variants(database, snippy_variants_reader, ref_contigs):
-    variation_service = VariationService(database)
+def test_insert_variants(database, snippy_variants_reader, reference_service_with_data):
+    variation_service = VariationService(database, reference_service_with_data)
 
     core_masks = snippy_variants_reader.get_core_masks()
     var_df = snippy_variants_reader.get_variants_table()
     session = database.get_session()
 
     variation_service.insert_variants(var_df=var_df,
-                                               ref_contigs=ref_contigs,
-                                               core_masks=core_masks)
+                                      reference_name='genome',
+                                      core_masks=core_masks)
 
     assert 112 == session.query(VariationAllele).count(), 'Incorrect number of variant entries'
 
@@ -37,14 +37,14 @@ def test_insert_variants(database, snippy_variants_reader, ref_contigs):
     assert 'del' == v.var_type, 'Type is incorrect'
 
 
-def test_pariwise_distance(database, snippy_variants_reader, ref_contigs):
-    variation_service = VariationService(database)
+def test_pariwise_distance(database, snippy_variants_reader, reference_service_with_data):
+    variation_service = VariationService(database, reference_service_with_data)
 
     core_masks = snippy_variants_reader.get_core_masks()
     var_df = snippy_variants_reader.get_variants_table()
 
     variation_service.insert_variants(var_df=var_df,
-                                      ref_contigs=ref_contigs,
+                                      reference_name='genome',
                                       core_masks=core_masks)
 
     distances = variation_service.pairwise_distance(['SampleA', 'SampleC', 'SampleB'])

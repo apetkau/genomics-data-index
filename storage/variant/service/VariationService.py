@@ -6,14 +6,16 @@ import pandas as pd
 from storage.variant.CoreBitMask import CoreBitMask
 from storage.variant.model import ReferenceSequence, VariationAllele, Sample, SampleSequence
 from storage.variant.service import DatabaseConnection
+from storage.variant.service.ReferenceService import ReferenceService
 
 logger = logging.getLogger(__file__)
 
 
 class VariationService:
 
-    def __init__(self, database_connection: DatabaseConnection):
+    def __init__(self, database_connection: DatabaseConnection, reference_service: ReferenceService):
         self._connection = database_connection
+        self._reference_service = reference_service
 
     def _create_file_variants(self, var_df: pd.DataFrame, ref_contigs: Dict[str, ReferenceSequence]) -> Dict[
         str, List[VariationAllele]]:
@@ -43,8 +45,9 @@ class VariationService:
 
         return file_variants
 
-    def insert_variants(self, var_df: pd.DataFrame, ref_contigs: Dict[str, ReferenceSequence],
+    def insert_variants(self, var_df: pd.DataFrame, reference_name: str,
                         core_masks: Dict[str, Dict[str, CoreBitMask]]) -> None:
+        ref_contigs = self._reference_service.get_reference_contigs(reference_name)
         file_variants = self._create_file_variants(var_df, ref_contigs)
 
         for s in file_variants:
