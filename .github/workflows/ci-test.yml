@@ -34,7 +34,7 @@ jobs:
           conda config --add channels defaults
           conda config --add channels conda-forge
           conda config --add channels bioconda
-          conda install htslib -y
+          conda install htslib fasttree -y
 
       - name: Setup python packages
         shell: bash -l {0}
