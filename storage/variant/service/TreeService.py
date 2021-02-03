@@ -3,8 +3,8 @@ from pathlib import Path
 import logging
 
 from Bio.Align import MultipleSeqAlignment
-from Bio.Phylo.BaseTree import Tree
-from Bio import Phylo, AlignIO
+from Bio import AlignIO
+from ete3 import Tree
 
 from storage.variant.service import DatabaseConnection
 from Bio.Phylo.Applications import FastTreeCommandline
@@ -32,12 +32,10 @@ class TreeService:
                 output_file = Path(tmp_dir, 'fasttree.tre')
                 command = FastTreeCommandline(input=str(input_file), out=str(output_file))
                 out, err = command()
-                print(out)
+                logger.debug('Output from FastTree')
+                logger.debug(out)
 
-                with open(output_file, 'r') as f:
-                    trees = list(Phylo.parse(f, 'newick'))
-                    if len(trees) != 1:
-                        raise Exception(f'Error, read more than one tree [{len(trees)}] from {output_file}')
-                    return trees[0]
+                tree = Tree(str(output_file))
+                return tree
             else:
                 raise Exception(f'tree_type=[{tree_build_type}] is invalid')
