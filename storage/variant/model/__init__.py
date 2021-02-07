@@ -9,14 +9,14 @@ Base = declarative_base()
 
 association_table = Table('sample_variation_allele', Base.metadata,
                           Column('sample_id', Integer, ForeignKey('sample.id')),
-                          Column('variantion_allele_id', String, ForeignKey('variation_allele.id')),
+                          Column('variantion_allele_id', String(255), ForeignKey('variation_allele.id')),
                           )
 
 
 class VariationAllele(Base):
     __tablename__ = 'variation_allele'
-    id = Column(String, primary_key=True)
-    sequence_id = Column(String, ForeignKey('reference_sequence.id'))
+    id = Column(String(255), primary_key=True)
+    sequence_id = Column(Integer, ForeignKey('reference_sequence.id'))
     position = Column(Integer)
     ref = Column(String(255))
     alt = Column(String(255))

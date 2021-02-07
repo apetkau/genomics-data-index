@@ -7,7 +7,7 @@ from storage.variant.model import Base
 class DatabaseConnection:
 
     def __init__(self, connection_string: str):
-        engine = create_engine('sqlite:///:memory:', echo=False)
+        engine = create_engine(connection_string, echo=False)
 
         Session = sessionmaker(bind=engine)
         self._session = Session()
