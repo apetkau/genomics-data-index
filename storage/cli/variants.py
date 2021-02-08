@@ -10,6 +10,7 @@ from storage.variant.service import DatabaseConnection
 from storage.variant.service.CoreAlignmentService import CoreAlignmentService
 from storage.variant.service.ReferenceService import ReferenceService
 from storage.variant.service.VariationService import VariationService
+from storage.variant.service.TreeService import TreeService
 
 
 @click.group()
@@ -27,10 +28,14 @@ def main(ctx, database_connection, seqrepo_dir):
     reference_service = ReferenceService(database, seqrepo_dir)
 
     variation_service = VariationService(database, reference_service)
+    alignment_service = CoreAlignmentService(database, reference_service)
+    tree_service = TreeService(database)
 
     ctx.obj['database'] = database
     ctx.obj['reference_service'] = reference_service
     ctx.obj['variation_service'] = variation_service
+    ctx.obj['alignment_service'] = alignment_service
+    ctx.obj['tree_service'] = tree_service
 
 
 @main.command()
@@ -63,10 +68,7 @@ def load(ctx, snippy_dir: Path, reference_file: Path):
 @click.option('--reference-name', help='Reference genome name', type=str)
 @click.option('--sample', help='Sample to include in alignment (can list more than one).', multiple=True, type=str)
 def alignment(ctx, output_file: Path, reference_name: str, sample: List[str]):
-    database = ctx.obj['database']
-    reference_service = ctx.obj['reference_service']
-
-    alignment_service = CoreAlignmentService(database, reference_service)
+    alignment_service = ctx.obj['alignment_service']
 
     alignment_data = alignment_service.construct_alignment(reference_name=reference_name,
                                                            samples=sample,
@@ -74,3 +76,20 @@ def alignment(ctx, output_file: Path, reference_name: str, sample: List[str]):
 
     with open(output_file, 'w') as f:
         AlignIO.write(alignment_data, f, 'fasta')
+
+
+@main.command()
+@click.pass_context
+@click.option('--output-file', help='Output file', type=click.Path())
+@click.option('--reference-name', help='Reference genome name', type=str)
+@click.option('--sample', help='Sample to include in alignment (can list more than one).', multiple=True, type=str)
+def tree(ctx, output_file: Path, reference_name: str, sample: List[str]):
+    alignment_service = ctx.obj['alignment_service']
+    tree_service = ctx.obj['tree_service']
+
+    alignment_data = alignment_service.construct_alignment(reference_name=reference_name,
+                                                           samples=sample,
+                                                           include_reference=True)
+
+    tree = tree_service.build_tree(alignment_data)
+    tree.write(outfile=output_file)
