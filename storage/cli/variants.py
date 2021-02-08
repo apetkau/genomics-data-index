@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import List
 
 import click
+import click_config_file
 from Bio import AlignIO
 
 from storage.variant.VariantsReader import SnippyVariantsReader
@@ -11,6 +12,7 @@ from storage.variant.service.CoreAlignmentService import CoreAlignmentService
 from storage.variant.service.ReferenceService import ReferenceService
 from storage.variant.service.VariationService import VariationService
 from storage.variant.service.TreeService import TreeService
+from storage.cli import yaml_config_provider
 
 
 @click.group()
@@ -18,6 +20,9 @@ from storage.variant.service.TreeService import TreeService
 @click.option('--database-connection', help='A connection string for the database.')
 @click.option('--seqrepo-dir', help='The root directory for the seqrepo reference storage.',
               type=click.Path())
+@click_config_file.configuration_option(provider=yaml_config_provider,
+                                        config_file_name='config.yaml',
+                                        implicit=True)
 def main(ctx, database_connection, seqrepo_dir):
     ctx.ensure_object(dict)
 
