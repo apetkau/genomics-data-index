@@ -1,15 +1,15 @@
-from typing import List
-import click
 from os import path, listdir
 from pathlib import Path
+from typing import List
 
+import click
 from Bio import AlignIO
 
+from storage.variant.VariantsReader import SnippyVariantsReader
 from storage.variant.service import DatabaseConnection
+from storage.variant.service.CoreAlignmentService import CoreAlignmentService
 from storage.variant.service.ReferenceService import ReferenceService
 from storage.variant.service.VariationService import VariationService
-from storage.variant.service.CoreAlignmentService import CoreAlignmentService
-from storage.variant.VariantsReader import SnippyVariantsReader
 
 
 @click.group()
@@ -52,8 +52,8 @@ def load(ctx, snippy_dir: Path, reference_file: Path):
     core_masks = variants_reader.get_core_masks()
 
     variation_service.insert_variants(var_df=var_df,
-                                reference_name='genome',
-                                core_masks=core_masks)
+                                      reference_name='genome',
+                                      core_masks=core_masks)
     click.echo(f'Loaded variants from [{snippy_dir}] into database')
 
 
@@ -69,10 +69,8 @@ def alignment(ctx, output_file: Path, reference_name: str, sample: List[str]):
     alignment_service = CoreAlignmentService(database, reference_service)
 
     alignment_data = alignment_service.construct_alignment(reference_name=reference_name,
-                                          samples=sample,
-                                          include_reference=True)
+                                                           samples=sample,
+                                                           include_reference=True)
 
     with open(output_file, 'w') as f:
         AlignIO.write(alignment_data, f, 'fasta')
-
-

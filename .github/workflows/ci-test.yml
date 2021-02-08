@@ -3,7 +3,7 @@ name: Integration Tests
 on:
   pull_request: # Run on all pull requests
   push:
-    branches:   # Run on any push to main or development
+    branches: # Run on any push to main or development
       - main
       - development
 
@@ -14,7 +14,7 @@ jobs:
     strategy:
       fail-fast: False
       matrix:
-        python-version: [3.8]
+        python-version: [ 3.8 ]
 
     steps:
       - uses: actions/checkout@v2

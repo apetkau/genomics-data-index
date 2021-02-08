@@ -1,13 +1,13 @@
-from tempfile import TemporaryDirectory
-from pathlib import Path
 import logging
+from pathlib import Path
+from tempfile import TemporaryDirectory
 
-from Bio.Align import MultipleSeqAlignment
 from Bio import AlignIO
+from Bio.Align import MultipleSeqAlignment
+from Bio.Phylo.Applications import FastTreeCommandline
 from ete3 import Tree
 
 from storage.variant.service import DatabaseConnection
-from Bio.Phylo.Applications import FastTreeCommandline
 
 logger = logging.getLogger(__file__)
 

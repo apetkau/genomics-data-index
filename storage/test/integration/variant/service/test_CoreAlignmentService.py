@@ -1,5 +1,6 @@
-import pytest
 import warnings
+
+import pytest
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 

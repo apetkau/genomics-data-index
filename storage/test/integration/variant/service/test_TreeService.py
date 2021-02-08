@@ -1,9 +1,9 @@
 import pytest
-
 from ete3 import Tree
 
-from storage.variant.service.TreeService import TreeService
 from storage.test.integration.variant import tree_file
+from storage.variant.service.TreeService import TreeService
+
 
 @pytest.fixture
 def tree_service(database) -> TreeService:

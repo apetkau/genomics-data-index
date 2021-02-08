@@ -1,9 +1,9 @@
-from typing import Dict
-import pytest
 import tempfile
+import warnings
 from pathlib import Path
 
-import warnings
+import pytest
+
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 from storage.test.integration.variant import sample_dirs, reference_file
@@ -12,7 +12,6 @@ from storage.variant.service.ReferenceService import ReferenceService
 from storage.variant.service.VariationService import VariationService
 from storage.variant.service.CoreAlignmentService import CoreAlignmentService
 from storage.variant.VariantsReader import SnippyVariantsReader
-from storage.variant.model import ReferenceSequence
 
 
 @pytest.fixture
