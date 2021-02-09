@@ -1,8 +1,10 @@
 from typing import List, Dict
+import copy
 
 from Bio.Align import MultipleSeqAlignment
-from Bio.Seq import Seq
+from Bio.Seq import Seq, MutableSeq
 from Bio.SeqRecord import SeqRecord
+from bitarray import bitarray
 
 from storage.variant.CoreBitMask import CoreBitMask
 from storage.variant.model import Sample, SampleSequence, Reference, ReferenceSequence, VariationAllele
@@ -11,6 +13,7 @@ from storage.variant.service.ReferenceService import ReferenceService
 
 
 class CoreAlignmentService:
+    ALIGN_TYPES = ['core', 'full']
 
     def __init__(self, database: DatabaseConnection, reference_service: ReferenceService):
         self._database = database
@@ -108,6 +111,57 @@ class CoreAlignmentService:
 
         return seq_records
 
+    def _build_full_alignment_sequence(self, ref_sequence: SeqRecord,
+                                       variants_dict: Dict[int, Dict[str, VariationAllele]],
+                                       samples: List[str],
+                                       sample_sequences: List[SampleSequence],
+                                       include_reference: bool) -> Dict[str, SeqRecord]:
+        seq_records = {}
+
+        for sample in samples:
+            seq_records[sample] = copy.deepcopy(ref_sequence)
+            seq_records[sample].id = sample
+            seq_records[sample].description = 'generated automatically'
+            if isinstance(seq_records[sample].seq, str):
+                seq_records[sample].seq = MutableSeq(seq_records[sample].seq)
+            else:
+                seq_records[sample].seq = seq_records[sample].seq.tomutable()
+
+        if include_reference:
+            seq_records['reference'] = ref_sequence
+
+        # Add all variants
+        for position in variants_dict:
+            variant_samples = variants_dict[position]
+            for sample in samples:
+                if sample not in seq_records:
+                    raise Exception(f'Alignment for sample {sample} is not valid')
+
+                if sample in variant_samples:
+                    seq_records[sample].seq[position-1] = variant_samples[sample].alt
+
+        # Mask positions
+        for sample in samples:
+            seq = seq_records[sample].seq
+
+            # Search for correct sample sequence
+            sample_sequence = None
+            for s in sample_sequences:
+                if s.sample.name == sample:
+                    sample_sequence = s
+                    break
+
+            core_mask = sample_sequence.get_core_mask()
+
+            for missing_pos in core_mask._core_bitmask.itersearch(bitarray('0')):
+                seq[missing_pos] = 'N'
+
+        # Change back to immutable sequences
+        for sample in samples:
+            seq_records[sample].seq = seq_records[sample].seq.toseq()
+
+        return seq_records
+
     def construct_alignment(self, reference_name: str, samples: List[str] = None,
                             include_reference: bool = True, align_type: str = 'core') -> MultipleSeqAlignment:
         if samples is None or len(samples) == 0:
@@ -120,11 +174,10 @@ class CoreAlignmentService:
 
         for sequence_name in sample_sequences:
             seq = self._reference_service.get_sequence(sequence_name)
-            core_mask = self._create_core_mask(sample_sequences[sequence_name])
-
             variants_dict = self._get_variants(sequence_name)
 
             if align_type == 'core':
+                core_mask = self._create_core_mask(sample_sequences[sequence_name])
                 alignment_seqs[sequence_name] = self._build_core_alignment_sequence(
                     ref_sequence=seq,
                     variants_dict=variants_dict,
@@ -132,6 +185,16 @@ class CoreAlignmentService:
                     samples=samples,
                     include_reference=include_reference
                 )
+            elif align_type == 'full':
+                alignment_seqs[sequence_name] = self._build_full_alignment_sequence(
+                    ref_sequence=seq,
+                    variants_dict=variants_dict,
+                    samples=samples,
+                    sample_sequences=sample_sequences[sequence_name],
+                    include_reference=include_reference
+                )
+            else:
+                raise Exception(f'Unknown value for align_type=[{align_type}]. Must be one of {self.ALIGN_TYPES}')
 
         for sequence_name in alignment_seqs:
             alignments[sequence_name] = MultipleSeqAlignment(

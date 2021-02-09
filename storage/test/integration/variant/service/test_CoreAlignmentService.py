@@ -45,6 +45,20 @@ def replace_ref_name(alignment):
         if s.id == 'Reference':
             s.id = 'reference'
 
+
+def replace_gap_with_n_and_upper(alignment: MultipleSeqAlignment) -> MultipleSeqAlignment:
+    for record in alignment:
+        seq = record.seq.tomutable()
+        for index, character in enumerate(seq):
+            if character.upper() == '-' or character.upper() == 'X':
+                seq[index] = 'N'
+            else:
+                seq[index] = seq[index].upper()
+
+        record.seq = seq.toseq()
+    return alignment
+
+
 @pytest.fixture
 def expected_alignment_core() -> MultipleSeqAlignment:
     '''
@@ -88,9 +102,14 @@ def expected_alignment_full() -> MultipleSeqAlignment:
 
         replace_ref_name(alignment)
 
+        # Replace Ns in locations I did not expect (not low coverage)
+        alignment = replace_column_with_reference(alignment, 463, skip_missing=False)
+        alignment = replace_column_with_reference(alignment, 464, skip_missing=False)
+
         # Replace SNVs/SNPs introduced by complex events
         alignment = replace_column_with_reference(alignment, 1325)
         alignment = replace_column_with_reference(alignment, 1984)
+        alignment = replace_gap_with_n_and_upper(alignment)
 
         alignment.sort()
 
@@ -113,11 +132,11 @@ def test_snippy_align(core_alignment_service, expected_alignment_core):
     compare_alignments(expected_alignment_core, actual_alignment)
 
 
-# def test_snippy_full_align(core_alignment_service, expected_alignment_full):
-#     actual_alignment = core_alignment_service.construct_alignment(reference_name='genome',
-#                                                                   samples=['SampleA', 'SampleB', 'SampleC'],
-#                                                                   align_type='full')
-#     compare_alignments(expected_alignment_full, actual_alignment)
+def test_snippy_full_align(core_alignment_service, expected_alignment_full):
+    actual_alignment = core_alignment_service.construct_alignment(reference_name='genome',
+                                                                  samples=['SampleA', 'SampleB', 'SampleC'],
+                                                                  align_type='full')
+    compare_alignments(expected_alignment_full, actual_alignment)
 
 
 def test_get_variants(core_alignment_service):
