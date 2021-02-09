@@ -104,8 +104,7 @@ def tree(ctx, output_file: Path, reference_name: str, align_type: str, tree_buil
     alignment_data = alignment_service.construct_alignment(reference_name=reference_name,
                                                            samples=sample,
                                                            align_type=align_type,
-                                                           tree_build_type=tree_build_type,
                                                            include_reference=True)
 
-    tree = tree_service.build_tree(alignment_data)
-    tree.write(outfile=output_file)
+    tree_data = tree_service.build_tree(alignment_data, tree_build_type=tree_build_type)
+    tree_data.write(outfile=output_file)
