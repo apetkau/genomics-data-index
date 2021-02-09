@@ -73,7 +73,8 @@ def load(ctx, snippy_dir: Path, reference_file: Path):
 @click.option('--reference-name', help='Reference genome name', type=str)
 @click.option('--align-type', help=f'The type of alignment to generate', default='core',
               type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
-@click.option('--sample', help='Sample to include in alignment (can list more than one).', multiple=True, type=str)
+@click.option('--sample', help='Sample to include in alignment (can list more than one).',
+              multiple=True, type=str)
 def alignment(ctx, output_file: Path, reference_name: str, align_type: str, sample: List[str]):
     alignment_service = ctx.obj['alignment_service']
 
@@ -90,13 +91,20 @@ def alignment(ctx, output_file: Path, reference_name: str, align_type: str, samp
 @click.pass_context
 @click.option('--output-file', help='Output file', type=click.Path())
 @click.option('--reference-name', help='Reference genome name', type=str)
-@click.option('--sample', help='Sample to include in alignment (can list more than one).', multiple=True, type=str)
-def tree(ctx, output_file: Path, reference_name: str, sample: List[str]):
+@click.option('--align-type', help=f'The type of alignment to use for generating the tree', default='core',
+              type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
+@click.option('--tree-build-type', help=f'The type of tree building software', default='iqtree',
+              type=click.Choice(TreeService.TREE_BUILD_TYPES))
+@click.option('--sample', help='Sample to include in tree (can list more than one).',
+              multiple=True, type=str)
+def tree(ctx, output_file: Path, reference_name: str, align_type: str, tree_build_type: str, sample: List[str]):
     alignment_service = ctx.obj['alignment_service']
     tree_service = ctx.obj['tree_service']
 
     alignment_data = alignment_service.construct_alignment(reference_name=reference_name,
                                                            samples=sample,
+                                                           align_type=align_type,
+                                                           tree_build_type=tree_build_type,
                                                            include_reference=True)
 
     tree = tree_service.build_tree(alignment_data)

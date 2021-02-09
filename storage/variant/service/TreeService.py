@@ -1,6 +1,7 @@
 import logging
 from pathlib import Path
 from tempfile import TemporaryDirectory
+import subprocess
 
 from Bio import AlignIO
 from Bio.Align import MultipleSeqAlignment
@@ -13,7 +14,7 @@ logger = logging.getLogger(__file__)
 
 
 class TreeService:
-    TREE_BUILD_TYPES = ['fasttree']
+    TREE_BUILD_TYPES = ['fasttree', 'iqtree']
 
     def __init__(self, database_connection: DatabaseConnection):
         self._database = database_connection
@@ -34,6 +35,18 @@ class TreeService:
                 out, err = command()
                 logger.debug('Output from FastTree')
                 logger.debug(out)
+
+                tree = Tree(str(output_file))
+                return tree
+            elif tree_build_type == 'iqtree':
+                output_file = f'{str(input_file)}.treefile'
+                command = ['iqtree', '-s', str(input_file)]
+                logger.debug(' '.join(command))
+                try:
+                    subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+                except subprocess.CalledProcessError as e:
+                    err_msg = str(e.stderr.strip())
+                    raise Exception(f'Could not run iqtree on alignment: error {err_msg}')
 
                 tree = Tree(str(output_file))
                 return tree
