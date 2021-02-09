@@ -73,15 +73,50 @@ class CoreAlignmentService:
 
             return core_mask
 
+    def _build_core_alignment_sequence(self, ref_sequence: SeqRecord,
+                                       variants_dict: Dict[int, Dict[str, VariationAllele]],
+                                       core_mask: CoreBitMask,
+                                       samples: List[str],
+                                       include_reference: bool) -> Dict[str, SeqRecord]:
+        seq_records = {}
+        for position in variants_dict:
+            ref = ref_sequence[position - 1:position].seq
+
+            # if in core
+            if core_mask[position - 1]:
+                variant_samples = variants_dict[position]
+                if len(set(samples).intersection(set(variant_samples.keys()))) == 0:
+                    continue
+
+                for sample in samples:
+                    if sample not in seq_records:
+                        seq_records[sample] = SeqRecord(
+                            seq=Seq(''), id=sample, description='generated automatically')
+
+                    if sample in variant_samples:
+                        seq_records[sample] += variant_samples[sample].alt
+                    else:
+                        seq_records[sample] += ref
+
+                if include_reference:
+                    # Add the reference sequence in
+                    if 'reference' not in seq_records:
+                        seq_records['reference'] = SeqRecord(
+                            seq=Seq(''), id='reference', description='generated automatically')
+
+                    seq_records['reference'] += ref
+
+        return seq_records
+
     def construct_alignment(self, reference_name: str, samples: List[str] = None,
-                            include_reference: bool = True) -> MultipleSeqAlignment:
+                            include_reference: bool = True, align_type: str = 'core') -> MultipleSeqAlignment:
         if samples is None or len(samples) == 0:
             samples = self._all_sample_names(reference_name)
 
         sample_sequences = self._sample_sequence(reference_name, samples)
 
-        sample_seqs = {}
-        seq_alignments = {}
+        alignment_seqs = {}
+        alignments = {}
 
         for sequence_name in sample_sequences:
             seq = self._reference_service.get_sequence(sequence_name)
@@ -89,46 +124,25 @@ class CoreAlignmentService:
 
             variants_dict = self._get_variants(sequence_name)
 
-            for position in variants_dict:
-                ref = seq[position - 1:position].seq
+            if align_type == 'core':
+                alignment_seqs[sequence_name] = self._build_core_alignment_sequence(
+                    ref_sequence=seq,
+                    variants_dict=variants_dict,
+                    core_mask=core_mask,
+                    samples=samples,
+                    include_reference=include_reference
+                )
 
-                # if in core
-                if core_mask[position - 1]:
-                    variant_samples = variants_dict[position]
-                    if len(set(samples).intersection(set(variant_samples.keys()))) == 0:
-                        continue
+        for sequence_name in alignment_seqs:
+            alignments[sequence_name] = MultipleSeqAlignment(
+                alignment_seqs[sequence_name].values())
+            alignments[sequence_name].sort()
 
-                    for sample in samples:
-                        if sequence_name not in sample_seqs:
-                            sample_seqs[sequence_name] = {}
-
-                        if sample not in sample_seqs[sequence_name]:
-                            sample_seqs[sequence_name][sample] = SeqRecord(
-                                seq=Seq(''), id=sample, description='generated automatically')
-
-                        if sample in variant_samples:
-                            sample_seqs[sequence_name][sample] += variant_samples[sample].alt
-                        else:
-                            sample_seqs[sequence_name][sample] += ref
-
-                    if include_reference:
-                        # Add the reference sequence in
-                        if 'reference' not in sample_seqs[sequence_name]:
-                            sample_seqs[sequence_name]['reference'] = SeqRecord(
-                                seq=Seq(''), id='reference', description='generated automatically')
-
-                        sample_seqs[sequence_name]['reference'] += ref
-
-        for sequence_name in sample_seqs:
-            seq_alignments[sequence_name] = MultipleSeqAlignment(
-                sample_seqs[sequence_name].values())
-            seq_alignments[sequence_name].sort()
-
-        sequence_names = sorted(seq_alignments.keys())
+        sequence_names = sorted(alignments.keys())
         seq1 = sequence_names.pop()
-        core_snv_align = seq_alignments[seq1]
+        core_snv_align = alignments[seq1]
 
         for sequence_name in sequence_names:
-            core_snv_align += seq_alignments[sequence_name]
+            core_snv_align += alignments[sequence_name]
 
         return core_snv_align
