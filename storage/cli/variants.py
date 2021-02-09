@@ -71,12 +71,15 @@ def load(ctx, snippy_dir: Path, reference_file: Path):
 @click.pass_context
 @click.option('--output-file', help='Output file', type=click.Path())
 @click.option('--reference-name', help='Reference genome name', type=str)
+@click.option('--align-type', help=f'The type of alignment to generate', default='core',
+              type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
 @click.option('--sample', help='Sample to include in alignment (can list more than one).', multiple=True, type=str)
-def alignment(ctx, output_file: Path, reference_name: str, sample: List[str]):
+def alignment(ctx, output_file: Path, reference_name: str, align_type: str, sample: List[str]):
     alignment_service = ctx.obj['alignment_service']
 
     alignment_data = alignment_service.construct_alignment(reference_name=reference_name,
                                                            samples=sample,
+                                                           align_type=align_type,
                                                            include_reference=True)
 
     with open(output_file, 'w') as f:

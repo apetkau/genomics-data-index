@@ -127,9 +127,6 @@ class CoreAlignmentService:
             else:
                 seq_records[sample].seq = seq_records[sample].seq.tomutable()
 
-        if include_reference:
-            seq_records['reference'] = ref_sequence
-
         # Add all variants
         for position in variants_dict:
             variant_samples = variants_dict[position]
@@ -159,6 +156,15 @@ class CoreAlignmentService:
         # Change back to immutable sequences
         for sample in samples:
             seq_records[sample].seq = seq_records[sample].seq.toseq()
+
+        if include_reference and 'reference' in seq_records:
+            raise Exception('Error, [reference] is a sample name so cannot add "reference" sequence to alignment')
+        elif include_reference:
+            seq_records['reference'] = copy.deepcopy(ref_sequence)
+            seq_records['reference'].id = 'reference'
+            seq_records['reference'].description = 'generated automatically'
+            if isinstance(seq_records['reference'].seq, str):
+                seq_records['reference'].seq = Seq(seq_records['reference'].seq)
 
         return seq_records
 
