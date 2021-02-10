@@ -7,7 +7,7 @@ import click_config_file
 from Bio import AlignIO
 
 from storage.variant.VariantsReader import SnippyVariantsReader
-from storage.variant.service import DatabaseConnection
+from storage.variant.service import DatabaseConnection, EntityExistsError
 from storage.variant.service.CoreAlignmentService import CoreAlignmentService
 from storage.variant.service.ReferenceService import ReferenceService
 from storage.variant.service.VariationService import VariationService
@@ -58,7 +58,11 @@ def load(ctx, snippy_dir: Path, reference_file: Path):
     reference_service = ctx.obj['reference_service']
     variation_service = ctx.obj['variation_service']
 
-    reference_service.add_reference_genome(reference_file)
+    try:
+        reference_service.add_reference_genome(reference_file)
+    except EntityExistsError as e:
+        click.echo(f'Reference genome [{reference_file}] already exists, will not load')
+        
     var_df = variants_reader.get_variants_table()
     core_masks = variants_reader.get_core_masks()
 
