@@ -11,7 +11,7 @@ from biocommons.seqrepo import SeqRepo
 
 from storage.variant.model import Reference
 from storage.variant.model import ReferenceSequence
-from storage.variant.service import DatabaseConnection
+from storage.variant.service import DatabaseConnection, EntityExistsError
 from storage.variant.util import get_genome_name
 
 
@@ -42,7 +42,7 @@ class ReferenceService:
         (genome_name, sequences) = self._parse_sequence_file(genome_file)
 
         if self.exists_reference_genome(genome_name):
-            raise Exception(f'Reference genome [{genome_name}] already exists in database')
+            raise EntityExistsError(f'Reference genome [{genome_name}] already exists in database')
         else:
             for record in sequences:
                 self._seq_repo_updatable.store(str(record.seq),

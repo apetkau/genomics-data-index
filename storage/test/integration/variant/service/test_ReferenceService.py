@@ -3,6 +3,7 @@ import gzip
 import pytest
 from Bio import SeqIO
 
+from storage.variant.service import EntityExistsError
 from storage.test.integration.variant import reference_file
 from storage.variant.model import Reference
 
@@ -29,7 +30,7 @@ def test_double_insert_reference_genome(database, reference_service):
     assert 1 == database.get_session().query(Reference).count(), 'Database should have one entry'
     assert 'genome' == database.get_session().query(Reference).all()[0].name, 'Name should match'
 
-    with pytest.raises(Exception) as execinfo:
+    with pytest.raises(EntityExistsError) as execinfo:
         reference_service.add_reference_genome(reference_file)
     assert 'Reference genome [genome] already exists in database' in str(execinfo.value)
     assert 1 == database.get_session().query(Reference).count(), 'Database should have one entry'

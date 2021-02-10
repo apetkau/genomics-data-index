@@ -16,3 +16,9 @@ class DatabaseConnection:
 
     def get_session(self):
         return self._session
+
+
+class EntityExistsError(Exception):
+
+    def __init__(self, msg):
+        super().__init__(msg)
