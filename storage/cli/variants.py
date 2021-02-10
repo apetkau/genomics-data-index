@@ -12,6 +12,7 @@ from storage.variant.service.CoreAlignmentService import CoreAlignmentService
 from storage.variant.service.ReferenceService import ReferenceService
 from storage.variant.service.VariationService import VariationService
 from storage.variant.service.TreeService import TreeService
+from storage.variant.util import get_genome_name
 from storage.cli import yaml_config_provider
 
 
@@ -61,8 +62,10 @@ def load(ctx, snippy_dir: Path, reference_file: Path):
     var_df = variants_reader.get_variants_table()
     core_masks = variants_reader.get_core_masks()
 
+    reference_name = get_genome_name(reference_file)
+
     variation_service.insert_variants(var_df=var_df,
-                                      reference_name='genome',
+                                      reference_name=reference_name,
                                       core_masks=core_masks)
     click.echo(f'Loaded variants from [{snippy_dir}] into database')
 

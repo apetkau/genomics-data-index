@@ -1,7 +1,6 @@
 import gzip
 from functools import partial
 from mimetypes import guess_type
-from os.path import basename, splitext
 from pathlib import Path
 from typing import Tuple, List
 
@@ -13,6 +12,7 @@ from biocommons.seqrepo import SeqRepo
 from storage.variant.model import Reference
 from storage.variant.model import ReferenceSequence
 from storage.variant.service import DatabaseConnection
+from storage.variant.util import get_genome_name
 
 
 class ReferenceService:
@@ -31,10 +31,7 @@ class ReferenceService:
         encoding = guess_type(str(sequence_file))[1]  # uses file extension
         _open = partial(gzip.open, mode='rt') if encoding == 'gzip' else open
 
-        if encoding == 'gzip':
-            ref_name = splitext(basename(sequence_file).rstrip('.gz'))[0]
-        else:
-            ref_name = splitext(basename(sequence_file))
+        ref_name = get_genome_name(sequence_file)
 
         with _open(sequence_file) as f:
             sequences = list(SeqIO.parse(f, 'fasta'))
