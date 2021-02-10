@@ -41,12 +41,15 @@ class ReferenceService:
     def add_reference_genome(self, genome_file: Path):
         (genome_name, sequences) = self._parse_sequence_file(genome_file)
 
-        for record in sequences:
-            self._seq_repo_updatable.store(str(record.seq),
-                                           [{'namespace': self._seq_repo_namespace, 'alias': record.id}])
-        self._seq_repo_updatable.commit()
+        if self.exists_reference_genome(genome_name):
+            raise Exception(f'Reference genome [{genome_name}] already exists in database')
+        else:
+            for record in sequences:
+                self._seq_repo_updatable.store(str(record.seq),
+                                               [{'namespace': self._seq_repo_namespace, 'alias': record.id}])
+            self._seq_repo_updatable.commit()
 
-        self._create_reference_genome_db(genome_file)
+            self._create_reference_genome_db(genome_file)
 
     def get_reference_contigs(self, reference_name: str):
         reference = self.find_reference_genome(reference_name)
@@ -74,3 +77,6 @@ class ReferenceService:
 
     def find_reference_genome(self, name: str):
         return self._connection.get_session().query(Reference).filter_by(name=name).one()
+
+    def exists_reference_genome(self, name: str):
+        return self._connection.get_session().query(Reference.id).filter_by(name=name).scalar() is not None

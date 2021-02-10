@@ -23,6 +23,18 @@ def test_insert_reference_genome(database, reference_service):
         assert records[0].seq == seq_record.seq, 'Incorrect sequence'
 
 
+def test_double_insert_reference_genome(database, reference_service):
+    assert 0 == database.get_session().query(Reference).count(), 'Database should be empty initially'
+    reference_service.add_reference_genome(reference_file)
+    assert 1 == database.get_session().query(Reference).count(), 'Database should have one entry'
+    assert 'genome' == database.get_session().query(Reference).all()[0].name, 'Name should match'
+
+    with pytest.raises(Exception) as execinfo:
+        reference_service.add_reference_genome(reference_file)
+    assert 'Reference genome [genome] already exists in database' in str(execinfo.value)
+    assert 1 == database.get_session().query(Reference).count(), 'Database should have one entry'
+
+
 def test_find_reference_genome(database, reference_service):
     assert 0 == database.get_session().query(Reference).count(), 'Database should be empty initially'
     reference_service.add_reference_genome(reference_file)
