@@ -42,7 +42,6 @@ def test_get_variants(database, snippy_variants_reader, reference_service_with_d
 
     core_masks = snippy_variants_reader.get_core_masks()
     var_df = snippy_variants_reader.get_variants_table()
-    session = database.get_session()
 
     variation_service.insert_variants(var_df=var_df,
                                       reference_name='genome',

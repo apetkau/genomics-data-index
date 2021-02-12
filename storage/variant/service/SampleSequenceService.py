@@ -1,7 +1,7 @@
 from typing import List, Dict
 
-from storage.variant.service import DatabaseConnection
 from storage.variant.model import Sample, SampleSequence, Reference, ReferenceSequence
+from storage.variant.service import DatabaseConnection
 
 
 class SampleSequenceService:

@@ -4,17 +4,17 @@ from typing import List
 
 import click
 import click_config_file
-from Bio import AlignIO
 import coloredlogs
+from Bio import AlignIO
 
+from storage.cli import yaml_config_provider
 from storage.variant.io.SnippyVariantsReader import SnippyVariantsReader
 from storage.variant.service import DatabaseConnection, EntityExistsError
 from storage.variant.service.CoreAlignmentService import CoreAlignmentService
 from storage.variant.service.ReferenceService import ReferenceService
-from storage.variant.service.VariationService import VariationService
 from storage.variant.service.TreeService import TreeService
+from storage.variant.service.VariationService import VariationService
 from storage.variant.util import get_genome_name
-from storage.cli import yaml_config_provider
 
 
 @click.group()
@@ -70,7 +70,7 @@ def load(ctx, snippy_dir: Path, reference_file: Path):
         reference_service.add_reference_genome(reference_file)
     except EntityExistsError as e:
         click.echo(f'Reference genome [{reference_file}] already exists, will not load')
-        
+
     var_df = variants_reader.get_variants_table()
     core_masks = variants_reader.get_core_masks()
 

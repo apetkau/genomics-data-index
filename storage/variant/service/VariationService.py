@@ -4,10 +4,10 @@ from typing import Dict, List
 import pandas as pd
 
 from storage.variant.CoreBitMask import CoreBitMask
+from storage.variant.io import check_variants_table_columns
 from storage.variant.model import ReferenceSequence, VariationAllele, Sample, SampleSequence
 from storage.variant.service import DatabaseConnection
 from storage.variant.service.ReferenceService import ReferenceService
-from storage.variant.io import check_variants_table_columns
 
 logger = logging.getLogger(__name__)
 

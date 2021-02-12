@@ -65,7 +65,7 @@ class SampleSequence(Base):
     __tablename__ = 'sample_sequence'
     sample_id = Column(Integer, ForeignKey('sample.id'), primary_key=True)
     sequence_id = Column(Integer, ForeignKey('reference_sequence.id'), primary_key=True)
-    core_mask = Column(LargeBinary(length=100 * 10**6)) # Max of 100 million
+    core_mask = Column(LargeBinary(length=100 * 10 ** 6))  # Max of 100 million
     flag = Column(String(255))
 
     sequence = relationship('ReferenceSequence', back_populates='sample_sequences')

@@ -1,6 +1,6 @@
-from pathlib import Path
 from mimetypes import guess_type
 from os.path import basename, splitext
+from pathlib import Path
 
 
 def get_genome_name(file: Path) -> str:

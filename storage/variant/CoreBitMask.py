@@ -45,8 +45,3 @@ class CoreBitMask:
 
     def __getitem__(self, index: int) -> bool:
         return self._core_bitmask[index]
-
-
-s = Bio.Seq.Seq('ATCG-NN')
-mask = CoreBitMask(sequence=s)
-mask.core_proportion()

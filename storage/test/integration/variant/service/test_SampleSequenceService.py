@@ -1,6 +1,6 @@
 def test_sample_sequence(sample_sequence_service):
     sample_sequences = sample_sequence_service.get_sample_sequences(reference_name='genome',
-                                                               samples=['SampleA', 'SampleB', 'SampleC'])
+                                                                    samples=['SampleA', 'SampleB', 'SampleC'])
 
     assert {'reference'} == set(sample_sequences.keys()), 'Incorrect number of sequences'
 

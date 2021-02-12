@@ -1,7 +1,7 @@
-import yaml
+import logging
 from os import path
 
-import logging
+import yaml
 
 logger = logging.getLogger(__name__)
 

@@ -137,4 +137,3 @@ def test_snippy_full_align(core_alignment_service, expected_alignment_full):
                                                                   samples=['SampleA', 'SampleB', 'SampleC'],
                                                                   align_type='full')
     compare_alignments(expected_alignment_full, actual_alignment)
-

@@ -1,7 +1,7 @@
 import logging
+import subprocess
 from pathlib import Path
 from tempfile import TemporaryDirectory
-import subprocess
 
 from Bio import AlignIO
 from Bio.Align import MultipleSeqAlignment

@@ -1,14 +1,14 @@
-from typing import List, Dict
 import logging
 import os
 from pathlib import Path
+from typing import List, Dict
 
 import pandas as pd
 import vcf
 from Bio import SeqIO
 
-from storage.variant.io import VariantsReader
 from storage.variant.CoreBitMask import CoreBitMask
+from storage.variant.io import VariantsReader
 
 logger = logging.getLogger(__name__)
 

@@ -1,7 +1,7 @@
-from typing import List, Dict
 import copy
 import logging
 import time
+from typing import List, Dict
 
 from Bio.Align import MultipleSeqAlignment
 from Bio.Seq import Seq, MutableSeq
@@ -12,8 +12,8 @@ from storage.variant.CoreBitMask import CoreBitMask
 from storage.variant.model import Sample, SampleSequence, Reference, ReferenceSequence, VariationAllele
 from storage.variant.service import DatabaseConnection
 from storage.variant.service.ReferenceService import ReferenceService
-from storage.variant.service.VariationService import VariationService
 from storage.variant.service.SampleSequenceService import SampleSequenceService
+from storage.variant.service.VariationService import VariationService
 
 logger = logging.getLogger(__name__)
 
@@ -95,7 +95,7 @@ class CoreAlignmentService:
 
         end_time = time.time()
         logger.debug(f'Finished building core alignment for {ref_sequence.id}. '
-                     f'Took {end_time-start_time:0.2f} seconds')
+                     f'Took {end_time - start_time:0.2f} seconds')
 
         return seq_records
 
@@ -127,7 +127,7 @@ class CoreAlignmentService:
                     raise Exception(f'Alignment for sample {sample} is not valid')
 
                 if sample in variant_samples:
-                    seq_records[sample].seq[position-1] = variant_samples[sample].alt
+                    seq_records[sample].seq[position - 1] = variant_samples[sample].alt
 
         # Mask positions
         for sample in samples:
@@ -160,7 +160,7 @@ class CoreAlignmentService:
 
         end_time = time.time()
         logger.debug(f'Finished building full alignment for {ref_sequence.id}. '
-                     f'Took {end_time-start_time:0.2f} seconds')
+                     f'Took {end_time - start_time:0.2f} seconds')
 
         return seq_records
 

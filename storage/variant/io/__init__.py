@@ -1,5 +1,6 @@
-from typing import Dict
 import abc
+from typing import Dict
+
 import pandas as pd
 
 from storage.variant.CoreBitMask import CoreBitMask

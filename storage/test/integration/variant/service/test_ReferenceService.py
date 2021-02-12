@@ -3,9 +3,9 @@ import gzip
 import pytest
 from Bio import SeqIO
 
-from storage.variant.service import EntityExistsError
 from storage.test.integration.variant import reference_file
 from storage.variant.model import Reference
+from storage.variant.service import EntityExistsError
 
 
 def test_insert_reference_genome(database, reference_service):
