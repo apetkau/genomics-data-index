@@ -65,3 +65,16 @@ def test_get_core_masks(setup):
     assert 4743 == core_masks['SampleA']['reference'].core_length(), 'Incorrect core length for SampleA'
     assert 4904 == core_masks['SampleB']['reference'].core_length(), 'Incorrect core length for SampleB'
     assert 4851 == core_masks['SampleC']['reference'].core_length(), 'Incorrect core length for SampleC'
+
+
+def test_get_samples_list(setup):
+    reader = setup['reader']
+
+    assert {'SampleA', 'SampleB', 'SampleC'} == set(reader.samples_list())
+
+
+def test_get_samples_list_two_files():
+    sample_dirs = [data_dir / 'SampleA', data_dir / 'SampleB']
+    reader = SnippyVariantsReader(sample_dirs)
+
+    assert {'SampleA', 'SampleB'} == set(reader.samples_list())

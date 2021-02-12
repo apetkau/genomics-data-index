@@ -7,9 +7,9 @@ from storage.variant.CoreBitMask import CoreBitMask
 from storage.variant.io import check_variants_table_columns
 from storage.variant.model import ReferenceSequence, VariationAllele, Sample, SampleSequence
 from storage.variant.service import DatabaseConnection
+from storage.variant.service import EntityExistsError
 from storage.variant.service.ReferenceService import ReferenceService
 from storage.variant.service.SampleService import SampleService
-from storage.variant.service import EntityExistsError
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +75,8 @@ class VariationService:
         :param reference_name: The reference genome name.
         :return: True if any of the samples have variants, false otherwise.
         """
-        samples_with_variants = {sample.name for sample in self._sample_service.get_samples_with_variants(reference_name)}
+        samples_with_variants = {sample.name for sample in
+                                 self._sample_service.get_samples_with_variants(reference_name)}
         samples_from_df = set(var_df['SAMPLE'].tolist())
         return len(samples_with_variants.intersection(samples_from_df)) != 0
 

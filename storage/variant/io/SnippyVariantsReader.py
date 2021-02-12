@@ -80,3 +80,6 @@ class SnippyVariantsReader(VariantsReader):
                 sequence_masks[record.id] = CoreBitMask(sequence=record.seq)
 
         return sequence_masks
+
+    def samples_list(self) -> List[str]:
+        return [os.path.basename(d) for d in self._sample_dirs]

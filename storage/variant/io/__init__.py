@@ -1,5 +1,5 @@
 import abc
-from typing import Dict
+from typing import Dict, List
 
 import pandas as pd
 
@@ -23,6 +23,14 @@ class VariantsReader(abc.ABC):
         variants_df = self._read_variants_table()
         check_variants_table_columns(variants_df)
         return variants_df
+
+    @abc.abstractmethod
+    def samples_list(self) -> List[str]:
+        """
+        Gets a list of sample names that will be read by this reader.
+        :return: A list of sample names that will be read by this reader.
+        """
+        pass
 
     @abc.abstractmethod
     def _read_variants_table(self) -> pd.DataFrame:

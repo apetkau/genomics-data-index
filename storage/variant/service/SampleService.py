@@ -1,6 +1,6 @@
-from typing import List, Dict
+from typing import List
 
-from storage.variant.model import Sample, VariationAllele, Reference, ReferenceSequence
+from storage.variant.model import Sample, Reference, ReferenceSequence
 from storage.variant.service import DatabaseConnection
 
 
@@ -22,3 +22,14 @@ class SampleService:
             .filter(Reference.name == reference_name) \
             .all()
         return samples
+
+    def which_exists(self, sample_names: List[str]) -> List[str]:
+        """
+        Returns which of the given samples exist in the database.
+        :param sample_names: The list of sample names.
+        :return: A list of those passed sample names that exist in the database.
+        """
+        samples = self._connection.get_session().query(Sample) \
+            .filter(Sample.name.in_(sample_names)) \
+            .all()
+        return [sample.name for sample in samples]

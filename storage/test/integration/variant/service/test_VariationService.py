@@ -1,9 +1,10 @@
-import pytest
 import math
 
+import pytest
+
 from storage.variant.model import VariationAllele, Sample, SampleSequence, sample_variation_association
-from storage.variant.service.VariationService import VariationService
 from storage.variant.service import EntityExistsError
+from storage.variant.service.VariationService import VariationService
 
 
 def test_insert_variants(database, snippy_variants_reader, reference_service_with_data, sample_service):
@@ -72,7 +73,8 @@ def test_insert_variants_duplicates(database, snippy_variants_reader, reference_
     assert 129 == session.query(sample_variation_association).count(), 'Incorrect number of sample variants'
 
 
-def test_insert_variants_duplicates_subset(database, snippy_variants_reader, reference_service_with_data, sample_service):
+def test_insert_variants_duplicates_subset(database, snippy_variants_reader, reference_service_with_data,
+                                           sample_service):
     variation_service = VariationService(database, reference_service_with_data, sample_service)
 
     core_masks = snippy_variants_reader.get_core_masks()
