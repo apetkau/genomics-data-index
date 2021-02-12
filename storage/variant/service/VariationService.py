@@ -8,15 +8,19 @@ from storage.variant.io import check_variants_table_columns
 from storage.variant.model import ReferenceSequence, VariationAllele, Sample, SampleSequence
 from storage.variant.service import DatabaseConnection
 from storage.variant.service.ReferenceService import ReferenceService
+from storage.variant.service.SampleService import SampleService
+from storage.variant.service import EntityExistsError
 
 logger = logging.getLogger(__name__)
 
 
 class VariationService:
 
-    def __init__(self, database_connection: DatabaseConnection, reference_service: ReferenceService):
+    def __init__(self, database_connection: DatabaseConnection, reference_service: ReferenceService,
+                 sample_service: SampleService):
         self._connection = database_connection
         self._reference_service = reference_service
+        self._sample_service = sample_service
 
     def get_variants(self, sequence_name: str, type: str = 'snp') -> Dict[int, Dict[str, VariationAllele]]:
         variants = self._connection.get_session().query(VariationAllele) \
@@ -64,9 +68,23 @@ class VariationService:
 
         return file_variants
 
+    def check_samples_have_variants(self, var_df: pd.DataFrame, reference_name: str) -> bool:
+        """
+        Checks if any of the samples loaded in the passed dataframe already have variants.
+        :param var_df: The dataframe of variants
+        :param reference_name: The reference genome name.
+        :return: True if any of the samples have variants, false otherwise.
+        """
+        samples_with_variants = {sample.name for sample in self._sample_service.get_samples_with_variants(reference_name)}
+        samples_from_df = set(var_df['SAMPLE'].tolist())
+        return len(samples_with_variants.intersection(samples_from_df)) != 0
+
     def insert_variants(self, var_df: pd.DataFrame, reference_name: str,
                         core_masks: Dict[str, Dict[str, CoreBitMask]]) -> None:
         check_variants_table_columns(var_df)
+        if self.check_samples_have_variants(var_df, reference_name):
+            raise EntityExistsError(f'Passed samples already have variants for reference genome [{reference_name}], '
+                                    f'will not insert any new variants')
 
         ref_contigs = self._reference_service.get_reference_contigs(reference_name)
         file_variants = self._create_file_variants(var_df, ref_contigs)

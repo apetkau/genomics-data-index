@@ -13,6 +13,7 @@ from storage.variant.service.VariationService import VariationService
 from storage.variant.service.CoreAlignmentService import CoreAlignmentService
 from storage.variant.io.SnippyVariantsReader import SnippyVariantsReader
 from storage.variant.service.SampleSequenceService import SampleSequenceService
+from storage.variant.service.SampleService import SampleService
 
 
 @pytest.fixture
@@ -39,12 +40,19 @@ def reference_service_with_data(reference_service) -> ReferenceService:
 
 
 @pytest.fixture
+def sample_service(database):
+    return SampleService(database)
+
+
+@pytest.fixture
 def variation_service(database, reference_service_with_data,
-                      snippy_variants_reader) -> VariationService:
+                      snippy_variants_reader, sample_service) -> VariationService:
     var_df = snippy_variants_reader.get_variants_table()
     core_masks = snippy_variants_reader.get_core_masks()
 
-    var_service = VariationService(database, reference_service_with_data)
+    var_service = VariationService(database_connection=database,
+                                   reference_service=reference_service_with_data,
+                                   sample_service=sample_service)
     var_service.insert_variants(var_df=var_df,
                                 reference_name='genome',
                                 core_masks=core_masks)
