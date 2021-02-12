@@ -1,30 +1,16 @@
-import abc
+from typing import List, Dict
 import logging
 import os
 from pathlib import Path
-from typing import List, Dict
 
 import pandas as pd
 import vcf
 from Bio import SeqIO
 
+from storage.variant.io import VariantsReader
 from storage.variant.CoreBitMask import CoreBitMask
 
 logger = logging.getLogger(__name__)
-
-
-class VariantsReader(abc.ABC):
-
-    def __init(self):
-        pass
-
-    @abc.abstractmethod
-    def get_variants_table(self) -> pd.DataFrame:
-        pass
-
-    @abc.abstractmethod
-    def get_core_masks(self) -> Dict[str, Dict[str, CoreBitMask]]:
-        pass
 
 
 class SnippyVariantsReader(VariantsReader):
