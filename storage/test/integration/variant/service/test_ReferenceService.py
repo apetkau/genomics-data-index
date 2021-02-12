@@ -49,3 +49,11 @@ def test_get_nonexistent_sequence(reference_service):
     with pytest.raises(KeyError) as execinfo:
         reference_service.get_sequence('does_not_exist')
     assert 'Alias does_not_exist' in str(execinfo.value)
+
+
+def test_get_reference_genomes(reference_service):
+    reference_service.add_reference_genome(reference_file)
+    assert {'genome'} == {genome.name for genome in reference_service.get_reference_genomes()}
+
+def test_get_reference_genomes_empty(reference_service):
+    assert [] == reference_service.get_reference_genomes()

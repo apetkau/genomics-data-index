@@ -23,3 +23,11 @@ def test_samples_which_exists_none(sample_service, variation_service):
 
 def test_samples_which_exists_none2(sample_service, variation_service):
     assert [] == sample_service.which_exists([])
+
+
+def test_get_samples(sample_service, variation_service):
+    assert {'SampleA', 'SampleB', 'SampleC'} == {sample.name for sample in sample_service.get_samples()}
+
+
+def test_get_samples_empty(sample_service):
+    assert [] == sample_service.get_samples()

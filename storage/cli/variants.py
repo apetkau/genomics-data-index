@@ -1,6 +1,7 @@
 from os import path, listdir
 from pathlib import Path
 from typing import List
+import logging
 
 import click
 import click_config_file
@@ -19,6 +20,9 @@ from storage.variant.service.VariationService import VariationService
 from storage.variant.util import get_genome_name
 
 
+logger = logging.getLogger(__name__)
+
+
 @click.group()
 @click.pass_context
 @click.option('--database-connection', help='A connection string for the database.')
@@ -35,12 +39,12 @@ def main(ctx, database_connection, seqrepo_dir, verbose):
         coloredlogs.install(level='DEBUG',
                             fmt='%(asctime)s %(levelname)s %(name)s.%(funcName)s,%(lineno)s: %(message)s')
     else:
-        coloredlogs.install(level='INFO', fmt='%(asctime)s %(levelname)s: %(message)s')
+        coloredlogs.install(level='WARNING', fmt='%(asctime)s %(levelname)s: %(message)s')
 
-    click.echo(f'Connecting to database {database_connection}')
+    logger.info(f'Connecting to database {database_connection}')
     database = DatabaseConnection(database_connection)
 
-    click.echo(f'Use seqrepo directory {seqrepo_dir}')
+    logger.info(f'Use seqrepo directory {seqrepo_dir}')
     reference_service = ReferenceService(database, seqrepo_dir)
 
     sample_service = SampleService(database)
@@ -80,11 +84,11 @@ def load(ctx, snippy_dir: Path, reference_file: Path):
     try:
         reference_service.add_reference_genome(reference_file)
     except EntityExistsError as e:
-        click.echo(f'Reference genome [{reference_file}] already exists, will not load')
+        logger.warning(f'Reference genome [{reference_file}] already exists, will not load')
 
     samples_exist = sample_service.which_exists(variants_reader.samples_list())
     if len(samples_exist) > 0:
-        click.echo(f'Samples {samples_exist} already exist, will not load any variants')
+        logger.error(f'Samples {samples_exist} already exist, will not load any variants')
     else:
         var_df = variants_reader.get_variants_table()
         core_masks = variants_reader.get_core_masks()
@@ -95,6 +99,22 @@ def load(ctx, snippy_dir: Path, reference_file: Path):
                                           reference_name=reference_name,
                                           core_masks=core_masks)
         click.echo(f'Loaded variants from [{snippy_dir}] into database')
+
+
+LIST_TYPES = ['genomes', 'samples']
+@main.command(name='list')
+@click.pass_context
+@click.option('--type', 'data_type', required=True, help='Type of data to list',
+              type=click.Choice(LIST_TYPES))
+def list_data(ctx, data_type):
+    if data_type == 'genomes':
+        items = {genome.name for genome in ctx.obj['reference_service'].get_reference_genomes()}
+    elif data_type == 'samples':
+        items = {sample.name for sample in ctx.obj['sample_service'].get_samples()}
+    else:
+        raise Exception(f'Unknown data_type=[{data_type}]')
+
+    click.echo('\n'.join(items))
 
 
 @main.command()

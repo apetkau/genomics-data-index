@@ -23,6 +23,9 @@ class SampleService:
             .all()
         return samples
 
+    def get_samples(self) -> List[Sample]:
+        return self._connection.get_session().query(Sample).all()
+
     def which_exists(self, sample_names: List[str]) -> List[str]:
         """
         Returns which of the given samples exist in the database.

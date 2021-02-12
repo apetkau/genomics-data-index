@@ -80,3 +80,6 @@ class ReferenceService:
 
     def exists_reference_genome(self, name: str):
         return self._connection.get_session().query(Reference.id).filter_by(name=name).scalar() is not None
+
+    def get_reference_genomes(self) -> List[Reference]:
+        return self._connection.get_session().query(Reference).all()
