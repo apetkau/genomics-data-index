@@ -11,7 +11,7 @@ from storage.variant.service import DatabaseConnection
 from storage.variant.service.ReferenceService import ReferenceService
 from storage.variant.service.VariationService import VariationService
 from storage.variant.service.CoreAlignmentService import CoreAlignmentService
-from storage.variant.io.VariantsReader import SnippyVariantsReader
+from storage.variant.io.SnippyVariantsReader import SnippyVariantsReader
 
 
 @pytest.fixture

@@ -7,6 +7,7 @@ from storage.variant.CoreBitMask import CoreBitMask
 from storage.variant.model import ReferenceSequence, VariationAllele, Sample, SampleSequence
 from storage.variant.service import DatabaseConnection
 from storage.variant.service.ReferenceService import ReferenceService
+from storage.variant.io import check_variants_table_columns
 
 logger = logging.getLogger(__file__)
 
@@ -47,6 +48,8 @@ class VariationService:
 
     def insert_variants(self, var_df: pd.DataFrame, reference_name: str,
                         core_masks: Dict[str, Dict[str, CoreBitMask]]) -> None:
+        check_variants_table_columns(var_df)
+
         ref_contigs = self._reference_service.get_reference_contigs(reference_name)
         file_variants = self._create_file_variants(var_df, ref_contigs)
 

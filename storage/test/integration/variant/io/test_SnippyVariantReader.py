@@ -4,7 +4,7 @@ from typing import Dict, Any
 import pytest
 
 from storage.test.integration.variant import data_dir
-from storage.variant.io.VariantsReader import SnippyVariantsReader
+from storage.variant.io.SnippyVariantsReader import SnippyVariantsReader
 
 sample_dirs = [data_dir / d for d in listdir(data_dir) if path.isdir(data_dir / d)]
 
@@ -46,10 +46,10 @@ def test_get_variants_table(setup):
     assert {'SampleA', 'SampleB', 'SampleC'} == set(df['SAMPLE'].tolist()), 'Incorrect sample names'
 
 
-def test_read_core_masks(setup):
+def test_read_core_masks_from_file(setup):
     sequence_file = data_dir / 'SampleA' / 'snps.aligned.fa'
 
-    core_masks = setup['reader'].read_core_masks(sequence_file)
+    core_masks = setup['reader'].read_core_masks_from_file(sequence_file)
 
     total_length = len(core_masks['reference'])
     assert 5180 == total_length, f'File has incorrect total length [{total_length}]'

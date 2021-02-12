@@ -6,7 +6,7 @@ import click
 import click_config_file
 from Bio import AlignIO
 
-from storage.variant.io.VariantsReader import SnippyVariantsReader
+from storage.variant.io.SnippyVariantsReader import SnippyVariantsReader
 from storage.variant.service import DatabaseConnection, EntityExistsError
 from storage.variant.service.CoreAlignmentService import CoreAlignmentService
 from storage.variant.service.ReferenceService import ReferenceService

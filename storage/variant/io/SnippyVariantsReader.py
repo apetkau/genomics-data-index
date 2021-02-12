@@ -19,7 +19,7 @@ class SnippyVariantsReader(VariantsReader):
         super().__init__()
         self._sample_dirs = sample_dirs
 
-    def get_variants_table(self) -> pd.DataFrame:
+    def _read_variants_table(self) -> pd.DataFrame:
         frames = []
         for directory in self._sample_dirs:
             vcf = Path(directory, 'snps.vcf.gz')
@@ -63,17 +63,17 @@ class SnippyVariantsReader(VariantsReader):
         out = out.reindex(columns=['SAMPLE'] + cols)
         return out
 
-    def get_core_masks(self) -> Dict[str, Dict[str, CoreBitMask]]:
+    def _read_core_masks(self) -> Dict[str, Dict[str, CoreBitMask]]:
         aligned_fastas = [Path(d, 'snps.aligned.fa') for d in self._sample_dirs]
         core_masks = {}
         for file in aligned_fastas:
             sample_name = os.path.basename(os.path.dirname(file))
             logger.debug(f'Loading core masks for sample=[{sample_name}]')
-            core_masks[sample_name] = self.read_core_masks(Path(file))
+            core_masks[sample_name] = self.read_core_masks_from_file(Path(file))
 
         return core_masks
 
-    def read_core_masks(self, file: Path) -> Dict[str, CoreBitMask]:
+    def read_core_masks_from_file(self, file: Path) -> Dict[str, CoreBitMask]:
         sequence_masks = {}
         for record in SeqIO.parse(file, 'fasta'):
             if record.id not in sequence_masks:
