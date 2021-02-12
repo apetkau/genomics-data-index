@@ -13,6 +13,7 @@ from storage.variant.model import Sample, SampleSequence, Reference, ReferenceSe
 from storage.variant.service import DatabaseConnection
 from storage.variant.service.ReferenceService import ReferenceService
 from storage.variant.service.VariationService import VariationService
+from storage.variant.service.SampleSequenceService import SampleSequenceService
 
 logger = logging.getLogger(__name__)
 
@@ -21,10 +22,11 @@ class CoreAlignmentService:
     ALIGN_TYPES = ['core', 'full']
 
     def __init__(self, database: DatabaseConnection, reference_service: ReferenceService,
-                 variation_service: VariationService):
+                 variation_service: VariationService, sample_sequence_service: SampleSequenceService):
         self._database = database
         self._reference_service = reference_service
         self._variation_service = variation_service
+        self._sample_sequence_service = sample_sequence_service
 
     def _all_sample_names(self, reference_name: str) -> List[str]:
         samples = self._database.get_session().query(Sample) \
@@ -35,24 +37,6 @@ class CoreAlignmentService:
             .all()
 
         return [s.name for s in samples]
-
-    def _sample_sequence(self, reference_name: str, samples: List[str]) -> Dict[str, List[SampleSequence]]:
-        sample_sequences = self._database.get_session().query(SampleSequence) \
-            .join(Sample) \
-            .join(ReferenceSequence) \
-            .join(Reference) \
-            .filter(Sample.name.in_(samples)) \
-            .filter(Reference.name == reference_name) \
-            .all()
-
-        sample_sequences_map = {}
-        for ss in sample_sequences:
-            if ss.sequence.sequence_name in sample_sequences_map:
-                sample_sequences_map[ss.sequence.sequence_name].append(ss)
-            else:
-                sample_sequences_map[ss.sequence.sequence_name] = [ss]
-
-        return sample_sequences_map
 
     def _create_core_mask(self, sequences: List[SampleSequence]) -> CoreBitMask:
         if sequences is None or len(sequences) == 0:
@@ -185,7 +169,7 @@ class CoreAlignmentService:
         if samples is None or len(samples) == 0:
             samples = self._all_sample_names(reference_name)
 
-        sample_sequences = self._sample_sequence(reference_name, samples)
+        sample_sequences = self._sample_sequence_service.get_sample_sequences(reference_name, samples)
 
         alignment_seqs = {}
         alignments = {}

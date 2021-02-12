@@ -138,12 +138,3 @@ def test_snippy_full_align(core_alignment_service, expected_alignment_full):
                                                                   align_type='full')
     compare_alignments(expected_alignment_full, actual_alignment)
 
-
-def test_sample_sequence(core_alignment_service):
-    sample_sequences = core_alignment_service._sample_sequence(reference_name='genome',
-                                                               samples=['SampleA', 'SampleB', 'SampleC'])
-
-    assert {'reference'} == set(sample_sequences.keys()), 'Incorrect number of sequences'
-
-    sample_names = {ss.sample.name for ss in sample_sequences['reference']}
-    assert {'SampleA', 'SampleB', 'SampleC'} == sample_names

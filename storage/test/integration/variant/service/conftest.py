@@ -12,6 +12,7 @@ from storage.variant.service.ReferenceService import ReferenceService
 from storage.variant.service.VariationService import VariationService
 from storage.variant.service.CoreAlignmentService import CoreAlignmentService
 from storage.variant.io.SnippyVariantsReader import SnippyVariantsReader
+from storage.variant.service.SampleSequenceService import SampleSequenceService
 
 
 @pytest.fixture
@@ -51,5 +52,15 @@ def variation_service(database, reference_service_with_data,
 
 
 @pytest.fixture
-def core_alignment_service(database, reference_service_with_data, variation_service) -> CoreAlignmentService:
-    return CoreAlignmentService(database, reference_service_with_data, variation_service)
+def sample_sequence_service(database, variation_service):
+    return SampleSequenceService(database)
+
+
+@pytest.fixture
+def core_alignment_service(database, reference_service_with_data, variation_service,
+                           sample_sequence_service) -> CoreAlignmentService:
+    return CoreAlignmentService(database=database,
+                                reference_service=reference_service_with_data,
+                                variation_service=variation_service,
+                                sample_sequence_service=sample_sequence_service,
+                                )
