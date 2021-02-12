@@ -1,7 +1,7 @@
 import pytest
 import math
 
-from storage.variant.model import VariationAllele, Sample, SampleSequence
+from storage.variant.model import VariationAllele, Sample, SampleSequence, sample_variation_association
 from storage.variant.service.VariationService import VariationService
 from storage.variant.service import EntityExistsError
 
@@ -18,6 +18,7 @@ def test_insert_variants(database, snippy_variants_reader, reference_service_wit
                                       core_masks=core_masks)
 
     assert 112 == session.query(VariationAllele).count(), 'Incorrect number of variant entries'
+    assert 129 == session.query(sample_variation_association).count(), 'Incorrect number of sample variants'
 
     # Check to make sure some variation alleles are stored
     v = session.query(VariationAllele).get('reference:1048:C:G')
@@ -49,6 +50,7 @@ def test_insert_variants_duplicates(database, snippy_variants_reader, reference_
     assert 0 == session.query(VariationAllele).count(), 'Incorrect number of variant entries'
     assert 0 == session.query(Sample).count(), 'Incorrect number of Samples'
     assert 0 == session.query(SampleSequence).count(), 'Incorrect number of SampleSequences'
+    assert 0 == session.query(sample_variation_association).count(), 'Incorrect number of sample variants'
 
     variation_service.insert_variants(var_df=var_df,
                                       reference_name='genome',
@@ -57,6 +59,7 @@ def test_insert_variants_duplicates(database, snippy_variants_reader, reference_
     assert 112 == session.query(VariationAllele).count(), 'Incorrect number of variant entries'
     assert 3 == session.query(Sample).count(), 'Incorrect number of Samples'
     assert 3 == session.query(SampleSequence).count(), 'Incorrect number of SampleSequences'
+    assert 129 == session.query(sample_variation_association).count(), 'Incorrect number of sample variants'
 
     with pytest.raises(EntityExistsError) as execinfo:
         variation_service.insert_variants(var_df=var_df,
@@ -66,7 +69,42 @@ def test_insert_variants_duplicates(database, snippy_variants_reader, reference_
     assert 112 == session.query(VariationAllele).count(), 'Incorrect number of variant entries'
     assert 3 == session.query(Sample).count(), 'Incorrect number of Samples'
     assert 3 == session.query(SampleSequence).count(), 'Incorrect number of SampleSequences'
+    assert 129 == session.query(sample_variation_association).count(), 'Incorrect number of sample variants'
 
+
+def test_insert_variants_duplicates_subset(database, snippy_variants_reader, reference_service_with_data, sample_service):
+    variation_service = VariationService(database, reference_service_with_data, sample_service)
+
+    core_masks = snippy_variants_reader.get_core_masks()
+    var_df = snippy_variants_reader.get_variants_table()
+    session = database.get_session()
+
+    assert 0 == session.query(VariationAllele).count(), 'Incorrect number of variant entries'
+    assert 0 == session.query(Sample).count(), 'Incorrect number of Samples'
+    assert 0 == session.query(SampleSequence).count(), 'Incorrect number of SampleSequences'
+    assert 0 == session.query(sample_variation_association).count(), 'Incorrect number of sample variants'
+
+    variation_service.insert_variants(var_df=var_df,
+                                      reference_name='genome',
+                                      core_masks=core_masks)
+
+    assert 112 == session.query(VariationAllele).count(), 'Incorrect number of variant entries'
+    assert 3 == session.query(Sample).count(), 'Incorrect number of Samples'
+    assert 3 == session.query(SampleSequence).count(), 'Incorrect number of SampleSequences'
+    assert 129 == session.query(sample_variation_association).count(), 'Incorrect number of sample variants'
+
+    # Select a subset of samples
+    var_df_2 = var_df[var_df['SAMPLE'].isin(['SampleA', 'SampleB'])]
+
+    with pytest.raises(EntityExistsError) as execinfo:
+        variation_service.insert_variants(var_df=var_df_2,
+                                          reference_name='genome',
+                                          core_masks=core_masks)
+    assert 'Passed samples already have variants for reference genome [genome]' in str(execinfo.value)
+    assert 112 == session.query(VariationAllele).count(), 'Incorrect number of variant entries'
+    assert 3 == session.query(Sample).count(), 'Incorrect number of Samples'
+    assert 3 == session.query(SampleSequence).count(), 'Incorrect number of SampleSequences'
+    assert 129 == session.query(sample_variation_association).count(), 'Incorrect number of sample variants'
 
 
 def test_get_variants(database, snippy_variants_reader, reference_service_with_data, sample_service):

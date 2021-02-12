@@ -7,10 +7,10 @@ from storage.variant.CoreBitMask import CoreBitMask
 
 Base = declarative_base()
 
-association_table = Table('sample_variation_allele', Base.metadata,
-                          Column('sample_id', Integer, ForeignKey('sample.id')),
-                          Column('variantion_allele_id', String(255), ForeignKey('variation_allele.id')),
-                          )
+sample_variation_association = Table('sample_variation_allele', Base.metadata,
+                                     Column('sample_id', Integer, ForeignKey('sample.id')),
+                                     Column('variantion_allele_id', String(255), ForeignKey('variation_allele.id')),
+                                     )
 
 
 class VariationAllele(Base):
@@ -22,7 +22,7 @@ class VariationAllele(Base):
     alt = Column(String(255))
     var_type = Column(String(255))
 
-    samples = relationship('Sample', secondary=association_table, back_populates='variants')
+    samples = relationship('Sample', secondary=sample_variation_association, back_populates='variants')
     sequence = relationship('ReferenceSequence', back_populates='variants')
 
     def __init__(self, sequence=None, position: int = -1, ref: str = None, alt: str = None,
@@ -115,7 +115,7 @@ class Sample(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(255))
 
-    variants = relationship('VariationAllele', secondary=association_table, back_populates='samples')
+    variants = relationship('VariationAllele', secondary=sample_variation_association, back_populates='samples')
     sample_sequences = relationship('SampleSequence', back_populates='sample')
 
     def __repr__(self):
