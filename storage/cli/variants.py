@@ -5,6 +5,7 @@ from typing import List
 import click
 import click_config_file
 from Bio import AlignIO
+import coloredlogs
 
 from storage.variant.io.SnippyVariantsReader import SnippyVariantsReader
 from storage.variant.service import DatabaseConnection, EntityExistsError
@@ -21,11 +22,18 @@ from storage.cli import yaml_config_provider
 @click.option('--database-connection', help='A connection string for the database.')
 @click.option('--seqrepo-dir', help='The root directory for the seqrepo reference storage.',
               type=click.Path())
+@click.option('--verbose/--no-verbose', default=False, help='Turn up verbosity of command')
 @click_config_file.configuration_option(provider=yaml_config_provider,
                                         config_file_name='config.yaml',
                                         implicit=True)
-def main(ctx, database_connection, seqrepo_dir):
+def main(ctx, database_connection, seqrepo_dir, verbose):
     ctx.ensure_object(dict)
+
+    if verbose:
+        coloredlogs.install(level='DEBUG',
+                            fmt='%(asctime)s %(levelname)s %(name)s.%(funcName)s,%(lineno)s: %(message)s')
+    else:
+        coloredlogs.install(level='INFO', fmt='%(asctime)s %(levelname)s: %(message)s')
 
     click.echo(f'Connecting to database {database_connection}')
     database = DatabaseConnection(database_connection)

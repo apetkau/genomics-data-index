@@ -1,5 +1,7 @@
 from typing import List, Dict
 import copy
+import logging
+import time
 
 from Bio.Align import MultipleSeqAlignment
 from Bio.Seq import Seq, MutableSeq
@@ -10,6 +12,8 @@ from storage.variant.CoreBitMask import CoreBitMask
 from storage.variant.model import Sample, SampleSequence, Reference, ReferenceSequence, VariationAllele
 from storage.variant.service import DatabaseConnection
 from storage.variant.service.ReferenceService import ReferenceService
+
+logger = logging.getLogger(__name__)
 
 
 class CoreAlignmentService:
@@ -69,10 +73,17 @@ class CoreAlignmentService:
         if sequences is None or len(sequences) == 0:
             raise Exception('Cannot create bitmask of empty sequences')
         else:
+            start_time = time.time()
+            logger.debug(f'Started creating core mask for {len(sequences)} sequences')
+
             core_mask = sequences[0].get_core_mask()
             for i in range(1, len(sequences)):
                 sequence = sequences[i]
                 core_mask = core_mask.append_bitmask(sequence.get_core_mask())
+
+            end_time = time.time()
+            logger.debug(f'Finished creating core mask for {len(sequences)} sequences. '
+                         f'Took {end_time - start_time:0.2f} seconds')
 
             return core_mask
 
@@ -81,6 +92,10 @@ class CoreAlignmentService:
                                        core_mask: CoreBitMask,
                                        samples: List[str],
                                        include_reference: bool) -> Dict[str, SeqRecord]:
+        start_time = time.time()
+        logger.debug(f'Started building core alignment for {ref_sequence.id} using {len(variants_dict)} '
+                     'variant positions')
+
         seq_records = {}
         for position in variants_dict:
             ref = ref_sequence[position - 1:position].seq
@@ -109,6 +124,10 @@ class CoreAlignmentService:
 
                     seq_records['reference'] += ref
 
+        end_time = time.time()
+        logger.debug(f'Finished building core alignment for {ref_sequence.id}. '
+                     f'Took {end_time-start_time:0.2f} seconds')
+
         return seq_records
 
     def _build_full_alignment_sequence(self, ref_sequence: SeqRecord,
@@ -117,6 +136,10 @@ class CoreAlignmentService:
                                        sample_sequences: List[SampleSequence],
                                        include_reference: bool) -> Dict[str, SeqRecord]:
         seq_records = {}
+
+        start_time = time.time()
+        logger.debug(f'Started building full alignment for {ref_sequence.id}'
+                     f' using {len(variants_dict)} variant positions')
 
         for sample in samples:
             seq_records[sample] = copy.deepcopy(ref_sequence)
@@ -165,6 +188,10 @@ class CoreAlignmentService:
             seq_records['reference'].description = 'generated automatically'
             if isinstance(seq_records['reference'].seq, str):
                 seq_records['reference'].seq = Seq(seq_records['reference'].seq)
+
+        end_time = time.time()
+        logger.debug(f'Finished building full alignment for {ref_sequence.id}. '
+                     f'Took {end_time-start_time:0.2f} seconds')
 
         return seq_records
 
