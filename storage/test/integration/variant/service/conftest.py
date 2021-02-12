@@ -52,4 +52,4 @@ def variation_service(database, reference_service_with_data,
 
 @pytest.fixture
 def core_alignment_service(database, reference_service_with_data, variation_service) -> CoreAlignmentService:
-    return CoreAlignmentService(database, reference_service_with_data)
+    return CoreAlignmentService(database, reference_service_with_data, variation_service)

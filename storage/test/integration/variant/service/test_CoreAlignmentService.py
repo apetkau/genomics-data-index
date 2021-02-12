@@ -139,20 +139,6 @@ def test_snippy_full_align(core_alignment_service, expected_alignment_full):
     compare_alignments(expected_alignment_full, actual_alignment)
 
 
-def test_get_variants(core_alignment_service):
-    variants = core_alignment_service._get_variants(sequence_name='reference')
-
-    assert 60 == len(variants.keys()), 'Incorrect number of variants returned (counting only SNV/SNPs)'
-
-    assert 'reference:4265:G:C' == variants[4265]['SampleA'].id, 'Incorrect variant returned'
-    assert 'SampleB' not in variants[4265], 'Incorrect variant returned'
-    assert 'SampleC' not in variants[4265], 'Incorrect variant returned'
-
-    assert 'reference:839:C:G' == variants[839]['SampleB'].id, 'Incorrect variant returned'
-    assert 'reference:839:C:G' == variants[839]['SampleC'].id, 'Incorrect variant returned'
-    assert 'SampleA' not in variants[839], 'Incorrect variant returned'
-
-
 def test_sample_sequence(core_alignment_service):
     sample_sequences = core_alignment_service._sample_sequence(reference_name='genome',
                                                                samples=['SampleA', 'SampleB', 'SampleC'])

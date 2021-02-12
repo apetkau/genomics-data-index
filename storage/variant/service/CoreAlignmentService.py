@@ -12,6 +12,7 @@ from storage.variant.CoreBitMask import CoreBitMask
 from storage.variant.model import Sample, SampleSequence, Reference, ReferenceSequence, VariationAllele
 from storage.variant.service import DatabaseConnection
 from storage.variant.service.ReferenceService import ReferenceService
+from storage.variant.service.VariationService import VariationService
 
 logger = logging.getLogger(__name__)
 
@@ -19,9 +20,11 @@ logger = logging.getLogger(__name__)
 class CoreAlignmentService:
     ALIGN_TYPES = ['core', 'full']
 
-    def __init__(self, database: DatabaseConnection, reference_service: ReferenceService):
+    def __init__(self, database: DatabaseConnection, reference_service: ReferenceService,
+                 variation_service: VariationService):
         self._database = database
         self._reference_service = reference_service
+        self._variation_service = variation_service
 
     def _all_sample_names(self, reference_name: str) -> List[str]:
         samples = self._database.get_session().query(Sample) \
@@ -50,24 +53,6 @@ class CoreAlignmentService:
                 sample_sequences_map[ss.sequence.sequence_name] = [ss]
 
         return sample_sequences_map
-
-    def _get_variants(self, sequence_name: str) -> Dict[int, Dict[str, VariationAllele]]:
-        variants = self._database.get_session().query(VariationAllele) \
-            .join(ReferenceSequence) \
-            .filter(ReferenceSequence.sequence_name == sequence_name) \
-            .filter(VariationAllele.var_type == 'snp') \
-            .order_by(VariationAllele.position) \
-            .all()
-
-        variants_dict = {}
-
-        for variant in variants:
-            if variant.position not in variants_dict:
-                variants_dict[variant.position] = {}
-            for sample in variant.samples:
-                variants_dict[variant.position][sample.name] = variant
-
-        return variants_dict
 
     def _create_core_mask(self, sequences: List[SampleSequence]) -> CoreBitMask:
         if sequences is None or len(sequences) == 0:
@@ -207,7 +192,7 @@ class CoreAlignmentService:
 
         for sequence_name in sample_sequences:
             seq = self._reference_service.get_sequence(sequence_name)
-            variants_dict = self._get_variants(sequence_name)
+            variants_dict = self._variation_service.get_variants(sequence_name, type='snp')
 
             if align_type == 'core':
                 core_mask = self._create_core_mask(sample_sequences[sequence_name])

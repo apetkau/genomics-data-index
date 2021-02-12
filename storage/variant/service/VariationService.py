@@ -18,6 +18,24 @@ class VariationService:
         self._connection = database_connection
         self._reference_service = reference_service
 
+    def get_variants(self, sequence_name: str, type: str = 'snp') -> Dict[int, Dict[str, VariationAllele]]:
+        variants = self._connection.get_session().query(VariationAllele) \
+            .join(ReferenceSequence) \
+            .filter(ReferenceSequence.sequence_name == sequence_name) \
+            .filter(VariationAllele.var_type == type) \
+            .order_by(VariationAllele.position) \
+            .all()
+
+        variants_dict = {}
+
+        for variant in variants:
+            if variant.position not in variants_dict:
+                variants_dict[variant.position] = {}
+            for sample in variant.samples:
+                variants_dict[variant.position][sample.name] = variant
+
+        return variants_dict
+
     def _create_file_variants(self, var_df: pd.DataFrame, ref_contigs: Dict[str, ReferenceSequence]) -> Dict[
         str, List[VariationAllele]]:
         variant_table = {}
