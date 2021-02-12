@@ -9,7 +9,7 @@ from storage.variant.service import DatabaseConnection
 from storage.variant.service.ReferenceService import ReferenceService
 from storage.variant.io import check_variants_table_columns
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 class VariationService:

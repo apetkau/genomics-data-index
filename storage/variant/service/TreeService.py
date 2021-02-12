@@ -10,7 +10,7 @@ from ete3 import Tree
 
 from storage.variant.service import DatabaseConnection
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 class TreeService:

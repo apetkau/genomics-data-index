@@ -3,7 +3,7 @@ from os import path
 
 import logging
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 def yaml_config_provider(file_path: str, cmd_name: str):

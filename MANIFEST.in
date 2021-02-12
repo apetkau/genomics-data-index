@@ -2,3 +2,4 @@ recursive-include storage/test/integration/data *
 README.md
 MANIFEST.in
 LICENSE
+pytest.ini
