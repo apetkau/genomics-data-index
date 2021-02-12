@@ -4,7 +4,7 @@ from typing import Dict, Any
 import pytest
 
 from storage.test.integration.variant import data_dir
-from storage.variant.VariantsReader import SnippyVariantsReader
+from storage.variant.io.VariantsReader import SnippyVariantsReader
 
 sample_dirs = [data_dir / d for d in listdir(data_dir) if path.isdir(data_dir / d)]
 
