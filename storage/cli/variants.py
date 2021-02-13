@@ -21,7 +21,7 @@ from storage.variant.service.VariationService import VariationService
 from storage.variant.util import get_genome_name
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('storage')
 
 
 @click.group()
