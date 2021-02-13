@@ -179,6 +179,10 @@ def tree(ctx, output_file: Path, reference_name: str, align_type: str, tree_buil
         logger.error(f'Samples {set(sample) - found_samples} do not exist')
         sys.exit(1)
 
+    if align_type == 'full' and tree_build_type == 'fasttree':
+        logger.error(f'align_type=[{align_type}] is not supported for tree_build_type=[{tree_build_type}]')
+        sys.exit(1)
+
     alignment_data = alignment_service.construct_alignment(reference_name=reference_name,
                                                            samples=sample,
                                                            align_type=align_type,
