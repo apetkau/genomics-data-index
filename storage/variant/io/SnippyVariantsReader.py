@@ -68,7 +68,6 @@ class SnippyVariantsReader(VariantsReader):
         core_masks = {}
         for file in aligned_fastas:
             sample_name = os.path.basename(os.path.dirname(file))
-            logger.debug(f'Loading core masks for sample=[{sample_name}]')
             core_masks[sample_name] = self.read_core_masks_from_file(Path(file))
 
         return core_masks

@@ -31,12 +31,18 @@ def test_build_tree_core_iqtree(tree_service, core_alignment_service, expected_t
     alignment = core_alignment_service.construct_alignment(
         reference_name='genome', samples=['SampleA', 'SampleB', 'SampleC'])
 
-    tree, out = tree_service.build_tree(alignment, tree_build_type='iqtree')
+    tree, out = tree_service.build_tree(alignment, tree_build_type='iqtree',
+                                        extra_params='--seed 42 -m GTR+ASC')
 
     assert {'SampleA', 'SampleB', 'SampleC', 'reference'} == set(tree.get_leaf_names())
 
     tree_comparison = expected_tree.compare(tree, unrooted=True)
     assert tree_comparison['rf'] == 0
+
+    actual_distance = 5180 * tree.get_distance('SampleA', 'reference')
+    expected_distance = 26
+    assert abs(expected_distance - actual_distance) < 5
+    print(actual_distance)
 
 
 def test_build_tree_core_iqtree_2cores(tree_service, core_alignment_service, expected_tree):
@@ -55,12 +61,17 @@ def test_build_tree_full(tree_service, core_alignment_service, expected_tree):
     alignment = core_alignment_service.construct_alignment(
         reference_name='genome', samples=['SampleA', 'SampleB', 'SampleC'], align_type='full')
 
-    tree, out = tree_service.build_tree(alignment, tree_build_type='iqtree')
+    tree, out = tree_service.build_tree(alignment, tree_build_type='iqtree',
+                                        extra_params='--seed 42 -m GTR')
 
     assert {'SampleA', 'SampleB', 'SampleC', 'reference'} == set(tree.get_leaf_names())
 
     tree_comparison = expected_tree.compare(tree, unrooted=True)
     assert tree_comparison['rf'] == 0
+
+    actual_distance = 5180 * tree.get_distance('SampleA', 'reference')
+    expected_distance = 26
+    assert abs(expected_distance - actual_distance) < 5
 
 
 def test_build_tree_two_samples(tree_service, core_alignment_service):

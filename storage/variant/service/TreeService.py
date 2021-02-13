@@ -21,13 +21,16 @@ class TreeService:
         self._database = database_connection
 
     def build_tree(self, alignment: MultipleSeqAlignment,
-                   tree_build_type: str = 'fasttree', num_cores: int = 1) -> Tuple[Tree, str]:
+                   tree_build_type: str = 'fasttree', num_cores: int = 1, extra_params: str = None) -> Tuple[Tree, str]:
         if not tree_build_type in self.TREE_BUILD_TYPES:
             raise Exception(
                 f'tree_type=[{tree_build_type}] is not one of the valid tree builder types {self.TREE_BUILD_TYPES}')
 
         if num_cores < 1:
             raise Exception(f'num_cores=[{num_cores}] is not supported')
+
+        if extra_params is not None and tree_build_type == 'fasttree':
+            raise Exception(f'extra_params is not supported for tree_build_type=[{tree_build_type}]')
 
         with TemporaryDirectory() as tmp_dir:
             input_file = Path(tmp_dir, 'input.fasta')
@@ -46,9 +49,12 @@ class TreeService:
             elif tree_build_type == 'iqtree':
                 output_file = f'{str(input_file)}.treefile'
                 command = ['iqtree', '--terrace', '-T', str(num_cores), '-s', str(input_file)]
+                if extra_params is not None:
+                    command.extend(extra_params.split())
+
                 try:
                     logger.debug(f'Running: {" ".join(command)}')
-                    completed = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                    completed = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                                check=True, text=True)
                     out = completed.stdout
                     tree = Tree(str(output_file))
