@@ -38,9 +38,11 @@ def main(ctx, database_connection, seqrepo_dir, verbose):
 
     if verbose:
         coloredlogs.install(level='DEBUG',
-                            fmt='%(asctime)s %(levelname)s %(name)s.%(funcName)s,%(lineno)s: %(message)s')
+                            fmt='%(asctime)s %(levelname)s %(name)s.%(funcName)s,%(lineno)s: %(message)s',
+                            logger=logger)
     else:
-        coloredlogs.install(level='WARNING', fmt='%(asctime)s %(levelname)s: %(message)s')
+        coloredlogs.install(level='WARNING', fmt='%(asctime)s %(levelname)s: %(message)s',
+                            logger=logger)
 
     logger.info(f'Connecting to database {database_connection}')
     database = DatabaseConnection(database_connection)
