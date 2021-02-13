@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import List
 import logging
 import sys
+import multiprocessing
 
 import click
 import click_config_file
@@ -22,6 +23,7 @@ from storage.variant.util import get_genome_name
 
 
 logger = logging.getLogger('storage')
+num_cores = multiprocessing.cpu_count()
 
 
 @click.group()
@@ -163,7 +165,10 @@ def alignment(ctx, output_file: Path, reference_name: str, align_type: str, samp
               type=click.Choice(TreeService.TREE_BUILD_TYPES))
 @click.option('--sample', help='Sample to include in tree (can list more than one).',
               multiple=True, type=str)
-def tree(ctx, output_file: Path, reference_name: str, align_type: str, tree_build_type: str, sample: List[str]):
+@click.option('--threads', help='Threads for building tree', default=1,
+              type=click.IntRange(min=1, max=num_cores))
+def tree(ctx, output_file: Path, reference_name: str, align_type: str,
+         tree_build_type: str, sample: List[str], threads: int):
     alignment_service = ctx.obj['alignment_service']
     tree_service = ctx.obj['tree_service']
     reference_service = ctx.obj['reference_service']
@@ -188,6 +193,12 @@ def tree(ctx, output_file: Path, reference_name: str, align_type: str, tree_buil
                                                            align_type=align_type,
                                                            include_reference=True)
 
-    tree_data = tree_service.build_tree(alignment_data, tree_build_type=tree_build_type)
+    log_file = f'{output_file}.log'
+
+    tree_data, out = tree_service.build_tree(alignment_data, tree_build_type=tree_build_type,
+                                        num_cores=threads)
     tree_data.write(outfile=output_file)
     click.echo(f'Wrote tree to [{output_file}]')
+    with open(log_file, 'w') as log:
+        log.write(out)
+        click.echo(f'Wrote log file to [{log_file}]')

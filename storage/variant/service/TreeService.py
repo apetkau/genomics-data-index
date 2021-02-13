@@ -1,3 +1,4 @@
+from typing import Tuple
 import logging
 import subprocess
 from pathlib import Path
@@ -19,10 +20,14 @@ class TreeService:
     def __init__(self, database_connection: DatabaseConnection):
         self._database = database_connection
 
-    def build_tree(self, alignment: MultipleSeqAlignment, tree_build_type: str = 'fasttree') -> Tree:
+    def build_tree(self, alignment: MultipleSeqAlignment,
+                   tree_build_type: str = 'fasttree', num_cores: int = 1) -> Tuple[Tree, str]:
         if not tree_build_type in self.TREE_BUILD_TYPES:
             raise Exception(
                 f'tree_type=[{tree_build_type}] is not one of the valid tree builder types {self.TREE_BUILD_TYPES}')
+
+        if num_cores < 1:
+            raise Exception(f'num_cores=[{num_cores}] is not supported')
 
         with TemporaryDirectory() as tmp_dir:
             input_file = Path(tmp_dir, 'input.fasta')
@@ -37,18 +42,19 @@ class TreeService:
                 logger.debug(out)
 
                 tree = Tree(str(output_file))
-                return tree
+                return tree, out
             elif tree_build_type == 'iqtree':
                 output_file = f'{str(input_file)}.treefile'
-                command = ['iqtree', '-s', str(input_file)]
-                logger.debug(' '.join(command))
+                command = ['iqtree', '--terrace', '-T', str(num_cores), '-s', str(input_file)]
                 try:
-                    subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+                    logger.debug(f'Running: {" ".join(command)}')
+                    completed = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                               check=True, text=True)
+                    out = completed.stdout
+                    tree = Tree(str(output_file))
+                    return tree, out
                 except subprocess.CalledProcessError as e:
                     err_msg = str(e.stderr.strip())
                     raise Exception(f'Could not run iqtree on alignment: error {err_msg}')
-
-                tree = Tree(str(output_file))
-                return tree
             else:
                 raise Exception(f'tree_type=[{tree_build_type}] is invalid')
