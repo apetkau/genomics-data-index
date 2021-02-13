@@ -2,6 +2,7 @@ from os import path, listdir
 from pathlib import Path
 from typing import List
 import logging
+import sys
 
 import click
 import click_config_file
@@ -127,6 +128,18 @@ def list_data(ctx, data_type):
               multiple=True, type=str)
 def alignment(ctx, output_file: Path, reference_name: str, align_type: str, sample: List[str]):
     alignment_service = ctx.obj['alignment_service']
+    reference_service = ctx.obj['reference_service']
+    sample_service = ctx.obj['sample_service']
+
+    if not reference_service.exists_reference_genome(reference_name):
+        logger.error(f'Reference genome [{reference_name}] does not exist')
+        sys.exit(1)
+
+    found_samples = set(sample_service.which_exists(sample))
+
+    if len(sample) > 0 and found_samples != set(sample):
+        logger.error(f'Samples {set(sample) - found_samples} do not exist')
+        sys.exit(1)
 
     alignment_data = alignment_service.construct_alignment(reference_name=reference_name,
                                                            samples=sample,
@@ -151,6 +164,18 @@ def alignment(ctx, output_file: Path, reference_name: str, align_type: str, samp
 def tree(ctx, output_file: Path, reference_name: str, align_type: str, tree_build_type: str, sample: List[str]):
     alignment_service = ctx.obj['alignment_service']
     tree_service = ctx.obj['tree_service']
+    reference_service = ctx.obj['reference_service']
+    sample_service = ctx.obj['sample_service']
+
+    if not reference_service.exists_reference_genome(reference_name):
+        logger.error(f'Reference genome [{reference_name}] does not exist')
+        sys.exit(1)
+
+    found_samples = set(sample_service.which_exists(sample))
+
+    if len(sample) > 0 and found_samples != set(sample):
+        logger.error(f'Samples {set(sample) - found_samples} do not exist')
+        sys.exit(1)
 
     alignment_data = alignment_service.construct_alignment(reference_name=reference_name,
                                                            samples=sample,
