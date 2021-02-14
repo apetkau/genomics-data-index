@@ -167,8 +167,10 @@ def alignment(ctx, output_file: Path, reference_name: str, align_type: str, samp
               multiple=True, type=str)
 @click.option('--threads', help='Threads for building tree', default=1,
               type=click.IntRange(min=1, max=num_cores))
+@click.option('--extra-params', help='Extra parameters to tree-building software',
+              default=None)
 def tree(ctx, output_file: Path, reference_name: str, align_type: str,
-         tree_build_type: str, sample: List[str], threads: int):
+         tree_build_type: str, sample: List[str], threads: int, extra_params: str):
     alignment_service = ctx.obj['alignment_service']
     tree_service = ctx.obj['tree_service']
     reference_service = ctx.obj['reference_service']
@@ -196,7 +198,7 @@ def tree(ctx, output_file: Path, reference_name: str, align_type: str,
     log_file = f'{output_file}.log'
 
     tree_data, out = tree_service.build_tree(alignment_data, tree_build_type=tree_build_type,
-                                        num_cores=threads)
+                                        num_cores=threads, extra_params=extra_params)
     tree_data.write(outfile=output_file)
     click.echo(f'Wrote tree to [{output_file}]')
     with open(log_file, 'w') as log:
