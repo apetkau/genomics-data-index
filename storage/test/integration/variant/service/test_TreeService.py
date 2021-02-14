@@ -81,6 +81,7 @@ def test_rebuild_tree(tree_service, reference_service_with_data, expected_tree):
     reference_genome = reference_service_with_data.find_reference_genome('genome')
     tree = reference_genome.tree
 
+    assert 58 == reference_genome.tree_alignment_length
     assert {'SampleA', 'SampleB', 'SampleC', 'reference'} == set(tree.get_leaf_names())
 
     tree_comparison = expected_tree.compare(tree, unrooted=True)

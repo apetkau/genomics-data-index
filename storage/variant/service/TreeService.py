@@ -101,4 +101,6 @@ class TreeService:
                                     extra_params=extra_params)
 
         logger.debug(f'Updating tree for reference genome [{reference_name}]')
-        self._reference_service.update_tree(reference_name, tree)
+        self._reference_service.update_tree(reference_name=reference_name,
+                                            tree=tree,
+                                            alignment_length=alignment.get_alignment_length())

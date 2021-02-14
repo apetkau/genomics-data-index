@@ -76,9 +76,13 @@ class ReferenceService:
         self._connection.get_session().add(reference)
         self._connection.get_session().commit()
 
-    def update_tree(self, reference_name: str, tree: Tree):
+    def update_tree(self, reference_name: str, tree: Tree, alignment_length: int):
+        if alignment_length is None or alignment_length <= 0:
+            raise Exception(f'Invalid alignment_length=[{alignment_length}]')
+
         reference = self.find_reference_genome(reference_name)
         reference.tree = tree
+        reference.tree_alignment_length = alignment_length
         self._connection.get_session().commit()
 
     def find_reference_genome(self, name: str):

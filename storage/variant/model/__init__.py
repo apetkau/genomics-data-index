@@ -58,6 +58,7 @@ class Reference(Base):
     name = Column(String(255))
     length = Column(Integer)
     _tree = Column('tree', UnicodeText)
+    tree_alignment_length = Column(Integer)
     sequences = relationship('ReferenceSequence')
 
     @hybrid_property
