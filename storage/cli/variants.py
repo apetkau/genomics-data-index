@@ -198,7 +198,7 @@ def tree(ctx, output_file: Path, reference_name: str, align_type: str,
     log_file = f'{output_file}.log'
 
     tree_data, out = tree_service.build_tree(alignment_data, tree_build_type=tree_build_type,
-                                        num_cores=threads, extra_params=extra_params)
+                                        num_cores=threads, align_type=align_type, extra_params=extra_params)
     tree_data.write(outfile=output_file)
     click.echo(f'Wrote tree to [{output_file}]')
     with open(log_file, 'w') as log:
