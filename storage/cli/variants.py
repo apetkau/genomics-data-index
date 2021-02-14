@@ -19,8 +19,8 @@ from storage.variant.service.SampleSequenceService import SampleSequenceService
 from storage.variant.service.SampleService import SampleService
 from storage.variant.service.TreeService import TreeService
 from storage.variant.service.VariationService import VariationService
+from storage.variant.service.SampleQueryService import SampleQueryService
 from storage.variant.util import get_genome_name
-
 
 logger = logging.getLogger('storage')
 num_cores = multiprocessing.cpu_count()
@@ -62,6 +62,8 @@ def main(ctx, database_connection, seqrepo_dir, verbose):
                                              variation_service=variation_service,
                                              sample_sequence_service=sample_sequence_service)
     tree_service = TreeService(database, reference_service, alignment_service)
+    sample_query_service = SampleQueryService(tree_service=tree_service,
+                                              reference_service=reference_service)
 
     ctx.obj['database'] = database
     ctx.obj['reference_service'] = reference_service
@@ -69,6 +71,7 @@ def main(ctx, database_connection, seqrepo_dir, verbose):
     ctx.obj['alignment_service'] = alignment_service
     ctx.obj['tree_service'] = tree_service
     ctx.obj['sample_service'] = sample_service
+    ctx.obj['sample_query_service'] = sample_query_service
 
 
 @main.command()
@@ -116,6 +119,8 @@ def load(ctx, snippy_dir: Path, reference_file: Path, build_tree: bool, threads:
 
 
 LIST_TYPES = ['genomes', 'samples']
+
+
 @main.command(name='list')
 @click.pass_context
 @click.option('--type', 'data_type', required=True, help='Type of data to list',
@@ -207,9 +212,30 @@ def tree(ctx, output_file: Path, reference_name: str, align_type: str,
     log_file = f'{output_file}.log'
 
     tree_data, out = tree_service.build_tree(alignment_data, tree_build_type=tree_build_type,
-                                        num_cores=threads, align_type=align_type, extra_params=extra_params)
+                                             num_cores=threads, align_type=align_type, extra_params=extra_params)
     tree_data.write(outfile=output_file)
     click.echo(f'Wrote tree to [{output_file}]')
     with open(log_file, 'w') as log:
         log.write(out)
         click.echo(f'Wrote log file to [{log_file}]')
+
+
+QUERY_TYPES = ['sample']
+
+
+@main.command()
+@click.pass_context
+@click.argument('name')
+@click.option('--type', 'query_type', help='Query type',
+              required=True, type=click.Choice(QUERY_TYPES))
+def query(ctx, name, query_type):
+    sample_query_service = ctx.obj['sample_query_service']
+
+    match_df = None
+    if query_type == 'sample':
+        match_df = sample_query_service.find_matches(sample_name=name)
+    else:
+        logger.error(f'Invalid query_type=[{query_type}]')
+        sys.exit(1)
+
+    match_df.to_csv(sys.stdout, sep='\t', index=False)
