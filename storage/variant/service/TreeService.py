@@ -10,6 +10,8 @@ from Bio.Phylo.Applications import FastTreeCommandline
 from ete3 import Tree
 
 from storage.variant.service import DatabaseConnection
+from storage.variant.service.ReferenceService import ReferenceService
+from storage.variant.service.CoreAlignmentService import CoreAlignmentService
 
 logger = logging.getLogger(__name__)
 
@@ -18,8 +20,11 @@ class TreeService:
     TREE_BUILD_TYPES = ['fasttree', 'iqtree']
     ALIGN_TYPES = ['core', 'full']
 
-    def __init__(self, database_connection: DatabaseConnection):
+    def __init__(self, database_connection: DatabaseConnection, reference_service: ReferenceService,
+                 core_alignment_service: CoreAlignmentService):
         self._database = database_connection
+        self._reference_service = reference_service
+        self._core_alignment_service = core_alignment_service
 
     def build_tree(self, alignment: MultipleSeqAlignment,
                    tree_build_type: str = 'fasttree', num_cores: int = 1, align_type: str = 'core',
@@ -55,14 +60,18 @@ class TreeService:
                 output_file = f'{str(input_file)}.treefile'
                 command = ['iqtree', '--terrace', '-T', str(num_cores), '-s', str(input_file)]
 
-                # Add ascertainment bias correction for core alignment
-                if align_type == 'core':
-                    command.extend(['-m', 'MFP+ASC'])
-                elif align_type == 'full':
-                    command.extend(['-m', 'MFP'])
-
+                extra_params_list = None
                 if extra_params is not None:
-                    command.extend(extra_params.split())
+                    extra_params_list = extra_params.split()
+                    command.extend(extra_params_list)
+
+                # Add ascertainment bias correction for core alignment
+                # But only add if '-m' is not included in extra_params
+                if extra_params_list is None or not ('-m' in extra_params_list):
+                    if align_type == 'core':
+                        command.extend(['-m', 'MFP+ASC'])
+                    elif align_type == 'full':
+                        command.extend(['-m', 'MFP'])
 
                 try:
                     logger.debug(f'Running: {" ".join(command)}')
@@ -76,3 +85,17 @@ class TreeService:
                     raise Exception(f'Could not run iqtree on alignment: error {err_msg}')
             else:
                 raise Exception(f'tree_type=[{tree_build_type}] is invalid')
+
+    def rebuild_tree(self, reference_name: str, num_cores: int = 1):
+        alignment = self._core_alignment_service.construct_alignment(reference_name=reference_name,
+                                                                     include_reference=True,
+                                                                     align_type='core')
+
+        tree, out = self.build_tree(alignment=alignment,
+                                    tree_build_type='iqtree',
+                                    num_cores=num_cores,
+                                    align_type='core')
+
+        reference_genome = self._reference_service.find_reference_genome(reference_name)
+        reference_genome.tree = tree.write()
+        self._database.get_session().commit()
