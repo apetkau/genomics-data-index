@@ -75,7 +75,10 @@ def main(ctx, database_connection, seqrepo_dir, verbose):
 @click.pass_context
 @click.argument('snippy_dir', type=click.Path(exists=True))
 @click.option('--reference-file', help='Reference genome', required=True, type=click.Path(exists=True))
-def load(ctx, snippy_dir: Path, reference_file: Path):
+@click.option('--build-tree/--no-build-tree', default=False, help='Builds tree of all samples after loading')
+@click.option('--threads', help='Threads for building tree', default=1,
+              type=click.IntRange(min=1, max=num_cores))
+def load(ctx, snippy_dir: Path, reference_file: Path, build_tree: bool, threads: int):
     snippy_dir = Path(snippy_dir)
     reference_file = Path(reference_file)
     click.echo(f'Loading {snippy_dir}')
@@ -85,6 +88,7 @@ def load(ctx, snippy_dir: Path, reference_file: Path):
     reference_service = ctx.obj['reference_service']
     variation_service = ctx.obj['variation_service']
     sample_service = ctx.obj['sample_service']
+    tree_service = ctx.obj['tree_service']
 
     try:
         reference_service.add_reference_genome(reference_file)
@@ -104,6 +108,11 @@ def load(ctx, snippy_dir: Path, reference_file: Path):
                                           reference_name=reference_name,
                                           core_masks=core_masks)
         click.echo(f'Loaded variants from [{snippy_dir}] into database')
+
+        if build_tree:
+            tree_service.rebuild_tree(reference_name=reference_name,
+                                      num_cores=threads)
+            click.echo('Finished building tree of all samples')
 
 
 LIST_TYPES = ['genomes', 'samples']
