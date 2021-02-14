@@ -239,3 +239,4 @@ def query(ctx, name, query_type):
         sys.exit(1)
 
     match_df.to_csv(sys.stdout, sep='\t', index=False)
+    print('# Note: I don\'t know if the Distance (subs) column is calculated correctly')

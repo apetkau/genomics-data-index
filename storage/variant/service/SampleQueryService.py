@@ -28,13 +28,19 @@ class SampleQueryService:
                 if leaf.name == sample_node.name:
                     continue
                 distance = sample_node.get_distance(leaf)
-                sample_distances.append([reference_genome.name, sample_name, leaf.name, distance])
+                align_length = reference_genome.tree_alignment_length
+                sample_distances.append([reference_genome.name, sample_name, leaf.name,
+                                         distance, f'{distance * align_length:0.2f}', align_length])
 
         matches_df = pd.DataFrame(data=sample_distances, columns=[
             'Reference Genome',
             'Sample A',
             'Sample B',
             'Distance (subs/site)',
+            'Distance (subs)',
+            'Alignment Length',
         ])
         matches_df['Distance (subs/site)'] = pd.to_numeric(matches_df['Distance (subs/site)'])
+        matches_df['Distance (subs)'] = pd.to_numeric(matches_df['Distance (subs)'])
+        matches_df['Alignment Length'] = pd.to_numeric(matches_df['Alignment Length'])
         return matches_df.sort_values('Distance (subs/site)', ascending=True)
