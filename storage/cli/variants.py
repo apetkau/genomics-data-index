@@ -225,15 +225,15 @@ QUERY_TYPES = ['sample']
 
 @main.command()
 @click.pass_context
-@click.argument('name')
+@click.argument('name', nargs=-1)
 @click.option('--type', 'query_type', help='Query type',
               required=True, type=click.Choice(QUERY_TYPES))
-def query(ctx, name, query_type):
+def query(ctx, name: List[str], query_type: str):
     sample_query_service = ctx.obj['sample_query_service']
 
     match_df = None
     if query_type == 'sample':
-        match_df = sample_query_service.find_matches(sample_name=name)
+        match_df = sample_query_service.find_matches(sample_names=name)
     else:
         logger.error(f'Invalid query_type=[{query_type}]')
         sys.exit(1)
