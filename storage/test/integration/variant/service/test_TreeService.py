@@ -2,12 +2,6 @@ import pytest
 from ete3 import Tree
 
 from storage.test.integration.variant import tree_file
-from storage.variant.service.TreeService import TreeService
-
-
-@pytest.fixture
-def tree_service(database, reference_service_with_data, core_alignment_service) -> TreeService:
-    return TreeService(database, reference_service_with_data, core_alignment_service)
 
 
 @pytest.fixture

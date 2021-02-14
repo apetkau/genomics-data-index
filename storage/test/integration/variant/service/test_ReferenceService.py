@@ -78,3 +78,22 @@ def test_update_tree(database, reference_service, example_tree):
     reference_service.update_tree(reference_name='genome', tree=example_tree)
     reference_genome = database.get_session().query(Reference).filter(Reference.name == 'genome').one()
     assert reference_genome.tree.write() == example_tree.write()
+
+
+def test_find_references_for_sample(reference_service_with_data, variation_service):
+    found_references = reference_service_with_data.find_references_for_sample('SampleA')
+    assert len(found_references) == 1
+    assert 'genome' == found_references[0].name
+
+    found_references = reference_service_with_data.find_references_for_sample('SampleB')
+    assert len(found_references) == 1
+    assert 'genome' == found_references[0].name
+
+    found_references = reference_service_with_data.find_references_for_sample('SampleC')
+    assert len(found_references) == 1
+    assert 'genome' == found_references[0].name
+
+
+def test_find_references_for_sample_not_exist(reference_service_with_data, variation_service):
+    found_references = reference_service_with_data.find_references_for_sample('not_exist')
+    assert len(found_references) == 0

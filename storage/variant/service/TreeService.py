@@ -86,7 +86,8 @@ class TreeService:
             else:
                 raise Exception(f'tree_type=[{tree_build_type}] is invalid')
 
-    def rebuild_tree(self, reference_name: str, num_cores: int = 1):
+    def rebuild_tree(self, reference_name: str, num_cores: int = 1, tree_build_type='iqtree',
+                     extra_params = None):
         logger.debug('Building alignment')
         alignment = self._core_alignment_service.construct_alignment(reference_name=reference_name,
                                                                      include_reference=True,
@@ -94,9 +95,10 @@ class TreeService:
 
         logger.debug('Building tree')
         tree, out = self.build_tree(alignment=alignment,
-                                    tree_build_type='iqtree',
+                                    tree_build_type=tree_build_type,
                                     num_cores=num_cores,
-                                    align_type='core')
+                                    align_type='core',
+                                    extra_params=extra_params)
 
         logger.debug(f'Updating tree for reference genome [{reference_name}]')
         self._reference_service.update_tree(reference_name, tree)
