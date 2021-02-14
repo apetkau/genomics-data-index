@@ -8,6 +8,7 @@ import ga4gh.vrs.dataproxy as dataproxy
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 from biocommons.seqrepo import SeqRepo
+from ete3 import Tree
 
 from storage.variant.model import Reference
 from storage.variant.model import ReferenceSequence
@@ -73,6 +74,12 @@ class ReferenceService:
         reference = Reference(name=ref_name, length=ref_length, sequences=list(ref_contigs.values()))
 
         self._connection.get_session().add(reference)
+        self._connection.get_session().commit()
+
+    def update_tree(self, reference_name: str, tree: Tree):
+        reference = self.find_reference_genome(reference_name)
+        tree_string = tree.write()
+        reference.tree = tree_string
         self._connection.get_session().commit()
 
     def find_reference_genome(self, name: str):

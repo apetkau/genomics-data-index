@@ -2,10 +2,17 @@ import gzip
 
 import pytest
 from Bio import SeqIO
+from ete3 import Tree
 
 from storage.test.integration.variant import reference_file
 from storage.variant.model import Reference
 from storage.variant.service import EntityExistsError
+from storage.test.integration.variant import tree_file
+
+
+@pytest.fixture
+def example_tree() -> Tree:
+    return Tree(str(tree_file))
 
 
 def test_insert_reference_genome(database, reference_service):
@@ -57,3 +64,18 @@ def test_get_reference_genomes(reference_service):
 
 def test_get_reference_genomes_empty(reference_service):
     assert [] == reference_service.get_reference_genomes()
+
+
+def test_update_tree(database, reference_service, example_tree):
+    reference_service.add_reference_genome(reference_file)
+
+    reference_genome = database.get_session().query(Reference).filter(Reference.name == 'genome').one()
+    assert reference_genome is not None
+    assert reference_genome.tree is None
+    with pytest.raises(Exception) as execinfo:
+        reference_genome.get_tree()
+    assert 'Cannot convert an empty tree' in str(execinfo.value)
+
+    reference_service.update_tree(reference_name='genome', tree=example_tree)
+    reference_genome = database.get_session().query(Reference).filter(Reference.name == 'genome').one()
+    assert reference_genome.get_tree().write() == example_tree.write()

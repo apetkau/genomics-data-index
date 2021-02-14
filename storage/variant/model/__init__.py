@@ -1,7 +1,8 @@
 from bitarray import bitarray
-from sqlalchemy import Column, Integer, String, ForeignKey, Table, LargeBinary
+from sqlalchemy import Column, Integer, String, ForeignKey, Table, LargeBinary, UnicodeText
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
+from ete3 import Tree
 
 from storage.variant.CoreBitMask import CoreBitMask
 
@@ -55,7 +56,14 @@ class Reference(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(255))
     length = Column(Integer)
+    tree = Column(UnicodeText)
     sequences = relationship('ReferenceSequence')
+
+    def get_tree(self) -> Tree:
+        if self.tree is None:
+            raise Exception('Cannot convert an empty tree')
+        else:
+            return Tree(self.tree)
 
     def __repr__(self):
         return f'<Reference(id={self.id}, name={self.name}, length={self.length})>'
