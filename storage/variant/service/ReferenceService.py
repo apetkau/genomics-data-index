@@ -78,8 +78,7 @@ class ReferenceService:
 
     def update_tree(self, reference_name: str, tree: Tree):
         reference = self.find_reference_genome(reference_name)
-        tree_string = tree.write()
-        reference.tree = tree_string
+        reference.tree = tree
         self._connection.get_session().commit()
 
     def find_reference_genome(self, name: str):

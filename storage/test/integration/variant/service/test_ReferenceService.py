@@ -71,11 +71,10 @@ def test_update_tree(database, reference_service, example_tree):
 
     reference_genome = database.get_session().query(Reference).filter(Reference.name == 'genome').one()
     assert reference_genome is not None
-    assert reference_genome.tree is None
     with pytest.raises(Exception) as execinfo:
-        reference_genome.get_tree()
+        reference_genome.tree()
     assert 'Cannot convert an empty tree' in str(execinfo.value)
 
     reference_service.update_tree(reference_name='genome', tree=example_tree)
     reference_genome = database.get_session().query(Reference).filter(Reference.name == 'genome').one()
-    assert reference_genome.get_tree().write() == example_tree.write()
+    assert reference_genome.tree.write() == example_tree.write()

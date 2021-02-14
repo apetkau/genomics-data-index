@@ -96,6 +96,4 @@ class TreeService:
                                     num_cores=num_cores,
                                     align_type='core')
 
-        reference_genome = self._reference_service.find_reference_genome(reference_name)
-        reference_genome.tree = tree.write()
-        self._database.get_session().commit()
+        self._reference_service.update_tree(reference_name, tree)

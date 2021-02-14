@@ -2,6 +2,7 @@ from bitarray import bitarray
 from sqlalchemy import Column, Integer, String, ForeignKey, Table, LargeBinary, UnicodeText
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
+from sqlalchemy.ext.hybrid import hybrid_property
 from ete3 import Tree
 
 from storage.variant.CoreBitMask import CoreBitMask
@@ -56,14 +57,22 @@ class Reference(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(255))
     length = Column(Integer)
-    tree = Column(UnicodeText)
+    _tree = Column('tree', UnicodeText)
     sequences = relationship('ReferenceSequence')
 
-    def get_tree(self) -> Tree:
-        if self.tree is None:
+    @hybrid_property
+    def tree(self) -> Tree:
+        if self._tree is None:
             raise Exception('Cannot convert an empty tree')
         else:
-            return Tree(self.tree)
+            return Tree(self._tree)
+
+    @tree.setter
+    def tree(self, in_tree: Tree):
+        if in_tree is None:
+            self._tree = None
+        else:
+            self._tree = in_tree.write()
 
     def __repr__(self):
         return f'<Reference(id={self.id}, name={self.name}, length={self.length})>'

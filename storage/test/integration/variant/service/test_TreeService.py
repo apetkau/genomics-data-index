@@ -85,7 +85,7 @@ def test_build_tree_two_samples(tree_service, core_alignment_service):
 def test_rebuild_tree(tree_service, reference_service_with_data, expected_tree):
     tree_service.rebuild_tree(reference_name='genome')
     reference_genome = reference_service_with_data.find_reference_genome('genome')
-    tree = reference_genome.get_tree()
+    tree = reference_genome.tree
 
     assert {'SampleA', 'SampleB', 'SampleC', 'reference'} == set(tree.get_leaf_names())
 
