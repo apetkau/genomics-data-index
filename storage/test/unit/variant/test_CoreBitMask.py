@@ -12,6 +12,10 @@ def test_create_from_sequence():
     assert 7 == len(mask), 'Invalid length'
     assert 4 == mask.core_length(), 'Invalid core length'
     assert math.isclose((4 / 7), mask.core_proportion()), 'Invalid core proportion'
+    assert 1 in mask
+    assert 4 in mask
+    assert 5 not in mask
+    assert 7 not in mask
 
 
 def test_create_from_sequence2():
@@ -21,19 +25,36 @@ def test_create_from_sequence2():
     assert 9 == len(mask), 'Invalid length'
     assert 0 == mask.core_length(), 'Invalid core length'
     assert 0 == mask.core_proportion()
+    assert 1 not in mask
+    assert 9 not in mask
 
 
-def test_create_from_bytes():
-    mask = CoreBitMask.from_bytes(b'\xf0', 8)
+def test_append():
+    sequence1 = Seq('ATCG-NN')
+    mask1 = CoreBitMask.from_sequence(sequence=sequence1)
+    sequence2 = Seq('NTCGATT')
+    mask2 = CoreBitMask.from_sequence(sequence=sequence2)
 
-    assert 8 == len(mask), 'Invalid length'
-    assert 4 == mask.core_length(), 'Invalid core length'
-    assert math.isclose((4 / 8), mask.core_proportion()), 'Invalid core proportion'
+    assert 7 == len(mask1), 'Invalid length'
+    assert 4 == mask1.core_length(), 'Invalid core length'
+    assert 7 == len(mask2), 'Invalid length'
+    assert 6 == mask2.core_length(), 'Invalid core length'
+
+    combined = mask1.append_bitmask(mask2)
+    assert 7 == len(combined)
+    assert 3 == combined.core_length()
+
+    assert math.isclose((3 / 7), combined.core_proportion())
+
+    assert 1 not in combined
+    assert 2 in combined
+    assert 4 in combined
+    assert 5 not in combined
+    assert 7 not in combined
 
 
-def test_create_from_bytes2():
-    mask = CoreBitMask.from_bytes(b'\xf0', 7)
+def test_iter_missing():
+    sequence = Seq('ATNG-NN')
+    mask = CoreBitMask.from_sequence(sequence)
 
-    assert 7 == len(mask), 'Invalid length'
-    assert 4 == mask.core_length(), 'Invalid core length'
-    assert math.isclose((4 / 7), mask.core_proportion()), 'Invalid core proportion'
+    assert [3,5,6,7] == list(mask.iter_missing_positions())

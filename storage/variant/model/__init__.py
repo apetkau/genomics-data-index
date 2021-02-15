@@ -101,6 +101,9 @@ class SampleSequence(Base):
             raise Exception('Cannot set core_mask to None')
         elif self.sequence is None or self.sequence.sequence_length is None:
             raise Exception(f'Cannot set core_mask without the corresponding sequence (and length) set')
+        elif self.sequence.sequence_length != len(core_mask):
+            raise Exception(f'Cannot set core_mask, len(core_mask)=[{len(core_mask)}] '
+                            f'is not the same as sequence_lenght=[{self.sequence.sequence_length}]')
         else:
             self._core_mask = core_mask.get_bytes()
 

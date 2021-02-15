@@ -70,7 +70,7 @@ class CoreAlignmentService:
             ref = ref_sequence[position - 1:position].seq
 
             # if in core
-            if core_mask[position - 1]:
+            if position in core_mask:
                 variant_samples = variants_dict[position]
                 if len(set(samples).intersection(set(variant_samples.keys()))) == 0:
                     continue
@@ -142,8 +142,8 @@ class CoreAlignmentService:
 
             core_mask = sample_sequence.core_mask
 
-            for missing_pos in core_mask._core_bitmask.itersearch(bitarray('0')):
-                seq[missing_pos] = 'N'
+            for missing_pos in core_mask.iter_missing_positions():
+                seq[missing_pos - 1] = 'N'
 
         # Change back to immutable sequences
         for sample in samples:
