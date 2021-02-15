@@ -45,10 +45,10 @@ class CoreAlignmentService:
             start_time = time.time()
             logger.debug(f'Started creating core mask for {len(sequences)} sequences')
 
-            core_mask = sequences[0].get_core_mask()
+            core_mask = sequences[0].core_mask
             for i in range(1, len(sequences)):
                 sequence = sequences[i]
-                core_mask = core_mask.append_bitmask(sequence.get_core_mask())
+                core_mask = core_mask.append_bitmask(sequence.core_mask)
 
             end_time = time.time()
             logger.debug(f'Finished creating core mask for {len(sequences)} sequences. '
@@ -140,7 +140,7 @@ class CoreAlignmentService:
                     sample_sequence = s
                     break
 
-            core_mask = sample_sequence.get_core_mask()
+            core_mask = sample_sequence.core_mask
 
             for missing_pos in core_mask._core_bitmask.itersearch(bitarray('0')):
                 seq[missing_pos] = 'N'

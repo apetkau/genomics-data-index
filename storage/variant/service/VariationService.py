@@ -96,7 +96,7 @@ class VariationService:
             sample_sequences = []
             for r in ref_objects:
                 sample_sequence = SampleSequence(sequence=r)
-                sample_sequence.set_core_mask(sample_core_masks[r.sequence_name])
+                sample_sequence.core_mask = sample_core_masks[r.sequence_name]
                 sample_sequences.append(sample_sequence)
             sample = Sample(name=s, variants=file_variants[s], sample_sequences=sample_sequences)
             self._connection.get_session().add(sample)

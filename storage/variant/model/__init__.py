@@ -83,18 +83,19 @@ class SampleSequence(Base):
     __tablename__ = 'sample_sequence'
     sample_id = Column(Integer, ForeignKey('sample.id'), primary_key=True)
     sequence_id = Column(Integer, ForeignKey('reference_sequence.id'), primary_key=True)
-    core_mask = Column(LargeBinary(length=100 * 10 ** 6))  # Max of 100 million
+    _core_mask = Column(LargeBinary(length=100 * 10 ** 6))  # Max of 100 million
     flag = Column(String(255))
 
     sequence = relationship('ReferenceSequence', back_populates='sample_sequences')
     sample = relationship('Sample', back_populates='sample_sequences')
 
-    def get_core_mask(self):
-        if self.core_mask is None:
+    @hybrid_property
+    def core_mask(self) -> CoreBitMask:
+        if self._core_mask is None:
             raise Exception('core_mask is not set')
         else:
             barray = bitarray()
-            barray.frombytes(self.core_mask)
+            barray.frombytes(self._core_mask)
 
             # Since I'm decoding a bitarray from bytes, the bytes must always be a multiple of 8
             # But the sequence length can be a non-multiple of 8
@@ -103,11 +104,12 @@ class SampleSequence(Base):
             barray = barray[:self.sequence.sequence_length]
             return CoreBitMask(existing_bitmask=barray)
 
-    def set_core_mask(self, core_mask: CoreBitMask) -> None:
+    @core_mask.setter
+    def core_mask(self, core_mask: CoreBitMask) -> None:
         if core_mask is None:
             raise Exception('Cannot set core_mask to None')
         else:
-            self.core_mask = core_mask.get_bytes()
+            self._core_mask = core_mask.get_bytes()
 
     def __repr__(self):
         return f'<SampleSequence(sample_id={self.sample_id}, sequence_id={self.sequence_id}, flag={self.flag})>'
