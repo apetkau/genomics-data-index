@@ -99,6 +99,8 @@ class SampleSequence(Base):
     def core_mask(self, core_mask: CoreBitMask) -> None:
         if core_mask is None:
             raise Exception('Cannot set core_mask to None')
+        elif self.sequence is None or self.sequence.sequence_length is None:
+            raise Exception(f'Cannot set core_mask without the corresponding sequence (and length) set')
         else:
             self._core_mask = core_mask.get_bytes()
 

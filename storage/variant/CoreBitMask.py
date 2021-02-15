@@ -43,7 +43,7 @@ class CoreBitMask:
                 barray[idx] = False
         return CoreBitMask(existing_bitmask=barray)
 
-    def get_bytes(self):
+    def get_bytes(self) -> bytes:
         return self._core_bitmask.tobytes()
 
     def core_length(self) -> int:
