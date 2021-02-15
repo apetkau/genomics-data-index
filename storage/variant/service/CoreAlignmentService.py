@@ -6,7 +6,6 @@ from typing import List, Dict
 from Bio.Align import MultipleSeqAlignment
 from Bio.Seq import Seq, MutableSeq
 from Bio.SeqRecord import SeqRecord
-from bitarray import bitarray
 
 from storage.variant.CoreBitMask import CoreBitMask
 from storage.variant.model import Sample, SampleSequence, Reference, ReferenceSequence, VariationAllele
