@@ -1,9 +1,8 @@
-from bitarray import bitarray
+from ete3 import Tree
 from sqlalchemy import Column, Integer, String, ForeignKey, Table, LargeBinary, UnicodeText
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
 from sqlalchemy.ext.hybrid import hybrid_property
-from ete3 import Tree
+from sqlalchemy.orm import relationship
 
 from storage.variant.CoreBitMask import CoreBitMask
 

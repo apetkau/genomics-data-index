@@ -1,9 +1,9 @@
+import logging
+import multiprocessing
+import sys
 from os import path, listdir
 from pathlib import Path
 from typing import List
-import logging
-import sys
-import multiprocessing
 
 import click
 import click_config_file
@@ -15,11 +15,11 @@ from storage.variant.io.SnippyVariantsReader import SnippyVariantsReader
 from storage.variant.service import DatabaseConnection, EntityExistsError
 from storage.variant.service.CoreAlignmentService import CoreAlignmentService
 from storage.variant.service.ReferenceService import ReferenceService
+from storage.variant.service.SampleQueryService import SampleQueryService
 from storage.variant.service.SampleSequenceService import SampleSequenceService
 from storage.variant.service.SampleService import SampleService
 from storage.variant.service.TreeService import TreeService
 from storage.variant.service.VariationService import VariationService
-from storage.variant.service.SampleQueryService import SampleQueryService
 from storage.variant.util import get_genome_name
 
 logger = logging.getLogger('storage')

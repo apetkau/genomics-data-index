@@ -1,8 +1,9 @@
 from typing import List
+
 import pandas as pd
 
-from storage.variant.service.TreeService import TreeService
 from storage.variant.service.ReferenceService import ReferenceService
+from storage.variant.service.TreeService import TreeService
 
 
 class SampleQueryService:
@@ -21,7 +22,8 @@ class SampleQueryService:
 
                 sample_leaves = tree.get_leaves_by_name(sample_name)
                 if len(sample_leaves) != 1:
-                    raise Exception(f'Invalid number of matching leaves for sample [{sample_name}], leaves {sample_leaves}')
+                    raise Exception(
+                        f'Invalid number of matching leaves for sample [{sample_name}], leaves {sample_leaves}')
 
                 sample_node = sample_leaves[0]
 

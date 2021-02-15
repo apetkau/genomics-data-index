@@ -5,9 +5,9 @@ from Bio import SeqIO
 from ete3 import Tree
 
 from storage.test.integration.variant import reference_file
+from storage.test.integration.variant import tree_file
 from storage.variant.model import Reference
 from storage.variant.service import EntityExistsError
-from storage.test.integration.variant import tree_file
 
 
 @pytest.fixture
@@ -61,6 +61,7 @@ def test_get_nonexistent_sequence(reference_service):
 def test_get_reference_genomes(reference_service):
     reference_service.add_reference_genome(reference_file)
     assert {'genome'} == {genome.name for genome in reference_service.get_reference_genomes()}
+
 
 def test_get_reference_genomes_empty(reference_service):
     assert [] == reference_service.get_reference_genomes()

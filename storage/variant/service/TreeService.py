@@ -1,8 +1,8 @@
-from typing import Tuple
 import logging
 import subprocess
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from typing import Tuple
 
 from Bio import AlignIO
 from Bio.Align import MultipleSeqAlignment
@@ -10,8 +10,8 @@ from Bio.Phylo.Applications import FastTreeCommandline
 from ete3 import Tree
 
 from storage.variant.service import DatabaseConnection
-from storage.variant.service.ReferenceService import ReferenceService
 from storage.variant.service.CoreAlignmentService import CoreAlignmentService
+from storage.variant.service.ReferenceService import ReferenceService
 
 logger = logging.getLogger(__name__)
 
@@ -87,7 +87,7 @@ class TreeService:
                 raise Exception(f'tree_type=[{tree_build_type}] is invalid')
 
     def rebuild_tree(self, reference_name: str, num_cores: int = 1, tree_build_type='iqtree',
-                     extra_params = None):
+                     extra_params=None):
         logger.debug('Building alignment')
         alignment = self._core_alignment_service.construct_alignment(reference_name=reference_name,
                                                                      include_reference=True,
