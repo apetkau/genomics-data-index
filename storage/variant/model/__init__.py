@@ -94,15 +94,7 @@ class SampleSequence(Base):
         if self._core_mask is None:
             raise Exception('core_mask is not set')
         else:
-            barray = bitarray()
-            barray.frombytes(self._core_mask)
-
-            # Since I'm decoding a bitarray from bytes, the bytes must always be a multiple of 8
-            # But the sequence length can be a non-multiple of 8
-            # So I have to remove (slice) the few additional elements from this array that got added
-            # When decoding from bytes
-            barray = barray[:self.sequence.sequence_length]
-            return CoreBitMask(existing_bitmask=barray)
+            return CoreBitMask.from_bytes(self._core_mask, self.sequence.sequence_length)
 
     @core_mask.setter
     def core_mask(self, core_mask: CoreBitMask) -> None:

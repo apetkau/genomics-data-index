@@ -76,7 +76,7 @@ class SnippyVariantsReader(VariantsReader):
         sequence_masks = {}
         for record in SeqIO.parse(file, 'fasta'):
             if record.id not in sequence_masks:
-                sequence_masks[record.id] = CoreBitMask(sequence=record.seq)
+                sequence_masks[record.id] = CoreBitMask.from_sequence(sequence=record.seq)
 
         return sequence_masks
 

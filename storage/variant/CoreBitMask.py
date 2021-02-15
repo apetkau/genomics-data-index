@@ -6,16 +6,9 @@ from bitarray import bitarray
 
 class CoreBitMask:
 
-    def __init__(self, sequence: Bio.Seq.Seq = None, existing_bitmask: bitarray = None):
-        if existing_bitmask is not None and sequence is not None:
-            raise Exception(f'Cannot set both existing_bitmask={existing_bitmask} and sequence={sequence}')
-
+    def __init__(self, existing_bitmask: bitarray = None):
         if existing_bitmask:
             self._core_bitmask = existing_bitmask
-        elif sequence:
-            self._core_bitmask = bitarray(len(sequence))
-            self._core_bitmask.setall(True)
-            self._add_sequence(sequence)
         else:
             raise Exception('If no existing_bitmask set then sequence must be defined')
 
@@ -26,10 +19,29 @@ class CoreBitMask:
             combined_array = self._core_bitmask & bitmask._core_bitmask
             return CoreBitMask(existing_bitmask=combined_array)
 
-    def _add_sequence(self, sequence: Bio.Seq.Seq) -> None:
+    @staticmethod
+    def from_bytes(data: bytes, length: int) -> CoreBitMask:
+        if length <= 0:
+            raise Exception(f'Invalid length=[{length}]')
+        else:
+            barray = bitarray()
+            barray.frombytes(data)
+
+            # Since I'm decoding a bitarray from bytes, the bytes must always be a multiple of 8
+            # But the sequence length can be a non-multiple of 8
+            # So I have to remove (slice) the few additional elements from this array that got added
+            # When decoding from bytes
+            barray = barray[:length]
+            return CoreBitMask(existing_bitmask=barray)
+
+    @staticmethod
+    def from_sequence(sequence: Bio.Seq.Seq):
+        barray = bitarray(len(sequence))
+        barray.setall(True)
         for idx, char in enumerate(sequence):
             if char.upper() == 'N' or char == '-':
-                self._core_bitmask[idx] = False
+                barray[idx] = False
+        return CoreBitMask(existing_bitmask=barray)
 
     def get_bytes(self):
         return self._core_bitmask.tobytes()
