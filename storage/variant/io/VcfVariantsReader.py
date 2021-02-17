@@ -1,7 +1,7 @@
 import logging
 import os
 from pathlib import Path
-from typing import List, Dict
+from typing import List, Dict, Union
 
 import pandas as pd
 import vcf
@@ -15,9 +15,28 @@ logger = logging.getLogger(__name__)
 
 class VcfVariantsReader(VariantsReader):
 
-    def __init__(self, sample_files_map: Dict[str, Dict[str, Path]]):
+    def __init__(self, sample_vcf_map: Dict[str, Path],
+                 core_mask_files_map: Dict[str, Path] = None,
+                 empty_core_mask: Dict[str, CoreBitMask] = None):
         super().__init__()
-        self._sample_files_map = sample_files_map
+
+        if core_mask_files_map is None and empty_core_mask is None:
+            raise Exception(f'Both core_mask_files_map and empty_core_mask are None. Must set one of them.')
+        elif core_mask_files_map is None:
+            core_mask_files_map: Dict[str, Path] = {}
+
+        sample_names_vcfs = set(sample_vcf_map.keys())
+        sample_names_masks = set(core_mask_files_map.keys())
+
+        if len(sample_names_masks - sample_names_vcfs) > 0:
+            raise Exception(f'Missing the following sample VCFs: {sample_names_masks - sample_names_vcfs}')
+        elif len(sample_names_vcfs - sample_names_masks) > 0 and empty_core_mask is None:
+            raise Exception(f'Cannot have empty_core_mask unset when missing sample_names_masks. '
+                            f'Missing samples: {sample_names_vcfs - sample_names_masks}')
+
+        self._sample_vcf_map = sample_vcf_map
+        self._core_mask_files_map = core_mask_files_map
+        self._empty_core_mask = empty_core_mask
 
     def read_vcf(self, file: Path, sample_name: str) -> pd.DataFrame:
         reader = vcf.Reader(filename=str(file))
@@ -25,7 +44,7 @@ class VcfVariantsReader(VariantsReader):
         out = df.merge(pd.DataFrame(df.INFO.tolist()),
                        left_index=True, right_index=True)
         out = out[['CHROM', 'POS', 'REF', 'ALT', 'DP', 'QUAL', 'RO', 'AO', 'INFO']]
-        out['TYPE'] = out['INFO'].map(lambda x: x['TYPE'][0])
+        out['TYPE'] = self._get_type(out)
         out = out.drop('INFO', axis='columns')
 
         out['ALT'] = out['ALT'].map(self._fix_alt)
@@ -37,10 +56,15 @@ class VcfVariantsReader(VariantsReader):
         out = out.reindex(columns=['SAMPLE'] + cols)
         return out
 
+    def _get_type(self, vcf_df: pd.DataFrame) -> pd.Series:
+        logger.error('I have not implemented a more general method for getting the type of variation, '
+                     'so defaulting to an empty type.')
+        return pd.Series(data=pd.NA, index=vcf_df.index)
+
     def _read_variants_table(self) -> pd.DataFrame:
         frames = []
-        for sample in self._sample_files_map:
-            vcf_file = self._sample_files_map[sample]['vcf_file']
+        for sample in self._sample_vcf_map:
+            vcf_file = self._sample_vcf_map[sample]
             frame = self.read_vcf(vcf_file, sample)
             frames.append(frame)
 
@@ -64,9 +88,12 @@ class VcfVariantsReader(VariantsReader):
 
     def _read_core_masks(self) -> Dict[str, Dict[str, CoreBitMask]]:
         core_masks = {}
-        for sample in self._sample_files_map:
-            core_mask_file = self._sample_files_map[sample]['core_mask_file']
-            core_masks[sample] = self.read_core_masks_from_file(core_mask_file)
+
+        for sample in self._sample_vcf_map:
+            if sample in self._core_mask_files_map:
+                core_masks[sample] = self.read_core_masks_from_file(self._core_mask_files_map[sample])
+            else:
+                core_masks[sample] = self._empty_core_mask
 
         return core_masks
 
@@ -79,4 +106,4 @@ class VcfVariantsReader(VariantsReader):
         return sequence_masks
 
     def samples_list(self) -> List[str]:
-        return list(self._sample_files_map.keys())
+        return list(self._core_mask_files_map.keys())

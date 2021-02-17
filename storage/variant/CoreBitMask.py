@@ -8,7 +8,7 @@ from pyroaring import BitMap
 class CoreBitMask:
 
     def __init__(self, existing_bitmask: BitMap, sequence_length: int):
-        if not existing_bitmask:
+        if existing_bitmask is None:
             raise Exception('Cannot create CoreBitMask with empty bitmask')
         elif not sequence_length or sequence_length <= 0:
             raise Exception(f'Invalid sequence_length=[{sequence_length}]')
@@ -46,11 +46,19 @@ class CoreBitMask:
                 bitmap.add(idx+1)
         return CoreBitMask(existing_bitmask=bitmap, sequence_length=len(sequence))
 
+    @staticmethod
+    def empty_mask(length: int):
+        bitmap = BitMap()
+        return CoreBitMask(existing_bitmask=bitmap, sequence_length=length)
+
     def get_bytes(self) -> bytes:
         return self._core_bitmask.serialize()
 
     def core_length(self) -> int:
         return self._sequence_length - len(self._core_bitmask)
+
+    def is_empty(self):
+        return len(self._core_bitmask) == 0
 
     def core_proportion(self) -> float:
         return self.core_length() / len(self)

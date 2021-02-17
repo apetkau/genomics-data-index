@@ -10,6 +10,7 @@ def test_create_from_sequence():
     mask = CoreBitMask.from_sequence(sequence=sequence)
 
     assert 7 == len(mask), 'Invalid length'
+    assert not mask.is_empty()
     assert 4 == mask.core_length(), 'Invalid core length'
     assert math.isclose((4 / 7), mask.core_proportion()), 'Invalid core proportion'
     assert 1 in mask
@@ -27,6 +28,17 @@ def test_create_from_sequence2():
     assert 0 == mask.core_proportion()
     assert 1 not in mask
     assert 9 not in mask
+
+
+def test_create_empty():
+    mask = CoreBitMask.empty_mask(7)
+
+    assert 7 == len(mask), 'Invalid length'
+    assert mask.is_empty()
+    assert 7 == mask.core_length(), 'Invalid core length'
+    assert math.isclose(1, mask.core_proportion()), 'Invalid core proportion'
+    assert 1 in mask
+    assert 7 in mask
 
 
 def test_append():
