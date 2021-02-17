@@ -1,3 +1,4 @@
+from typing import Dict
 import logging
 import multiprocessing
 import sys
@@ -8,10 +9,12 @@ from typing import List
 import click
 import click_config_file
 import coloredlogs
-from Bio import AlignIO
+from Bio import AlignIO, SeqIO
+import pandas as pd
 
 from storage.cli import yaml_config_provider
 from storage.variant.io.SnippyVariantsReader import SnippyVariantsReader
+from storage.variant.io.VcfVariantsReader import VcfVariantsReader
 from storage.variant.service import DatabaseConnection, EntityExistsError
 from storage.variant.service.CoreAlignmentService import CoreAlignmentService
 from storage.variant.service.ReferenceService import ReferenceService
@@ -20,7 +23,8 @@ from storage.variant.service.SampleSequenceService import SampleSequenceService
 from storage.variant.service.SampleService import SampleService
 from storage.variant.service.TreeService import TreeService
 from storage.variant.service.VariationService import VariationService
-from storage.variant.util import get_genome_name
+from storage.variant.CoreBitMask import CoreBitMask
+from storage.variant.util import get_genome_name, parse_sequence_file
 
 logger = logging.getLogger('storage')
 num_cores = multiprocessing.cpu_count()
@@ -74,20 +78,7 @@ def main(ctx, database_connection, seqrepo_dir, verbose):
     ctx.obj['sample_query_service'] = sample_query_service
 
 
-@main.command()
-@click.pass_context
-@click.argument('snippy_dir', type=click.Path(exists=True))
-@click.option('--reference-file', help='Reference genome', required=True, type=click.Path(exists=True))
-@click.option('--build-tree/--no-build-tree', default=False, help='Builds tree of all samples after loading')
-@click.option('--threads', help='Threads for building tree', default=1,
-              type=click.IntRange(min=1, max=num_cores))
-def load(ctx, snippy_dir: Path, reference_file: Path, build_tree: bool, threads: int):
-    snippy_dir = Path(snippy_dir)
-    reference_file = Path(reference_file)
-    click.echo(f'Loading {snippy_dir}')
-    sample_dirs = [snippy_dir / d for d in listdir(snippy_dir) if path.isdir(snippy_dir / d)]
-    variants_reader = SnippyVariantsReader(sample_dirs)
-
+def load_variants_common(ctx, variants_reader, reference_file, input, build_tree, threads):
     reference_service = ctx.obj['reference_service']
     variation_service = ctx.obj['variation_service']
     sample_service = ctx.obj['sample_service']
@@ -110,12 +101,67 @@ def load(ctx, snippy_dir: Path, reference_file: Path, build_tree: bool, threads:
         variation_service.insert_variants(var_df=var_df,
                                           reference_name=reference_name,
                                           core_masks=core_masks)
-        click.echo(f'Loaded variants from [{snippy_dir}] into database')
+        click.echo(f'Loaded variants from [{input}] into database')
 
         if build_tree:
             tree_service.rebuild_tree(reference_name=reference_name,
                                       num_cores=threads)
             click.echo('Finished building tree of all samples')
+
+
+@main.command(name='load-snippy')
+@click.pass_context
+@click.argument('snippy_dir', type=click.Path(exists=True))
+@click.option('--reference-file', help='Reference genome', required=True, type=click.Path(exists=True))
+@click.option('--build-tree/--no-build-tree', default=False, help='Builds tree of all samples after loading')
+@click.option('--threads', help='Threads for building tree', default=1,
+              type=click.IntRange(min=1, max=num_cores))
+def load_snippy(ctx, snippy_dir: Path, reference_file: Path, build_tree: bool, threads: int):
+    snippy_dir = Path(snippy_dir)
+    reference_file = Path(reference_file)
+    click.echo(f'Loading {snippy_dir}')
+    sample_dirs = [snippy_dir / d for d in listdir(snippy_dir) if path.isdir(snippy_dir / d)]
+    variants_reader = SnippyVariantsReader(sample_dirs)
+
+    load_variants_common(ctx=ctx, variants_reader=variants_reader, reference_file=reference_file,
+                         input=snippy_dir, build_tree=build_tree, threads=threads)
+
+
+@main.command(name='load-vcf')
+@click.pass_context
+@click.argument('vcf_fofns', type=click.Path(exists=True))
+@click.option('--reference-file', help='Reference genome', required=True, type=click.Path(exists=True))
+@click.option('--build-tree/--no-build-tree', default=False, help='Builds tree of all samples after loading')
+@click.option('--threads', help='Threads for building tree', default=1,
+              type=click.IntRange(min=1, max=num_cores))
+def load_vcf(ctx, vcf_fofns: Path, reference_file: Path, build_tree: bool, threads: int):
+    snippy_dir = Path(vcf_fofns)
+    reference_file = Path(reference_file)
+
+    # Generate empty masks
+    empty_core_mask: Dict[str, CoreBitMask] = {}
+    ref_name, sequences = parse_sequence_file(reference_file)
+    for r in sequences:
+        empty_core_mask[r.id] = CoreBitMask.empty_mask(len(r))
+
+    click.echo(f'Loading files listed in {vcf_fofns}')
+    sample_vcf_map = {}
+    core_mask_files_map = {}
+    files_df = pd.read_csv(vcf_fofns, sep='\t')
+    for index, row in files_df.iterrows():
+        if row['Sample'] in sample_vcf_map:
+            raise Exception(f'Error, duplicate samples {row["Sample"]} in file {vcf_fofns}')
+
+        sample_vcf_map[row['Sample']] = row['VCF']
+        if not pd.isna(row['Core File']):
+            core_mask_files_map[row['Sample']] = row['Core File']
+
+    variants_reader = VcfVariantsReader(sample_vcf_map=sample_vcf_map,
+                                        core_mask_files_map=core_mask_files_map,
+                                        empty_core_mask=empty_core_mask)
+
+    load_variants_common(ctx=ctx, variants_reader=variants_reader, reference_file=reference_file,
+                         input=snippy_dir, build_tree=build_tree, threads=threads)
 
 
 LIST_TYPES = ['genomes', 'samples']

@@ -1,11 +1,8 @@
-import gzip
-from functools import partial
-from mimetypes import guess_type
 from pathlib import Path
-from typing import Tuple, List
+from pathlib import Path
+from typing import List
 
 import ga4gh.vrs.dataproxy as dataproxy
-from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 from biocommons.seqrepo import SeqRepo
 from ete3 import Tree
@@ -13,7 +10,7 @@ from ete3 import Tree
 from storage.variant.model import Reference
 from storage.variant.model import ReferenceSequence, SampleSequence, Sample
 from storage.variant.service import DatabaseConnection, EntityExistsError
-from storage.variant.util import get_genome_name
+from storage.variant.util import parse_sequence_file
 
 
 class ReferenceService:
@@ -27,20 +24,8 @@ class ReferenceService:
             self._seq_repo_updatable = SeqRepo(seq_repo_dir, writeable=True)
             self._seq_repo_proxy = dataproxy.SeqRepoDataProxy(SeqRepo(seq_repo_dir))
 
-    def _parse_sequence_file(self, sequence_file: Path) -> Tuple[str, List[SeqRecord]]:
-        # Code for handling gzipped/non-gzipped from https://stackoverflow.com/a/52839332
-        encoding = guess_type(str(sequence_file))[1]  # uses file extension
-        _open = partial(gzip.open, mode='rt') if encoding == 'gzip' else open
-
-        ref_name = get_genome_name(sequence_file)
-
-        with _open(sequence_file) as f:
-            sequences = list(SeqIO.parse(f, 'fasta'))
-
-            return (ref_name, sequences)
-
     def add_reference_genome(self, genome_file: Path):
-        (genome_name, sequences) = self._parse_sequence_file(genome_file)
+        (genome_name, sequences) = parse_sequence_file(genome_file)
 
         if self.exists_reference_genome(genome_name):
             raise EntityExistsError(f'Reference genome [{genome_name}] already exists in database')
@@ -65,7 +50,7 @@ class ReferenceService:
         ref_length = 0
         ref_contigs = {}
 
-        (ref_name, sequences) = self._parse_sequence_file(reference_file)
+        (ref_name, sequences) = parse_sequence_file(reference_file)
         for record in sequences:
             ref_contigs[record.id] = ReferenceSequence(
                 sequence_name=record.id, sequence_length=len(record.seq))
