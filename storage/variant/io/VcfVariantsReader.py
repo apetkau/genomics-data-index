@@ -44,11 +44,11 @@ class VcfVariantsReader(VariantsReader):
         out = df.merge(pd.DataFrame(df.INFO.tolist()),
                        left_index=True, right_index=True)
         out = out[['CHROM', 'POS', 'REF', 'ALT', 'DP', 'QUAL', 'RO', 'AO', 'INFO']]
-        out['TYPE'] = self._get_type(out)
-        out = out.drop('INFO', axis='columns')
 
         out['ALT'] = out['ALT'].map(self._fix_alt)
         out['REF'] = out['REF'].map(self._fix_ref)
+        out['TYPE'] = self._get_type(out)
+        out = out.drop('INFO', axis='columns')
 
         out['FILE'] = os.path.basename(file)
         cols = out.columns.tolist()
@@ -57,9 +57,22 @@ class VcfVariantsReader(VariantsReader):
         return out
 
     def _get_type(self, vcf_df: pd.DataFrame) -> pd.Series:
-        logger.error('I have not implemented a more general method for getting the type of variation, '
-                     'so defaulting to an empty type.')
-        return pd.Series(data=pd.NA, index=vcf_df.index)
+        def select_type(ref: str, alt: str):
+            ref = ref.upper()
+            alt = alt.upper()
+
+            if len(ref) == len(alt) and len(ref) == 1:
+                return 'snp'
+            elif len(ref) > len(alt) and ref.startswith(alt) or ref.endswith(alt):
+                return 'del'
+            elif len(alt) > len(ref) and alt.startswith(ref) or alt.endswith(ref):
+                return 'ins'
+            elif len(ref) > 0 and len(alt) > 0:
+                return 'complex'
+            else:
+                raise Exception(f'Should not hit this case when defining type. ref=[{ref}], alt=[{alt}]')
+
+        return vcf_df.apply(lambda x: select_type(x['REF'], x['ALT']), axis='columns')
 
     def _read_variants_table(self) -> pd.DataFrame:
         frames = []
