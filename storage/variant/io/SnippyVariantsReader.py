@@ -30,5 +30,10 @@ class SnippyVariantsReader(VcfVariantsReader):
     def _get_type(self, vcf_df: pd.DataFrame) -> pd.Series:
         return vcf_df['INFO'].map(lambda x: x['TYPE'][0])
 
-    def _subset_vcf_dataframe(self, vcf_df: pd.DataFrame) -> pd.DataFrame:
-        return vcf_df[['CHROM', 'POS', 'REF', 'ALT', 'INFO']]
+    def _fix_df_columns(self, vcf_df: pd.DataFrame) -> pd.DataFrame:
+        out = vcf_df.merge(pd.DataFrame(vcf_df.INFO.tolist()),
+                left_index=True, right_index=True)
+        return out[['CHROM', 'POS', 'REF', 'ALT', 'INFO']]
+
+    def _drop_extra_columns(self, vcf_df: pd.DataFrame) -> pd.DataFrame:
+        return vcf_df.drop('INFO', axis='columns')

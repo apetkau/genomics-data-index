@@ -38,23 +38,22 @@ class VcfVariantsReader(VariantsReader):
         self._core_mask_files_map = core_mask_files_map
         self._empty_core_mask = empty_core_mask
 
-    def _subset_vcf_dataframe(self, vcf_df: pd.DataFrame) -> pd.DataFrame:
+    def _fix_df_columns(self, vcf_df: pd.DataFrame) -> pd.DataFrame:
         return vcf_df[['CHROM', 'POS', 'REF', 'ALT']]
+
+    def _drop_extra_columns(self, vcf_df: pd.DataFrame) -> pd.DataFrame:
+        return vcf_df
 
     def read_vcf(self, file: Path, sample_name: str) -> pd.DataFrame:
         reader = vcf.Reader(filename=str(file))
         df = pd.DataFrame([vars(r) for r in reader])
-        out = df.merge(pd.DataFrame(df.INFO.tolist()),
-                       left_index=True, right_index=True)
-
-        out = self._subset_vcf_dataframe(out)
+        out = self._fix_df_columns(df)
 
         out['ALT'] = out['ALT'].map(self._fix_alt)
         out['REF'] = out['REF'].map(self._fix_ref)
         out['TYPE'] = self._get_type(out)
 
-        if 'INFO' in out:
-            out = out.drop('INFO', axis='columns')
+        out = self._drop_extra_columns(out)
 
         out['FILE'] = os.path.basename(file)
         cols = out.columns.tolist()
