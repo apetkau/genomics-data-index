@@ -43,7 +43,7 @@ class VcfVariantsReader(VariantsReader):
         if len(vcf_df) == 0:
             vcf_df = pd.DataFrame(columns=['CHROM', 'POS', 'REF', 'ALT'])
 
-        return vcf_df[['CHROM', 'POS', 'REF', 'ALT']]
+        return vcf_df.loc[:, ['CHROM', 'POS', 'REF', 'ALT']]
 
     def _drop_extra_columns(self, vcf_df: pd.DataFrame) -> pd.DataFrame:
         return vcf_df
