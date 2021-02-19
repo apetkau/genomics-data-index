@@ -1,12 +1,13 @@
-from typing import List
-import pytest
 from os import path, listdir
 from pathlib import Path
+from typing import List
 
-from storage.variant.io.VcfVariantsReader import VcfVariantsReader
-from storage.variant.CoreBitMask import CoreBitMask
+import pytest
+
 from storage.test.integration.variant import data_dir
 from storage.test.integration.variant import data_dir_empty
+from storage.variant.CoreBitMask import CoreBitMask
+from storage.variant.io.VcfVariantsReader import VcfVariantsReader
 
 
 @pytest.fixture

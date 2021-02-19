@@ -1,7 +1,7 @@
 import logging
 import os
 from pathlib import Path
-from typing import List, Dict, Union
+from typing import List, Dict
 
 import pandas as pd
 import vcf

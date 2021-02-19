@@ -1,9 +1,9 @@
-from typing import Tuple, List
 import gzip
 from functools import partial
 from mimetypes import guess_type
 from os.path import basename, splitext
 from pathlib import Path
+from typing import Tuple, List
 
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord

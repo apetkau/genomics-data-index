@@ -1,18 +1,19 @@
-from typing import Dict
 import logging
 import multiprocessing
 import sys
 from os import path, listdir
 from pathlib import Path
+from typing import Dict
 from typing import List
 
 import click
 import click_config_file
 import coloredlogs
-from Bio import AlignIO, SeqIO
 import pandas as pd
+from Bio import AlignIO
 
 from storage.cli import yaml_config_provider
+from storage.variant.CoreBitMask import CoreBitMask
 from storage.variant.io.SnippyVariantsReader import SnippyVariantsReader
 from storage.variant.io.VcfVariantsReader import VcfVariantsReader
 from storage.variant.service import DatabaseConnection, EntityExistsError
@@ -23,7 +24,6 @@ from storage.variant.service.SampleSequenceService import SampleSequenceService
 from storage.variant.service.SampleService import SampleService
 from storage.variant.service.TreeService import TreeService
 from storage.variant.service.VariationService import VariationService
-from storage.variant.CoreBitMask import CoreBitMask
 from storage.variant.util import get_genome_name, parse_sequence_file
 
 logger = logging.getLogger('storage')

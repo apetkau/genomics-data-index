@@ -1,13 +1,10 @@
 import logging
 import os
 from pathlib import Path
-from typing import List, Dict
+from typing import List
 
 import pandas as pd
-import vcf
-from Bio import SeqIO
 
-from storage.variant.CoreBitMask import CoreBitMask
 from storage.variant.io.VcfVariantsReader import VcfVariantsReader
 
 logger = logging.getLogger(__name__)
@@ -36,7 +33,7 @@ class SnippyVariantsReader(VcfVariantsReader):
             vcf_df = pd.DataFrame(columns=['CHROM', 'POS', 'REF', 'ALT', 'INFO'])
 
         out = vcf_df.merge(pd.DataFrame(vcf_df.INFO.tolist()),
-                left_index=True, right_index=True)
+                           left_index=True, right_index=True)
         return out[['CHROM', 'POS', 'REF', 'ALT', 'INFO']]
 
     def _drop_extra_columns(self, vcf_df: pd.DataFrame) -> pd.DataFrame:

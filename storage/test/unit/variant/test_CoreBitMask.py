@@ -69,4 +69,4 @@ def test_iter_missing():
     sequence = Seq('ATNG-NN')
     mask = CoreBitMask.from_sequence(sequence)
 
-    assert [3,5,6,7] == list(mask.iter_missing_positions())
+    assert [3, 5, 6, 7] == list(mask.iter_missing_positions())

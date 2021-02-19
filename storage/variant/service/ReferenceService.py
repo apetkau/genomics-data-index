@@ -1,5 +1,4 @@
 from pathlib import Path
-from pathlib import Path
 from typing import List
 
 import ga4gh.vrs.dataproxy as dataproxy

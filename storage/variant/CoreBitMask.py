@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from typing import Generator
 
 import Bio.Seq
@@ -43,7 +44,7 @@ class CoreBitMask:
         for idx, char in enumerate(sequence):
             if char.upper() == 'N' or char == '-':
                 # Add 1 so that positions are counted from 1 instead of 0
-                bitmap.add(idx+1)
+                bitmap.add(idx + 1)
         return CoreBitMask(existing_bitmask=bitmap, sequence_length=len(sequence))
 
     @staticmethod
