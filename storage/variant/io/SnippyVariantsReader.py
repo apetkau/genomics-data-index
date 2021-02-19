@@ -29,3 +29,6 @@ class SnippyVariantsReader(VcfVariantsReader):
 
     def _get_type(self, vcf_df: pd.DataFrame) -> pd.Series:
         return vcf_df['INFO'].map(lambda x: x['TYPE'][0])
+
+    def _subset_vcf_dataframe(self, vcf_df: pd.DataFrame) -> pd.DataFrame:
+        return vcf_df[['CHROM', 'POS', 'REF', 'ALT', 'INFO']]

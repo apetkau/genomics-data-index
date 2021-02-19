@@ -38,17 +38,23 @@ class VcfVariantsReader(VariantsReader):
         self._core_mask_files_map = core_mask_files_map
         self._empty_core_mask = empty_core_mask
 
+    def _subset_vcf_dataframe(self, vcf_df: pd.DataFrame) -> pd.DataFrame:
+        return vcf_df[['CHROM', 'POS', 'REF', 'ALT']]
+
     def read_vcf(self, file: Path, sample_name: str) -> pd.DataFrame:
         reader = vcf.Reader(filename=str(file))
         df = pd.DataFrame([vars(r) for r in reader])
         out = df.merge(pd.DataFrame(df.INFO.tolist()),
                        left_index=True, right_index=True)
-        out = out[['CHROM', 'POS', 'REF', 'ALT', 'INFO']]
+
+        out = self._subset_vcf_dataframe(out)
 
         out['ALT'] = out['ALT'].map(self._fix_alt)
         out['REF'] = out['REF'].map(self._fix_ref)
         out['TYPE'] = self._get_type(out)
-        out = out.drop('INFO', axis='columns')
+
+        if 'INFO' in out:
+            out = out.drop('INFO', axis='columns')
 
         out['FILE'] = os.path.basename(file)
         cols = out.columns.tolist()
