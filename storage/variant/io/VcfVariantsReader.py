@@ -43,7 +43,7 @@ class VcfVariantsReader(VariantsReader):
         df = pd.DataFrame([vars(r) for r in reader])
         out = df.merge(pd.DataFrame(df.INFO.tolist()),
                        left_index=True, right_index=True)
-        out = out[['CHROM', 'POS', 'REF', 'ALT', 'DP', 'QUAL', 'RO', 'AO', 'INFO']]
+        out = out[['CHROM', 'POS', 'REF', 'ALT', 'INFO']]
 
         out['ALT'] = out['ALT'].map(self._fix_alt)
         out['REF'] = out['REF'].map(self._fix_ref)
