@@ -1,4 +1,4 @@
-from typing import Dict, Any
+from typing import List
 import pytest
 from os import path, listdir
 from pathlib import Path
@@ -6,12 +6,20 @@ from pathlib import Path
 from storage.variant.io.VcfVariantsReader import VcfVariantsReader
 from storage.variant.CoreBitMask import CoreBitMask
 from storage.test.integration.variant import data_dir
-
-sample_dirs = [data_dir / d for d in listdir(data_dir) if path.isdir(data_dir / d)]
+from storage.test.integration.variant import data_dir_empty
 
 
 @pytest.fixture
-def variants_reader() -> VcfVariantsReader:
+def sample_dirs() -> List[Path]:
+    return [data_dir / d for d in listdir(data_dir) if path.isdir(data_dir / d)]
+
+
+@pytest.fixture
+def sample_dirs_empty() -> List[Path]:
+    return [data_dir_empty / d for d in listdir(data_dir_empty) if path.isdir(data_dir_empty / d)]
+
+
+def variants_reader_internal(sample_dirs):
     sample_vcf_map = {}
     sample_core_masks_map = {}
     for d in sample_dirs:
@@ -27,7 +35,17 @@ def variants_reader() -> VcfVariantsReader:
 
 
 @pytest.fixture
-def variants_reader_empty_core_masks() -> VcfVariantsReader:
+def variants_reader(sample_dirs) -> VcfVariantsReader:
+    return variants_reader_internal(sample_dirs)
+
+
+@pytest.fixture
+def variants_reader_empty(sample_dirs_empty) -> VcfVariantsReader:
+    return variants_reader_internal(sample_dirs_empty)
+
+
+@pytest.fixture
+def variants_reader_empty_core_masks(sample_dirs) -> VcfVariantsReader:
     sample_vcf_map = {}
     for d in sample_dirs:
         sample_name = path.basename(d)
@@ -76,3 +94,9 @@ def test_get_core_masks_empty(variants_reader_empty_core_masks):
 
 def test_get_samples_list(variants_reader):
     assert {'SampleA', 'SampleB', 'SampleC'} == set(variants_reader.samples_list())
+
+
+def test_get_variants_table_empty(variants_reader_empty):
+    df = variants_reader_empty.get_variants_table()
+
+    assert 0 == len(df), 'Data has incorrect length'

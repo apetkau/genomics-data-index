@@ -39,6 +39,10 @@ class VcfVariantsReader(VariantsReader):
         self._empty_core_mask = empty_core_mask
 
     def _fix_df_columns(self, vcf_df: pd.DataFrame) -> pd.DataFrame:
+        # If no data, I still want certain column names so that rest of code still works
+        if len(vcf_df) == 0:
+            vcf_df = pd.DataFrame(columns=['CHROM', 'POS', 'REF', 'ALT'])
+
         return vcf_df[['CHROM', 'POS', 'REF', 'ALT']]
 
     def _drop_extra_columns(self, vcf_df: pd.DataFrame) -> pd.DataFrame:
@@ -77,7 +81,10 @@ class VcfVariantsReader(VariantsReader):
             else:
                 raise Exception(f'Should not hit this case when defining type. ref=[{ref}], alt=[{alt}]')
 
-        return vcf_df.apply(lambda x: select_type(x['REF'], x['ALT']), axis='columns')
+        if len(vcf_df) > 0:
+            return vcf_df.apply(lambda x: select_type(x['REF'], x['ALT']), axis='columns')
+        else:
+            return pd.Series(dtype='object')
 
     def _read_variants_table(self) -> pd.DataFrame:
         frames = []

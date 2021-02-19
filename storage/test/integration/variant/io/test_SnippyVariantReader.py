@@ -4,9 +4,11 @@ from typing import Dict, Any
 import pytest
 
 from storage.test.integration.variant import data_dir
+from storage.test.integration.variant import data_dir_empty
 from storage.variant.io.SnippyVariantsReader import SnippyVariantsReader
 
 sample_dirs = [data_dir / d for d in listdir(data_dir) if path.isdir(data_dir / d)]
+sample_dirs_empty = [data_dir_empty / d for d in listdir(data_dir_empty) if path.isdir(data_dir_empty / d)]
 
 
 @pytest.fixture
@@ -78,3 +80,10 @@ def test_get_samples_list_two_files():
     reader = SnippyVariantsReader(sample_dirs)
 
     assert {'SampleA', 'SampleB'} == set(reader.samples_list())
+
+
+def test_read_empty_vcf():
+    reader = SnippyVariantsReader(sample_dirs_empty)
+    df = reader.get_variants_table()
+
+    assert 0 == len(df), 'Data has incorrect length'
