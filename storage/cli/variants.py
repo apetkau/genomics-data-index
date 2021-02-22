@@ -78,7 +78,7 @@ def main(ctx, database_connection, seqrepo_dir, verbose):
     ctx.obj['sample_query_service'] = sample_query_service
 
 
-def load_variants_common(ctx, variants_reader, reference_file, input, build_tree, threads):
+def load_variants_common(ctx, variants_reader, reference_file, input, build_tree, align_type, threads):
     reference_service = ctx.obj['reference_service']
     variation_service = ctx.obj['variation_service']
     sample_service = ctx.obj['sample_service']
@@ -105,6 +105,7 @@ def load_variants_common(ctx, variants_reader, reference_file, input, build_tree
 
         if build_tree:
             tree_service.rebuild_tree(reference_name=reference_name,
+                                      align_type=align_type,
                                       num_cores=threads)
             click.echo('Finished building tree of all samples')
 
@@ -114,9 +115,11 @@ def load_variants_common(ctx, variants_reader, reference_file, input, build_tree
 @click.argument('snippy_dir', type=click.Path(exists=True))
 @click.option('--reference-file', help='Reference genome', required=True, type=click.Path(exists=True))
 @click.option('--build-tree/--no-build-tree', default=False, help='Builds tree of all samples after loading')
+@click.option('--align-type', help=f'The type of alignment to generate', default='core',
+              type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
 @click.option('--threads', help='Threads for building tree', default=1,
               type=click.IntRange(min=1, max=num_cores))
-def load_snippy(ctx, snippy_dir: Path, reference_file: Path, build_tree: bool, threads: int):
+def load_snippy(ctx, snippy_dir: Path, reference_file: Path, build_tree: bool, align_type: str, threads: int):
     snippy_dir = Path(snippy_dir)
     reference_file = Path(reference_file)
     click.echo(f'Loading {snippy_dir}')
@@ -124,7 +127,7 @@ def load_snippy(ctx, snippy_dir: Path, reference_file: Path, build_tree: bool, t
     variants_reader = SnippyVariantsReader(sample_dirs)
 
     load_variants_common(ctx=ctx, variants_reader=variants_reader, reference_file=reference_file,
-                         input=snippy_dir, build_tree=build_tree, threads=threads)
+                         input=snippy_dir, build_tree=build_tree, align_type=align_type, threads=threads)
 
 
 @main.command(name='load-vcf')
@@ -132,10 +135,11 @@ def load_snippy(ctx, snippy_dir: Path, reference_file: Path, build_tree: bool, t
 @click.argument('vcf_fofns', type=click.Path(exists=True))
 @click.option('--reference-file', help='Reference genome', required=True, type=click.Path(exists=True))
 @click.option('--build-tree/--no-build-tree', default=False, help='Builds tree of all samples after loading')
+@click.option('--align-type', help=f'The type of alignment to generate', default='core',
+              type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
 @click.option('--threads', help='Threads for building tree', default=1,
               type=click.IntRange(min=1, max=num_cores))
-def load_vcf(ctx, vcf_fofns: Path, reference_file: Path, build_tree: bool, threads: int):
-    snippy_dir = Path(vcf_fofns)
+def load_vcf(ctx, vcf_fofns: Path, reference_file: Path, build_tree: bool, align_type: str, threads: int):
     reference_file = Path(reference_file)
 
     # Generate empty masks
@@ -161,7 +165,7 @@ def load_vcf(ctx, vcf_fofns: Path, reference_file: Path, build_tree: bool, threa
                                         empty_core_mask=empty_core_mask)
 
     load_variants_common(ctx=ctx, variants_reader=variants_reader, reference_file=reference_file,
-                         input=snippy_dir, build_tree=build_tree, threads=threads)
+                         input=Path(vcf_fofns), build_tree=build_tree, align_type=align_type, threads=threads)
 
 
 LIST_TYPES = ['genomes', 'samples']
