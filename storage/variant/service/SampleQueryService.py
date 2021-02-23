@@ -1,18 +1,21 @@
-from typing import List
+from pathlib import Path
+from typing import List, Dict
 
 import pandas as pd
 
+from storage.variant.service.QueryService import QueryService
 from storage.variant.service.ReferenceService import ReferenceService
 from storage.variant.service.TreeService import TreeService
 
 
-class SampleQueryService:
+class SampleQueryService(QueryService):
 
     def __init__(self, tree_service: TreeService, reference_service: ReferenceService):
+        super().__init__()
         self._tree_service = tree_service
         self._reference_service = reference_service
 
-    def find_matches(self, sample_names: List[str]) -> pd.DataFrame:
+    def _find_matches_internal(self, sample_names: List[str], distance_threshold: float = None) -> pd.DataFrame:
         sample_distances = []
         for sample_name in sample_names:
             reference_genomes = self._reference_service.find_references_for_sample(sample_name)
@@ -34,17 +37,35 @@ class SampleQueryService:
                     distance = sample_node.get_distance(leaf)
                     align_length = reference_genome.tree_alignment_length
                     sample_distances.append([reference_genome.name, sample_name, leaf.name,
-                                             distance, f'{distance * align_length:0.2f}', align_length])
+                                             f'{distance * align_length:0.2f}', distance, align_length])
 
         matches_df = pd.DataFrame(data=sample_distances, columns=[
             'Reference Genome',
             'Sample A',
             'Sample B',
+            'Distance',
             'Distance (subs/site)',
-            'Distance (subs)',
             'SNV Alignment Length',
         ])
+        matches_df['Distance'] = pd.to_numeric(matches_df['Distance'])
         matches_df['Distance (subs/site)'] = pd.to_numeric(matches_df['Distance (subs/site)'])
-        matches_df['Distance (subs)'] = pd.to_numeric(matches_df['Distance (subs)'])
         matches_df['SNV Alignment Length'] = pd.to_numeric(matches_df['SNV Alignment Length'])
-        return matches_df.sort_values(['Sample A', 'Distance (subs/site)'], ascending=True)
+        matches_df = matches_df.sort_values(['Sample A', 'Distance (subs/site)'], ascending=True)
+
+        if distance_threshold is not None:
+            matches_df = matches_df.loc[:, matches_df['Distance (subs/site)'] <= distance_threshold]
+
+        return matches_df
+
+    def _find_matches_genome_files_internal(self, sample_reads: Dict[str, List[Path]],
+                                            distance_threshold: float = None) -> pd.DataFrame:
+        raise Exception('Method not implemented')
+
+    def _pairwise_distance_internal(self, samples: List[str]) -> pd.DataFrame:
+        raise Exception('Method not implemented')
+
+    def _differences_between_genomes_internal(self, sample1: str, sample2: str):
+        raise Exception('Method not implemented')
+
+    def get_data_type(self) -> str:
+        return 'SNV'

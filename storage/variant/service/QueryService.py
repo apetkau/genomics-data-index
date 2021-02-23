@@ -18,10 +18,10 @@ class QueryService(abc.ABC):
         pass
 
     # Scenerio 1 (and 2 with proper implementation)
-    @abc.abstractmethod
     def find_matches_genome_files(self, sample_reads: Dict[str, List[Path]],
                                   distance_threshold: float = None) -> pd.DataFrame:
         matches_df = self._find_matches_genome_files_internal(sample_reads, distance_threshold)
+        matches_df.insert(loc=0, column='Type', value=self.get_data_type())
         verify_columns_match({'Type', 'Sample A', 'Sample B', 'Distance'}, matches_df)
 
         return matches_df
@@ -40,6 +40,7 @@ class QueryService(abc.ABC):
             raise Exception(f'Cannot find matches of empty samples list')
 
         matches_df = self._find_matches_internal(samples, distance_threshold)
+        matches_df.insert(loc=0, column='Type', value=self.get_data_type())
         verify_columns_match({'Type', 'Sample A', 'Sample B', 'Distance'}, matches_df)
 
         return matches_df
@@ -54,6 +55,7 @@ class QueryService(abc.ABC):
             raise Exception(f'Cannot find pairwise distances of empty samples list')
 
         distance_df = self._pairwise_distance_internal(samples)
+        distance_df.insert(loc=0, column='Type', value=self.get_data_type())
         verify_columns_match({'Type', 'Sample A', 'Sample B', 'Distance'}, distance_df)
 
         return distance_df
@@ -68,10 +70,15 @@ class QueryService(abc.ABC):
     # Scenario 9
     def differences_between_genomes(self, sample1: str, sample2: str):
         differences_df = self._differences_between_genomes_internal(sample1, sample2)
+        differences_df.insert(loc=0, column='Type', value=self.get_data_type())
         verify_columns_match({'Type', 'Sample1 unique', 'Sample2 unique'}, differences_df)
 
         return differences_df
 
     @abc.abstractmethod
     def _differences_between_genomes_internal(self, sample1: str, sample2: str):
+        pass
+
+    @abc.abstractmethod
+    def get_data_type(self) -> str:
         pass

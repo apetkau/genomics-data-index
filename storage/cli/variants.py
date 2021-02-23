@@ -283,7 +283,7 @@ def query(ctx, name: List[str], query_type: str):
 
     match_df = None
     if query_type == 'sample':
-        match_df = sample_query_service.find_matches(sample_names=name)
+        match_df = sample_query_service.find_matches(samples=name)
     else:
         logger.error(f'Invalid query_type=[{query_type}]')
         sys.exit(1)
