@@ -12,6 +12,11 @@ def verify_columns_match(expected_columns: Set[str], result_df: pd.DataFrame) ->
                         f'Expected {expected_columns}, actual {actual_columns}')
 
 
+class Feature:
+    def __init__(self):
+        pass
+
+
 class QueryService(abc.ABC):
 
     def __init__(self):
@@ -64,7 +69,21 @@ class QueryService(abc.ABC):
     def _pairwise_distance_internal(self, samples: List[str]) -> pd.DataFrame:
         pass
 
-    # TODO: Scenario 6 and 7 later
+    # TODO: Scenario 6 later
+
+    def find_by_feature(self, feature: Feature) -> pd.DataFrame:
+        if feature is None:
+            raise Exception(f'Cannot find by empty feature')
+
+        matches_df = self._find_by_feature_internal(feature)
+        matches_df.insert(loc=0, column='Type', value=self.get_data_type())
+        verify_columns_match({'Type', 'Feature', 'Sample'}, matches_df)
+
+        return matches_df
+
+    def _find_by_feature_internal(self, feature: Feature) -> pd.DataFrame:
+        pass
+
     # Scenario 8 in TreeService
 
     # Scenario 9
