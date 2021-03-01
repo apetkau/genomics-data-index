@@ -99,4 +99,4 @@ class MutationQueryService(QueryService):
         raise Exception('Method not implemented')
 
     def get_data_type(self) -> str:
-        return 'SNV'
+        return 'mutation'

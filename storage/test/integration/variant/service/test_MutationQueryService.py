@@ -66,7 +66,7 @@ def test_find_by_features(mutation_query_service: MutationQueryService):
     assert {'SampleB'} == set(matches_df['Sample Name'].tolist())
     assert {2} == set(matches_df['Sample ID'].tolist())
     assert {'reference:5061:G:A'} == set(matches_df['Feature'].tolist())
-    assert {'SNV'} == set(matches_df['Type'].tolist())
+    assert {'mutation'} == set(matches_df['Type'].tolist())
     assert len(matches_df) == 1
 
 
@@ -78,7 +78,7 @@ def test_find_by_features_2_results(mutation_query_service: MutationQueryService
     assert {'SampleB', 'SampleC'} == set(matches_df['Sample Name'].tolist())
     assert {2,3} == set(matches_df['Sample ID'].tolist())
     assert {'reference:3063:A:ATGCAGC'} == set(matches_df['Feature'].tolist())
-    assert {'SNV'} == set(matches_df['Type'].tolist())
+    assert {'mutation'} == set(matches_df['Type'].tolist())
     assert len(matches_df) == 2
 
 
@@ -91,5 +91,5 @@ def test_find_by_features_2_features(mutation_query_service: MutationQueryServic
     assert {'SampleB', 'SampleC'} == set(matches_df['Sample Name'].tolist())
     assert {2,3} == set(matches_df['Sample ID'].tolist())
     assert {'reference:5061:G:A', 'reference:3063:A:ATGCAGC'} == set(matches_df['Feature'].tolist())
-    assert {'SNV'} == set(matches_df['Type'].tolist())
+    assert {'mutation'} == set(matches_df['Type'].tolist())
     assert len(matches_df) == 3
