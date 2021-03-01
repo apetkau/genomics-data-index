@@ -1,13 +1,15 @@
 import pytest
 
 from storage.variant.service.SampleQueryService import SampleQueryService
+from storage.variant.service.SampleQueryService import QueryFeatureMutation
 
 
 @pytest.fixture
 def sample_query_service(tree_service_with_tree_stored,
-                         reference_service_with_data, variation_service) -> SampleQueryService:
+                         reference_service_with_data, sample_service, variation_service) -> SampleQueryService:
     return SampleQueryService(tree_service=tree_service_with_tree_stored,
-                              reference_service=reference_service_with_data)
+                              reference_service=reference_service_with_data,
+                              sample_service=sample_service)
 
 
 def test_find_matchesC(sample_query_service: SampleQueryService):
@@ -54,3 +56,15 @@ def test_find_matchesAB(sample_query_service: SampleQueryService):
     assert {'genome'} == set(matches_df['Reference Genome'])
     assert ['reference', 'SampleC', 'SampleB',
             'SampleC', 'reference', 'SampleA'] == matches_df['Sample B'].tolist()
+
+
+def test_find_by_features(sample_query_service: SampleQueryService):
+    matches_df = sample_query_service.find_by_features([QueryFeatureMutation('reference:5061:G:A')])
+
+    assert ['Type', 'Feature', 'Sample Name', 'Sample ID'] == list(matches_df.columns.tolist())
+
+    assert {'SampleB'} == set(matches_df['Sample Name'].tolist())
+    assert {2} == set(matches_df['Sample ID'].tolist())
+    assert {'reference:5061:G:A'} == set(matches_df['Feature'].tolist())
+    assert {'SNV'} == set(matches_df['Type'].tolist())
+    assert len(matches_df) == 1

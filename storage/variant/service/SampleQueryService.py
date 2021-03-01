@@ -6,14 +6,30 @@ import pandas as pd
 from storage.variant.service.QueryService import QueryService
 from storage.variant.service.ReferenceService import ReferenceService
 from storage.variant.service.TreeService import TreeService
+from storage.variant.service.SampleService import SampleService
+
+from storage.variant.service.QueryService import QueryFeature
+
+
+class QueryFeatureMutation(QueryFeature):
+
+    def __init__(self, spdi: str):
+        super().__init__()
+        self._spdi = spdi
+
+    @property
+    def spdi(self):
+        return self._spdi
 
 
 class SampleQueryService(QueryService):
 
-    def __init__(self, tree_service: TreeService, reference_service: ReferenceService):
+    def __init__(self, tree_service: TreeService, reference_service: ReferenceService,
+                 sample_service: SampleService):
         super().__init__()
         self._tree_service = tree_service
         self._reference_service = reference_service
+        self._sample_service = sample_service
 
     def _find_matches_internal(self, sample_names: List[str], distance_threshold: float = None) -> pd.DataFrame:
         sample_distances = []
@@ -56,6 +72,21 @@ class SampleQueryService(QueryService):
             matches_df = matches_df.loc[:, matches_df['Distance (subs/site)'] <= distance_threshold]
 
         return matches_df
+
+    def _find_by_features_internal(self, features: List[QueryFeature]) -> pd.DataFrame:
+        for feature in features:
+            if not isinstance(feature, QueryFeatureMutation):
+                raise Exception(f'feature=[{feature}] is not of type QueryFeatureMutation')
+
+        variation_ids = [f.spdi for f in features]
+        variation_samples = self._sample_service.find_samples_by_variation_ids(variation_ids)
+
+        data = []
+        for vid in variation_samples:
+            for sample in variation_samples[vid]:
+                data.append([vid, sample.name, sample.id])
+
+        return pd.DataFrame(data=data, columns=['Feature', 'Sample Name', 'Sample ID'])
 
     def _find_matches_genome_files_internal(self, sample_reads: Dict[str, List[Path]],
                                             distance_threshold: float = None) -> pd.DataFrame:

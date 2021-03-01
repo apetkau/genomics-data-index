@@ -31,3 +31,11 @@ def test_get_samples(sample_service, variation_service):
 
 def test_get_samples_empty(sample_service):
     assert [] == sample_service.get_samples()
+
+
+def test_find_samples_by_variation_ids(sample_service, variation_service):
+    variant_samples = sample_service.find_samples_by_variation_ids(['reference:5061:G:A'])
+
+    assert 'reference:5061:G:A' in variant_samples
+    assert {'SampleB'} == {s.name for s in variant_samples['reference:5061:G:A']}
+    assert {2} == {s.id for s in variant_samples['reference:5061:G:A']}

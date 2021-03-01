@@ -1,6 +1,6 @@
-from typing import List
+from typing import List, Dict
 
-from storage.variant.model import Sample, Reference, ReferenceSequence
+from storage.variant.model import Sample, Reference, ReferenceSequence, VariationAllele
 from storage.variant.service import DatabaseConnection
 
 
@@ -36,3 +36,10 @@ class SampleService:
             .filter(Sample.name.in_(sample_names)) \
             .all()
         return [sample.name for sample in samples]
+
+    def find_samples_by_variation_ids(self, variation_ids: List[str]) -> Dict[str, List[Sample]]:
+        variants = self._connection.get_session().query(VariationAllele) \
+            .filter(VariationAllele.id.in_(variation_ids)) \
+            .all()
+
+        return {v.id: v.samples for v in variants}

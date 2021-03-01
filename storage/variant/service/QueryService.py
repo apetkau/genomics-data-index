@@ -12,7 +12,7 @@ def verify_columns_match(expected_columns: Set[str], result_df: pd.DataFrame) ->
                         f'Expected {expected_columns}, actual {actual_columns}')
 
 
-class Feature:
+class QueryFeature:
     def __init__(self):
         pass
 
@@ -71,17 +71,17 @@ class QueryService(abc.ABC):
 
     # TODO: Scenario 6 later
 
-    def find_by_feature(self, feature: Feature) -> pd.DataFrame:
-        if feature is None:
-            raise Exception(f'Cannot find by empty feature')
+    def find_by_features(self, features: List[QueryFeature]) -> pd.DataFrame:
+        if features is None or len(features) == 0:
+            raise Exception(f'Cannot find by empty features')
 
-        matches_df = self._find_by_feature_internal(feature)
+        matches_df = self._find_by_features_internal(features)
         matches_df.insert(loc=0, column='Type', value=self.get_data_type())
-        verify_columns_match({'Type', 'Feature', 'Sample'}, matches_df)
+        verify_columns_match({'Type', 'Feature', 'Sample Name', 'Sample ID'}, matches_df)
 
         return matches_df
 
-    def _find_by_feature_internal(self, feature: Feature) -> pd.DataFrame:
+    def _find_by_features_internal(self, features: List[QueryFeature]) -> pd.DataFrame:
         pass
 
     # Scenario 8 in TreeService
