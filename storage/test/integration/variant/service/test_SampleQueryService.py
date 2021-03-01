@@ -1,7 +1,7 @@
 import pytest
 
-from storage.variant.service.SampleQueryService import SampleQueryService
 from storage.variant.service.SampleQueryService import QueryFeatureMutation
+from storage.variant.service.SampleQueryService import SampleQueryService
 
 
 @pytest.fixture

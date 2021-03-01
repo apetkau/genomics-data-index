@@ -56,7 +56,7 @@ class Reference(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(255))
     length = Column(Integer)
-    _tree = Column('tree', UnicodeText(10**6))
+    _tree = Column('tree', UnicodeText(10 ** 6))
     tree_alignment_length = Column(Integer)
     sequences = relationship('ReferenceSequence')
 
