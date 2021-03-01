@@ -22,7 +22,7 @@ class QueryFeatureMutation(QueryFeature):
         return self._spdi
 
 
-class SampleQueryService(QueryService):
+class MutationQueryService(QueryService):
 
     def __init__(self, tree_service: TreeService, reference_service: ReferenceService,
                  sample_service: SampleService):

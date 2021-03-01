@@ -19,7 +19,7 @@ from storage.variant.io.VcfVariantsReader import VcfVariantsReader
 from storage.variant.service import DatabaseConnection, EntityExistsError
 from storage.variant.service.CoreAlignmentService import CoreAlignmentService
 from storage.variant.service.ReferenceService import ReferenceService
-from storage.variant.service.SampleQueryService import SampleQueryService
+from storage.variant.service.MutationQueryService import MutationQueryService
 from storage.variant.service.SampleSequenceService import SampleSequenceService
 from storage.variant.service.SampleService import SampleService
 from storage.variant.service.TreeService import TreeService
@@ -66,8 +66,9 @@ def main(ctx, database_connection, seqrepo_dir, verbose):
                                              variation_service=variation_service,
                                              sample_sequence_service=sample_sequence_service)
     tree_service = TreeService(database, reference_service, alignment_service)
-    sample_query_service = SampleQueryService(tree_service=tree_service,
-                                              reference_service=reference_service)
+    mutation_query_service = MutationQueryService(tree_service=tree_service,
+                                                reference_service=reference_service,
+                                                sample_service=sample_service)
 
     ctx.obj['database'] = database
     ctx.obj['reference_service'] = reference_service
@@ -75,7 +76,7 @@ def main(ctx, database_connection, seqrepo_dir, verbose):
     ctx.obj['alignment_service'] = alignment_service
     ctx.obj['tree_service'] = tree_service
     ctx.obj['sample_service'] = sample_service
-    ctx.obj['sample_query_service'] = sample_query_service
+    ctx.obj['mutation_query_service'] = mutation_query_service
 
 
 def load_variants_common(ctx, variants_reader, reference_file, input, build_tree, align_type, threads):
@@ -279,11 +280,11 @@ QUERY_TYPES = ['sample']
 @click.option('--type', 'query_type', help='Query type',
               required=True, type=click.Choice(QUERY_TYPES))
 def query(ctx, name: List[str], query_type: str):
-    sample_query_service = ctx.obj['sample_query_service']
+    mutation_query_service = ctx.obj['mutation_query_service']
 
     match_df = None
     if query_type == 'sample':
-        match_df = sample_query_service.find_matches(samples=name)
+        match_df = mutation_query_service.find_matches(samples=name)
     else:
         logger.error(f'Invalid query_type=[{query_type}]')
         sys.exit(1)
