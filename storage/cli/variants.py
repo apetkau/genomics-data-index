@@ -280,7 +280,10 @@ QUERY_TYPES = ['sample', 'mutation']
 @click.argument('name', nargs=-1)
 @click.option('--type', 'query_type', help='Query type',
               required=True, type=click.Choice(QUERY_TYPES))
-def query(ctx, name: List[str], query_type: str):
+@click.option('--include-unknown/--no-include-unknown',
+              help='Including results where it is unknown if the search term is present or not.',
+              required=False)
+def query(ctx, name: List[str], query_type: str, include_unknown: bool):
     mutation_query_service = ctx.obj['mutation_query_service']
 
     match_df = None
@@ -289,7 +292,7 @@ def query(ctx, name: List[str], query_type: str):
         print('# Note: I don\'t know if the Distance (subs) column is calculated correctly')
     elif query_type == 'mutation':
         features = [QueryFeatureMutation(n) for n in name]
-        match_df = mutation_query_service.find_by_features(features)
+        match_df = mutation_query_service.find_by_features(features, include_unknown=include_unknown)
     else:
         logger.error(f'Invalid query_type=[{query_type}]')
         sys.exit(1)

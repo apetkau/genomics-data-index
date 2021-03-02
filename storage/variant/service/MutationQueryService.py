@@ -97,7 +97,7 @@ class MutationQueryService(QueryService):
 
         return matches_df
 
-    def _find_by_features_internal(self, features: List[QueryFeature], include_missing: bool) -> pd.DataFrame:
+    def _find_by_features_internal(self, features: List[QueryFeature], include_unknown: bool) -> pd.DataFrame:
         for feature in features:
             if not isinstance(feature, QueryFeatureMutation):
                 raise Exception(f'feature=[{feature}] is not of type QueryFeatureMutation')
@@ -110,7 +110,7 @@ class MutationQueryService(QueryService):
             for sample in variation_samples[vid]:
                 data.append([vid, sample.name, sample.id, 'Present'])
 
-        if include_missing:
+        if include_unknown:
             for feature in features:
                 missing_positions = list(range(feature.position, feature.position + len(feature.ref)))
                 samples_with_variants = self._sample_service.get_samples_with_variants_on_sequence(feature.sequence_name)

@@ -100,9 +100,9 @@ def test_find_by_features_2_features(mutation_query_service: MutationQueryServic
     assert len(matches_df) == 3
 
 
-def test_find_by_features_missing(mutation_query_service: MutationQueryService):
+def test_find_by_features_unknwon(mutation_query_service: MutationQueryService):
     matches_df = mutation_query_service.find_by_features([QueryFeatureMutation('reference:190:A:G')],
-                                                         include_missing=True)
+                                                         include_unknown=True)
 
     assert ['Type', 'Feature', 'Sample Name', 'Sample ID', 'Status'] == list(matches_df.columns.tolist())
 
@@ -114,7 +114,7 @@ def test_find_by_features_missing(mutation_query_service: MutationQueryService):
     assert len(matches_df) == 3
 
     matches_df = mutation_query_service.find_by_features([QueryFeatureMutation('reference:190:A:G')],
-                                                         include_missing=False)
+                                                         include_unknown=False)
     assert ['Type', 'Feature', 'Sample Name', 'Sample ID', 'Status'] == list(matches_df.columns.tolist())
 
     assert {'SampleB'} == set(matches_df['Sample Name'].tolist())

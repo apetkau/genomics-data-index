@@ -71,17 +71,17 @@ class QueryService(abc.ABC):
 
     # TODO: Scenario 6 later
 
-    def find_by_features(self, features: List[QueryFeature], include_missing: bool = False) -> pd.DataFrame:
+    def find_by_features(self, features: List[QueryFeature], include_unknown: bool = False) -> pd.DataFrame:
         if features is None or len(features) == 0:
             raise Exception(f'Cannot find by empty features')
 
-        matches_df = self._find_by_features_internal(features, include_missing)
+        matches_df = self._find_by_features_internal(features, include_unknown)
         matches_df.insert(loc=0, column='Type', value=self.get_data_type())
         verify_columns_match({'Type', 'Feature', 'Sample Name', 'Sample ID'}, matches_df)
 
         return matches_df
 
-    def _find_by_features_internal(self, features: List[QueryFeature], include_missing: bool) -> pd.DataFrame:
+    def _find_by_features_internal(self, features: List[QueryFeature], include_unknown: bool) -> pd.DataFrame:
         pass
 
     # Scenario 8 in TreeService
