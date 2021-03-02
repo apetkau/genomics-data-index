@@ -283,16 +283,28 @@ QUERY_TYPES = ['sample', 'mutation']
 @click.option('--include-unknown/--no-include-unknown',
               help='Including results where it is unknown if the search term is present or not.',
               required=False)
-def query(ctx, name: List[str], query_type: str, include_unknown: bool):
+@click.option('--summarize/--no-summarize', help='Print summary information on query')
+def query(ctx, name: List[str], query_type: str, include_unknown: bool, summarize: bool):
     mutation_query_service = ctx.obj['mutation_query_service']
 
     match_df = None
     if query_type == 'sample':
         match_df = mutation_query_service.find_matches(samples=name)
         print('# Note: I don\'t know if the Distance (subs) column is calculated correctly')
+        if summarize:
+            logger.warning('--summarize is not implemented for --type=sample')
     elif query_type == 'mutation':
         features = [QueryFeatureMutation(n) for n in name]
         match_df = mutation_query_service.find_by_features(features, include_unknown=include_unknown)
+
+        if summarize:
+            sample_counts = {}
+            for feature in features:
+                count = ctx.obj['sample_service'].count_samples_associated_with_sequence(feature.sequence_name)
+                sample_counts[feature.spdi] = count
+
+            match_df['Total Samples'] = match_df['Feature'].apply(lambda x: sample_counts[x])
+            # match_df.groupby('Feature')
     else:
         logger.error(f'Invalid query_type=[{query_type}]')
         sys.exit(1)

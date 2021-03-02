@@ -118,10 +118,10 @@ class MutationQueryService(QueryService):
                     if self._sample_sequence_service.missing_in_sequence(sample_name=sample.name,
                                                                          sequence_name=feature.sequence_name,
                                                                          positions=missing_positions):
-                        data.append([vid, sample.name, sample.id, 'Unknown'])
+                        data.append([feature.spdi, sample.name, sample.id, 'Unknown'])
 
         return pd.DataFrame(data=data, columns=[
-            'Feature', 'Sample Name', 'Sample ID', 'Status']).sort_values('Sample Name')
+            'Feature', 'Sample Name', 'Sample ID', 'Status']).sort_values(['Feature', 'Sample Name'])
 
     def _find_matches_genome_files_internal(self, sample_reads: Dict[str, List[Path]],
                                             distance_threshold: float = None) -> pd.DataFrame:

@@ -49,6 +49,9 @@ class SampleService:
             .all()
         return samples
 
+    def count_samples_associated_with_sequence(self, sequence_name: str) -> int:
+        return len(self.get_samples_associated_with_sequence(sequence_name))
+
     def get_samples(self) -> List[Sample]:
         return self._connection.get_session().query(Sample).all()
 
