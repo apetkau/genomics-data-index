@@ -1,6 +1,6 @@
 from typing import List, Dict
 
-from storage.variant.model import Sample, Reference, ReferenceSequence, VariationAllele
+from storage.variant.model import Sample, Reference, ReferenceSequence, VariationAllele, SampleSequence
 from storage.variant.service import DatabaseConnection
 
 
@@ -31,6 +31,19 @@ class SampleService:
         """
         samples = self._connection.get_session().query(Sample) \
             .join(Sample.variants) \
+            .join(ReferenceSequence) \
+            .filter(ReferenceSequence.sequence_name == sequence_name) \
+            .all()
+        return samples
+
+    def get_samples_associated_with_sequence(self, sequence_name: str) -> List[Sample]:
+        """
+        Gets a list of all samples associated with a sequence name (whether they have variants or not).
+        :sequence_name: The sequence name.
+        :return: A list of Samples associated with the sequence name, empty list of no Samples.
+        """
+        samples = self._connection.get_session().query(Sample) \
+            .join(Sample.sample_sequences) \
             .join(ReferenceSequence) \
             .filter(ReferenceSequence.sequence_name == sequence_name) \
             .all()

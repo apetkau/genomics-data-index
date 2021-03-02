@@ -8,6 +8,16 @@ def test_samples_with_variants_on_sequence(sample_service, variation_service):
     assert {'SampleA', 'SampleB', 'SampleC'} == {sample.name for sample in samples_with_variants}
 
 
+def test_samples_associated_with_sequence(sample_service, variation_service):
+    samples_with_variants = sample_service.get_samples_associated_with_sequence('reference')
+    assert {'SampleA', 'SampleB', 'SampleC'} == {sample.name for sample in samples_with_variants}
+
+
+def test_samples_associated_with_sequence_empty(sample_service, variation_service):
+    samples_with_variants = sample_service.get_samples_associated_with_sequence('no_exist')
+    assert set() == {sample.name for sample in samples_with_variants}
+
+
 def test_samples_with_variants_empty(sample_service, variation_service):
     samples_with_variants = sample_service.get_samples_with_variants('does_not_exist')
     assert set() == set(samples_with_variants)

@@ -113,7 +113,7 @@ class MutationQueryService(QueryService):
         if include_unknown:
             for feature in features:
                 missing_positions = list(range(feature.position, feature.position + len(feature.ref)))
-                samples_with_variants = self._sample_service.get_samples_with_variants_on_sequence(feature.sequence_name)
+                samples_with_variants = self._sample_service.get_samples_associated_with_sequence(feature.sequence_name)
                 for sample in samples_with_variants:
                     if self._sample_sequence_service.missing_in_sequence(sample_name=sample.name,
                                                                          sequence_name=feature.sequence_name,
