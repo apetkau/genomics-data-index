@@ -6,10 +6,12 @@ from storage.variant.service.MutationQueryService import MutationQueryService
 
 @pytest.fixture
 def mutation_query_service(tree_service_with_tree_stored,
-                           reference_service_with_data, sample_service, variation_service) -> MutationQueryService:
+                           reference_service_with_data, sample_service,
+                           variation_service, sample_sequence_service) -> MutationQueryService:
     return MutationQueryService(tree_service=tree_service_with_tree_stored,
                                 reference_service=reference_service_with_data,
-                                sample_service=sample_service)
+                                sample_service=sample_service,
+                                sample_sequence_service=sample_sequence_service)
 
 
 def test_find_matchesC(mutation_query_service: MutationQueryService):
@@ -61,24 +63,26 @@ def test_find_matchesAB(mutation_query_service: MutationQueryService):
 def test_find_by_features(mutation_query_service: MutationQueryService):
     matches_df = mutation_query_service.find_by_features([QueryFeatureMutation('reference:5061:G:A')])
 
-    assert ['Type', 'Feature', 'Sample Name', 'Sample ID'] == list(matches_df.columns.tolist())
+    assert ['Type', 'Feature', 'Sample Name', 'Sample ID', 'Status'] == list(matches_df.columns.tolist())
 
     assert {'SampleB'} == set(matches_df['Sample Name'].tolist())
     assert {2} == set(matches_df['Sample ID'].tolist())
     assert {'reference:5061:G:A'} == set(matches_df['Feature'].tolist())
     assert {'mutation'} == set(matches_df['Type'].tolist())
+    assert {'Present'} == set(matches_df['Status'].tolist())
     assert len(matches_df) == 1
 
 
 def test_find_by_features_2_results(mutation_query_service: MutationQueryService):
     matches_df = mutation_query_service.find_by_features([QueryFeatureMutation('reference:3063:A:ATGCAGC')])
 
-    assert ['Type', 'Feature', 'Sample Name', 'Sample ID'] == list(matches_df.columns.tolist())
+    assert ['Type', 'Feature', 'Sample Name', 'Sample ID', 'Status'] == list(matches_df.columns.tolist())
 
     assert {'SampleB', 'SampleC'} == set(matches_df['Sample Name'].tolist())
     assert {2,3} == set(matches_df['Sample ID'].tolist())
     assert {'reference:3063:A:ATGCAGC'} == set(matches_df['Feature'].tolist())
     assert {'mutation'} == set(matches_df['Type'].tolist())
+    assert {'Present'} == set(matches_df['Status'].tolist())
     assert len(matches_df) == 2
 
 
@@ -86,10 +90,36 @@ def test_find_by_features_2_features(mutation_query_service: MutationQueryServic
     matches_df = mutation_query_service.find_by_features([QueryFeatureMutation('reference:5061:G:A'),
                                                           QueryFeatureMutation('reference:3063:A:ATGCAGC')])
 
-    assert ['Type', 'Feature', 'Sample Name', 'Sample ID'] == list(matches_df.columns.tolist())
+    assert ['Type', 'Feature', 'Sample Name', 'Sample ID', 'Status'] == list(matches_df.columns.tolist())
 
     assert {'SampleB', 'SampleC'} == set(matches_df['Sample Name'].tolist())
     assert {2,3} == set(matches_df['Sample ID'].tolist())
     assert {'reference:5061:G:A', 'reference:3063:A:ATGCAGC'} == set(matches_df['Feature'].tolist())
     assert {'mutation'} == set(matches_df['Type'].tolist())
+    assert {'Present'} == set(matches_df['Status'].tolist())
     assert len(matches_df) == 3
+
+
+def test_find_by_features_missing(mutation_query_service: MutationQueryService):
+    matches_df = mutation_query_service.find_by_features([QueryFeatureMutation('reference:190:A:G')],
+                                                         include_missing=True)
+
+    assert ['Type', 'Feature', 'Sample Name', 'Sample ID', 'Status'] == list(matches_df.columns.tolist())
+
+    assert ['SampleA', 'SampleB', 'SampleC'] == matches_df['Sample Name'].tolist()
+    assert [1,2,3] == matches_df['Sample ID'].tolist()
+    assert {'reference:190:A:G'} == set(matches_df['Feature'].tolist())
+    assert {'mutation'} == set(matches_df['Type'].tolist())
+    assert ['Unknown', 'Present', 'Unknown'] == matches_df['Status'].tolist()
+    assert len(matches_df) == 3
+
+    matches_df = mutation_query_service.find_by_features([QueryFeatureMutation('reference:190:A:G')],
+                                                         include_missing=False)
+    assert ['Type', 'Feature', 'Sample Name', 'Sample ID', 'Status'] == list(matches_df.columns.tolist())
+
+    assert {'SampleB'} == set(matches_df['Sample Name'].tolist())
+    assert {2} == set(matches_df['Sample ID'].tolist())
+    assert {'reference:190:A:G'} == set(matches_df['Feature'].tolist())
+    assert {'mutation'} == set(matches_df['Type'].tolist())
+    assert {'Present'} == set(matches_df['Status'].tolist())
+    assert len(matches_df) == 1

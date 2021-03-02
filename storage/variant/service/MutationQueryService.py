@@ -7,6 +7,7 @@ from storage.variant.service.QueryService import QueryService
 from storage.variant.service.ReferenceService import ReferenceService
 from storage.variant.service.TreeService import TreeService
 from storage.variant.service.SampleService import SampleService
+from storage.variant.service.SampleSequenceService import SampleSequenceService
 
 from storage.variant.service.QueryService import QueryFeature
 
@@ -17,19 +18,42 @@ class QueryFeatureMutation(QueryFeature):
         super().__init__()
         self._spdi = spdi
 
+        seq, pos, ref, alt = self._spdi.split(':')
+        self._seq_name = seq
+        self._pos = int(pos)
+        self._ref = ref
+        self._alt = alt
+
     @property
     def spdi(self):
         return self._spdi
+
+    @property
+    def sequence_name(self):
+        return self._seq_name
+
+    @property
+    def position(self):
+        return self._pos
+
+    @property
+    def ref(self):
+        return self._ref
+
+    @property
+    def alt(self):
+        return self._alt
 
 
 class MutationQueryService(QueryService):
 
     def __init__(self, tree_service: TreeService, reference_service: ReferenceService,
-                 sample_service: SampleService):
+                 sample_service: SampleService, sample_sequence_service: SampleSequenceService):
         super().__init__()
         self._tree_service = tree_service
         self._reference_service = reference_service
         self._sample_service = sample_service
+        self._sample_sequence_service = sample_sequence_service
 
     def _find_matches_internal(self, sample_names: List[str], distance_threshold: float = None) -> pd.DataFrame:
         sample_distances = []
@@ -73,7 +97,7 @@ class MutationQueryService(QueryService):
 
         return matches_df
 
-    def _find_by_features_internal(self, features: List[QueryFeature]) -> pd.DataFrame:
+    def _find_by_features_internal(self, features: List[QueryFeature], include_missing: bool) -> pd.DataFrame:
         for feature in features:
             if not isinstance(feature, QueryFeatureMutation):
                 raise Exception(f'feature=[{feature}] is not of type QueryFeatureMutation')
@@ -84,9 +108,20 @@ class MutationQueryService(QueryService):
         data = []
         for vid in variation_samples:
             for sample in variation_samples[vid]:
-                data.append([vid, sample.name, sample.id])
+                data.append([vid, sample.name, sample.id, 'Present'])
 
-        return pd.DataFrame(data=data, columns=['Feature', 'Sample Name', 'Sample ID'])
+        if include_missing:
+            for feature in features:
+                missing_positions = list(range(feature.position, feature.position + len(feature.ref)))
+                samples_with_variants = self._sample_service.get_samples_with_variants_on_sequence(feature.sequence_name)
+                for sample in samples_with_variants:
+                    if self._sample_sequence_service.missing_in_sequence(sample_name=sample.name,
+                                                                         sequence_name=feature.sequence_name,
+                                                                         positions=missing_positions):
+                        data.append([vid, sample.name, sample.id, 'Unknown'])
+
+        return pd.DataFrame(data=data, columns=[
+            'Feature', 'Sample Name', 'Sample ID', 'Status']).sort_values('Sample Name')
 
     def _find_matches_genome_files_internal(self, sample_reads: Dict[str, List[Path]],
                                             distance_threshold: float = None) -> pd.DataFrame:

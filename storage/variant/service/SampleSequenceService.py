@@ -26,3 +26,23 @@ class SampleSequenceService:
                 sample_sequences_map[ss.sequence.sequence_name] = [ss]
 
         return sample_sequences_map
+
+    def missing_in_sequence(self, sample_name: str, sequence_name: str, positions: List[int]) -> bool:
+        """
+        Checks if any of the given positions are missing in the sequence data.
+        :param positions: The list of positions.
+        :return: True if any positions are missing, False otherwise.
+        """
+        if positions is None or len(positions) == 0:
+            return False
+
+        sample_sequence = self._connection.get_session()\
+            .query(SampleSequence)\
+            .join(Sample)\
+            .join(ReferenceSequence)\
+            .filter(Sample.name == sample_name)\
+            .filter(ReferenceSequence.sequence_name == sequence_name)\
+            .one()
+
+        core_mask = sample_sequence.core_mask
+        return not all([pos in core_mask for pos in positions])

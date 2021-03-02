@@ -23,6 +23,19 @@ class SampleService:
             .all()
         return samples
 
+    def get_samples_with_variants_on_sequence(self, sequence_name: str) -> List[Sample]:
+        """
+        Gets a list of all samples that have variants associated with the given sequence name.
+        :sequence_name: The sequence name.
+        :return: A list of Samples with variants with respect to the sequence name, empty list of no Samples.
+        """
+        samples = self._connection.get_session().query(Sample) \
+            .join(Sample.variants) \
+            .join(ReferenceSequence) \
+            .filter(ReferenceSequence.sequence_name == sequence_name) \
+            .all()
+        return samples
+
     def get_samples(self) -> List[Sample]:
         return self._connection.get_session().query(Sample).all()
 

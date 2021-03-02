@@ -68,7 +68,8 @@ def main(ctx, database_connection, seqrepo_dir, verbose):
     tree_service = TreeService(database, reference_service, alignment_service)
     mutation_query_service = MutationQueryService(tree_service=tree_service,
                                                 reference_service=reference_service,
-                                                sample_service=sample_service)
+                                                sample_service=sample_service,
+                                                sample_sequence_service=sample_sequence_service)
 
     ctx.obj['database'] = database
     ctx.obj['reference_service'] = reference_service
