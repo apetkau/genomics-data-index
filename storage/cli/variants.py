@@ -312,4 +312,4 @@ def query(ctx, name: List[str], query_type: str, include_unknown: bool, summariz
         logger.error(f'Invalid query_type=[{query_type}]')
         sys.exit(1)
 
-    match_df.to_csv(sys.stdout, sep='\t', index=False, float_format='%0.2f')
+    match_df.to_csv(sys.stdout, sep='\t', index=False, float_format='%0.4g')
