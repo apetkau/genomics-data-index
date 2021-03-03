@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import List, Dict
 
 import pandas as pd
+from pandas.api.types import CategoricalDtype
 
 from storage.variant.service.QueryService import QueryService
 from storage.variant.service.ReferenceService import ReferenceService
@@ -135,3 +136,28 @@ class MutationQueryService(QueryService):
 
     def get_data_type(self) -> str:
         return 'mutation'
+
+
+class MutationQuerySummaries:
+
+    def __init__(self):
+        pass
+
+    def find_by_features_summary(self, find_by_features_results: pd.DataFrame,
+                                 sample_counts: Dict[str, int]) -> pd.DataFrame:
+        summary_df = find_by_features_results.astype({
+            'Status': CategoricalDtype(categories=['Present', 'Absent', 'Unknown'])
+        })
+
+        summary_df = summary_df.groupby(['Feature', 'Status']).agg({'Sample Name': 'count'})
+        summary_df = summary_df.unstack().fillna(0).astype('int64')
+        summary_df.columns = list(summary_df.columns.droplevel())
+
+        summary_df['Total'] = summary_df.apply(lambda x: sample_counts[x.name], axis='columns')
+        summary_df['Absent'] = summary_df['Total'] - (summary_df['Present'] + summary_df['Unknown'])
+        summary_df['% Present'] = 100 * summary_df['Present'] / summary_df['Total']
+        summary_df['% Absent'] = 100 * summary_df['Absent'] / summary_df['Total']
+        summary_df['% Unknown'] = 100 * summary_df['Unknown'] / summary_df['Total']
+        summary_df.columns.name = None
+
+        return summary_df

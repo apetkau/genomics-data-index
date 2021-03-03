@@ -19,7 +19,7 @@ from storage.variant.io.VcfVariantsReader import VcfVariantsReader
 from storage.variant.service import DatabaseConnection, EntityExistsError
 from storage.variant.service.CoreAlignmentService import CoreAlignmentService
 from storage.variant.service.ReferenceService import ReferenceService
-from storage.variant.service.MutationQueryService import MutationQueryService, QueryFeatureMutation
+from storage.variant.service.MutationQueryService import MutationQueryService, QueryFeatureMutation, MutationQuerySummaries
 from storage.variant.service.SampleSequenceService import SampleSequenceService
 from storage.variant.service.SampleService import SampleService
 from storage.variant.service.TreeService import TreeService
@@ -298,13 +298,14 @@ def query(ctx, name: List[str], query_type: str, include_unknown: bool, summariz
         match_df = mutation_query_service.find_by_features(features, include_unknown=include_unknown)
 
         if summarize:
-            sample_counts = {}
-            for feature in features:
-                count = ctx.obj['sample_service'].count_samples_associated_with_sequence(feature.sequence_name)
-                sample_counts[feature.spdi] = count
-
-            match_df['Total Samples'] = match_df['Feature'].apply(lambda x: sample_counts[x])
-            # match_df.groupby('Feature')
+            sample_service = ctx.obj['sample_service']
+            query_summaries = MutationQuerySummaries()
+            feature_sample_counts = {
+                f.spdi: sample_service.count_samples_associated_with_sequence(f.sequence_name) for f in features
+            }
+            match_df = query_summaries.find_by_features_summary(find_by_features_results=match_df,
+                                                                sample_counts=feature_sample_counts,
+                                                                )
     else:
         logger.error(f'Invalid query_type=[{query_type}]')
         sys.exit(1)
