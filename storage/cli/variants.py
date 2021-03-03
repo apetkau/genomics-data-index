@@ -307,8 +307,9 @@ def query(ctx, name: List[str], query_type: str, include_unknown: bool, summariz
             match_df = query_summaries.find_by_features_summary(find_by_features_results=match_df,
                                                                 sample_counts=feature_sample_counts,
                                                                 )
+            match_df = match_df.reset_index()
     else:
         logger.error(f'Invalid query_type=[{query_type}]')
         sys.exit(1)
 
-    match_df.to_csv(sys.stdout, sep='\t', index=False)
+    match_df.to_csv(sys.stdout, sep='\t', index=False, float_format='%0.2f')
