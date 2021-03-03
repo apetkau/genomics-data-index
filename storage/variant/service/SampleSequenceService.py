@@ -36,12 +36,12 @@ class SampleSequenceService:
         if positions is None or len(positions) == 0:
             return False
 
-        sample_sequence = self._connection.get_session()\
-            .query(SampleSequence)\
-            .join(Sample)\
-            .join(ReferenceSequence)\
-            .filter(Sample.name == sample_name)\
-            .filter(ReferenceSequence.sequence_name == sequence_name)\
+        sample_sequence = self._connection.get_session() \
+            .query(SampleSequence) \
+            .join(Sample) \
+            .join(ReferenceSequence) \
+            .filter(Sample.name == sample_name) \
+            .filter(ReferenceSequence.sequence_name == sequence_name) \
             .one()
 
         core_mask = sample_sequence.core_mask

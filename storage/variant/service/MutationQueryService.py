@@ -4,13 +4,12 @@ from typing import List, Dict
 import pandas as pd
 from pandas.api.types import CategoricalDtype
 
+from storage.variant.service.QueryService import QueryFeature
 from storage.variant.service.QueryService import QueryService
 from storage.variant.service.ReferenceService import ReferenceService
-from storage.variant.service.TreeService import TreeService
-from storage.variant.service.SampleService import SampleService
 from storage.variant.service.SampleSequenceService import SampleSequenceService
-
-from storage.variant.service.QueryService import QueryFeature
+from storage.variant.service.SampleService import SampleService
+from storage.variant.service.TreeService import TreeService
 
 
 class QueryFeatureMutation(QueryFeature):

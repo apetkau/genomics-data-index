@@ -18,8 +18,9 @@ from storage.variant.io.SnippyVariantsReader import SnippyVariantsReader
 from storage.variant.io.VcfVariantsReader import VcfVariantsReader
 from storage.variant.service import DatabaseConnection, EntityExistsError
 from storage.variant.service.CoreAlignmentService import CoreAlignmentService
+from storage.variant.service.MutationQueryService import MutationQueryService, QueryFeatureMutation, \
+    MutationQuerySummaries
 from storage.variant.service.ReferenceService import ReferenceService
-from storage.variant.service.MutationQueryService import MutationQueryService, QueryFeatureMutation, MutationQuerySummaries
 from storage.variant.service.SampleSequenceService import SampleSequenceService
 from storage.variant.service.SampleService import SampleService
 from storage.variant.service.TreeService import TreeService
@@ -67,9 +68,9 @@ def main(ctx, database_connection, seqrepo_dir, verbose):
                                              sample_sequence_service=sample_sequence_service)
     tree_service = TreeService(database, reference_service, alignment_service)
     mutation_query_service = MutationQueryService(tree_service=tree_service,
-                                                reference_service=reference_service,
-                                                sample_service=sample_service,
-                                                sample_sequence_service=sample_sequence_service)
+                                                  reference_service=reference_service,
+                                                  sample_service=sample_service,
+                                                  sample_sequence_service=sample_sequence_service)
 
     ctx.obj['database'] = database
     ctx.obj['reference_service'] = reference_service

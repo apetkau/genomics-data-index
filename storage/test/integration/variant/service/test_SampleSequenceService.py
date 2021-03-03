@@ -10,7 +10,7 @@ def test_sample_sequence(sample_sequence_service):
 
 def test_missing_in_sequence(sample_sequence_service):
     assert sample_sequence_service.missing_in_sequence('SampleA', 'reference', positions=[1])
-    assert sample_sequence_service.missing_in_sequence('SampleA', 'reference', positions=[1,2])
+    assert sample_sequence_service.missing_in_sequence('SampleA', 'reference', positions=[1, 2])
 
     assert not sample_sequence_service.missing_in_sequence('SampleA', 'reference', positions=[500])
     assert sample_sequence_service.missing_in_sequence('SampleA', 'reference', positions=[1, 500])

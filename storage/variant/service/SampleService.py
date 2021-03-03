@@ -1,6 +1,6 @@
 from typing import List, Dict
 
-from storage.variant.model import Sample, Reference, ReferenceSequence, VariationAllele, SampleSequence
+from storage.variant.model import Sample, Reference, ReferenceSequence, VariationAllele
 from storage.variant.service import DatabaseConnection
 
 
