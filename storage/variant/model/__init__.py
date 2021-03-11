@@ -133,6 +133,16 @@ class Sample(Base):
 
     variants = relationship('VariationAllele', secondary=sample_variation_association, back_populates='samples')
     sample_sequences = relationship('SampleSequence', back_populates='sample')
+    sample_kmer_index = relationship('SampleKmerIndex', back_populates='sample')
 
     def __repr__(self):
         return f'<Sample(id={self.id}, name={self.name})>'
+
+
+class SampleKmerIndex(Base):
+    __tablename__ = 'sample_kmer_index'
+    sample_id = Column(Integer, ForeignKey('sample.id'), primary_key=True)
+    kmer_index_path = Column(String(255))
+
+    sample = relationship('Sample', back_populates='sample_sequences')
+    sample_kmer_index = relationship('Sample', back_populates='sample_kmer_index')

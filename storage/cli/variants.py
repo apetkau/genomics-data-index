@@ -26,6 +26,7 @@ from storage.variant.service.SampleSequenceService import SampleSequenceService
 from storage.variant.service.SampleService import SampleService
 from storage.variant.service.TreeService import TreeService
 from storage.variant.service.VariationService import VariationService
+from storage.variant.index.KmerIndexer import KmerIndexerSourmash, KmerIndexManager
 from storage.variant.util import get_genome_name, parse_sequence_file
 
 logger = logging.getLogger('storage')
@@ -172,6 +173,25 @@ def load_vcf(ctx, vcf_fofns: Path, reference_file: Path, build_tree: bool, align
 
     load_variants_common(ctx=ctx, variants_reader=variants_reader, reference_file=reference_file,
                          input=Path(vcf_fofns), build_tree=build_tree, align_type=align_type, threads=threads)
+
+
+@main.command(name='load-kmer')
+@click.pass_context
+@click.argument('kmer_fofns', type=click.Path(exists=True))
+def load_kmer(ctx, kmer_fofns):
+    filesystem_storage = ctx.obj['filesystem_storage']
+    index_manager = KmerIndexManager(filesystem_storage.kmer_dir)
+
+    files_df = pd.read_csv(kmer_fofns, sep='\t')
+    for index, row in files_df.iterrows():
+        sample_name = row['Sample']
+        genome_files = row['Files'].split(',')
+        index_file = index_manager.index_genome_files(sample_name, genome_files, KmerIndexerSourmash(
+            k=[21, 31, 51],
+            scaled=1000,
+            abund=True,
+        ))
+        print(str(index_file))
 
 
 LIST_TYPES = ['genomes', 'samples']
