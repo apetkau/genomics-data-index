@@ -66,6 +66,15 @@ class SampleService:
             .all()
         return [sample.name for sample in samples]
 
+    def get_sample(self, sample_name: str) -> Sample:
+        return self._connection.get_session().query(Sample)\
+            .filter(Sample.name == sample_name)\
+            .one()
+
+    def exists(self, sample_name: str):
+        return self._connection.get_session().query(Sample)\
+            .filter(Sample.name == sample_name).count() > 0
+
     def find_samples_by_variation_ids(self, variation_ids: List[str]) -> Dict[str, List[Sample]]:
         variants = self._connection.get_session().query(VariationAllele) \
             .filter(VariationAllele.id.in_(variation_ids)) \

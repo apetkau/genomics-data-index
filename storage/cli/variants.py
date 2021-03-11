@@ -26,6 +26,7 @@ from storage.variant.service.SampleSequenceService import SampleSequenceService
 from storage.variant.service.SampleService import SampleService
 from storage.variant.service.TreeService import TreeService
 from storage.variant.service.VariationService import VariationService
+from storage.variant.service.KmerService import KmerService
 from storage.variant.index.KmerIndexer import KmerIndexerSourmash, KmerIndexManager
 from storage.variant.util import get_genome_name, parse_sequence_file
 
@@ -75,8 +76,12 @@ def main(ctx, database_connection, database_dir, verbose):
                                                   sample_service=sample_service,
                                                   sample_sequence_service=sample_sequence_service)
 
+    kmer_service = KmerService(database_connection=database,
+                               sample_service=sample_service)
+
     ctx.obj['database'] = database
     ctx.obj['filesystem_storage'] = filesystem_storage
+    ctx.obj['kmer_service'] = kmer_service
     ctx.obj['reference_service'] = reference_service
     ctx.obj['variation_service'] = variation_service
     ctx.obj['alignment_service'] = alignment_service
@@ -180,18 +185,28 @@ def load_vcf(ctx, vcf_fofns: Path, reference_file: Path, build_tree: bool, align
 @click.argument('kmer_fofns', type=click.Path(exists=True))
 def load_kmer(ctx, kmer_fofns):
     filesystem_storage = ctx.obj['filesystem_storage']
+    kmer_service = ctx.obj['kmer_service']
     index_manager = KmerIndexManager(filesystem_storage.kmer_dir)
 
     files_df = pd.read_csv(kmer_fofns, sep='\t')
+    index_count = 0
     for index, row in files_df.iterrows():
         sample_name = row['Sample']
-        genome_files = row['Files'].split(',')
-        index_file = index_manager.index_genome_files(sample_name, genome_files, KmerIndexerSourmash(
-            k=[21, 31, 51],
-            scaled=1000,
-            abund=True,
-        ))
-        print(str(index_file))
+        if kmer_service.has_kmer_index(sample_name):
+            logger.warning(f'Sample [{sample_name}] already has kmer index, will not regenerate')
+        else:
+            genome_files = row['Files'].split(',')
+            index_file = index_manager.index_genome_files(sample_name, genome_files, KmerIndexerSourmash(
+                # k=[21, 31, 51],
+                k=31,
+                scaled=5000,
+                abund=False,
+            ))
+            kmer_service.insert_kmer_index(sample_name=sample_name,
+                                           kmer_index_path=index_file)
+            index_count += 1
+
+    print(f'Generated indexes for {index_count} samples')
 
 
 LIST_TYPES = ['genomes', 'samples']

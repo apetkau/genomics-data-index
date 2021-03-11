@@ -6,6 +6,9 @@ class FilesystemStorage:
     def __init__(self, root_dir: Path):
         self._root_dir = root_dir
 
+        if not root_dir.exists():
+            os.mkdir(root_dir)
+
     @property
     def reference_dir(self):
         ref_dir = self._root_dir / 'reference'
