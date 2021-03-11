@@ -13,6 +13,7 @@ import pandas as pd
 from Bio import AlignIO
 
 from storage.cli import yaml_config_provider
+from storage.FilesystemStorage import FilesystemStorage
 from storage.variant.CoreBitMask import CoreBitMask
 from storage.variant.io.SnippyVariantsReader import SnippyVariantsReader
 from storage.variant.io.VcfVariantsReader import VcfVariantsReader
@@ -34,13 +35,13 @@ num_cores = multiprocessing.cpu_count()
 @click.group()
 @click.pass_context
 @click.option('--database-connection', help='A connection string for the database.')
-@click.option('--seqrepo-dir', help='The root directory for the seqrepo reference storage.',
+@click.option('--database-dir', help='The root directory for the database files.',
               type=click.Path())
 @click.option('--verbose/--no-verbose', default=False, help='Turn up verbosity of command')
 @click_config_file.configuration_option(provider=yaml_config_provider,
                                         config_file_name='config.yaml',
                                         implicit=True)
-def main(ctx, database_connection, seqrepo_dir, verbose):
+def main(ctx, database_connection, database_dir, verbose):
     ctx.ensure_object(dict)
 
     if verbose:
@@ -53,9 +54,10 @@ def main(ctx, database_connection, seqrepo_dir, verbose):
 
     logger.info(f'Connecting to database {database_connection}')
     database = DatabaseConnection(database_connection)
+    filesystem_storage = FilesystemStorage(Path(database_dir))
 
-    logger.info(f'Use seqrepo directory {seqrepo_dir}')
-    reference_service = ReferenceService(database, seqrepo_dir)
+    logger.info(f'Use database directory {database_dir}')
+    reference_service = ReferenceService(database, filesystem_storage.reference_dir)
 
     sample_service = SampleService(database)
     sample_sequence_service = SampleSequenceService(database)
@@ -73,6 +75,7 @@ def main(ctx, database_connection, seqrepo_dir, verbose):
                                                   sample_sequence_service=sample_sequence_service)
 
     ctx.obj['database'] = database
+    ctx.obj['filesystem_storage'] = filesystem_storage
     ctx.obj['reference_service'] = reference_service
     ctx.obj['variation_service'] = variation_service
     ctx.obj['alignment_service'] = alignment_service
