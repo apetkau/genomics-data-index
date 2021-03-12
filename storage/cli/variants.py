@@ -209,7 +209,7 @@ def load_kmer(ctx, kmer_fofns):
     print(f'Generated indexes for {index_count} samples')
 
 
-LIST_TYPES = ['genomes', 'samples']
+LIST_TYPES = ['genome', 'sample', 'reference']
 
 
 @main.command(name='list')
@@ -217,14 +217,38 @@ LIST_TYPES = ['genomes', 'samples']
 @click.option('--type', 'data_type', required=True, help='Type of data to list',
               type=click.Choice(LIST_TYPES))
 def list_data(ctx, data_type):
-    if data_type == 'genomes':
-        items = {genome.name for genome in ctx.obj['reference_service'].get_reference_genomes()}
-    elif data_type == 'samples':
-        items = {sample.name for sample in ctx.obj['sample_service'].get_samples()}
+    if data_type == 'genome' or data_type == 'reference':
+        items = [genome.name for genome in ctx.obj['reference_service'].get_reference_genomes()]
+    elif data_type == 'sample':
+        items = [sample.name for sample in ctx.obj['sample_service'].get_samples()]
     else:
         raise Exception(f'Unknown data_type=[{data_type}]')
 
     click.echo('\n'.join(items))
+
+
+EXPORT_TYPES = ['tree']
+
+
+@main.command(name='export')
+@click.pass_context
+@click.argument('name', nargs=-1)
+@click.option('--type', 'data_type', required=True, help='Type of data to export',
+              type=click.Choice(EXPORT_TYPES))
+@click.option('--ascii/--no-ascii', help='Export as ASCII figure')
+def export(ctx, name: List[str], data_type, ascii: bool):
+    if data_type == 'tree':
+        if len(name) == 0:
+            logger.warning('No reference genome names passed, will not export tree')
+
+        for ref_name in name:
+            reference = ctx.obj['reference_service'].find_reference_genome(ref_name)
+            if ascii:
+                click.echo(str(reference.tree))
+            else:
+                click.echo(reference.tree.write())
+    else:
+        raise Exception(f'Unknown data_type=[{data_type}]')
 
 
 @main.command()
