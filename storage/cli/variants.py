@@ -353,7 +353,6 @@ def query(ctx, name: List[str], query_type: str, include_unknown: bool, summariz
     match_df = None
     if query_type == 'sample':
         match_df = mutation_query_service.find_matches(samples=name)
-        print('# Note: I don\'t know if the Distance (subs) column is calculated correctly')
         if summarize:
             logger.warning('--summarize is not implemented for --type=sample')
     elif query_type == 'mutation':
