@@ -5,10 +5,10 @@ from typing import List, Dict
 
 import pandas as pd
 import vcf
-from Bio import SeqIO
 
 from storage.variant.CoreBitMask import CoreBitMask
 from storage.variant.io import VariantsReader
+from storage.variant.util import parse_sequence_file
 
 logger = logging.getLogger(__name__)
 
@@ -124,7 +124,8 @@ class VcfVariantsReader(VariantsReader):
 
     def read_core_masks_from_file(self, file: Path) -> Dict[str, CoreBitMask]:
         sequence_masks = {}
-        for record in SeqIO.parse(file, 'fasta'):
+        name, records = parse_sequence_file(file)
+        for record in records:
             if record.id not in sequence_masks:
                 sequence_masks[record.id] = CoreBitMask.from_sequence(sequence=record.seq)
 
