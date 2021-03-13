@@ -90,7 +90,8 @@ def main(ctx, database_connection, database_dir, verbose):
     ctx.obj['mutation_query_service'] = mutation_query_service
 
 
-def load_variants_common(ctx, variants_reader, reference_file, input, build_tree, align_type, threads):
+def load_variants_common(ctx, variants_reader, reference_file, input, build_tree, align_type, threads,
+                         extra_tree_params: str):
     reference_service = ctx.obj['reference_service']
     variation_service = ctx.obj['variation_service']
     sample_service = ctx.obj['sample_service']
@@ -118,7 +119,8 @@ def load_variants_common(ctx, variants_reader, reference_file, input, build_tree
         if build_tree:
             tree_service.rebuild_tree(reference_name=reference_name,
                                       align_type=align_type,
-                                      num_cores=threads)
+                                      num_cores=threads,
+                                      extra_params=extra_tree_params)
             click.echo('Finished building tree of all samples')
 
 
@@ -131,7 +133,10 @@ def load_variants_common(ctx, variants_reader, reference_file, input, build_tree
               type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
 @click.option('--threads', help='Threads for building tree', default=1,
               type=click.IntRange(min=1, max=num_cores))
-def load_snippy(ctx, snippy_dir: Path, reference_file: Path, build_tree: bool, align_type: str, threads: int):
+@click.option('--extra-tree-params', help='Extra parameters to tree-building software',
+              default=None)
+def load_snippy(ctx, snippy_dir: Path, reference_file: Path, build_tree: bool, align_type: str, threads: int,
+                extra_tree_params: str):
     snippy_dir = Path(snippy_dir)
     reference_file = Path(reference_file)
     click.echo(f'Loading {snippy_dir}')
@@ -139,7 +144,8 @@ def load_snippy(ctx, snippy_dir: Path, reference_file: Path, build_tree: bool, a
     variants_reader = SnippyVariantsReader(sample_dirs)
 
     load_variants_common(ctx=ctx, variants_reader=variants_reader, reference_file=reference_file,
-                         input=snippy_dir, build_tree=build_tree, align_type=align_type, threads=threads)
+                         input=snippy_dir, build_tree=build_tree, align_type=align_type, threads=threads,
+                         extra_tree_params=extra_tree_params)
 
 
 @main.command(name='load-vcf')
@@ -151,7 +157,10 @@ def load_snippy(ctx, snippy_dir: Path, reference_file: Path, build_tree: bool, a
               type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
 @click.option('--threads', help='Threads for building tree', default=1,
               type=click.IntRange(min=1, max=num_cores))
-def load_vcf(ctx, vcf_fofns: Path, reference_file: Path, build_tree: bool, align_type: str, threads: int):
+@click.option('--extra-tree-params', help='Extra parameters to tree-building software',
+              default=None)
+def load_vcf(ctx, vcf_fofns: Path, reference_file: Path, build_tree: bool, align_type: str, threads: int,
+             extra_tree_params: str):
     reference_file = Path(reference_file)
 
     # Generate empty masks
@@ -177,7 +186,8 @@ def load_vcf(ctx, vcf_fofns: Path, reference_file: Path, build_tree: bool, align
                                         empty_core_mask=empty_core_mask)
 
     load_variants_common(ctx=ctx, variants_reader=variants_reader, reference_file=reference_file,
-                         input=Path(vcf_fofns), build_tree=build_tree, align_type=align_type, threads=threads)
+                         input=Path(vcf_fofns), build_tree=build_tree, align_type=align_type, threads=threads,
+                         extra_tree_params=extra_tree_params)
 
 
 @main.command(name='load-kmer')
