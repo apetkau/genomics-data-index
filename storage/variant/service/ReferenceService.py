@@ -7,7 +7,7 @@ from biocommons.seqrepo import SeqRepo
 from ete3 import Tree
 
 from storage.variant.model import Reference
-from storage.variant.model import ReferenceSequence, SampleSequence, Sample
+from storage.variant.model import ReferenceSequence, SampleNucleotideVariation, Sample
 from storage.variant.service import DatabaseConnection, EntityExistsError
 from storage.variant.util import parse_sequence_file
 
@@ -80,8 +80,7 @@ class ReferenceService:
 
     def find_references_for_sample(self, sample_name: str) -> List[Reference]:
         return self._connection.get_session().query(Reference) \
-            .join(ReferenceSequence) \
-            .join(SampleSequence) \
+            .join(SampleNucleotideVariation) \
             .join(Sample) \
             .filter(Sample.name == sample_name) \
             .all()

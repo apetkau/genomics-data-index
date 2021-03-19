@@ -1,5 +1,6 @@
+from typing import Dict, List, Any
 import logging
-from typing import Dict, List
+from pathlib import Path
 
 import pandas as pd
 
@@ -79,6 +80,33 @@ class VariationService:
                                  self._sample_service.get_samples_with_variants(reference_name)}
         samples_from_df = set(var_df['SAMPLE'].tolist())
         return len(samples_with_variants.intersection(samples_from_df)) != 0
+
+    # def insert_variant_files(self, variant_data: Dict[str, Dict[str, Any]]):
+    #     """
+    #     Inserts nucleotide variation files from the given data stucture.
+    #     :param reference_name: The name of the reference genome.
+    #     :param variant_data: A dictionary mapping a sample name to the file path and core bitmask.
+    #     :return: None
+    #     """
+    #     for sample_name in variant_data:
+    #
+    #
+    #
+    #     ref_contigs = self._reference_service.get_reference_contigs(reference_name)
+    #     file_variants = self._create_file_variants(var_df, ref_contigs)
+    #
+    #     for s in file_variants:
+    #         ref_objects = {ref_contigs[v.sequence.sequence_name] for v in file_variants[s]}
+    #         sample_core_masks = core_masks[s]
+    #         sample_sequences = []
+    #         for r in ref_objects:
+    #             sample_sequence = SampleSequence(sequence=r)
+    #             sample_sequence.core_mask = sample_core_masks[r.sequence_name]
+    #             sample_sequences.append(sample_sequence)
+    #         sample = Sample(name=s, variants=file_variants[s], sample_sequences=sample_sequences)
+    #         self._connection.get_session().add(sample)
+    #
+    #     self._connection.get_session().commit()
 
     def insert_variants(self, var_df: pd.DataFrame, reference_name: str,
                         core_masks: Dict[str, Dict[str, CoreBitMask]]) -> None:
