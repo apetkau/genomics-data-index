@@ -1,6 +1,6 @@
 from typing import List, Dict
 
-from storage.variant.model import Sample, Reference, ReferenceSequence, VariationAllele
+from storage.variant.model import Sample, Reference, ReferenceSequence
 from storage.variant.service import DatabaseConnection
 
 
@@ -15,13 +15,14 @@ class SampleService:
         :reference_name: The reference genome name.
         :return: A list of Samples with variants with respect to the reference genome name, empty list of no Samples.
         """
-        samples = self._connection.get_session().query(Sample) \
-            .join(Sample.variants) \
-            .join(ReferenceSequence) \
-            .join(Reference) \
-            .filter(Reference.name == reference_name) \
-            .all()
-        return samples
+        raise Exception('Not implemented')
+        # samples = self._connection.get_session().query(Sample) \
+        #     .join(Sample.variants) \
+        #     .join(ReferenceSequence) \
+        #     .join(Reference) \
+        #     .filter(Reference.name == reference_name) \
+        #     .all()
+        # return samples
 
     def get_samples_with_variants_on_sequence(self, sequence_name: str) -> List[Sample]:
         """
@@ -29,28 +30,29 @@ class SampleService:
         :sequence_name: The sequence name.
         :return: A list of Samples with variants with respect to the sequence name, empty list of no Samples.
         """
+        raise Exception('Not implemented')
+        # samples = self._connection.get_session().query(Sample) \
+        #     .join(Sample.variants) \
+        #     .join(ReferenceSequence) \
+        #     .filter(ReferenceSequence.sequence_name == sequence_name) \
+        #     .all()
+        # return samples
+
+    def get_samples_associated_with_reference(self, reference_name: str) -> List[Sample]:
+        """
+        Gets a list of all samples associated with a reference name.
+        :reference_name: The reference name.
+        :return: A list of Samples associated with the reference name or an empty list if no Samples.
+        """
         samples = self._connection.get_session().query(Sample) \
-            .join(Sample.variants) \
-            .join(ReferenceSequence) \
-            .filter(ReferenceSequence.sequence_name == sequence_name) \
+            .join(Sample.sample_nucleotide_variation) \
+            .join(Reference) \
+            .filter(ReferenceSequence.name == reference_name) \
             .all()
         return samples
 
-    def get_samples_associated_with_sequence(self, sequence_name: str) -> List[Sample]:
-        """
-        Gets a list of all samples associated with a sequence name (whether they have variants or not).
-        :sequence_name: The sequence name.
-        :return: A list of Samples associated with the sequence name, empty list of no Samples.
-        """
-        samples = self._connection.get_session().query(Sample) \
-            .join(Sample.sample_sequences) \
-            .join(ReferenceSequence) \
-            .filter(ReferenceSequence.sequence_name == sequence_name) \
-            .all()
-        return samples
-
-    def count_samples_associated_with_sequence(self, sequence_name: str) -> int:
-        return len(self.get_samples_associated_with_sequence(sequence_name))
+    def count_samples_associated_with_reference(self, reference_name: str) -> int:
+        return len(self.get_samples_associated_with_reference(reference_name))
 
     def get_samples(self) -> List[Sample]:
         return self._connection.get_session().query(Sample).all()
@@ -76,8 +78,9 @@ class SampleService:
             .filter(Sample.name == sample_name).count() > 0
 
     def find_samples_by_variation_ids(self, variation_ids: List[str]) -> Dict[str, List[Sample]]:
-        variants = self._connection.get_session().query(VariationAllele) \
-            .filter(VariationAllele.id.in_(variation_ids)) \
-            .all()
-
-        return {v.id: v.samples for v in variants}
+        raise Exception('Not implemented')
+        # variants = self._connection.get_session().query(VariationAllele) \
+        #     .filter(VariationAllele.id.in_(variation_ids)) \
+        #     .all()
+        #
+        # return {v.id: v.samples for v in variants}

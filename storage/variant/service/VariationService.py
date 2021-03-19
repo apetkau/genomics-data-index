@@ -5,8 +5,9 @@ from pathlib import Path
 import pandas as pd
 
 from storage.variant.CoreBitMask import CoreBitMask
+from storage.variant.io import VariantsReader
 from storage.variant.io import check_variants_table_columns
-from storage.variant.model import ReferenceSequence, VariationAllele, Sample, SampleSequence
+from storage.variant.model import ReferenceSequence, Sample, SampleNucleotideVariation
 from storage.variant.service import DatabaseConnection
 from storage.variant.service import EntityExistsError
 from storage.variant.service.ReferenceService import ReferenceService
@@ -23,51 +24,53 @@ class VariationService:
         self._reference_service = reference_service
         self._sample_service = sample_service
 
-    def get_variants(self, sequence_name: str, type: str = 'snp') -> Dict[int, Dict[str, VariationAllele]]:
-        variants = self._connection.get_session().query(VariationAllele) \
-            .join(ReferenceSequence) \
-            .filter(ReferenceSequence.sequence_name == sequence_name) \
-            .filter(VariationAllele.var_type == type) \
-            .order_by(VariationAllele.position) \
-            .all()
-
-        variants_dict = {}
-
-        for variant in variants:
-            if variant.position not in variants_dict:
-                variants_dict[variant.position] = {}
-            for sample in variant.samples:
-                variants_dict[variant.position][sample.name] = variant
-
-        return variants_dict
+    def get_variants(self, sequence_name: str, type: str = 'snp') -> Dict[int, Dict[str, Any]]:
+        raise Exception('Not implemented')
+        # variants = self._connection.get_session().query(VariationAllele) \
+        #     .join(ReferenceSequence) \
+        #     .filter(ReferenceSequence.sequence_name == sequence_name) \
+        #     .filter(VariationAllele.var_type == type) \
+        #     .order_by(VariationAllele.position) \
+        #     .all()
+        #
+        # variants_dict = {}
+        #
+        # for variant in variants:
+        #     if variant.position not in variants_dict:
+        #         variants_dict[variant.position] = {}
+        #     for sample in variant.samples:
+        #         variants_dict[variant.position][sample.name] = variant
+        #
+        # return variants_dict
 
     def _create_file_variants(self, var_df: pd.DataFrame, ref_contigs: Dict[str, ReferenceSequence]) -> Dict[
-        str, List[VariationAllele]]:
-        variant_table = {}
-        file_variants = {}
-        for row in var_df.iterrows():
-            sample_name = row[1]['SAMPLE']
-
-            ref_contig = ref_contigs[row[1]['CHROM']]
-            variant_id = VariationAllele.spdi(sequence_name=ref_contig.sequence_name,
-                                              position=row[1]['POS'],
-                                              ref=row[1]['REF'],
-                                              alt=row[1]['ALT']
-                                              )
-
-            if variant_id not in variant_table:
-                variant = VariationAllele(sequence=ref_contig, position=row[1]['POS'],
-                                          ref=row[1]['REF'], alt=row[1]['ALT'], var_type=row[1]['TYPE'])
-                variant_table[variant.id] = variant
-            else:
-                variant = variant_table[variant_id]
-
-            if sample_name not in file_variants:
-                file_variants[sample_name] = []
-
-            file_variants[sample_name].append(variant)
-
-        return file_variants
+        str, List[Any]]:
+        raise Exception('Not implemented')
+        # variant_table = {}
+        # file_variants = {}
+        # for row in var_df.iterrows():
+        #     sample_name = row[1]['SAMPLE']
+        #
+        #     ref_contig = ref_contigs[row[1]['CHROM']]
+        #     variant_id = VariationAllele.spdi(sequence_name=ref_contig.sequence_name,
+        #                                       position=row[1]['POS'],
+        #                                       ref=row[1]['REF'],
+        #                                       alt=row[1]['ALT']
+        #                                       )
+        #
+        #     if variant_id not in variant_table:
+        #         variant = VariationAllele(sequence=ref_contig, position=row[1]['POS'],
+        #                                   ref=row[1]['REF'], alt=row[1]['ALT'], var_type=row[1]['TYPE'])
+        #         variant_table[variant.id] = variant
+        #     else:
+        #         variant = variant_table[variant_id]
+        #
+        #     if sample_name not in file_variants:
+        #         file_variants[sample_name] = []
+        #
+        #     file_variants[sample_name].append(variant)
+        #
+        # return file_variants
 
     def check_samples_have_variants(self, var_df: pd.DataFrame, reference_name: str) -> bool:
         """
@@ -108,26 +111,34 @@ class VariationService:
     #
     #     self._connection.get_session().commit()
 
-    def insert_variants(self, var_df: pd.DataFrame, reference_name: str,
-                        core_masks: Dict[str, Dict[str, CoreBitMask]]) -> None:
-        check_variants_table_columns(var_df)
-        if self.check_samples_have_variants(var_df, reference_name):
-            raise EntityExistsError(f'Passed samples already have variants for reference genome [{reference_name}], '
-                                    f'will not insert any new variants')
-
-        ref_contigs = self._reference_service.get_reference_contigs(reference_name)
-        file_variants = self._create_file_variants(var_df, ref_contigs)
-
-        for s in file_variants:
-            ref_objects = {ref_contigs[v.sequence.sequence_name] for v in file_variants[s]}
-            sample_core_masks = core_masks[s]
-            sample_sequences = []
-            for r in ref_objects:
-                sample_sequence = SampleSequence(sequence=r)
-                sample_sequence.core_mask = sample_core_masks[r.sequence_name]
-                sample_sequences.append(sample_sequence)
-            sample = Sample(name=s, variants=file_variants[s], sample_sequences=sample_sequences)
+    def insert_variants(self, reference_name: str, variants_reader: VariantsReader) -> None:
+        # check_variants_table_columns(var_df)
+        # if self.check_samples_have_variants(var_df, reference_name):
+        #     raise EntityExistsError(f'Passed samples already have variants for reference genome [{reference_name}], '
+        #                             f'will not insert any new variants')
+        reference = self._reference_service.find_reference_genome(reference_name)
+        sample_variant_files = variants_reader.sample_variant_files()
+        for sample_name in sample_variant_files:
+            variant_file = sample_variant_files[sample_name]
+            sample_nucleotide_variation = SampleNucleotideVariation(reference=reference)
+            sample_nucleotide_variation.nucleotide_variants_file = variant_file
+            sample = Sample(name=sample_name, sample_nucleotide_variation=[sample_nucleotide_variation])
             self._connection.get_session().add(sample)
+        #
+        #
+        # ref_contigs = self._reference_service.get_reference_contigs(reference_name)
+        # file_variants = self._create_file_variants(var_df, ref_contigs)
+        #
+        # for s in file_variants:
+        #     ref_objects = {ref_contigs[v.sequence.sequence_name] for v in file_variants[s]}
+        #     sample_core_masks = core_masks[s]
+        #     sample_sequences = []
+        #     for r in ref_objects:
+        #         sample_sequence = SampleSequence(sequence=r)
+        #         sample_sequence.core_mask = sample_core_masks[r.sequence_name]
+        #         sample_sequences.append(sample_sequence)
+        #     sample = Sample(name=s, variants=file_variants[s], sample_sequences=sample_sequences)
+        #     self._connection.get_session().add(sample)
 
         self._connection.get_session().commit()
 

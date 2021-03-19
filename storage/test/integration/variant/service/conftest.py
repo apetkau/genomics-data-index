@@ -9,11 +9,11 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 from storage.test.integration.variant import sample_dirs, reference_file
 from storage.variant.service import DatabaseConnection
 from storage.variant.service.ReferenceService import ReferenceService
-# from storage.variant.service.VariationService import VariationService
+from storage.variant.service.VariationService import VariationService
 # from storage.variant.service.CoreAlignmentService import CoreAlignmentService
-# from storage.variant.io.SnippyVariantsReader import SnippyVariantsReader
+from storage.variant.io.SnippyVariantsReader import SnippyVariantsReader
 # from storage.variant.service.SampleSequenceService import SampleSequenceService
-# from storage.variant.service.SampleService import SampleService
+from storage.variant.service.SampleService import SampleService
 # from storage.variant.service.TreeService import TreeService
 
 
@@ -28,10 +28,10 @@ def reference_service(database) -> ReferenceService:
     reference_service = ReferenceService(database, seq_repo_root)
     return reference_service
 
-#
-# @pytest.fixture
-# def snippy_variants_reader() -> SnippyVariantsReader:
-#     return SnippyVariantsReader(sample_dirs)
+
+@pytest.fixture
+def snippy_variants_reader() -> SnippyVariantsReader:
+    return SnippyVariantsReader(sample_dirs)
 
 
 @pytest.fixture
@@ -40,26 +40,22 @@ def reference_service_with_data(reference_service) -> ReferenceService:
     return reference_service
 
 
-# @pytest.fixture
-# def sample_service(database):
-#     return SampleService(database)
-#
-#
-# @pytest.fixture
-# def variation_service(database, reference_service_with_data,
-#                       snippy_variants_reader, sample_service) -> VariationService:
-#     var_df = snippy_variants_reader.get_variants_table()
-#     core_masks = snippy_variants_reader.get_core_masks()
-#
-#     var_service = VariationService(database_connection=database,
-#                                    reference_service=reference_service_with_data,
-#                                    sample_service=sample_service)
-#     var_service.insert_variants(var_df=var_df,
-#                                 reference_name='genome',
-#                                 core_masks=core_masks)
-#     return var_service
-#
-#
+@pytest.fixture
+def sample_service(database):
+    return SampleService(database)
+
+
+@pytest.fixture
+def variation_service(database, reference_service_with_data,
+                      snippy_variants_reader, sample_service) -> VariationService:
+    var_service = VariationService(database_connection=database,
+                                   reference_service=reference_service_with_data,
+                                   sample_service=sample_service)
+    var_service.insert_variants(reference_name='genome',
+                                variants_reader=snippy_variants_reader)
+    return var_service
+
+
 # @pytest.fixture
 # def sample_sequence_service(database, variation_service):
 #     return SampleSequenceService(database)

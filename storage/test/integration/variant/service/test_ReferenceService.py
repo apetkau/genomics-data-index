@@ -82,7 +82,6 @@ def test_update_tree(database, reference_service, example_tree):
     assert 1000 == reference_genome.tree_alignment_length
 
 
-@pytest.mark.skip
 def test_find_references_for_sample(reference_service_with_data, variation_service):
     found_references = reference_service_with_data.find_references_for_sample('SampleA')
     assert len(found_references) == 1
@@ -97,7 +96,6 @@ def test_find_references_for_sample(reference_service_with_data, variation_servi
     assert 'genome' == found_references[0].name
 
 
-@pytest.mark.skip
 def test_find_references_for_sample_not_exist(reference_service_with_data, variation_service):
     found_references = reference_service_with_data.find_references_for_sample('not_exist')
     assert len(found_references) == 0

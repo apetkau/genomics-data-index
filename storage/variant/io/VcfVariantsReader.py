@@ -48,6 +48,9 @@ class VcfVariantsReader(VariantsReader):
     def _drop_extra_columns(self, vcf_df: pd.DataFrame) -> pd.DataFrame:
         return vcf_df
 
+    def sample_variant_files(self) -> Dict[str, Path]:
+        return self._sample_vcf_map
+
     def read_vcf(self, file: Path, sample_name: str) -> pd.DataFrame:
         reader = vcf.Reader(filename=str(file))
         df = pd.DataFrame([vars(r) for r in reader])

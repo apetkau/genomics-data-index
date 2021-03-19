@@ -1,3 +1,4 @@
+from pathlib import Path
 from ete3 import Tree
 from sqlalchemy import Column, Integer, String, ForeignKey, Table, LargeBinary, UnicodeText
 from sqlalchemy.ext.declarative import declarative_base
@@ -56,8 +57,22 @@ class SampleNucleotideVariation(Base):
     __tablename__ = 'sample_nucleotide_variation'
     sample_id = Column(Integer, ForeignKey('sample.id'), primary_key=True)
     reference_id = Column(Integer, ForeignKey('reference.id'), primary_key=True)
-    consensus_file = Column(String(255))
-    nucleotide_variants_file = Column(String(255))
+    _consensus_file = Column(String(255))
+    _nucleotide_variants_file = Column('nucleotide_variants_file', String(255))
+
+    @hybrid_property
+    def nucleotide_variants_file(self) -> Path:
+        if self._nucleotide_variants_file is None:
+            raise Exception('Empty _nucleotide_variants_file')
+        else:
+            return Path(self._nucleotide_variants_file)
+
+    @nucleotide_variants_file.setter
+    def nucleotide_variants_file(self, file: Path) -> None:
+        if file is None:
+            self._nucleotide_variants_file = None
+        else:
+            self._nucleotide_variants_file = str(file)
 
     sample = relationship('Sample', back_populates='sample_nucleotide_variation')
     reference = relationship('Reference', back_populates='sample_nucleotide_variation')
