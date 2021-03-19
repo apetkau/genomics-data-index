@@ -1,6 +1,7 @@
 from typing import Dict, List, Any
 import logging
 from pathlib import Path
+import shutil
 
 import pandas as pd
 
@@ -121,10 +122,11 @@ class VariationService:
         sample_variant_files = variants_reader.sample_variant_files()
         for sample_name in sample_variant_files:
             variant_file = sample_variant_files[sample_name]
+            sample = Sample(name=sample_name)
             sample_nucleotide_variation = SampleNucleotideVariation(reference=reference)
-            sample_nucleotide_variation.nucleotide_variants_file = variant_file
-            sample = Sample(name=sample_name, sample_nucleotide_variation=[sample_nucleotide_variation])
-            self._connection.get_session().add(sample)
+            sample_nucleotide_variation.nucleotide_variants_file = self._save_variation_file(variant_file, sample)
+            sample_nucleotide_variation.sample = sample
+            self._connection.get_session().add(sample_nucleotide_variation)
         #
         #
         # ref_contigs = self._reference_service.get_reference_contigs(reference_name)
@@ -142,6 +144,14 @@ class VariationService:
         #     self._connection.get_session().add(sample)
 
         self._connection.get_session().commit()
+
+    def _save_variation_file(self, original_file: Path, sample: Sample) -> Path:
+        new_file = self._variation_dir / f'{sample.name}.vcf.gz'
+        if new_file.exists():
+            raise Exception(f'File {new_file} already exists')
+
+        shutil.copyfile(original_file, new_file)
+        return new_file
 
     def pairwise_distance(self, samples: List[str], var_type='all', distance_type='jaccard') -> pd.DataFrame:
         sample_objs = self._connection.get_session().query(Sample).filter(Sample.name.in_(samples)).all()

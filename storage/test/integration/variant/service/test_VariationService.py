@@ -7,8 +7,12 @@ from storage.variant.service import EntityExistsError
 from storage.variant.service.VariationService import VariationService
 
 
-def test_insert_variants(database, snippy_variants_reader, reference_service_with_data, sample_service):
-    variation_service = VariationService(database, reference_service_with_data, sample_service)
+def test_insert_variants(database, snippy_variants_reader, reference_service_with_data,
+                         sample_service, filesystem_storage):
+    variation_service = VariationService(database_connection=database,
+                                         reference_service=reference_service_with_data,
+                                         sample_service=sample_service,
+                                         variation_dir=filesystem_storage.variation_dir)
 
     variation_service.insert_variants(reference_name='genome', variants_reader=snippy_variants_reader)
     session = database.get_session()
