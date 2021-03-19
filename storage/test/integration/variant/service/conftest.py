@@ -15,6 +15,7 @@ from storage.variant.io.SnippyVariantsReader import SnippyVariantsReader
 # from storage.variant.service.SampleSequenceService import SampleSequenceService
 from storage.variant.service.SampleService import SampleService
 # from storage.variant.service.TreeService import TreeService
+from storage.FilesystemStorage import FilesystemStorage
 
 
 @pytest.fixture
@@ -23,9 +24,13 @@ def database() -> DatabaseConnection:
 
 
 @pytest.fixture
-def reference_service(database) -> ReferenceService:
-    seq_repo_root = Path(tempfile.mkdtemp(prefix='index-test'))
-    reference_service = ReferenceService(database, seq_repo_root)
+def filesystem_storage() -> FilesystemStorage:
+    return FilesystemStorage(Path(tempfile.mkdtemp(prefix='index-test')))
+
+
+@pytest.fixture
+def reference_service(database, filesystem_storage) -> ReferenceService:
+    reference_service = ReferenceService(database, filesystem_storage.reference_dir)
     return reference_service
 
 
@@ -47,10 +52,11 @@ def sample_service(database):
 
 @pytest.fixture
 def variation_service(database, reference_service_with_data,
-                      snippy_variants_reader, sample_service) -> VariationService:
+                      snippy_variants_reader, sample_service, filesystem_storage) -> VariationService:
     var_service = VariationService(database_connection=database,
                                    reference_service=reference_service_with_data,
-                                   sample_service=sample_service)
+                                   sample_service=sample_service,
+                                   variation_dir=filesystem_storage.variation_dir)
     var_service.insert_variants(reference_name='genome',
                                 variants_reader=snippy_variants_reader)
     return var_service

@@ -18,11 +18,12 @@ logger = logging.getLogger(__name__)
 
 class VariationService:
 
-    def __init__(self, database_connection: DatabaseConnection, reference_service: ReferenceService,
-                 sample_service: SampleService):
+    def __init__(self, database_connection: DatabaseConnection, variation_dir: Path,
+                 reference_service: ReferenceService, sample_service: SampleService):
         self._connection = database_connection
         self._reference_service = reference_service
         self._sample_service = sample_service
+        self._variation_dir = variation_dir
 
     def get_variants(self, sequence_name: str, type: str = 'snp') -> Dict[int, Dict[str, Any]]:
         raise Exception('Not implemented')

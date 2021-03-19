@@ -9,16 +9,20 @@ class FilesystemStorage:
         if not root_dir.exists():
             os.mkdir(root_dir)
 
+    def _check_make_dir(self, name) -> Path:
+        d = self._root_dir / name
+        if not d.exists():
+            os.mkdir(d)
+        return d
+
     @property
     def reference_dir(self):
-        ref_dir = self._root_dir / 'reference'
-        if not ref_dir.exists():
-            os.mkdir(ref_dir)
-        return ref_dir
+        return self._check_make_dir('reference')
 
     @property
     def kmer_dir(self):
-        k_dir = self._root_dir / 'kmer'
-        if not k_dir.exists():
-            os.mkdir(k_dir)
-        return k_dir
+        return self._check_make_dir('kmer')
+
+    @property
+    def variation_dir(self):
+        return self._check_make_dir('variation')
