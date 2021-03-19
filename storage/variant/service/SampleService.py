@@ -47,7 +47,7 @@ class SampleService:
         samples = self._connection.get_session().query(Sample) \
             .join(Sample.sample_nucleotide_variation) \
             .join(Reference) \
-            .filter(ReferenceSequence.name == reference_name) \
+            .filter(Reference.name == reference_name) \
             .all()
         return samples
 
