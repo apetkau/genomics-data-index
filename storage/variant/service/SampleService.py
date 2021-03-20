@@ -83,7 +83,7 @@ class SampleService:
 
     def find_samples_by_variation_ids(self, variation_ids: List[str]) -> Dict[str, List[Sample]]:
         variants = self._connection.get_session().query(NucleotideVariantsSamples) \
-            .filter(NucleotideVariantsSamples.spdi.in_(variation_ids)) \
+            .filter(NucleotideVariantsSamples._spdi.in_(variation_ids)) \
             .all()
 
         return {v.spdi: self.find_samples_by_ids(v.sample_ids) for v in variants}

@@ -48,7 +48,6 @@ class VariationService:
     def _create_nucleotide_variants(self, var_df: pd.DataFrame) -> List[NucleotideVariantsSamples]:
         samples_names = set(var_df['SAMPLE'].tolist())
         sample_name_ids = self._sample_service.find_sample_name_ids(samples_names)
-        print(sample_name_ids)
 
         var_df['SPDI'] = var_df.apply(lambda x: NucleotideVariantsSamples.to_spdi(
             sequence_name=x['CHROM'],

@@ -46,12 +46,22 @@ def test_insert_variants(database, snippy_variants_reader, reference_service_wit
     assert 112 == session.query(NucleotideVariantsSamples).count(), 'Incorrect number of variant entries'
 
     # Check to make sure some variants are stored
-    v = session.query(NucleotideVariantsSamples).get('reference:1048:C:G')
+    v = session.query(NucleotideVariantsSamples).get({
+        'sequence': 'reference',
+        'position': 1048,
+        'deletion': 'C',
+        'insertion': 'G'
+    })
     assert v is not None, 'Particular variant does not exist'
     assert 'snp' == v.var_type, 'Type is incorrect'
     assert {sample_name_ids['SampleA']} == set(v.sample_ids)
 
-    v = session.query(NucleotideVariantsSamples).get('reference:1135:CCT:C')
+    v = session.query(NucleotideVariantsSamples).get({
+        'sequence': 'reference',
+        'position': 1135,
+        'deletion': 'CCT',
+        'insertion': 'C'
+    })
     assert 'del' == v.var_type, 'Type is incorrect'
     assert {sample_name_ids['SampleB'], sample_name_ids['SampleC']} == set(v.sample_ids)
 

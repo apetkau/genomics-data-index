@@ -1,3 +1,4 @@
+from typing import Tuple
 from pathlib import Path
 from ete3 import Tree
 from sqlalchemy import Column, Integer, String, ForeignKey, Table, LargeBinary, UnicodeText
@@ -13,7 +14,11 @@ Base = declarative_base()
 
 class NucleotideVariantsSamples(Base):
     __tablename__ = 'nucleotide_variants_samples'
-    spdi = Column(String(255), primary_key=True)
+    sequence = Column(String(255), primary_key=True)
+    position = Column(Integer, primary_key=True)
+    deletion = Column(String(255), primary_key=True)
+    insertion = Column(String(255), primary_key=True)
+    _spdi = Column('spdi', String(255))
     var_type = Column(String(255))
     _sample_ids = Column(LargeBinary(length=500 * 10 ** 6))  # Max of 500 million
 
@@ -21,6 +26,15 @@ class NucleotideVariantsSamples(Base):
         self.spdi = spdi
         self.var_type = var_type
         self.sample_ids = sample_ids
+
+    @hybrid_property
+    def spdi(self) -> str:
+        return self.to_spdi(self.sequence, self.position, self.deletion, self.insertion)
+
+    @spdi.setter
+    def spdi(self, spdi_value: str):
+        self.sequence, self.position, self.deletion, self.insertion = self.from_spdi(spdi_value)
+        self._spdi = spdi_value
 
     @hybrid_property
     def sample_ids(self) -> SampleSet:
@@ -39,6 +53,17 @@ class NucleotideVariantsSamples(Base):
     @classmethod
     def to_spdi(cls, sequence_name: str, position: int, ref: str, alt: str) -> str:
         return f'{sequence_name}:{position}:{ref}:{alt}'
+
+    @classmethod
+    def from_spdi(cls, spdi: str) -> Tuple[str, int, str, str]:
+        if spdi is None:
+            raise Exception('Cannot parse value spdi=None')
+
+        values = spdi.split(':')
+        if len(values) != 4:
+            raise Exception(f'Incorrect number of items for spdi=[{spdi}]')
+        else:
+            return str(values[0]), int(values[1]), str(values[2]), str(values[3])
 
     def __repr__(self):
         return (f'<NucleotideVariantsSamples(spdi={self.spdi}, var_type={self.var_type}, num_samples={len(self.sample_ids)})>')
