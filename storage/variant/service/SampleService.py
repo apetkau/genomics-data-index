@@ -1,7 +1,8 @@
-from typing import List, Dict, Set
+from typing import List, Dict, Set, Union
 
-from storage.variant.model import Sample, Reference, ReferenceSequence
+from storage.variant.model import Sample, Reference, ReferenceSequence, NucleotideVariantsSamples
 from storage.variant.service import DatabaseConnection
+from storage.variant.SampleSet import SampleSet
 
 
 class SampleService:
@@ -15,14 +16,11 @@ class SampleService:
         :reference_name: The reference genome name.
         :return: A list of Samples with variants with respect to the reference genome name, empty list of no Samples.
         """
-        raise Exception('Not implemented')
-        # samples = self._connection.get_session().query(Sample) \
-        #     .join(Sample.variants) \
-        #     .join(ReferenceSequence) \
-        #     .join(Reference) \
-        #     .filter(Reference.name == reference_name) \
-        #     .all()
-        # return samples
+        samples = self._connection.get_session().query(Sample) \
+            .join(Sample.sample_nucleotide_variation) \
+            .filter(Reference.name == reference_name) \
+            .all()
+        return samples
 
     def get_samples_with_variants_on_sequence(self, sequence_name: str) -> List[Sample]:
         """
@@ -30,13 +28,12 @@ class SampleService:
         :sequence_name: The sequence name.
         :return: A list of Samples with variants with respect to the sequence name, empty list of no Samples.
         """
-        raise Exception('Not implemented')
-        # samples = self._connection.get_session().query(Sample) \
-        #     .join(Sample.variants) \
-        #     .join(ReferenceSequence) \
-        #     .filter(ReferenceSequence.sequence_name == sequence_name) \
-        #     .all()
-        # return samples
+        samples = self._connection.get_session().query(Sample) \
+            .join(Sample.sample_nucleotide_variation) \
+            .join(Reference.sequences) \
+            .filter(ReferenceSequence.sequence_name == sequence_name) \
+            .all()
+        return samples
 
     def get_samples_associated_with_reference(self, reference_name: str) -> List[Sample]:
         """
@@ -46,7 +43,6 @@ class SampleService:
         """
         samples = self._connection.get_session().query(Sample) \
             .join(Sample.sample_nucleotide_variation) \
-            .join(Reference) \
             .filter(Reference.name == reference_name) \
             .all()
         return samples
@@ -77,13 +73,20 @@ class SampleService:
         return self._connection.get_session().query(Sample)\
             .filter(Sample.name == sample_name).count() > 0
 
+    def find_samples_by_ids(self, sample_ids: Union[List[int], SampleSet]) -> List[Sample]:
+        if isinstance(sample_ids, SampleSet):
+            sample_ids = list(sample_ids)
+
+        return self._connection.get_session().query(Sample)\
+            .filter(Sample.id.in_(sample_ids))\
+            .all()
+
     def find_samples_by_variation_ids(self, variation_ids: List[str]) -> Dict[str, List[Sample]]:
-        raise Exception('Not implemented')
-        # variants = self._connection.get_session().query(VariationAllele) \
-        #     .filter(VariationAllele.id.in_(variation_ids)) \
-        #     .all()
-        #
-        # return {v.id: v.samples for v in variants}
+        variants = self._connection.get_session().query(NucleotideVariantsSamples) \
+            .filter(NucleotideVariantsSamples.spdi.in_(variation_ids)) \
+            .all()
+
+        return {v.spdi: self.find_samples_by_ids(v.sample_ids) for v in variants}
 
     def find_sample_name_ids(self, sample_names: Set[str]) -> Dict[str, int]:
         """
