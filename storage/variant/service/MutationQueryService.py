@@ -7,9 +7,9 @@ from pandas.api.types import CategoricalDtype
 from storage.variant.service.QueryService import QueryFeature
 from storage.variant.service.QueryService import QueryService
 from storage.variant.service.ReferenceService import ReferenceService
-from storage.variant.service.SampleSequenceService import SampleSequenceService
+# from storage.variant.service.SampleSequenceService import SampleSequenceService
 from storage.variant.service.SampleService import SampleService
-from storage.variant.service.TreeService import TreeService
+# from storage.variant.service.TreeService import TreeService
 
 
 class QueryFeatureMutation(QueryFeature):
@@ -47,55 +47,56 @@ class QueryFeatureMutation(QueryFeature):
 
 class MutationQueryService(QueryService):
 
-    def __init__(self, tree_service: TreeService, reference_service: ReferenceService,
-                 sample_service: SampleService, sample_sequence_service: SampleSequenceService):
+    def __init__(self, reference_service: ReferenceService,
+                 sample_service: SampleService):
         super().__init__()
-        self._tree_service = tree_service
+        # self._tree_service = tree_service
         self._reference_service = reference_service
         self._sample_service = sample_service
-        self._sample_sequence_service = sample_sequence_service
+        # self._sample_sequence_service = sample_sequence_service
 
     def _find_matches_internal(self, sample_names: List[str], distance_threshold: float = None) -> pd.DataFrame:
-        sample_distances = []
-        for sample_name in sample_names:
-            reference_genomes = self._reference_service.find_references_for_sample(sample_name)
-
-            for reference_genome in reference_genomes:
-                tree = reference_genome.tree
-
-                sample_leaves = tree.get_leaves_by_name(sample_name)
-                if len(sample_leaves) != 1:
-                    raise Exception(
-                        f'Invalid number of matching leaves for sample [{sample_name}], leaves {sample_leaves}')
-
-                sample_node = sample_leaves[0]
-
-                leaves = tree.get_leaves()
-                for leaf in leaves:
-                    if leaf.name == sample_node.name:
-                        continue
-                    distance = sample_node.get_distance(leaf)
-                    align_length = reference_genome.tree_alignment_length
-                    sample_distances.append([reference_genome.name, sample_name, leaf.name,
-                                             f'{distance * align_length:0.2f}', distance, align_length])
-
-        matches_df = pd.DataFrame(data=sample_distances, columns=[
-            'Reference Genome',
-            'Sample A',
-            'Sample B',
-            'Distance',
-            'Distance (subs/site)',
-            'SNV Alignment Length',
-        ])
-        matches_df['Distance'] = pd.to_numeric(matches_df['Distance'])
-        matches_df['Distance (subs/site)'] = pd.to_numeric(matches_df['Distance (subs/site)'])
-        matches_df['SNV Alignment Length'] = pd.to_numeric(matches_df['SNV Alignment Length'])
-        matches_df = matches_df.sort_values(['Sample A', 'Distance (subs/site)'], ascending=True)
-
-        if distance_threshold is not None:
-            matches_df = matches_df.loc[:, matches_df['Distance (subs/site)'] <= distance_threshold]
-
-        return matches_df
+        raise Exception('Not implemented')
+        # sample_distances = []
+        # for sample_name in sample_names:
+        #     reference_genomes = self._reference_service.find_references_for_sample(sample_name)
+        #
+        #     for reference_genome in reference_genomes:
+        #         tree = reference_genome.tree
+        #
+        #         sample_leaves = tree.get_leaves_by_name(sample_name)
+        #         if len(sample_leaves) != 1:
+        #             raise Exception(
+        #                 f'Invalid number of matching leaves for sample [{sample_name}], leaves {sample_leaves}')
+        #
+        #         sample_node = sample_leaves[0]
+        #
+        #         leaves = tree.get_leaves()
+        #         for leaf in leaves:
+        #             if leaf.name == sample_node.name:
+        #                 continue
+        #             distance = sample_node.get_distance(leaf)
+        #             align_length = reference_genome.tree_alignment_length
+        #             sample_distances.append([reference_genome.name, sample_name, leaf.name,
+        #                                      f'{distance * align_length:0.2f}', distance, align_length])
+        #
+        # matches_df = pd.DataFrame(data=sample_distances, columns=[
+        #     'Reference Genome',
+        #     'Sample A',
+        #     'Sample B',
+        #     'Distance',
+        #     'Distance (subs/site)',
+        #     'SNV Alignment Length',
+        # ])
+        # matches_df['Distance'] = pd.to_numeric(matches_df['Distance'])
+        # matches_df['Distance (subs/site)'] = pd.to_numeric(matches_df['Distance (subs/site)'])
+        # matches_df['SNV Alignment Length'] = pd.to_numeric(matches_df['SNV Alignment Length'])
+        # matches_df = matches_df.sort_values(['Sample A', 'Distance (subs/site)'], ascending=True)
+        #
+        # if distance_threshold is not None:
+        #     matches_df = matches_df.loc[:, matches_df['Distance (subs/site)'] <= distance_threshold]
+        #
+        # return matches_df
 
     def _find_by_features_internal(self, features: List[QueryFeature], include_unknown: bool) -> pd.DataFrame:
         for feature in features:
@@ -110,15 +111,15 @@ class MutationQueryService(QueryService):
             for sample in variation_samples[vid]:
                 data.append([vid, sample.name, sample.id, 'Present'])
 
-        if include_unknown:
-            for feature in features:
-                missing_positions = list(range(feature.position, feature.position + len(feature.ref)))
-                samples_with_variants = self._sample_service.get_samples_associated_with_sequence(feature.sequence_name)
-                for sample in samples_with_variants:
-                    if self._sample_sequence_service.missing_in_sequence(sample_name=sample.name,
-                                                                         sequence_name=feature.sequence_name,
-                                                                         positions=missing_positions):
-                        data.append([feature.spdi, sample.name, sample.id, 'Unknown'])
+        # if include_unknown:
+        #     for feature in features:
+        #         missing_positions = list(range(feature.position, feature.position + len(feature.ref)))
+        #         samples_with_variants = self._sample_service.get_samples_associated_with_sequence(feature.sequence_name)
+        #         for sample in samples_with_variants:
+        #             if self._sample_sequence_service.missing_in_sequence(sample_name=sample.name,
+        #                                                                  sequence_name=feature.sequence_name,
+        #                                                                  positions=missing_positions):
+        #                 data.append([feature.spdi, sample.name, sample.id, 'Unknown'])
 
         return pd.DataFrame(data=data, columns=[
             'Feature', 'Sample Name', 'Sample ID', 'Status']).sort_values(['Feature', 'Sample Name'])

@@ -5,15 +5,20 @@ from storage.variant.service.MutationQueryService import QueryFeatureMutation
 
 
 @pytest.fixture
-def mutation_query_service(tree_service_with_tree_stored,
-                           reference_service_with_data, sample_service,
-                           variation_service, sample_sequence_service) -> MutationQueryService:
-    return MutationQueryService(tree_service=tree_service_with_tree_stored,
-                                reference_service=reference_service_with_data,
-                                sample_service=sample_service,
-                                sample_sequence_service=sample_sequence_service)
+def mutation_query_service(reference_service_with_data, sample_service,
+                           variation_service) -> MutationQueryService:
+    return MutationQueryService(reference_service=reference_service_with_data,
+                                sample_service=sample_service)
+# def mutation_query_service(tree_service_with_tree_stored,
+#                            reference_service_with_data, sample_service,
+#                            variation_service, sample_sequence_service) -> MutationQueryService:
+#     return MutationQueryService(tree_service=tree_service_with_tree_stored,
+#                                 reference_service=reference_service_with_data,
+#                                 sample_service=sample_service,
+#                                 sample_sequence_service=sample_sequence_service)
 
 
+@pytest.mark.skip()
 def test_find_matchesC(mutation_query_service: MutationQueryService):
     matches_df = mutation_query_service.find_matches(['SampleC'])
 
@@ -25,6 +30,7 @@ def test_find_matchesC(mutation_query_service: MutationQueryService):
     assert ['reference', 'SampleB', 'SampleA'] == matches_df['Sample B'].tolist()
 
 
+@pytest.mark.skip()
 def test_find_matchesB(mutation_query_service: MutationQueryService):
     matches_df = mutation_query_service.find_matches(['SampleB'])
 
@@ -36,6 +42,7 @@ def test_find_matchesB(mutation_query_service: MutationQueryService):
     assert ['SampleC', 'reference', 'SampleA'] == matches_df['Sample B'].tolist()
 
 
+@pytest.mark.skip()
 def test_find_matchesA(mutation_query_service: MutationQueryService):
     matches_df = mutation_query_service.find_matches(['SampleA'])
 
@@ -47,6 +54,7 @@ def test_find_matchesA(mutation_query_service: MutationQueryService):
     assert ['reference', 'SampleC', 'SampleB'] == matches_df['Sample B'].tolist()
 
 
+@pytest.mark.skip()
 def test_find_matchesAB(mutation_query_service: MutationQueryService):
     matches_df = mutation_query_service.find_matches(['SampleA', 'SampleB'])
 
@@ -101,6 +109,7 @@ def test_find_by_features_2_features(mutation_query_service: MutationQueryServic
     assert len(matches_df) == 3
 
 
+@pytest.mark.skip()
 def test_find_by_features_unknown(mutation_query_service: MutationQueryService):
     matches_df = mutation_query_service.find_by_features([QueryFeatureMutation('reference:190:A:G')],
                                                          include_unknown=True)
@@ -126,6 +135,7 @@ def test_find_by_features_unknown(mutation_query_service: MutationQueryService):
     assert len(matches_df) == 1
 
 
+@pytest.mark.skip()
 def test_find_by_features_found_unknown(mutation_query_service: MutationQueryService):
     matches_df = mutation_query_service.find_by_features([QueryFeatureMutation('reference:5061:G:A'),
                                                           QueryFeatureMutation('reference:190:A:G')],
