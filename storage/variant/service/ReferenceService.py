@@ -84,3 +84,9 @@ class ReferenceService:
             .join(Sample) \
             .filter(Sample.name == sample_name) \
             .all()
+
+    def find_reference_for_sequence(self, sequence_name: str) -> Reference:
+        return self._connection.get_session().query(Reference) \
+            .join(Reference.sequences) \
+            .filter(ReferenceSequence.sequence_name == sequence_name) \
+            .one()

@@ -3,6 +3,7 @@ import gzip
 import pytest
 from Bio import SeqIO
 from ete3 import Tree
+from sqlalchemy.orm.exc import NoResultFound
 
 from storage.test.integration.variant import reference_file
 from storage.test.integration.variant import tree_file
@@ -105,3 +106,14 @@ def test_get_reference_sequences(reference_service_with_data, variation_service)
     reference_sequences = reference_service_with_data.get_reference_sequences('genome')
 
     assert {'reference'} == set(reference_sequences.keys())
+
+
+def test_find_reference_for_sequence(reference_service_with_data, variation_service):
+    reference = reference_service_with_data.find_reference_for_sequence('reference')
+    assert 'genome' == reference.name
+
+
+def test_find_reference_for_sequence_not_exist(reference_service_with_data, variation_service):
+    with pytest.raises(NoResultFound) as execinfo:
+        reference_service_with_data.find_reference_for_sequence('not_exist')
+    assert 'No row was found' in str(execinfo.value)

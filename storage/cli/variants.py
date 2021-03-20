@@ -371,9 +371,11 @@ def query(ctx, name: List[str], query_type: str, include_unknown: bool, summariz
 
         if summarize:
             sample_service = ctx.obj['sample_service']
+            reference_service = ctx.obj['reference_service']
+            sequence_reference_map = {f.sequence_name: reference_service.find_reference_for_sequence(f.sequence_name) for f in features}
             query_summaries = MutationQuerySummaries()
             feature_sample_counts = {
-                f.spdi: sample_service.count_samples_associated_with_sequence(f.sequence_name) for f in features
+                f.spdi: sample_service.count_samples_associated_with_reference(sequence_reference_map[f.sequence_name].name) for f in features
             }
             match_df = query_summaries.find_by_features_summary(find_by_features_results=match_df,
                                                                 sample_counts=feature_sample_counts,
