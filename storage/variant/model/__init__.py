@@ -6,6 +6,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 
 from storage.variant.CoreBitMask import CoreBitMask
+from storage.variant.SampleSet import SampleSet
 
 Base = declarative_base()
 
@@ -14,14 +15,33 @@ class NucleotideVariantsSamples(Base):
     __tablename__ = 'nucleotide_variants_samples'
     spdi = Column(String(255), primary_key=True)
     var_type = Column(String(255))
-    _samples_bitmap = Column(LargeBinary(length=100 * 10 ** 6))  # Max of 100 million bytes
+    _sample_ids = Column(LargeBinary(length=500 * 10 ** 6))  # Max of 500 million
+
+    def __init__(self, spdi: str = None, var_type: str = None, sample_ids: SampleSet = None):
+        self.spdi = spdi
+        self.var_type = var_type
+        self.sample_ids = sample_ids
+
+    @hybrid_property
+    def sample_ids(self) -> SampleSet:
+        if self._sample_ids is None:
+            raise Exception('_sample_ids is not set')
+        else:
+            return SampleSet.from_bytes(self._sample_ids)
+
+    @sample_ids.setter
+    def sample_ids(self, sample_ids: SampleSet) -> None:
+        if sample_ids is None:
+            raise Exception('Cannot set sample_ids to None')
+        else:
+            self._sample_ids = sample_ids.get_bytes()
 
     @classmethod
     def to_spdi(cls, sequence_name: str, position: int, ref: str, alt: str) -> str:
         return f'{sequence_name}:{position}:{ref}:{alt}'
 
     def __repr__(self):
-        return (f'<NucleotideVariantsSamples(spdi={self.spdi}, var_type={self.var_type})>')
+        return (f'<NucleotideVariantsSamples(spdi={self.spdi}, var_type={self.var_type}, num_samples={len(self.sample_ids)})>')
 
 
 class Reference(Base):

@@ -18,6 +18,11 @@ def test_samples_associated_with_reference(sample_service, variation_service):
     assert {'SampleA', 'SampleB', 'SampleC'} == {sample.name for sample in samples_reference}
 
 
+def test_find_sample_name_ids(sample_service, variation_service):
+    sample_ids_list = sample_service.find_sample_name_ids(['SampleA', 'SampleB', 'SampleC'])
+    assert {'SampleA': 1, 'SampleB': 2, 'SampleC': 3} == sample_ids_list
+
+
 def test_count_samples_associated_with_reference(sample_service, variation_service):
     assert 3 == sample_service.count_samples_associated_with_reference('genome')
 

@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import List, Dict, Set
 
 from storage.variant.model import Sample, Reference, ReferenceSequence
 from storage.variant.service import DatabaseConnection
@@ -84,3 +84,15 @@ class SampleService:
         #     .all()
         #
         # return {v.id: v.samples for v in variants}
+
+    def find_sample_name_ids(self, sample_names: Set[str]) -> Dict[str, int]:
+        """
+        Given a list of sample names, returns a dictionary mapping the sample names to sample IDs.
+        :param sample_names: The sample names to search.
+        :return: A dictionary linking the sample names to IDs.
+        """
+        sample_tuples = self._connection.get_session().query(Sample.name, Sample.id) \
+            .filter(Sample.name.in_(sample_names)) \
+            .all()
+
+        return dict(sample_tuples)
