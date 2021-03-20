@@ -21,13 +21,10 @@ class SampleSet:
         bitmap = BitMap.deserialize(data)
         return SampleSet(existing_bitmap=bitmap)
 
-    def iter_sample_ids(self) -> Generator[int, None, None]:
-        yield from self._bitmap
-
     def get_bytes(self) -> bytes:
         return self._bitmap.serialize()
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[int, None, None]:
         yield from self._bitmap
 
     def __contains__(self, value: int) -> bool:
