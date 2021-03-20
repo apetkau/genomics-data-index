@@ -8,10 +8,10 @@ from Bio.Seq import Seq, MutableSeq
 from Bio.SeqRecord import SeqRecord
 
 from storage.variant.CoreBitMask import CoreBitMask
-from storage.variant.model import Sample, SampleSequence, Reference, ReferenceSequence, VariationAllele
+from storage.variant.model import Sample, Reference, ReferenceSequence
 from storage.variant.service import DatabaseConnection
 from storage.variant.service.ReferenceService import ReferenceService
-from storage.variant.service.SampleSequenceService import SampleSequenceService
+from storage.variant.service.SampleService import SampleService
 from storage.variant.service.VariationService import VariationService
 
 logger = logging.getLogger(__name__)
@@ -21,20 +21,14 @@ class CoreAlignmentService:
     ALIGN_TYPES = ['core', 'full']
 
     def __init__(self, database: DatabaseConnection, reference_service: ReferenceService,
-                 variation_service: VariationService, sample_sequence_service: SampleSequenceService):
+                 sample_service: SampleService, variation_service: VariationService):
         self._database = database
         self._reference_service = reference_service
         self._variation_service = variation_service
-        self._sample_sequence_service = sample_sequence_service
+        self._sample_service = sample_service
 
     def _all_sample_names(self, reference_name: str) -> List[str]:
-        samples = self._database.get_session().query(Sample) \
-            .join(SampleSequence) \
-            .join(ReferenceSequence) \
-            .join(Reference) \
-            .filter(Reference.name == reference_name) \
-            .all()
-
+        samples = self._sample_service.get_samples_with_variants(reference_name)
         return [s.name for s in samples]
 
     def _create_core_mask(self, sequences: List[SampleSequence]) -> CoreBitMask:
