@@ -1,10 +1,12 @@
 import math
-
 import pytest
 
 from storage.variant.model import Sample, NucleotideVariantsSamples, SampleNucleotideVariation
 from storage.variant.service import EntityExistsError
 from storage.variant.service.VariationService import VariationService
+from storage.variant.io.SnippyVariantsReader import SnippyVariantsReader
+
+from storage.test.integration.variant import data_dir
 
 
 def test_insert_variants_tmp(database, snippy_variants_reader, reference_service_with_data,
@@ -54,7 +56,6 @@ def test_insert_variants(database, snippy_variants_reader, reference_service_wit
     assert {sample_name_ids['SampleB'], sample_name_ids['SampleC']} == set(v.sample_ids)
 
 
-@pytest.mark.skip()
 def test_insert_variants_duplicates(database, snippy_variants_reader, reference_service_with_data,
                                     sample_service, filesystem_storage):
     variation_service = VariationService(database_connection=database,
@@ -71,7 +72,7 @@ def test_insert_variants_duplicates(database, snippy_variants_reader, reference_
 
     assert 112 == session.query(NucleotideVariantsSamples).count(), 'Incorrect number of variant entries'
     assert 3 == session.query(Sample).count(), 'Incorrect number of Samples'
-    assert 1 == session.query(SampleNucleotideVariation).count(), 'Incorrect number of SampleNucleotideVariation'
+    assert 3 == session.query(SampleNucleotideVariation).count(), 'Incorrect number of SampleNucleotideVariation'
 
     with pytest.raises(EntityExistsError) as execinfo:
         variation_service.insert_variants(reference_name='genome', variants_reader=snippy_variants_reader)
@@ -79,10 +80,9 @@ def test_insert_variants_duplicates(database, snippy_variants_reader, reference_
     assert 'Passed samples already have variants for reference genome [genome]' in str(execinfo.value)
     assert 112 == session.query(NucleotideVariantsSamples).count(), 'Incorrect number of variant entries'
     assert 3 == session.query(Sample).count(), 'Incorrect number of Samples'
-    assert 1 == session.query(SampleNucleotideVariation).count(), 'Incorrect number of SampleNucleotideVariation'
+    assert 3 == session.query(SampleNucleotideVariation).count(), 'Incorrect number of SampleNucleotideVariation'
 
 
-@pytest.mark.skip()
 def test_insert_variants_duplicates_subset(database, snippy_variants_reader, reference_service_with_data,
                                            sample_service, filesystem_storage):
     variation_service = VariationService(database_connection=database,
@@ -102,10 +102,11 @@ def test_insert_variants_duplicates_subset(database, snippy_variants_reader, ref
     assert 3 == session.query(SampleNucleotideVariation).count(), 'Incorrect number of SampleSequences'
 
     # Select a subset of samples
-    # var_df_2 = var_df[var_df['SAMPLE'].isin(['SampleA', 'SampleB'])]
+    sample_dirs_subset = [data_dir / 'SampleA']
+    snippy_variants_reader_subset = SnippyVariantsReader(sample_dirs_subset)
 
     with pytest.raises(EntityExistsError) as execinfo:
-        variation_service.insert_variants(reference_name='genome', variants_reader=snippy_variants_reader)
+        variation_service.insert_variants(reference_name='genome', variants_reader=snippy_variants_reader_subset)
 
     assert 'Passed samples already have variants for reference genome [genome]' in str(execinfo.value)
     assert 112 == session.query(NucleotideVariantsSamples).count(), 'Incorrect number of variant entries'

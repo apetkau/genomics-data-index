@@ -1,4 +1,4 @@
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Set
 import logging
 from pathlib import Path
 import shutil
@@ -64,21 +64,25 @@ class VariationService:
             spdi=x['SPDI'], var_type=x['TYPE'], sample_ids=x['SAMPLE_ID']),
             axis='columns').tolist()
 
-    def check_samples_have_variants(self, var_df: pd.DataFrame, reference_name: str) -> bool:
+    def check_samples_have_variants(self, sample_names: Set[str], reference_name: str) -> bool:
         """
-        Checks if any of the samples loaded in the passed dataframe already have variants.
-        :param var_df: The dataframe of variants
+        Checks if any of the passed sample names already have variants.
+        :param sample_names: The dataframe of variants
         :param reference_name: The reference genome name.
         :return: True if any of the samples have variants, false otherwise.
         """
         samples_with_variants = {sample.name for sample in
                                  self._sample_service.get_samples_with_variants(reference_name)}
-        samples_from_df = set(var_df['SAMPLE'].tolist())
-        return len(samples_with_variants.intersection(samples_from_df)) != 0
+        return len(samples_with_variants.intersection(sample_names)) != 0
 
     def insert_variants(self, reference_name: str, variants_reader: VariantsReader) -> None:
         reference = self._reference_service.find_reference_genome(reference_name)
         sample_variant_files = variants_reader.sample_variant_files()
+
+        if self.check_samples_have_variants(set(sample_variant_files.keys()), reference_name):
+            raise EntityExistsError(f'Passed samples already have variants for reference genome [{reference_name}], '
+                                    f'will not insert any new variants')
+
         for sample_name in sample_variant_files:
             variant_file = sample_variant_files[sample_name]
             sample = Sample(name=sample_name)
