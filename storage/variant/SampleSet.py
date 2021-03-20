@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterable, Generator
+from typing import Iterable, Generator, Union, Set
 from pyroaring import BitMap
 
 
@@ -15,6 +15,16 @@ class SampleSet:
             self._bitmap = BitMap(sample_ids)
         else:
             self._bitmap = existing_bitmap
+
+    def intersection(self, other: Union[Set[int]]) -> SampleSet:
+        if other is None:
+            raise Exception('Cannot intersect [other = None]')
+        elif isinstance(other, SampleSet):
+            return self._bitmap.intersection(other._bitmap)
+        elif isinstance(other, set):
+            return self._bitmap.intersection(BitMap(other))
+        else:
+            raise Exception(f'Cannot intersect other of type [{type(other)}]')
 
     @staticmethod
     def from_bytes(data: bytes) -> SampleSet:

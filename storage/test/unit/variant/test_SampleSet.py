@@ -39,3 +39,16 @@ def test_serialize_deserialize():
 
     sample_set_deserialize = SampleSet.from_bytes(sample_set_bytes)
     assert {1,3,10} == set(sample_set_deserialize)
+
+
+def test_intersect_sample_set():
+    sample_set1 = SampleSet(sample_ids=[1, 3, 10])
+    sample_set2 = SampleSet(sample_ids=[3, 10, 20])
+
+    assert {3, 10} == set(sample_set1.intersection(sample_set2))
+
+
+def test_intersect_python_set():
+    sample_set1 = SampleSet(sample_ids=[1, 3, 10])
+
+    assert {3, 10} == set(sample_set1.intersection({3, 10, 20}))
