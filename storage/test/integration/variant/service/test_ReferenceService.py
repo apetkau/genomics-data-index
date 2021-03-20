@@ -99,3 +99,9 @@ def test_find_references_for_sample(reference_service_with_data, variation_servi
 def test_find_references_for_sample_not_exist(reference_service_with_data, variation_service):
     found_references = reference_service_with_data.find_references_for_sample('not_exist')
     assert len(found_references) == 0
+
+
+def test_get_reference_sequences(reference_service_with_data, variation_service):
+    reference_sequences = reference_service_with_data.get_reference_sequences('genome')
+
+    assert {'reference'} == set(reference_sequences.keys())

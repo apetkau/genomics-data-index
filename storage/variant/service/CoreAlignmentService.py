@@ -162,7 +162,7 @@ class CoreAlignmentService:
         if samples is None or len(samples) == 0:
             samples = self._all_sample_names(reference_name)
 
-        sample_sequences = self._sample_sequence_service.get_sample_sequences(reference_name, samples)
+        reference_sequences = self._sample_sequence_service.get_sample_sequences(reference_name, samples)
 
         alignment_seqs = {}
         alignments = {}

@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List
+from typing import List, Dict
 
 import ga4gh.vrs.dataproxy as dataproxy
 from Bio.SeqRecord import SeqRecord
@@ -36,7 +36,7 @@ class ReferenceService:
 
             self._create_reference_genome_db(genome_file)
 
-    def get_reference_contigs(self, reference_name: str):
+    def get_reference_sequences(self, reference_name: str) -> Dict[str, ReferenceSequence]:
         reference = self.find_reference_genome(reference_name)
         return {s.sequence_name: s for s in reference.sequences}
 
