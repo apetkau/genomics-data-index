@@ -27,6 +27,12 @@ class SampleSet:
     def get_bytes(self) -> bytes:
         return self._bitmap.serialize()
 
+    def __iter__(self):
+        yield from self._bitmap
+
+    def __contains__(self, value: int) -> bool:
+        return value in self._bitmap
+
     def __len__(self) -> int:
         return len(self._bitmap)
 
