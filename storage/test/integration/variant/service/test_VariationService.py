@@ -1,3 +1,4 @@
+from typing import List
 import math
 import pytest
 
@@ -124,9 +125,15 @@ def test_insert_variants_duplicates_subset(database, snippy_variants_reader, ref
     assert 3 == session.query(SampleNucleotideVariation).count(), 'Incorrect number of SampleSequences'
 
 
-@pytest.mark.skip()
-def test_get_variants(database, snippy_variants_reader, reference_service_with_data,
+def test_get_variants_ordered(database, snippy_variants_reader, reference_service_with_data,
                       sample_service, filesystem_storage):
+    def find_variant_by_position(variants: List[NucleotideVariantsSamples], position: int) -> NucleotideVariantsSamples:
+        for v in variants:
+            if v.position == position:
+                return v
+
+        raise Exception(f'Could not find variant with position {position}')
+
     variation_service = VariationService(database_connection=database,
                                          reference_service=reference_service_with_data,
                                          sample_service=sample_service,
@@ -134,17 +141,17 @@ def test_get_variants(database, snippy_variants_reader, reference_service_with_d
 
     variation_service.insert_variants(reference_name='genome', variants_reader=snippy_variants_reader)
 
-    variants = variation_service.get_variants(sequence_name='reference')
+    variants = variation_service.get_variants_ordered(sequence_name='reference')
 
-    assert 60 == len(variants.keys()), 'Incorrect number of variants returned (counting only SNV/SNPs)'
+    assert 60 == len(variants), 'Incorrect number of variants returned (counting only SNV/SNPs)'
 
-    assert 'reference:4265:G:C' == variants[4265]['SampleA'].id, 'Incorrect variant returned'
-    assert 'SampleB' not in variants[4265], 'Incorrect variant returned'
-    assert 'SampleC' not in variants[4265], 'Incorrect variant returned'
+    v1 = find_variant_by_position(variants, 4265)
+    assert 'reference:4265:G:C' == v1.spdi, 'Incorrect variant returned'
+    assert {1} == set(v1.sample_ids)
 
-    assert 'reference:839:C:G' == variants[839]['SampleB'].id, 'Incorrect variant returned'
-    assert 'reference:839:C:G' == variants[839]['SampleC'].id, 'Incorrect variant returned'
-    assert 'SampleA' not in variants[839], 'Incorrect variant returned'
+    v2 = find_variant_by_position(variants, 839)
+    assert 'reference:839:C:G' == v2.spdi, 'Incorrect variant returned'
+    assert {2,3} == set(v2.sample_ids)
 
 
 @pytest.mark.skip()

@@ -26,24 +26,12 @@ class VariationService:
         self._sample_service = sample_service
         self._variation_dir = variation_dir
 
-    def get_variants(self, sequence_name: str, type: str = 'snp') -> Dict[int, Dict[str, Any]]:
-        raise Exception('Not implemented')
-        # variants = self._connection.get_session().query(VariationAllele) \
-        #     .join(ReferenceSequence) \
-        #     .filter(ReferenceSequence.sequence_name == sequence_name) \
-        #     .filter(VariationAllele.var_type == type) \
-        #     .order_by(VariationAllele.position) \
-        #     .all()
-        #
-        # variants_dict = {}
-        #
-        # for variant in variants:
-        #     if variant.position not in variants_dict:
-        #         variants_dict[variant.position] = {}
-        #     for sample in variant.samples:
-        #         variants_dict[variant.position][sample.name] = variant
-        #
-        # return variants_dict
+    def get_variants_ordered(self, sequence_name: str, type: str = 'snp') -> List[NucleotideVariantsSamples]:
+        return self._connection.get_session().query(NucleotideVariantsSamples) \
+            .filter(NucleotideVariantsSamples.sequence == sequence_name) \
+            .filter(NucleotideVariantsSamples.var_type == type) \
+            .order_by(NucleotideVariantsSamples.position) \
+            .all()
 
     def _create_nucleotide_variants(self, var_df: pd.DataFrame) -> List[NucleotideVariantsSamples]:
         samples_names = set(var_df['SAMPLE'].tolist())
