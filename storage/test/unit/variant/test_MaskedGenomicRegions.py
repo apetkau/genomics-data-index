@@ -147,11 +147,26 @@ def test_mask_genome():
             SeqIO.write(genome_record, f, 'fasta')
 
         mask = MaskedGenomicRegions(BedTool('reference 0 4', from_string=True))
-        masked_records = mask.mask_genome(genome_file, mask_char='?')
+        masked_records = mask.mask_genome(genome_file, mask_char='?', remove=True)
 
         assert 1 == len(masked_records)
         assert 'reference' == masked_records['reference'].id
         assert Seq('AATT') == masked_records['reference'].seq
+
+
+def test_mask_genome_no_remove():
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        genome_file = Path(tmp_dir) / 'genome.fasta'
+        genome_record = SeqRecord(id='reference', seq=Seq('ATCGAATT'))
+        with open(genome_file, 'w') as f:
+            SeqIO.write(genome_record, f, 'fasta')
+
+        mask = MaskedGenomicRegions(BedTool('reference 0 4', from_string=True))
+        masked_records = mask.mask_genome(genome_file, mask_char='?', remove=False)
+
+        assert 1 == len(masked_records)
+        assert 'reference' == masked_records['reference'].id
+        assert Seq('????AATT') == masked_records['reference'].seq
 
 
 def test_mask_genome_multiple_sequence():
@@ -165,7 +180,7 @@ def test_mask_genome_multiple_sequence():
             SeqIO.write(genome_records, f, 'fasta')
 
         mask = MaskedGenomicRegions(BedTool('r1 2 4\nr2 4 8', from_string=True))
-        masked_records = mask.mask_genome(genome_file, mask_char='?')
+        masked_records = mask.mask_genome(genome_file, mask_char='?', remove=True)
 
         assert 2 == len(masked_records)
         assert 'r1' == masked_records['r1'].id

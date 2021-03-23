@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import List, Set
+from typing import List, Set, Dict
 import tempfile
 
 from pathlib import Path
@@ -20,20 +20,23 @@ class MaskedGenomicRegions:
         union = self._mask.cat(other._mask, postmerge=True, force_truncate=True)
         return MaskedGenomicRegions(union)
 
-    def mask_genome(self, genome_file: Path, mask_char: str = '?') -> Dict[str, SeqRecord]:
+    def mask_genome(self, genome_file: Path, mask_char: str = '?', remove: bool = True) -> Dict[str, SeqRecord]:
         """
-        Gets a SeqRecord with all those regions on the passed genome that are in the masked regions removed.
+        Gets a SeqRecord with all those regions on the passed genome that are in the masked regions removed
+        (or masked with mask_char).
         :param genome_file: The genome file to mask.
         :param mask_char: The character to mask with.
+        :param remove: Whether or not to remove masked sequence data.
         :return: A Dictionary mapping a sequence name to a SeqRecord containing all those regions on the sequence
-                 within the masked regions removed.
+                 within the masked regions removed (or masked with mask_char)
         """
         with tempfile.TemporaryDirectory() as out_f:
             seq_records = {}
             output_fasta = Path(out_f) / 'masked.fasta'
             self._mask.mask_fasta(fi=str(genome_file), fo=str(output_fasta), mc=mask_char)
             for record in SeqIO.parse(output_fasta, 'fasta'):
-                record.seq = record.seq.ungap(mask_char)
+                if remove:
+                    record.seq = record.seq.ungap(mask_char)
                 seq_records[record.id] = record
             return seq_records
 
