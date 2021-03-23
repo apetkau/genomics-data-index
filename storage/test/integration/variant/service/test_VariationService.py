@@ -10,7 +10,7 @@ from storage.variant.io.SnippyVariantsReader import SnippyVariantsReader
 from storage.test.integration.variant import data_dir
 
 
-def test_insert_variants_saved_file(database, snippy_variants_reader, reference_service_with_data,
+def test_insert_variants_saved_files(database, snippy_variants_reader, reference_service_with_data,
                          sample_service, filesystem_storage):
     variation_service = VariationService(database_connection=database,
                                          reference_service=reference_service_with_data,
@@ -32,7 +32,26 @@ def test_insert_variants_saved_file(database, snippy_variants_reader, reference_
     assert 3 == len(genomic_mask_files)
 
 
-def test_insert_variants(database, snippy_variants_reader, reference_service_with_data,
+def test_insert_variants_masked_regions(database, snippy_variants_reader, reference_service_with_data,
+                         sample_service, filesystem_storage):
+    variation_service = VariationService(database_connection=database,
+                                         reference_service=reference_service_with_data,
+                                         sample_service=sample_service,
+                                         variation_dir=filesystem_storage.variation_dir)
+
+    session = database.get_session()
+
+    variation_service.insert_variants(reference_name='genome', variants_reader=snippy_variants_reader)
+
+    samples = session.query(Sample).all()
+
+    genomic_masks = {s.name: v.masked_regions for s in samples for v in s.sample_nucleotide_variation}
+    assert 437 == len(genomic_masks['SampleA'])
+    assert 276 == len(genomic_masks['SampleB'])
+    assert 329 == len(genomic_masks['SampleC'])
+
+
+def test_insert_variants_examine_variation(database, snippy_variants_reader, reference_service_with_data,
                          sample_service, filesystem_storage):
     variation_service = VariationService(database_connection=database,
                                          reference_service=reference_service_with_data,
