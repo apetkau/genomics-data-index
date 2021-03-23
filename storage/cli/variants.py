@@ -163,6 +163,8 @@ def load_vcf(ctx, vcf_fofns: Path, reference_file: Path, build_tree: bool, threa
     align_type = None
     reference_file = Path(reference_file)
 
+    logger.warning('TODO: I need to make sure "TYPE" is available in the input VCF/BCF files')
+
     # Generate empty masks
     empty_core_mask: Dict[str, MaskedGenomicRegions] = {}
     ref_name, sequences = parse_sequence_file(reference_file)

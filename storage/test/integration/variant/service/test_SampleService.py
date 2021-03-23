@@ -1,5 +1,3 @@
-import pytest
-
 from storage.variant.SampleSet import SampleSet
 
 

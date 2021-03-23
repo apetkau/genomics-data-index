@@ -171,7 +171,6 @@ class CoreAlignmentService:
 
         for sequence_name in reference_sequences:
             seq = self._reference_service.get_sequence(sequence_name)
-            variants_ordered = self._variation_service.get_variants_ordered(sequence_name, type='snp')
 
             if align_type == 'core':
                 pass
