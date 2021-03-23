@@ -1,4 +1,5 @@
-import math
+import tempfile
+from pathlib import Path
 
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
@@ -112,3 +113,25 @@ def test_union():
     assert mask_union.contains('record1', 5)
     assert mask_union.contains('record1', 6)
     assert not mask_union.contains('record1', 7)
+
+
+def test_write():
+    sequences = [SeqRecord(seq=Seq('ATCG-NN'), id='record1')]
+    mask = MaskedGenomicRegions.from_sequences(sequences=sequences)
+
+    assert 3 == len(mask), 'Invalid length'
+    assert not mask.contains('record1', 3)
+    assert mask.contains('record1', 4)
+    assert mask.contains('record1', 6)
+    assert not mask.contains('record1', 7)
+
+    with tempfile.NamedTemporaryFile() as f:
+        file = Path(f.name)
+        mask.write(file)
+
+        mask2 = MaskedGenomicRegions.from_file(file)
+        assert 3 == len(mask2), 'Invalid length'
+        assert not mask2.contains('record1', 3)
+        assert mask2.contains('record1', 4)
+        assert mask2.contains('record1', 6)
+        assert not mask2.contains('record1', 7)

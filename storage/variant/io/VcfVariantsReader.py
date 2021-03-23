@@ -101,16 +101,16 @@ class VcfVariantsReader(VariantsReader):
         """
         return str(element)
 
-    def _read_genomic_masked_regions(self) -> Dict[str, Dict[str, MaskedGenomicRegions]]:
-        core_masks = {}
+    def _read_genomic_masked_regions(self) -> Dict[str, MaskedGenomicRegions]:
+        genomic_masks = {}
 
         for sample in self._sample_vcf_map:
             if sample in self._genomic_mask_files_map:
-                core_masks[sample] = self.read_genomic_masks_from_file(self._genomic_mask_files_map[sample])
+                genomic_masks[sample] = self.read_genomic_masks_from_file(self._genomic_mask_files_map[sample])
             else:
-                core_masks[sample] = MaskedGenomicRegions.empty_mask()
+                genomic_masks[sample] = MaskedGenomicRegions.empty_mask()
 
-        return core_masks
+        return genomic_masks
 
     def read_genomic_masks_from_file(self, file: Path) -> MaskedGenomicRegions:
         name, records = parse_sequence_file(file)

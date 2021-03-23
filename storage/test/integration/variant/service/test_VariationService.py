@@ -10,7 +10,7 @@ from storage.variant.io.SnippyVariantsReader import SnippyVariantsReader
 from storage.test.integration.variant import data_dir
 
 
-def test_insert_variants_tmp(database, snippy_variants_reader, reference_service_with_data,
+def test_insert_variants_saved_file(database, snippy_variants_reader, reference_service_with_data,
                          sample_service, filesystem_storage):
     variation_service = VariationService(database_connection=database,
                                          reference_service=reference_service_with_data,
@@ -27,6 +27,9 @@ def test_insert_variants_tmp(database, snippy_variants_reader, reference_service
 
     variation_files = {v.nucleotide_variants_file for s in samples for v in s.sample_nucleotide_variation}
     assert 3 == len(variation_files)
+
+    genomic_mask_files = {v.masked_regions_file for s in samples for v in s.sample_nucleotide_variation}
+    assert 3 == len(genomic_mask_files)
 
 
 def test_insert_variants(database, snippy_variants_reader, reference_service_with_data,

@@ -45,9 +45,9 @@ class VariantsReader(abc.ABC):
     def _read_variants_table(self) -> pd.DataFrame:
         pass
 
-    def get_genomic_masked_regions(self) -> Dict[str, Dict[str, MaskedGenomicRegions]]:
+    def get_genomic_masked_regions(self) -> Dict[str, MaskedGenomicRegions]:
         return self._read_genomic_masked_regions()
 
     @abc.abstractmethod
-    def _read_genomic_masked_regions(self) -> Dict[str, Dict[str, MaskedGenomicRegions]]:
+    def _read_genomic_masked_regions(self) -> Dict[str, MaskedGenomicRegions]:
         pass

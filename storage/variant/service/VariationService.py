@@ -65,6 +65,7 @@ class VariationService:
     def insert_variants(self, reference_name: str, variants_reader: VariantsReader) -> None:
         reference = self._reference_service.find_reference_genome(reference_name)
         sample_variant_files = variants_reader.sample_variant_files()
+        genomic_masked_regions = variants_reader.get_genomic_masked_regions()
 
         if self.check_samples_have_variants(set(sample_variant_files.keys()), reference_name):
             raise EntityExistsError(f'Passed samples already have variants for reference genome [{reference_name}], '
@@ -76,6 +77,14 @@ class VariationService:
             sample_nucleotide_variation = SampleNucleotideVariation(reference=reference)
             sample_nucleotide_variation.nucleotide_variants_file = self._save_variation_file(variant_file, sample)
             sample_nucleotide_variation.sample = sample
+
+            if sample_name in genomic_masked_regions:
+                masked_regions = genomic_masked_regions[sample_name]
+            else:
+                masked_regions = MaskedGenomicRegions.empty_mask()
+
+            sample_nucleotide_variation.masked_regions_file = self._save_masked_regions_file(masked_regions, sample)
+
             self._connection.get_session().add(sample_nucleotide_variation)
         self._connection.get_session().commit()
 
@@ -92,6 +101,14 @@ class VariationService:
             raise Exception(f'File {new_file} already exists')
 
         shutil.copyfile(original_file, new_file)
+        return new_file
+
+    def _save_masked_regions_file(self, masked_regions, sample: Sample):
+        new_file = self._variation_dir / f'{sample.name}.bed.gz'
+        if new_file.exists():
+            raise Exception(f'File {new_file} already exists')
+
+        masked_regions.write(new_file)
         return new_file
 
     def pairwise_distance(self, samples: List[str], var_type='all', distance_type='jaccard') -> pd.DataFrame:

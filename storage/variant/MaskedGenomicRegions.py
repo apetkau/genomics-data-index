@@ -1,7 +1,7 @@
 from __future__ import annotations
-
 from typing import List, Set
 
+from pathlib import Path
 from pybedtools import BedTool
 from Bio.SeqRecord import SeqRecord
 
@@ -17,6 +17,9 @@ class MaskedGenomicRegions:
     def union(self, other: MaskedGenomicRegions) -> MaskedGenomicRegions:
         union = self._mask.cat(other._mask, postmerge=True, force_truncate=True)
         return MaskedGenomicRegions(union)
+
+    def write(self, file: Path):
+        self._mask.saveas(str(file), compressed=True)
 
     @classmethod
     def union_all(cls, masked_regions: List[MaskedGenomicRegions]):
@@ -60,6 +63,11 @@ class MaskedGenomicRegions:
 
         bedtool_intervals = BedTool(mask_intervals)
         return MaskedGenomicRegions(bedtool_intervals)
+
+    @classmethod
+    def from_file(cls, file: Path) -> MaskedGenomicRegions:
+        bed_file_data = BedTool(str(file))
+        return MaskedGenomicRegions(bed_file_data)
 
     @classmethod
     def empty_mask(cls):
