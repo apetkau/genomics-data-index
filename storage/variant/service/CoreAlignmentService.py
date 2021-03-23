@@ -98,6 +98,8 @@ class CoreAlignmentService:
                 SeqIO.write(reference_records, h, 'fasta')
 
             if align_type == 'core':
+                raise Exception('align_type=core not fully implemented')
+
                 core_mask = self._create_core_mask(sample_nucleotide_variants)
                 core_mask_file = Path(tmp_dir) / 'core-mask.bed.gz'
                 core_mask.write(core_mask_file)
