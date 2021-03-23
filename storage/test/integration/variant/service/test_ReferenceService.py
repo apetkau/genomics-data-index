@@ -117,3 +117,11 @@ def test_find_reference_for_sequence_not_exist(reference_service_with_data, vari
     with pytest.raises(NoResultFound) as execinfo:
         reference_service_with_data.find_reference_for_sequence('not_exist')
     assert 'No row was found' in str(execinfo.value)
+
+
+def test_get_reference_genome_records(reference_service_with_data, variation_service):
+    records = reference_service_with_data.get_reference_genome_records('genome')
+    assert 1 == len(records)
+
+    assert 'reference' == records[0].id
+    assert 5180 == len(records[0])

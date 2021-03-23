@@ -40,10 +40,14 @@ class ReferenceService:
         reference = self.find_reference_genome(reference_name)
         return {s.sequence_name: s for s in reference.sequences}
 
-    def get_sequence(self, sequence_name: str):
+    def get_sequence(self, sequence_name: str) -> SeqRecord:
         namespace = self._seq_repo_namespace
         seq_string = self._seq_repo_proxy.get_sequence(f'{namespace}:{sequence_name}')
         return SeqRecord(seq_string, id=sequence_name)
+
+    def get_reference_genome_records(self, reference_name: str) -> List[SeqRecord]:
+        reference = self.find_reference_genome(reference_name)
+        return [self.get_sequence(sequence.sequence_name) for sequence in reference.sequences]
 
     def _create_reference_genome_db(self, reference_file: Path):
         ref_length = 0
