@@ -3,6 +3,8 @@ from pathlib import Path
 
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
+from Bio import SeqIO
+from pybedtools import BedTool
 
 from storage.variant.MaskedGenomicRegions import MaskedGenomicRegions
 
@@ -135,3 +137,38 @@ def test_write():
         assert mask2.contains('record1', 4)
         assert mask2.contains('record1', 6)
         assert not mask2.contains('record1', 7)
+
+
+def test_mask_genome():
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        genome_file = Path(tmp_dir) / 'genome.fasta'
+        genome_record = SeqRecord(id='reference', seq=Seq('ATCGAATT'))
+        with open(genome_file, 'w') as f:
+            SeqIO.write(genome_record, f, 'fasta')
+
+        mask = MaskedGenomicRegions(BedTool('reference 0 4', from_string=True))
+        masked_records = mask.mask_genome(genome_file, mask_char='?')
+
+        assert 1 == len(masked_records)
+        assert 'reference' == masked_records['reference'].id
+        assert Seq('AATT') == masked_records['reference'].seq
+
+
+def test_mask_genome_multiple_sequence():
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        genome_file = Path(tmp_dir) / 'genome.fasta'
+        genome_records = [
+            SeqRecord(id='r1', seq=Seq('ATCGAATT')),
+            SeqRecord(id='r2', seq=Seq('GGGGCCCCAAAA')),
+        ]
+        with open(genome_file, 'w') as f:
+            SeqIO.write(genome_records, f, 'fasta')
+
+        mask = MaskedGenomicRegions(BedTool('r1 2 4\nr2 4 8', from_string=True))
+        masked_records = mask.mask_genome(genome_file, mask_char='?')
+
+        assert 2 == len(masked_records)
+        assert 'r1' == masked_records['r1'].id
+        assert Seq('ATAATT') == masked_records['r1'].seq
+        assert 'r2' == masked_records['r2'].id
+        assert Seq('GGGGAAAA') == masked_records['r2'].seq
