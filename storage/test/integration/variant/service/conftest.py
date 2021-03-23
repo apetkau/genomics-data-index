@@ -13,7 +13,7 @@ from storage.variant.service.VariationService import VariationService
 from storage.variant.service.CoreAlignmentService import CoreAlignmentService
 from storage.variant.io.SnippyVariantsReader import SnippyVariantsReader
 from storage.variant.service.SampleService import SampleService
-# from storage.variant.service.TreeService import TreeService
+from storage.variant.service.TreeService import TreeService
 from storage.FilesystemStorage import FilesystemStorage
 
 
@@ -71,17 +71,17 @@ def core_alignment_service(database, reference_service_with_data, variation_serv
                                 )
 
 
-# @pytest.fixture
-# def tree_service(database, reference_service_with_data, core_alignment_service) -> TreeService:
-#     return TreeService(database, reference_service_with_data, core_alignment_service)
-#
-#
-# @pytest.fixture
-# def tree_service_with_tree_stored(database, reference_service_with_data,
-#                                   core_alignment_service, variation_service) -> TreeService:
-#     tree_service = TreeService(database, reference_service_with_data, core_alignment_service)
-#     tree_service.rebuild_tree('genome',
-#                               tree_build_type='iqtree',
-#                               extra_params='-m MFP+ASC --seed 42')
-#
-#     return tree_service
+@pytest.fixture
+def tree_service(database, reference_service_with_data, core_alignment_service) -> TreeService:
+    return TreeService(database, reference_service_with_data, core_alignment_service)
+
+
+@pytest.fixture
+def tree_service_with_tree_stored(database, reference_service_with_data,
+                                  core_alignment_service, variation_service) -> TreeService:
+    tree_service = TreeService(database, reference_service_with_data, core_alignment_service)
+    tree_service.rebuild_tree('genome',
+                              tree_build_type='iqtree',
+                              extra_params='-m MFP+ASC --seed 42')
+
+    return tree_service
