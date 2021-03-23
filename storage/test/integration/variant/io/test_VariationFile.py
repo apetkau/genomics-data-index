@@ -53,3 +53,20 @@ def test_consensus_mask():
     assert 5180 == len(actual_seq_record)
     assert expected_consensus_record.id == actual_seq_record.id
     assert expected_consensus_record.seq == actual_seq_record.seq
+
+
+def test_consensus_mask_over_mutation():
+    sample_bcf = variation_dir / 'SampleA.bcf'
+    sample_mask_file = variation_dir / 'SampleA-mask-over-mutation.bed.gz'
+
+    expected_consensus_file = consensus_dir / 'SampleA-consensus-withmask-over-mutation.fasta.gz'
+    name, expected_consensus_records = parse_sequence_file(expected_consensus_file)
+    expected_consensus_record = expected_consensus_records[0]
+
+    seq_records = VariationFile(sample_bcf).consensus(reference_file=reference_file,
+                                        mask_file=sample_mask_file)
+    assert 1 == len(seq_records)
+    actual_seq_record = seq_records[0]
+    assert 5180 == len(actual_seq_record)
+    assert expected_consensus_record.id == actual_seq_record.id
+    assert expected_consensus_record.seq == actual_seq_record.seq

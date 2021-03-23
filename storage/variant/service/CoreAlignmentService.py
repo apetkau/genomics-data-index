@@ -35,24 +35,9 @@ class CoreAlignmentService:
         samples = self._sample_service.get_samples_with_variants(reference_name)
         return [s.name for s in samples]
 
-    def _create_core_mask(self) -> MaskedGenomicRegions:
-        raise Exception('Not implemented')
-        # if sequences is None or len(sequences) == 0:
-        #     raise Exception('Cannot create bitmask of empty sequences')
-        # else:
-        #     start_time = time.time()
-        #     logger.debug(f'Started creating core mask for {len(sequences)} sequences')
-        #
-        #     core_mask = sequences[0].core_mask
-        #     for i in range(1, len(sequences)):
-        #         sequence = sequences[i]
-        #         core_mask = core_mask.append_bitmask(sequence.core_mask)
-        #
-        #     end_time = time.time()
-        #     logger.debug(f'Finished creating core mask for {len(sequences)} sequences. '
-        #                  f'Took {end_time - start_time:0.2f} seconds')
-        #
-        #     return core_mask
+    def _create_core_mask(self, sample_variations: List[SampleNucleotideVariation]) -> MaskedGenomicRegions:
+        masked_regions = [v.masked_regions for v in sample_variations]
+        return MaskedGenomicRegions.union_all(masked_regions)
 
     def _build_core_alignment_sequence(self, ref_sequence: SeqRecord,
                                        variants_ordered: List[NucleotideVariantsSamples],
