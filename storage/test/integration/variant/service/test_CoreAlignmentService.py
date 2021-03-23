@@ -21,7 +21,7 @@ def replace_column_with_reference(alignment: MultipleSeqAlignment, position: int
                                   skip_missing=True) -> MultipleSeqAlignment:
     column = alignment[:, (position - 1):position]
     ref = None
-    ref_name = 'reference'
+    ref_name = 'genome'
     for s in column:
         if s.id == ref_name:
             ref = s
@@ -41,9 +41,11 @@ def replace_column_with_reference(alignment: MultipleSeqAlignment, position: int
 def replace_ref_name(alignment):
     # Change reference name
     for s in alignment:
-        s.description = 'generated automatically'
         if s.id == 'Reference':
-            s.id = 'reference'
+            s.id = 'genome'
+            s.description = '[reference genome]'
+        else:
+            s.description = 'generated automatically'
 
 
 def replace_gap_with_n_and_upper(alignment: MultipleSeqAlignment) -> MultipleSeqAlignment:
@@ -120,10 +122,10 @@ def compare_alignments(a: MultipleSeqAlignment, b: MultipleSeqAlignment) -> None
     assert len(a) == len(b), 'Alignment has incorrect number of samples'
     assert a.get_alignment_length() == b.get_alignment_length()
 
-    alignment_length = a.get_alignment_length()
-    for i in range(0, alignment_length):
-        assert a[0].id == b[0].id, 'Alignment ids are not equal'
-        assert a[0].seq == b[0].seq, 'Alignment sequences are not equal'
+    number_of_sequences = len(a)
+    for i in range(0, number_of_sequences):
+        assert a[i].id == b[i].id, 'Alignment ids are not equal'
+        assert a[i].seq == b[i].seq, 'Alignment sequences are not equal'
 
 
 @pytest.mark.skip()

@@ -24,6 +24,10 @@ logger = logging.getLogger(__name__)
 class CoreAlignmentService:
     ALIGN_TYPES = ['core', 'full']
 
+    # Mask generated sequence with this character (which should not appear anywhere else) so I can remove
+    # all positions with this character later (when generating core alignment)
+    CORE_MASK_CHAR = '?'
+
     def __init__(self, database: DatabaseConnection, reference_service: ReferenceService,
                  sample_service: SampleService, variation_service: VariationService):
         self._database = database
@@ -39,49 +43,24 @@ class CoreAlignmentService:
         masked_regions = [v.masked_regions for v in sample_variations]
         return MaskedGenomicRegions.union_all(masked_regions)
 
-    def _build_core_alignment_sequence(self, ref_sequence: SeqRecord,
-                                       variants_ordered: List[NucleotideVariantsSamples],
-                                       core_mask: MaskedGenomicRegions,
-                                       samples: List[Sample],
-                                       include_reference: bool) -> Dict[str, SeqRecord]:
-        start_time = time.time()
-        logger.debug(f'Started building core alignment for {ref_sequence.id} using {len(variants_ordered)} '
-                     'variant positions')
+    def _core_alignment_sequence_generator(self, reference_file: Path, core_mask_file: Path,
+                                           sample_variations: List[SampleNucleotideVariation]) -> Generator[Dict[str, SeqRecord], None, None]:
+        for sample_variation in sample_variations:
+            seq_records = {}
 
-        seq_records = {}
-        selected_sample_ids = {s.id for s in samples}
-        for variant in variants_ordered:
-            position = variant.position
-            ref = ref_sequence[position - 1:position].seq
-
-            # if in core
-            if position in core_mask:
-                if len(selected_sample_ids.intersection(variant.sample_ids)) == 0:
-                    continue
-
-                for sample in samples:
-                    if sample.name not in seq_records:
-                        seq_records[sample.name] = SeqRecord(
-                            seq=Seq(''), id=sample.name, description='generated automatically')
-
-                    if sample.id in variant.sample_ids:
-                        seq_records[sample] += variant.insertion
-                    else:
-                        seq_records[sample] += ref
-
-                if include_reference:
-                    # Add the reference sequence in
-                    if 'reference' not in seq_records:
-                        seq_records['reference'] = SeqRecord(
-                            seq=Seq(''), id='reference', description='generated automatically')
-
-                    seq_records['reference'] += ref
-
-        end_time = time.time()
-        logger.debug(f'Finished building core alignment for {ref_sequence.id}. '
-                     f'Took {end_time - start_time:0.2f} seconds')
-
-        return seq_records
+            consensus_records = VariationFile(sample_variation.nucleotide_variants_file).consensus(
+                reference_file=reference_file,
+                mask_file=core_mask_file,
+                mask_with=self.CORE_MASK_CHAR
+            )
+            for record in consensus_records:
+                seq_records[record.id] = record
+                record.id = sample_variation.sample.name
+                record.description = 'generated automatically'
+                # Remove this character fro alignment sequences
+                # To produce a core-only alignment
+                record.seq = record.seq.ungap(self.CORE_MASK_CHAR)
+            yield seq_records
 
     def _full_alignment_sequence_generator(self, reference_file: Path,
                                            sample_variations: List[SampleNucleotideVariation]) -> Generator[Dict[str, SeqRecord], None, None]:
@@ -119,7 +98,25 @@ class CoreAlignmentService:
                 SeqIO.write(reference_records, h, 'fasta')
 
             if align_type == 'core':
-                raise Exception('align_type=core not implemented')
+                core_mask = self._create_core_mask(sample_nucleotide_variants)
+                core_mask_file = Path(tmp_dir) / 'core-mask.bed.gz'
+                core_mask.write(core_mask_file)
+
+                alignment_generator = self._core_alignment_sequence_generator(
+                    reference_file=reference_file,
+                    sample_variations=sample_nucleotide_variants,
+                    core_mask_file=core_mask_file
+                )
+
+                if include_reference:
+                    # Add the reference sequence in
+                    reference_records = core_mask.mask_genome(genome_file=reference_file, mask_char='?', remove=True)
+                    for sequence in reference_records:
+                        record = reference_records[sequence]
+                        alignment_seqs[sequence] = [record]
+                        record.id = reference_name
+                        record.description = '[reference genome]'
+
             elif align_type == 'full':
                 alignment_generator = self._full_alignment_sequence_generator(
                     reference_file=reference_file,
@@ -131,17 +128,20 @@ class CoreAlignmentService:
                     reference_records_align = copy.deepcopy(reference_records)
                     for record in reference_records_align:
                         alignment_seqs[record.id] = [record]
-                        record.id = 'reference'
-                        record.description = 'generated automatically'
-
-                for sequence_record in alignment_generator:
-                    for sequence in sequence_record:
-                        if sequence not in alignment_seqs:
-                            alignment_seqs[sequence] = [sequence_record[sequence]]
-                        else:
-                            alignment_seqs[sequence].append(sequence_record[sequence])
+                        record.id = reference_name
+                        record.description = '[reference genome]'
             else:
                 raise Exception(f'Unknown value for align_type=[{align_type}]. Must be one of {self.ALIGN_TYPES}')
+
+            # Actually generate the data
+            for sequence_record in alignment_generator:
+                for sequence in sequence_record:
+                    if sequence == reference_name:
+                        raise Exception(f'Data contains a sequence with name [{sequence}], which is the same as the reference genome name')
+                    elif sequence not in alignment_seqs:
+                        alignment_seqs[sequence] = [sequence_record[sequence]]
+                    else:
+                        alignment_seqs[sequence].append(sequence_record[sequence])
 
         for sequence_name in alignment_seqs:
             alignments[sequence_name] = MultipleSeqAlignment(
