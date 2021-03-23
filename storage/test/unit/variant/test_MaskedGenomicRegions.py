@@ -187,3 +187,39 @@ def test_mask_genome_multiple_sequence():
         assert Seq('ATAATT') == masked_records['r1'].seq
         assert 'r2' == masked_records['r2'].id
         assert Seq('GGGGAAAA') == masked_records['r2'].seq
+
+
+def test_overlaps_region_one_region():
+    masked_region = MaskedGenomicRegions(BedTool([('ref', 10, 20)]))
+
+    assert not masked_region.overlaps_range('ref', 9, 10)
+
+    assert masked_region.overlaps_range('ref', 10, 11)
+    assert masked_region.overlaps_range('ref', 11, 15)
+    assert masked_region.overlaps_range('ref', 11, 21)
+    assert masked_region.overlaps_range('ref', 11, 25)
+
+    assert masked_region.overlaps_range('ref', 19, 25)
+    assert not masked_region.overlaps_range('ref', 20, 25)
+    assert not masked_region.overlaps_range('ref', 21, 25)
+
+    assert masked_region.overlaps_range('ref', 9, 25)
+
+    assert not masked_region.overlaps_range('no_exist', 11, 15)
+
+
+def test_overlaps_region_multiple_regions():
+    masked_region = MaskedGenomicRegions(BedTool([('ref', 10, 20),
+                                                  ('ref2', 30, 40)]))
+
+    assert not masked_region.overlaps_range('ref', 9, 10)
+    assert masked_region.overlaps_range('ref', 10, 11)
+    assert masked_region.overlaps_range('ref', 11, 15)
+    assert masked_region.overlaps_range('ref', 19, 25)
+    assert not masked_region.overlaps_range('ref', 20, 25)
+
+    assert not masked_region.overlaps_range('ref2', 29, 30)
+    assert masked_region.overlaps_range('ref2', 30, 31)
+    assert masked_region.overlaps_range('ref2', 31, 35)
+    assert masked_region.overlaps_range('ref2', 39, 45)
+    assert not masked_region.overlaps_range('ref2', 40, 45)

@@ -111,6 +111,18 @@ class MaskedGenomicRegions:
                 return True
         return False
 
+    def overlaps_range(self, sequence: str, start: int, stop: int) -> bool:
+        if stop <= start:
+            raise Exception(f'start=[{start}] is less than stop=[{stop}]')
+
+        for i in self._mask:
+            if i.chrom == sequence:
+                if i.start <= start and i.end > start:
+                    return True
+                elif start < i.end and stop > i.end:
+                    return True
+        return False
+
     def __len__(self) -> int:
         """
         Calculates length of underlying masked intervals. Assumes the intervals have been merged beforehand.
