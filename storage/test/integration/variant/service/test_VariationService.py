@@ -176,6 +176,21 @@ def test_get_variants_ordered(database, snippy_variants_reader, reference_servic
     assert {2,3} == set(v2.sample_ids)
 
 
+def test_get_sample_nucleotide_variation_one_sample(variation_service):
+    sample_variations = variation_service.get_sample_nucleotide_variation(['SampleA'])
+
+    assert 1 == len(sample_variations)
+    assert isinstance(sample_variations[0], SampleNucleotideVariation)
+    assert 'SampleA' == sample_variations[0].sample.name
+
+
+def test_get_sample_nucleotide_variation_all_samples(variation_service):
+    sample_variations = variation_service.get_sample_nucleotide_variation(['SampleA', 'SampleB', 'SampleC'])
+
+    assert 3 == len(sample_variations)
+    assert {'SampleA', 'SampleB', 'SampleC'} == {v.sample.name for v in sample_variations}
+
+
 @pytest.mark.skip()
 def test_pariwise_distance(database, snippy_variants_reader, reference_service_with_data,
                            sample_service, filesystem_storage):

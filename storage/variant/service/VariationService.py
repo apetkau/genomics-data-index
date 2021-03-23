@@ -34,6 +34,12 @@ class VariationService:
             .order_by(NucleotideVariantsSamples.position) \
             .all()
 
+    def get_sample_nucleotide_variation(self, sample_names: List[str]) -> List[SampleNucleotideVariation]:
+        return self._connection.get_session().query(SampleNucleotideVariation) \
+            .join(SampleNucleotideVariation.sample) \
+            .filter(Sample.name.in_(sample_names)) \
+            .all()
+
     def _create_nucleotide_variants(self, var_df: pd.DataFrame) -> List[NucleotideVariantsSamples]:
         samples_names = set(var_df['SAMPLE'].tolist())
         sample_name_ids = self._sample_service.find_sample_name_ids(samples_names)
