@@ -16,13 +16,13 @@ class SnippyVariantsReader(VcfVariantsReader):
         self._sample_dirs = sample_dirs
 
         vcf_map = {}
-        core_mask_map = {}
+        masked_genomic_files_map = {}
         for d in self._sample_dirs:
             sample_name = os.path.basename(d)
             vcf_map[sample_name] = Path(d, 'snps.vcf.gz')
-            core_mask_map[sample_name] = Path(d, 'snps.aligned.fa')
+            masked_genomic_files_map[sample_name] = Path(d, 'snps.aligned.fa')
 
-        super().__init__(sample_vcf_map=vcf_map, core_mask_files_map=core_mask_map)
+        super().__init__(sample_vcf_map=vcf_map, masked_genomic_files_map=masked_genomic_files_map)
 
     def _get_type(self, vcf_df: pd.DataFrame) -> pd.Series:
         return vcf_df['INFO'].map(lambda x: x['TYPE'][0])

@@ -7,7 +7,7 @@ from Bio.Align import MultipleSeqAlignment
 from Bio.Seq import Seq, MutableSeq
 from Bio.SeqRecord import SeqRecord
 
-from storage.variant.CoreBitMask import CoreBitMask
+from storage.variant.MaskedGenomicRegions import MaskedGenomicRegions
 from storage.variant.model import Sample, Reference, ReferenceSequence
 from storage.variant.service import DatabaseConnection
 from storage.variant.service.ReferenceService import ReferenceService
@@ -31,7 +31,7 @@ class CoreAlignmentService:
         samples = self._sample_service.get_samples_with_variants(reference_name)
         return [s.name for s in samples]
 
-    def _create_core_mask(self, sequences: List[SampleSequence]) -> CoreBitMask:
+    def _create_core_mask(self, sequences: List[SampleSequence]) -> MaskedGenomicRegions:
         if sequences is None or len(sequences) == 0:
             raise Exception('Cannot create bitmask of empty sequences')
         else:
@@ -51,7 +51,7 @@ class CoreAlignmentService:
 
     def _build_core_alignment_sequence(self, ref_sequence: SeqRecord,
                                        variants_dict: Dict[int, Dict[str, VariationAllele]],
-                                       core_mask: CoreBitMask,
+                                       core_mask: MaskedGenomicRegions,
                                        samples: List[str],
                                        include_reference: bool) -> Dict[str, SeqRecord]:
         start_time = time.time()

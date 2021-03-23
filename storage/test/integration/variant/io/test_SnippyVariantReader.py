@@ -48,25 +48,21 @@ def test_get_variants_table(setup):
     assert {'SampleA', 'SampleB', 'SampleC'} == set(df['SAMPLE'].tolist()), 'Incorrect sample names'
 
 
-def test_read_core_masks_from_file(setup):
+def test_read_genomic_masks_from_file(setup):
     sequence_file = data_dir / 'SampleA' / 'snps.aligned.fa'
 
-    core_masks = setup['reader'].read_core_masks_from_file(sequence_file)
+    genomic_mask = setup['reader'].read_genomic_masks_from_file(sequence_file)
 
-    total_length = len(core_masks['reference'])
-    assert 5180 == total_length, f'File has incorrect total length [{total_length}]'
-
-    missing_length = total_length - core_masks['reference'].core_length()
-    assert 437 == missing_length, f'File has incorrect missing length [{missing_length}]'
+    assert 437 == len(genomic_mask)
 
 
-def test_get_core_masks(setup):
-    core_masks = setup['reader'].get_core_masks()
+def test_get_genomic_masks(setup):
+    genomic_masks = setup['reader'].get_genomic_masked_regions()
 
-    assert {'SampleA', 'SampleB', 'SampleC'} == set(core_masks.keys()), 'Incorrect samples'
-    assert 4743 == core_masks['SampleA']['reference'].core_length(), 'Incorrect core length for SampleA'
-    assert 4904 == core_masks['SampleB']['reference'].core_length(), 'Incorrect core length for SampleB'
-    assert 4851 == core_masks['SampleC']['reference'].core_length(), 'Incorrect core length for SampleC'
+    assert {'SampleA', 'SampleB', 'SampleC'} == set(genomic_masks.keys()), 'Incorrect samples'
+    assert 437 == len(genomic_masks['SampleA'])
+    assert 276 == len(genomic_masks['SampleB'])
+    assert 329 == len(genomic_masks['SampleC'])
 
 
 def test_get_samples_list(setup):

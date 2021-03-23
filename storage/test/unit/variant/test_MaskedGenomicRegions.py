@@ -40,6 +40,15 @@ def test_create_from_two_sequences():
     assert not mask.contains('record2', 5)
 
 
+def test_sequence_names():
+    sequences = [
+        SeqRecord(seq=Seq('ATCG-NN'), id='record1'),
+        SeqRecord(seq=Seq('NN-GAT'), id='record2')
+    ]
+    mask = MaskedGenomicRegions.from_sequences(sequences=sequences)
+    assert {'record1', 'record2'} == mask.sequence_names()
+
+
 def test_create_from_sequence_all_masked():
     sequences = [SeqRecord(seq=Seq('---------'), id='record1')]
     mask = MaskedGenomicRegions.from_sequences(sequences=sequences)

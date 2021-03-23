@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from storage.variant.CoreBitMask import CoreBitMask
+from storage.variant.MaskedGenomicRegions import MaskedGenomicRegions
 
 
 def check_variants_table_columns(df: pd.DataFrame) -> None:
@@ -45,9 +45,9 @@ class VariantsReader(abc.ABC):
     def _read_variants_table(self) -> pd.DataFrame:
         pass
 
-    def get_core_masks(self) -> Dict[str, Dict[str, CoreBitMask]]:
-        return self._read_core_masks()
+    def get_genomic_masked_regions(self) -> Dict[str, Dict[str, MaskedGenomicRegions]]:
+        return self._read_genomic_masked_regions()
 
     @abc.abstractmethod
-    def _read_core_masks(self) -> Dict[str, Dict[str, CoreBitMask]]:
+    def _read_genomic_masked_regions(self) -> Dict[str, Dict[str, MaskedGenomicRegions]]:
         pass

@@ -5,7 +5,7 @@ import shutil
 
 import pandas as pd
 
-from storage.variant.CoreBitMask import CoreBitMask
+from storage.variant.MaskedGenomicRegions import MaskedGenomicRegions
 from storage.variant.io import VariantsReader
 from storage.variant.SampleSet import SampleSet
 from storage.variant.model import ReferenceSequence, Sample, SampleNucleotideVariation, NucleotideVariantsSamples

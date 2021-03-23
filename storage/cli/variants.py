@@ -14,7 +14,7 @@ from Bio import AlignIO
 
 from storage.cli import yaml_config_provider
 from storage.FilesystemStorage import FilesystemStorage
-from storage.variant.CoreBitMask import CoreBitMask
+from storage.variant.MaskedGenomicRegions import MaskedGenomicRegions
 from storage.variant.io.SnippyVariantsReader import SnippyVariantsReader
 from storage.variant.io.VcfVariantsReader import VcfVariantsReader
 from storage.variant.service import DatabaseConnection, EntityExistsError
@@ -106,7 +106,7 @@ def load_variants_common(ctx, variants_reader, reference_file, input, build_tree
         logger.error(f'Samples {samples_exist} already exist, will not load any variants')
     else:
         # var_df = variants_reader.get_variants_table()
-        # core_masks = variants_reader.get_core_masks()
+        # core_masks = variants_reader.get_genomic_masked_regions()
 
         reference_name = get_genome_name(reference_file)
 
@@ -164,10 +164,10 @@ def load_vcf(ctx, vcf_fofns: Path, reference_file: Path, build_tree: bool, threa
     reference_file = Path(reference_file)
 
     # Generate empty masks
-    empty_core_mask: Dict[str, CoreBitMask] = {}
+    empty_core_mask: Dict[str, MaskedGenomicRegions] = {}
     ref_name, sequences = parse_sequence_file(reference_file)
     for r in sequences:
-        empty_core_mask[r.id] = CoreBitMask.empty_mask(len(r))
+        empty_core_mask[r.id] = MaskedGenomicRegions.empty_mask(len(r))
 
     click.echo(f'Loading files listed in {vcf_fofns}')
     sample_vcf_map = {}
@@ -182,7 +182,7 @@ def load_vcf(ctx, vcf_fofns: Path, reference_file: Path, build_tree: bool, threa
             core_mask_files_map[row['Sample']] = row['Core File']
 
     variants_reader = VcfVariantsReader(sample_vcf_map=sample_vcf_map,
-                                        core_mask_files_map=core_mask_files_map,
+                                        masked_genomic_files_map=core_mask_files_map,
                                         empty_core_mask=empty_core_mask)
 
     load_variants_common(ctx=ctx, variants_reader=variants_reader, reference_file=reference_file,

@@ -6,7 +6,7 @@ import pytest
 
 from storage.test.integration.variant import data_dir
 from storage.test.integration.variant import data_dir_empty
-from storage.variant.CoreBitMask import CoreBitMask
+from storage.variant.MaskedGenomicRegions import MaskedGenomicRegions
 from storage.variant.io.VcfVariantsReader import VcfVariantsReader
 
 
@@ -22,17 +22,17 @@ def sample_dirs_empty() -> List[Path]:
 
 def variants_reader_internal(sample_dirs):
     sample_vcf_map = {}
-    sample_core_masks_map = {}
+    sample_genomic_files_mask = {}
     for d in sample_dirs:
         sample_name = path.basename(d)
         vcf_file = Path(d, 'snps.vcf.gz')
-        core_mask_file = Path(d, 'snps.aligned.fa')
+        genomic_file_mask = Path(d, 'snps.aligned.fa')
 
         sample_vcf_map[sample_name] = vcf_file
-        sample_core_masks_map[sample_name] = core_mask_file
+        sample_genomic_files_mask[sample_name] = genomic_file_mask
 
     return VcfVariantsReader(sample_vcf_map=sample_vcf_map,
-                             core_mask_files_map=sample_core_masks_map)
+                             masked_genomic_files_map=sample_genomic_files_mask)
 
 
 @pytest.fixture
@@ -46,7 +46,7 @@ def variants_reader_empty(sample_dirs_empty) -> VcfVariantsReader:
 
 
 @pytest.fixture
-def variants_reader_empty_core_masks(sample_dirs) -> VcfVariantsReader:
+def variants_reader_empty_masks(sample_dirs) -> VcfVariantsReader:
     sample_vcf_map = {}
     for d in sample_dirs:
         sample_name = path.basename(d)
@@ -54,12 +54,7 @@ def variants_reader_empty_core_masks(sample_dirs) -> VcfVariantsReader:
 
         sample_vcf_map[sample_name] = vcf_file
 
-    empty_mask = {
-        'reference': CoreBitMask.empty_mask(5180)
-    }
-
-    return VcfVariantsReader(sample_vcf_map=sample_vcf_map,
-                             empty_core_mask=empty_mask)
+    return VcfVariantsReader(sample_vcf_map=sample_vcf_map)
 
 
 def test_get_variants_table(variants_reader):
@@ -77,20 +72,23 @@ def test_get_variants_table(variants_reader):
     assert ['complex'] == df.loc[(df['SAMPLE'] == 'SampleC') & (df['POS'] == 1984), 'TYPE'].tolist()
 
 
-def test_get_core_masks(variants_reader):
-    core_masks = variants_reader.get_core_masks()
+def test_get_genomic_masks(variants_reader):
+    genomic_masks = variants_reader.get_genomic_masked_regions()
 
-    assert {'SampleA', 'SampleB', 'SampleC'} == set(core_masks.keys()), 'Incorrect samples'
-    assert 4743 == core_masks['SampleA']['reference'].core_length(), 'Incorrect core length for SampleA'
-    assert 4904 == core_masks['SampleB']['reference'].core_length(), 'Incorrect core length for SampleB'
-    assert 4851 == core_masks['SampleC']['reference'].core_length(), 'Incorrect core length for SampleC'
+    assert {'SampleA', 'SampleB', 'SampleC'} == set(genomic_masks.keys()), 'Incorrect samples'
+    assert 437 == len(genomic_masks['SampleA'])
+    assert 276 == len(genomic_masks['SampleB'])
+    assert 329 == len(genomic_masks['SampleC'])
+
+    assert {'reference'} == genomic_masks['SampleA'].sequence_names()
+    assert {'reference'} == genomic_masks['SampleB'].sequence_names()
+    assert {'reference'} == genomic_masks['SampleC'].sequence_names()
 
 
-def test_get_core_masks_empty(variants_reader_empty_core_masks):
-    core_masks = variants_reader_empty_core_masks.get_core_masks()
-    assert {'SampleA', 'SampleB', 'SampleC'} == set(core_masks.keys())
-    assert core_masks['SampleA']['reference'].is_empty()
-    assert 5180 == core_masks['SampleA']['reference'].core_length()
+def test_get_genomic_masks_empty(variants_reader_empty_masks):
+    genomic_masks = variants_reader_empty_masks.get_genomic_masked_regions()
+    assert {'SampleA', 'SampleB', 'SampleC'} == set(genomic_masks.keys())
+    assert genomic_masks['SampleA'].is_empty()
 
 
 def test_get_samples_list(variants_reader):

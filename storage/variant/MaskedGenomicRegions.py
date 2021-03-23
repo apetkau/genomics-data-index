@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List
+from typing import List, Set
 
 from pybedtools import BedTool
 from Bio.SeqRecord import SeqRecord
@@ -67,6 +67,13 @@ class MaskedGenomicRegions:
 
     def is_empty(self):
         return len(self) == 0
+
+    def sequence_names(self) -> Set[str]:
+        """
+        Gets a set of sequence names from this genomic regions mask.
+        :return: A set of sequence names.
+        """
+        return {x.chrom for x in self._mask}
 
     def contains(self, sequence: str, position: int) -> bool:
         for i in self._mask:
