@@ -10,9 +10,8 @@ from storage.test.integration.variant import sample_dirs, reference_file
 from storage.variant.service import DatabaseConnection
 from storage.variant.service.ReferenceService import ReferenceService
 from storage.variant.service.VariationService import VariationService
-# from storage.variant.service.CoreAlignmentService import CoreAlignmentService
+from storage.variant.service.CoreAlignmentService import CoreAlignmentService
 from storage.variant.io.SnippyVariantsReader import SnippyVariantsReader
-# from storage.variant.service.SampleSequenceService import SampleSequenceService
 from storage.variant.service.SampleService import SampleService
 # from storage.variant.service.TreeService import TreeService
 from storage.FilesystemStorage import FilesystemStorage
@@ -62,21 +61,16 @@ def variation_service(database, reference_service_with_data,
     return var_service
 
 
-# @pytest.fixture
-# def sample_sequence_service(database, variation_service):
-#     return SampleSequenceService(database)
-#
-#
-# @pytest.fixture
-# def core_alignment_service(database, reference_service_with_data, variation_service,
-#                            sample_sequence_service) -> CoreAlignmentService:
-#     return CoreAlignmentService(database=database,
-#                                 reference_service=reference_service_with_data,
-#                                 variation_service=variation_service,
-#                                 sample_sequence_service=sample_sequence_service,
-#                                 )
-#
-#
+@pytest.fixture
+def core_alignment_service(database, reference_service_with_data, variation_service,
+                           sample_service) -> CoreAlignmentService:
+    return CoreAlignmentService(database=database,
+                                reference_service=reference_service_with_data,
+                                variation_service=variation_service,
+                                sample_service=sample_service,
+                                )
+
+
 # @pytest.fixture
 # def tree_service(database, reference_service_with_data, core_alignment_service) -> TreeService:
 #     return TreeService(database, reference_service_with_data, core_alignment_service)

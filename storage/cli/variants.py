@@ -18,11 +18,10 @@ from storage.variant.MaskedGenomicRegions import MaskedGenomicRegions
 from storage.variant.io.SnippyVariantsReader import SnippyVariantsReader
 from storage.variant.io.VcfVariantsReader import VcfVariantsReader
 from storage.variant.service import DatabaseConnection, EntityExistsError
-# from storage.variant.service.CoreAlignmentService import CoreAlignmentService
+from storage.variant.service.CoreAlignmentService import CoreAlignmentService
 from storage.variant.service.MutationQueryService import MutationQueryService, QueryFeatureMutation, \
     MutationQuerySummaries
 from storage.variant.service.ReferenceService import ReferenceService
-# from storage.variant.service.SampleSequenceService import SampleSequenceService
 from storage.variant.service.SampleService import SampleService
 # from storage.variant.service.TreeService import TreeService
 from storage.variant.service.VariationService import VariationService
@@ -62,15 +61,14 @@ def main(ctx, database_connection, database_dir, verbose):
     reference_service = ReferenceService(database, filesystem_storage.reference_dir)
 
     sample_service = SampleService(database)
-    # sample_sequence_service = SampleSequenceService(database)
     variation_service = VariationService(database_connection=database,
                                          variation_dir=filesystem_storage.variation_dir,
                                          reference_service=reference_service,
                                          sample_service=sample_service)
-    # alignment_service = CoreAlignmentService(database=database,
-    #                                          reference_service=reference_service,
-    #                                          variation_service=variation_service,
-    #                                          sample_sequence_service=sample_sequence_service)
+    alignment_service = CoreAlignmentService(database=database,
+                                             reference_service=reference_service,
+                                             sample_service=sample_service,
+                                             variation_service=variation_service)
     # tree_service = TreeService(database, reference_service, alignment_service)
     mutation_query_service = MutationQueryService(reference_service=reference_service,
                                                   sample_service=sample_service)
@@ -83,7 +81,7 @@ def main(ctx, database_connection, database_dir, verbose):
     ctx.obj['kmer_service'] = kmer_service
     ctx.obj['reference_service'] = reference_service
     ctx.obj['variation_service'] = variation_service
-    # ctx.obj['alignment_service'] = alignment_service
+    ctx.obj['alignment_service'] = alignment_service
     # ctx.obj['tree_service'] = tree_service
     ctx.obj['sample_service'] = sample_service
     ctx.obj['mutation_query_service'] = mutation_query_service
@@ -165,27 +163,20 @@ def load_vcf(ctx, vcf_fofns: Path, reference_file: Path, build_tree: bool, threa
 
     logger.warning('TODO: I need to make sure "TYPE" is available in the input VCF/BCF files')
 
-    # Generate empty masks
-    empty_core_mask: Dict[str, MaskedGenomicRegions] = {}
-    ref_name, sequences = parse_sequence_file(reference_file)
-    for r in sequences:
-        empty_core_mask[r.id] = MaskedGenomicRegions.empty_mask(len(r))
-
     click.echo(f'Loading files listed in {vcf_fofns}')
     sample_vcf_map = {}
-    core_mask_files_map = {}
+    mask_files_map = {}
     files_df = pd.read_csv(vcf_fofns, sep='\t')
     for index, row in files_df.iterrows():
         if row['Sample'] in sample_vcf_map:
             raise Exception(f'Error, duplicate samples {row["Sample"]} in file {vcf_fofns}')
 
         sample_vcf_map[row['Sample']] = row['VCF']
-        if not pd.isna(row['Core File']):
-            core_mask_files_map[row['Sample']] = row['Core File']
+        if not pd.isna(row['Mask File']):
+            mask_files_map[row['Sample']] = row['Mask File']
 
     variants_reader = VcfVariantsReader(sample_vcf_map=sample_vcf_map,
-                                        masked_genomic_files_map=core_mask_files_map,
-                                        empty_core_mask=empty_core_mask)
+                                        masked_genomic_files_map=mask_files_map)
 
     load_variants_common(ctx=ctx, variants_reader=variants_reader, reference_file=reference_file,
                          input=Path(vcf_fofns), build_tree=build_tree, align_type=align_type, threads=threads,
@@ -263,37 +254,37 @@ def export(ctx, name: List[str], data_type, ascii: bool):
         raise Exception(f'Unknown data_type=[{data_type}]')
 
 
-# @main.command()
-# @click.pass_context
-# @click.option('--output-file', help='Output file', required=True, type=click.Path())
-# @click.option('--reference-name', help='Reference genome name', required=True, type=str)
-# @click.option('--align-type', help=f'The type of alignment to generate', default='core',
-#               type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
-# @click.option('--sample', help='Sample to include in alignment (can list more than one).',
-#               multiple=True, type=str)
-# def alignment(ctx, output_file: Path, reference_name: str, align_type: str, sample: List[str]):
-#     alignment_service = ctx.obj['alignment_service']
-#     reference_service = ctx.obj['reference_service']
-#     sample_service = ctx.obj['sample_service']
-#
-#     if not reference_service.exists_reference_genome(reference_name):
-#         logger.error(f'Reference genome [{reference_name}] does not exist')
-#         sys.exit(1)
-#
-#     found_samples = set(sample_service.which_exists(sample))
-#
-#     if len(sample) > 0 and found_samples != set(sample):
-#         logger.error(f'Samples {set(sample) - found_samples} do not exist')
-#         sys.exit(1)
-#
-#     alignment_data = alignment_service.construct_alignment(reference_name=reference_name,
-#                                                            samples=sample,
-#                                                            align_type=align_type,
-#                                                            include_reference=True)
-#
-#     with open(output_file, 'w') as f:
-#         AlignIO.write(alignment_data, f, 'fasta')
-#         click.echo(f'Wrote alignment to [{output_file}]')
+@main.command()
+@click.pass_context
+@click.option('--output-file', help='Output file', required=True, type=click.Path())
+@click.option('--reference-name', help='Reference genome name', required=True, type=str)
+@click.option('--align-type', help=f'The type of alignment to generate', default='core',
+              type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
+@click.option('--sample', help='Sample to include in alignment (can list more than one).',
+              multiple=True, type=str)
+def alignment(ctx, output_file: Path, reference_name: str, align_type: str, sample: List[str]):
+    alignment_service = ctx.obj['alignment_service']
+    reference_service = ctx.obj['reference_service']
+    sample_service = ctx.obj['sample_service']
+
+    if not reference_service.exists_reference_genome(reference_name):
+        logger.error(f'Reference genome [{reference_name}] does not exist')
+        sys.exit(1)
+
+    found_samples = set(sample_service.which_exists(sample))
+
+    if len(sample) > 0 and found_samples != set(sample):
+        logger.error(f'Samples {set(sample) - found_samples} do not exist')
+        sys.exit(1)
+
+    alignment_data = alignment_service.construct_alignment(reference_name=reference_name,
+                                                           samples=sample,
+                                                           align_type=align_type,
+                                                           include_reference=True)
+
+    with open(output_file, 'w') as f:
+        AlignIO.write(alignment_data, f, 'fasta')
+        click.echo(f'Wrote alignment to [{output_file}]')
 
 
 # @main.command()

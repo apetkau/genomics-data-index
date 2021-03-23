@@ -3,6 +3,7 @@ from typing import List, Dict
 
 import ga4gh.vrs.dataproxy as dataproxy
 from Bio.SeqRecord import SeqRecord
+from Bio.Seq import Seq
 from biocommons.seqrepo import SeqRepo
 from ete3 import Tree
 
@@ -43,7 +44,7 @@ class ReferenceService:
     def get_sequence(self, sequence_name: str) -> SeqRecord:
         namespace = self._seq_repo_namespace
         seq_string = self._seq_repo_proxy.get_sequence(f'{namespace}:{sequence_name}')
-        return SeqRecord(seq_string, id=sequence_name)
+        return SeqRecord(Seq(seq_string), id=sequence_name)
 
     def get_reference_genome_records(self, reference_name: str) -> List[SeqRecord]:
         reference = self.find_reference_genome(reference_name)

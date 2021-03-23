@@ -126,6 +126,7 @@ def compare_alignments(a: MultipleSeqAlignment, b: MultipleSeqAlignment) -> None
         assert a[0].seq == b[0].seq, 'Alignment sequences are not equal'
 
 
+@pytest.mark.skip()
 def test_snippy_align(core_alignment_service, expected_alignment_core):
     actual_alignment = core_alignment_service.construct_alignment(reference_name='genome',
                                                                   samples=['SampleA', 'SampleB', 'SampleC'])

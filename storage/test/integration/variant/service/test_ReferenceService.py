@@ -2,6 +2,7 @@ import gzip
 
 import pytest
 from Bio import SeqIO
+from Bio.Seq import Seq
 from ete3 import Tree
 from sqlalchemy.orm.exc import NoResultFound
 
@@ -119,7 +120,14 @@ def test_find_reference_for_sequence_not_exist(reference_service_with_data, vari
     assert 'No row was found' in str(execinfo.value)
 
 
-def test_get_reference_genome_records(reference_service_with_data, variation_service):
+def test_get_sequence(reference_service_with_data):
+    seq_record = reference_service_with_data.get_sequence('reference')
+
+    assert 'reference' == seq_record.id
+    assert isinstance(seq_record.seq, Seq)
+
+
+def test_get_reference_genome_records(reference_service_with_data):
     records = reference_service_with_data.get_reference_genome_records('genome')
     assert 1 == len(records)
 

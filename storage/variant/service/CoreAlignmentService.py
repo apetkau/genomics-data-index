@@ -1,14 +1,18 @@
 import copy
 import logging
 import time
-from typing import List, Dict
+from typing import List, Dict, Generator
+from pathlib import Path
+import tempfile
 
 from Bio.Align import MultipleSeqAlignment
 from Bio.Seq import Seq, MutableSeq
 from Bio.SeqRecord import SeqRecord
+from Bio import SeqIO
 
 from storage.variant.MaskedGenomicRegions import MaskedGenomicRegions
-from storage.variant.model import Sample, Reference, ReferenceSequence, NucleotideVariantsSamples
+from storage.variant.io.VariationFile import VariationFile
+from storage.variant.model import Sample, Reference, ReferenceSequence, NucleotideVariantsSamples, SampleNucleotideVariation
 from storage.variant.service import DatabaseConnection
 from storage.variant.service.ReferenceService import ReferenceService
 from storage.variant.service.SampleService import SampleService
@@ -31,23 +35,24 @@ class CoreAlignmentService:
         samples = self._sample_service.get_samples_with_variants(reference_name)
         return [s.name for s in samples]
 
-    def _create_core_mask(self, sequences: List[SampleSequence]) -> MaskedGenomicRegions:
-        if sequences is None or len(sequences) == 0:
-            raise Exception('Cannot create bitmask of empty sequences')
-        else:
-            start_time = time.time()
-            logger.debug(f'Started creating core mask for {len(sequences)} sequences')
-
-            core_mask = sequences[0].core_mask
-            for i in range(1, len(sequences)):
-                sequence = sequences[i]
-                core_mask = core_mask.append_bitmask(sequence.core_mask)
-
-            end_time = time.time()
-            logger.debug(f'Finished creating core mask for {len(sequences)} sequences. '
-                         f'Took {end_time - start_time:0.2f} seconds')
-
-            return core_mask
+    def _create_core_mask(self) -> MaskedGenomicRegions:
+        raise Exception('Not implemented')
+        # if sequences is None or len(sequences) == 0:
+        #     raise Exception('Cannot create bitmask of empty sequences')
+        # else:
+        #     start_time = time.time()
+        #     logger.debug(f'Started creating core mask for {len(sequences)} sequences')
+        #
+        #     core_mask = sequences[0].core_mask
+        #     for i in range(1, len(sequences)):
+        #         sequence = sequences[i]
+        #         core_mask = core_mask.append_bitmask(sequence.core_mask)
+        #
+        #     end_time = time.time()
+        #     logger.debug(f'Finished creating core mask for {len(sequences)} sequences. '
+        #                  f'Took {end_time - start_time:0.2f} seconds')
+        #
+        #     return core_mask
 
     def _build_core_alignment_sequence(self, ref_sequence: SeqRecord,
                                        variants_ordered: List[NucleotideVariantsSamples],
@@ -93,116 +98,80 @@ class CoreAlignmentService:
 
         return seq_records
 
-    def _build_full_alignment_sequence(self, ref_sequence: SeqRecord,
-                                       variants_ordered: List[NucleotideVariantsSamples],
-                                       samples: List[Sample],
-                                       sample_sequences: List[SampleSequence],
-                                       include_reference: bool) -> Dict[str, SeqRecord]:
-        seq_records = {}
+    def _full_alignment_sequence_generator(self, reference_file: Path,
+                                           sample_variations: List[SampleNucleotideVariation]) -> Generator[Dict[str, SeqRecord], None, None]:
+        for sample_variation in sample_variations:
+            seq_records = {}
 
-        start_time = time.time()
-        logger.debug(f'Started building full alignment for {ref_sequence.id}'
-                     f' using {len(variants_ordered)} variant positions')
-
-        for sample in samples:
-            seq_records[sample.name] = copy.deepcopy(ref_sequence)
-            seq_records[sample.name].id = sample
-            seq_records[sample.name].description = 'generated automatically'
-            if isinstance(seq_records[sample.name].seq, str):
-                seq_records[sample.name].seq = MutableSeq(seq_records[sample.name].seq)
-            else:
-                seq_records[sample.name].seq = seq_records[sample.name].seq.tomutable()
-
-        # Add all variants
-        for variant in variants_ordered:
-            for sample in samples:
-                if sample.name not in seq_records:
-                    raise Exception(f'Alignment for sample {sample.name} is not valid')
-
-                if sample.id in variant.sample_ids:
-                    seq_records[sample.name].seq[variant.position - 1] = variant.insertion
-
-        ### TODO continue here
-
-        # Mask positions
-        for sample in samples:
-            seq = seq_records[sample.name].seq
-
-            # Search for correct sample sequence
-            sample_sequence = None
-            for s in sample_sequences:
-                if s.sample.name == sample:
-                    sample_sequence = s
-                    break
-
-            core_mask = sample_sequence.core_mask
-
-            for missing_pos in core_mask.iter_missing_positions():
-                seq[missing_pos - 1] = 'N'
-
-        # Change back to immutable sequences
-        for sample in samples:
-            seq_records[sample].seq = seq_records[sample].seq.toseq()
-
-        if include_reference and 'reference' in seq_records:
-            raise Exception('Error, [reference] is a sample name so cannot add "reference" sequence to alignment')
-        elif include_reference:
-            seq_records['reference'] = copy.deepcopy(ref_sequence)
-            seq_records['reference'].id = 'reference'
-            seq_records['reference'].description = 'generated automatically'
-            if isinstance(seq_records['reference'].seq, str):
-                seq_records['reference'].seq = Seq(seq_records['reference'].seq)
-
-        end_time = time.time()
-        logger.debug(f'Finished building full alignment for {ref_sequence.id}. '
-                     f'Took {end_time - start_time:0.2f} seconds')
-
-        return seq_records
+            consensus_records = VariationFile(sample_variation.nucleotide_variants_file).consensus(
+                reference_file=reference_file,
+                mask_file=sample_variation.masked_regions_file
+            )
+            for record in consensus_records:
+                seq_records[record.id] = record
+                record.id = sample_variation.sample.name
+                record.description = 'generated automatically'
+            yield seq_records
 
     def construct_alignment(self, reference_name: str, samples: List[str] = None,
                             include_reference: bool = True, align_type: str = 'core') -> MultipleSeqAlignment:
         if samples is None or len(samples) == 0:
             samples = self._all_sample_names(reference_name)
 
-        reference_sequences = self._reference_service.get_reference_sequences(reference_name)
+        sample_nucleotide_variants = self._variation_service.get_sample_nucleotide_variation(samples)
 
         alignment_seqs = {}
         alignments = {}
 
-        for sequence_name in reference_sequences:
-            seq = self._reference_service.get_sequence(sequence_name)
+        start_time = time.time()
+        logger.debug(f'Started building alignment for {len(samples)} samples')
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            # Write reference genome to file for creating consensus sequences
+            reference_file = Path(tmp_dir) / 'reference.fasta'
+            reference_records = self._reference_service.get_reference_genome_records(reference_name)
+            with open(reference_file, 'w') as h:
+                SeqIO.write(reference_records, h, 'fasta')
 
             if align_type == 'core':
-                pass
-                # core_mask = self._create_core_mask(sample_sequences[sequence_name])
-                # alignment_seqs[sequence_name] = self._build_core_alignment_sequence(
-                #     ref_sequence=seq,
-                #     variants_ordered=variants_ordered,
-                #     core_mask=core_mask,
-                #     samples=samples,
-                #     include_reference=include_reference
-                # )
+                raise Exception('align_type=core not implemented')
             elif align_type == 'full':
-                alignment_seqs[sequence_name] = self._build_full_alignment_sequence(
-                    ref_sequence=seq,
-                    variants_ordered=variants_ordered,
-                    samples=samples,
-                    sample_sequences=sample_sequences[sequence_name],
-                    include_reference=include_reference
+                alignment_generator = self._full_alignment_sequence_generator(
+                    reference_file=reference_file,
+                    sample_variations=sample_nucleotide_variants
                 )
+
+                if include_reference:
+                    # Add the reference sequence in
+                    reference_records_align = copy.deepcopy(reference_records)
+                    for record in reference_records_align:
+                        alignment_seqs[record.id] = [record]
+                        record.id = 'reference'
+                        record.description = 'generated automatically'
+
+                for sequence_record in alignment_generator:
+                    for sequence in sequence_record:
+                        if sequence not in alignment_seqs:
+                            alignment_seqs[sequence] = [sequence_record[sequence]]
+                        else:
+                            alignment_seqs[sequence].append(sequence_record[sequence])
             else:
                 raise Exception(f'Unknown value for align_type=[{align_type}]. Must be one of {self.ALIGN_TYPES}')
 
         for sequence_name in alignment_seqs:
             alignments[sequence_name] = MultipleSeqAlignment(
-                alignment_seqs[sequence_name].values())
+                alignment_seqs[sequence_name])
             alignments[sequence_name].sort()
 
         sequence_names = sorted(alignments.keys())
         seq1 = sequence_names.pop()
-        core_snv_align = alignments[seq1]
+        snv_align = alignments[seq1]
 
         for sequence_name in sequence_names:
-            core_snv_align += alignments[sequence_name]
+            snv_align += alignments[sequence_name]
 
-        return core_snv_align
+        end_time = time.time()
+        logger.debug(f'Finished building alignment for {len(samples)} samples. '
+                     f'Took {end_time - start_time:0.2f} seconds')
+
+        return snv_align
