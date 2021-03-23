@@ -8,7 +8,7 @@ from Bio.Seq import Seq, MutableSeq
 from Bio.SeqRecord import SeqRecord
 
 from storage.variant.MaskedGenomicRegions import MaskedGenomicRegions
-from storage.variant.model import Sample, Reference, ReferenceSequence
+from storage.variant.model import Sample, Reference, ReferenceSequence, NucleotideVariantsSamples
 from storage.variant.service import DatabaseConnection
 from storage.variant.service.ReferenceService import ReferenceService
 from storage.variant.service.SampleService import SampleService
@@ -50,31 +50,32 @@ class CoreAlignmentService:
             return core_mask
 
     def _build_core_alignment_sequence(self, ref_sequence: SeqRecord,
-                                       variants_dict: Dict[int, Dict[str, VariationAllele]],
+                                       variants_ordered: List[NucleotideVariantsSamples],
                                        core_mask: MaskedGenomicRegions,
-                                       samples: List[str],
+                                       samples: List[Sample],
                                        include_reference: bool) -> Dict[str, SeqRecord]:
         start_time = time.time()
-        logger.debug(f'Started building core alignment for {ref_sequence.id} using {len(variants_dict)} '
+        logger.debug(f'Started building core alignment for {ref_sequence.id} using {len(variants_ordered)} '
                      'variant positions')
 
         seq_records = {}
-        for position in variants_dict:
+        selected_sample_ids = {s.id for s in samples}
+        for variant in variants_ordered:
+            position = variant.position
             ref = ref_sequence[position - 1:position].seq
 
             # if in core
             if position in core_mask:
-                variant_samples = variants_dict[position]
-                if len(set(samples).intersection(set(variant_samples.keys()))) == 0:
+                if len(selected_sample_ids.intersection(variant.sample_ids)) == 0:
                     continue
 
                 for sample in samples:
-                    if sample not in seq_records:
-                        seq_records[sample] = SeqRecord(
-                            seq=Seq(''), id=sample, description='generated automatically')
+                    if sample.name not in seq_records:
+                        seq_records[sample.name] = SeqRecord(
+                            seq=Seq(''), id=sample.name, description='generated automatically')
 
-                    if sample in variant_samples:
-                        seq_records[sample] += variant_samples[sample].alt
+                    if sample.id in variant.sample_ids:
+                        seq_records[sample] += variant.insertion
                     else:
                         seq_records[sample] += ref
 
@@ -93,38 +94,39 @@ class CoreAlignmentService:
         return seq_records
 
     def _build_full_alignment_sequence(self, ref_sequence: SeqRecord,
-                                       variants_dict: Dict[int, Dict[str, VariationAllele]],
-                                       samples: List[str],
+                                       variants_ordered: List[NucleotideVariantsSamples],
+                                       samples: List[Sample],
                                        sample_sequences: List[SampleSequence],
                                        include_reference: bool) -> Dict[str, SeqRecord]:
         seq_records = {}
 
         start_time = time.time()
         logger.debug(f'Started building full alignment for {ref_sequence.id}'
-                     f' using {len(variants_dict)} variant positions')
+                     f' using {len(variants_ordered)} variant positions')
 
         for sample in samples:
-            seq_records[sample] = copy.deepcopy(ref_sequence)
-            seq_records[sample].id = sample
-            seq_records[sample].description = 'generated automatically'
-            if isinstance(seq_records[sample].seq, str):
-                seq_records[sample].seq = MutableSeq(seq_records[sample].seq)
+            seq_records[sample.name] = copy.deepcopy(ref_sequence)
+            seq_records[sample.name].id = sample
+            seq_records[sample.name].description = 'generated automatically'
+            if isinstance(seq_records[sample.name].seq, str):
+                seq_records[sample.name].seq = MutableSeq(seq_records[sample.name].seq)
             else:
-                seq_records[sample].seq = seq_records[sample].seq.tomutable()
+                seq_records[sample.name].seq = seq_records[sample.name].seq.tomutable()
 
         # Add all variants
-        for position in variants_dict:
-            variant_samples = variants_dict[position]
+        for variant in variants_ordered:
             for sample in samples:
-                if sample not in seq_records:
-                    raise Exception(f'Alignment for sample {sample} is not valid')
+                if sample.name not in seq_records:
+                    raise Exception(f'Alignment for sample {sample.name} is not valid')
 
-                if sample in variant_samples:
-                    seq_records[sample].seq[position - 1] = variant_samples[sample].alt
+                if sample.id in variant.sample_ids:
+                    seq_records[sample.name].seq[variant.position - 1] = variant.insertion
+
+        ### TODO continue here
 
         # Mask positions
         for sample in samples:
-            seq = seq_records[sample].seq
+            seq = seq_records[sample.name].seq
 
             # Search for correct sample sequence
             sample_sequence = None
@@ -162,20 +164,20 @@ class CoreAlignmentService:
         if samples is None or len(samples) == 0:
             samples = self._all_sample_names(reference_name)
 
-        reference_sequences = self._sample_sequence_service.get_sample_sequences(reference_name, samples)
+        reference_sequences = self._reference_service.get_reference_sequences(reference_name)
 
         alignment_seqs = {}
         alignments = {}
 
-        for sequence_name in sample_sequences:
+        for sequence_name in reference_sequences:
             seq = self._reference_service.get_sequence(sequence_name)
-            variants_dict = self._variation_service.get_variants(sequence_name, type='snp')
+            variants_ordered = self._variation_service.get_variants_ordered(sequence_name, type='snp')
 
             if align_type == 'core':
                 core_mask = self._create_core_mask(sample_sequences[sequence_name])
                 alignment_seqs[sequence_name] = self._build_core_alignment_sequence(
                     ref_sequence=seq,
-                    variants_dict=variants_dict,
+                    variants_ordered=variants_ordered,
                     core_mask=core_mask,
                     samples=samples,
                     include_reference=include_reference
@@ -183,7 +185,7 @@ class CoreAlignmentService:
             elif align_type == 'full':
                 alignment_seqs[sequence_name] = self._build_full_alignment_sequence(
                     ref_sequence=seq,
-                    variants_dict=variants_dict,
+                    variants_ordered=variants_ordered,
                     samples=samples,
                     sample_sequences=sample_sequences[sequence_name],
                     include_reference=include_reference
