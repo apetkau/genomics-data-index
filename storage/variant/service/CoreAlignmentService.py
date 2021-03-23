@@ -174,14 +174,15 @@ class CoreAlignmentService:
             variants_ordered = self._variation_service.get_variants_ordered(sequence_name, type='snp')
 
             if align_type == 'core':
-                core_mask = self._create_core_mask(sample_sequences[sequence_name])
-                alignment_seqs[sequence_name] = self._build_core_alignment_sequence(
-                    ref_sequence=seq,
-                    variants_ordered=variants_ordered,
-                    core_mask=core_mask,
-                    samples=samples,
-                    include_reference=include_reference
-                )
+                pass
+                # core_mask = self._create_core_mask(sample_sequences[sequence_name])
+                # alignment_seqs[sequence_name] = self._build_core_alignment_sequence(
+                #     ref_sequence=seq,
+                #     variants_ordered=variants_ordered,
+                #     core_mask=core_mask,
+                #     samples=samples,
+                #     include_reference=include_reference
+                # )
             elif align_type == 'full':
                 alignment_seqs[sequence_name] = self._build_full_alignment_sequence(
                     ref_sequence=seq,

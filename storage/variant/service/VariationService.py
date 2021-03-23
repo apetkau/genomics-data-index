@@ -13,6 +13,7 @@ from storage.variant.service import DatabaseConnection
 from storage.variant.service import EntityExistsError
 from storage.variant.service.ReferenceService import ReferenceService
 from storage.variant.service.SampleService import SampleService
+from storage.variant.io.VariationFile import VariationFile
 
 logger = logging.getLogger(__name__)
 
@@ -96,12 +97,11 @@ class VariationService:
         self._connection.get_session().commit()
 
     def _save_variation_file(self, original_file: Path, sample: Sample) -> Path:
-        new_file = self._variation_dir / f'{sample.name}.vcf.gz'
+        new_file = self._variation_dir / f'{sample.name}.bcf'
         if new_file.exists():
             raise Exception(f'File {new_file} already exists')
 
-        shutil.copyfile(original_file, new_file)
-        return new_file
+        return VariationFile(original_file).write(new_file)
 
     def _save_masked_regions_file(self, masked_regions, sample: Sample):
         new_file = self._variation_dir / f'{sample.name}.bed.gz'

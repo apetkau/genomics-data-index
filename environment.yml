@@ -20,3 +20,9 @@ dependencies:
   - click-config-file
   - iqtree
   - pyroaring
+  - sourmash
+  - pymongo
+  - mongoengine
+  - jupyterlab
+  - pybedtools
+  - bcftools
