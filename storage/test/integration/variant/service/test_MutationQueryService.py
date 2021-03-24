@@ -7,15 +7,11 @@ from storage.variant.service.MutationQueryService import QueryFeatureMutation
 @pytest.fixture
 def mutation_query_service(reference_service_with_data, sample_service,
                            variation_service) -> MutationQueryService:
+# def mutation_query_service(tree_service_with_tree_stored, reference_service_with_data, sample_service,
+#                            variation_service) -> MutationQueryService:
     return MutationQueryService(reference_service=reference_service_with_data,
-                                sample_service=sample_service)
-# def mutation_query_service(tree_service_with_tree_stored,
-#                            reference_service_with_data, sample_service,
-#                            variation_service, sample_sequence_service) -> MutationQueryService:
-#     return MutationQueryService(tree_service=tree_service_with_tree_stored,
-#                                 reference_service=reference_service_with_data,
-#                                 sample_service=sample_service,
-#                                 sample_sequence_service=sample_sequence_service)
+                                sample_service=sample_service,
+                                tree_service=None)
 
 
 @pytest.mark.skip()
