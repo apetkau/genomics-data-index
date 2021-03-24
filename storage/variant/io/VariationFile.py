@@ -57,4 +57,7 @@ class VariationFile:
             execute_commands([
                 command
             ])
-            return pd.read_csv(union_file, sep='\t', names=['CHROM', 'POS', 'REF', 'ALT', 'INDEXES'])
+            var_df = pd.read_csv(union_file, sep='\t', dtype=str,
+                               names=['CHROM', 'POS', 'REF', 'ALT', 'INDEXES']).sort_values(['CHROM','POS'])
+            var_df['POS'] = var_df['POS'].astype(int)
+            return var_df

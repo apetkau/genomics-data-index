@@ -1,7 +1,7 @@
 import tempfile
 from pathlib import Path
 
-from storage.test.integration.variant import data_dir, variation_dir, reference_file, consensus_dir, sample_dirs
+from storage.test.integration.variant import data_dir, variation_dir, reference_file, consensus_dir
 from storage.variant.io.VariationFile import VariationFile
 from storage.variant.MaskedGenomicRegions import MaskedGenomicRegions
 from storage.variant.util import parse_sequence_file
@@ -73,13 +73,19 @@ def test_consensus_mask_over_mutation():
 
 
 def test_union_all_files():
-    variant_files = [d / 'snps.vcf.gz' for d in sample_dirs]
+    # List like this to guarantee a specific order
+    variant_files = [
+        data_dir / 'SampleA' / 'snps.vcf.gz',
+        data_dir / 'SampleB' / 'snps.vcf.gz',
+        data_dir / 'SampleC' / 'snps.vcf.gz'
+    ]
     union_df = VariationFile.union_all_files(variant_files)
 
     assert 60 == len(union_df)
-    assert 1 == len(union_df[(union_df['CHROM'] == 'reference') & (union_df['POS'] == 190)])
-    assert 1 == len(union_df[(union_df['CHROM'] == 'reference') & (union_df['POS'] == 5061)])
-    assert 1 == len(union_df[(union_df['CHROM'] == 'reference') & (union_df['POS'] == 4975)])
+    assert '010' == union_df[(union_df['CHROM'] == 'reference') & (union_df['POS'] == 190)]['INDEXES'].values[0]
+    assert '010' == union_df[(union_df['CHROM'] == 'reference') & (union_df['POS'] == 5061)]['INDEXES'].values[0]
+    assert '011' == union_df[(union_df['CHROM'] == 'reference') & (union_df['POS'] == 4975)]['INDEXES'].values[0]
+    assert '100' == union_df[(union_df['CHROM'] == 'reference') & (union_df['POS'] == 2076)]['INDEXES'].values[0]
 
 
 def test_union_one_file():
@@ -87,5 +93,5 @@ def test_union_one_file():
     union_df = VariationFile.union_all_files([sample_bcf])
 
     assert 26 == len(union_df)
-    assert 1 == len(union_df[(union_df['CHROM'] == 'reference') & (union_df['POS'] == 293)])
-    assert 1 == len(union_df[(union_df['CHROM'] == 'reference') & (union_df['POS'] == 4929)])
+    assert '1' == union_df[(union_df['CHROM'] == 'reference') & (union_df['POS'] == 293)]['INDEXES'].values[0]
+    assert '1' == union_df[(union_df['CHROM'] == 'reference') & (union_df['POS'] == 4929)]['INDEXES'].values[0]
