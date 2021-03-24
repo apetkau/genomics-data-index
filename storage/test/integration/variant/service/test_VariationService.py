@@ -189,24 +189,3 @@ def test_get_sample_nucleotide_variation_all_samples(variation_service):
 
     assert 3 == len(sample_variations)
     assert {'SampleA', 'SampleB', 'SampleC'} == {v.sample.name for v in sample_variations}
-
-
-@pytest.mark.skip()
-def test_pariwise_distance(database, snippy_variants_reader, reference_service_with_data,
-                           sample_service, filesystem_storage):
-    variation_service = VariationService(database_connection=database,
-                                         reference_service=reference_service_with_data,
-                                         sample_service=sample_service,
-                                         variation_dir=filesystem_storage.variation_dir)
-
-    variation_service.insert_variants(reference_name='genome', variants_reader=snippy_variants_reader)
-
-    distances = variation_service.pairwise_distance(['SampleA', 'SampleC', 'SampleB'])
-
-    expected_distAB = 1
-    expected_distAC = 1
-    expected_distBC = (1 - 17 / 66)
-
-    assert math.isclose(expected_distAB, distances.loc['SampleA', 'SampleB']), 'Incorrect pairwise distance'
-    assert math.isclose(expected_distAC, distances.loc['SampleA', 'SampleC']), 'Incorrect pairwise distance'
-    assert math.isclose(expected_distBC, distances.loc['SampleB', 'SampleC']), 'Incorrect pairwise distance'

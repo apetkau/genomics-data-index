@@ -76,12 +76,12 @@ def tree_service(database, reference_service_with_data, core_alignment_service) 
     return TreeService(database, reference_service_with_data, core_alignment_service)
 
 
-# @pytest.fixture
-# def tree_service_with_tree_stored(database, reference_service_with_data,
-#                                   core_alignment_service, variation_service) -> TreeService:
-#     tree_service = TreeService(database, reference_service_with_data, core_alignment_service)
-#     tree_service.rebuild_tree('genome',
-#                               tree_build_type='iqtree',
-#                               extra_params='-m MFP+ASC --seed 42')
-#
-#     return tree_service
+@pytest.fixture
+def tree_service_with_tree_stored(database, reference_service_with_data,
+                                  core_alignment_service, variation_service) -> TreeService:
+    tree_service = TreeService(database, reference_service_with_data, core_alignment_service)
+    tree_service.rebuild_tree('genome',
+                              tree_build_type='iqtree',
+                              extra_params='-m MFP+ASC --seed 42')
+
+    return tree_service

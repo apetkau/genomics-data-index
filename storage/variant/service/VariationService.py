@@ -116,33 +116,3 @@ class VariationService:
 
         masked_regions.write(new_file)
         return new_file
-
-    def pairwise_distance(self, samples: List[str], var_type='all', distance_type='jaccard') -> pd.DataFrame:
-        raise Exception('Not implemented')
-        # sample_objs = self._connection.get_session().query(Sample).filter(Sample.name.in_(samples)).all()
-        #
-        # if var_type == 'all':
-        #     sample_variants = {s.name: {v.to_spdi() for v in s.variants} for s in sample_objs}
-        # else:
-        #     sample_variants = {s.name: {v.to_spdi() for v in s.variants if v.var_type == var_type} for s in sample_objs}
-        #
-        # names = list(sample_variants.keys())
-        # distances = []
-        # for name1 in names:
-        #     row = []
-        #     for name2 in names:
-        #         if name1 == name2:
-        #             row.append(0)
-        #         else:
-        #             if distance_type == 'jaccard':
-        #                 logger.debug(f'variants1=[{sample_variants[name1]}]')
-        #                 logger.debug(f'variants2=[{sample_variants[name2]}]')
-        #                 intersection = sample_variants[name1].intersection(sample_variants[name2])
-        #                 union = sample_variants[name1].union(sample_variants[name2])
-        #
-        #                 row.append(1 - (len(intersection) / len(union)))
-        #             else:
-        #                 raise Exception(f'Unsupported distance_type=[{distance_type}]')
-        #     distances.append(row)
-        #
-        # return pd.DataFrame(distances, columns=names, index=names)
