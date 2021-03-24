@@ -3,6 +3,7 @@ from typing import List
 import tempfile
 from pathlib import Path
 
+import pandas as pd
 from Bio.SeqRecord import SeqRecord
 from Bio import SeqIO
 
@@ -36,3 +37,24 @@ class VariationFile:
             ])
             sequences = list(SeqIO.parse(out_f.name, 'fasta'))
             return sequences
+
+    @classmethod
+    def union_all_files(cls, variant_files: List[Path], include_expression: str = 'TYPE="snp"') -> pd.DataFrame:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            union_file = Path(tmp_dir) / 'union.tsv'
+
+            if len(variant_files) == 0:
+                raise Exception('Cannot take union of 0 files')
+            elif len(variant_files) == 1:
+                command = ['bcftools', 'query', '-f', '%CHROM\t%POS\t%REF\t%ALT\t1\n', '-i', include_expression,
+                           '-o', str(union_file), str(variant_files[0])]
+            else:
+                command = ['bcftools', 'isec', '-i', include_expression, '-c', 'none',
+                           '-n', '+1', '--threads', '2', '-o', str(union_file)]
+                for file in variant_files:
+                    command.append(str(file))
+
+            execute_commands([
+                command
+            ])
+            return pd.read_csv(union_file, sep='\t', names=['CHROM', 'POS', 'REF', 'ALT', 'INDEXES'])

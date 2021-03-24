@@ -1,7 +1,7 @@
 import tempfile
 from pathlib import Path
 
-from storage.test.integration.variant import data_dir, variation_dir, reference_file, consensus_dir
+from storage.test.integration.variant import data_dir, variation_dir, reference_file, consensus_dir, sample_dirs
 from storage.variant.io.VariationFile import VariationFile
 from storage.variant.MaskedGenomicRegions import MaskedGenomicRegions
 from storage.variant.util import parse_sequence_file
@@ -70,3 +70,22 @@ def test_consensus_mask_over_mutation():
     assert 5180 == len(actual_seq_record)
     assert expected_consensus_record.id == actual_seq_record.id
     assert expected_consensus_record.seq == actual_seq_record.seq
+
+
+def test_union_all_files():
+    variant_files = [d / 'snps.vcf.gz' for d in sample_dirs]
+    union_df = VariationFile.union_all_files(variant_files)
+
+    assert 60 == len(union_df)
+    assert 1 == len(union_df[(union_df['CHROM'] == 'reference') & (union_df['POS'] == 190)])
+    assert 1 == len(union_df[(union_df['CHROM'] == 'reference') & (union_df['POS'] == 5061)])
+    assert 1 == len(union_df[(union_df['CHROM'] == 'reference') & (union_df['POS'] == 4975)])
+
+
+def test_union_one_file():
+    sample_bcf = variation_dir / 'SampleA.bcf'
+    union_df = VariationFile.union_all_files([sample_bcf])
+
+    assert 26 == len(union_df)
+    assert 1 == len(union_df[(union_df['CHROM'] == 'reference') & (union_df['POS'] == 293)])
+    assert 1 == len(union_df[(union_df['CHROM'] == 'reference') & (union_df['POS'] == 4929)])
