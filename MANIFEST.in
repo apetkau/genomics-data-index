@@ -1,5 +1,5 @@
 recursive-include storage/test/integration/data *
-README.md
-MANIFEST.in
-LICENSE
-pytest.ini
+include README.md
+include MANIFEST.in
+include LICENSE
+include pytest.ini
