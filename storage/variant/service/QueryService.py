@@ -27,7 +27,7 @@ class QueryService(abc.ABC):
                                   distance_threshold: float = None) -> pd.DataFrame:
         matches_df = self._find_matches_genome_files_internal(sample_reads, distance_threshold)
         matches_df.insert(loc=0, column='Type', value=self.get_data_type())
-        verify_columns_match({'Type', 'Sample A', 'Sample B', 'Distance'}, matches_df)
+        verify_columns_match({'Type', 'Query', 'Match', 'Distance'}, matches_df)
 
         return matches_df
 
@@ -46,7 +46,7 @@ class QueryService(abc.ABC):
 
         matches_df = self._find_matches_internal(samples, distance_threshold)
         matches_df.insert(loc=0, column='Type', value=self.get_data_type())
-        verify_columns_match({'Type', 'Sample A', 'Sample B', 'Distance'}, matches_df)
+        verify_columns_match({'Type', 'Query', 'Match', 'Distance'}, matches_df)
 
         return matches_df
 

@@ -88,8 +88,8 @@ class MutationQueryService(QueryService):
 
         matches_df = pd.DataFrame(data=sample_distances, columns=[
             'Reference Genome',
-            'Sample A',
-            'Sample B',
+            'Query',
+            'Match',
             'Distance',
             'Distance (subs/site)',
             'SNV Alignment Length',
@@ -97,7 +97,7 @@ class MutationQueryService(QueryService):
         matches_df['Distance'] = pd.to_numeric(matches_df['Distance'])
         matches_df['Distance (subs/site)'] = pd.to_numeric(matches_df['Distance (subs/site)'])
         matches_df['SNV Alignment Length'] = pd.to_numeric(matches_df['SNV Alignment Length'])
-        matches_df = matches_df.sort_values(['Sample A', 'Distance (subs/site)'], ascending=True)
+        matches_df = matches_df.sort_values(['Query', 'Distance (subs/site)'], ascending=True)
 
         if distance_threshold is not None:
             matches_df = matches_df.loc[:, matches_df['Distance (subs/site)'] <= distance_threshold]

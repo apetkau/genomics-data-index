@@ -16,47 +16,47 @@ def mutation_query_service(tree_service_with_tree_stored, reference_service_with
 def test_find_matchesC(mutation_query_service: MutationQueryService):
     matches_df = mutation_query_service.find_matches(['SampleC'])
 
-    assert ['Type', 'Reference Genome', 'Sample A', 'Sample B', 'Distance', 'Distance (subs/site)',
+    assert ['Type', 'Reference Genome', 'Query', 'Match', 'Distance', 'Distance (subs/site)',
             'SNV Alignment Length'] == list(matches_df.columns)
     assert {58} == set(matches_df['SNV Alignment Length'].tolist())
-    assert {'SampleC'} == set(matches_df['Sample A'])
+    assert {'SampleC'} == set(matches_df['Query'])
     assert {'genome'} == set(matches_df['Reference Genome'])
-    assert ['genome', 'SampleB', 'SampleA'] == matches_df['Sample B'].tolist()
+    assert ['genome', 'SampleB', 'SampleA'] == matches_df['Match'].tolist()
 
 
 def test_find_matchesB(mutation_query_service: MutationQueryService):
     matches_df = mutation_query_service.find_matches(['SampleB'])
 
-    assert ['Type', 'Reference Genome', 'Sample A', 'Sample B', 'Distance', 'Distance (subs/site)',
+    assert ['Type', 'Reference Genome', 'Query', 'Match', 'Distance', 'Distance (subs/site)',
             'SNV Alignment Length'] == list(matches_df.columns)
     assert {58} == set(matches_df['SNV Alignment Length'].tolist())
-    assert {'SampleB'} == set(matches_df['Sample A'])
+    assert {'SampleB'} == set(matches_df['Query'])
     assert {'genome'} == set(matches_df['Reference Genome'])
-    assert ['SampleC', 'genome', 'SampleA'] == matches_df['Sample B'].tolist()
+    assert ['SampleC', 'genome', 'SampleA'] == matches_df['Match'].tolist()
 
 
 def test_find_matchesA(mutation_query_service: MutationQueryService):
     matches_df = mutation_query_service.find_matches(['SampleA'])
 
-    assert ['Type', 'Reference Genome', 'Sample A', 'Sample B', 'Distance', 'Distance (subs/site)',
+    assert ['Type', 'Reference Genome', 'Query', 'Match', 'Distance', 'Distance (subs/site)',
             'SNV Alignment Length'] == list(matches_df.columns)
     assert {58} == set(matches_df['SNV Alignment Length'].tolist())
-    assert {'SampleA'} == set(matches_df['Sample A'])
+    assert {'SampleA'} == set(matches_df['Query'])
     assert {'genome'} == set(matches_df['Reference Genome'])
-    assert ['genome', 'SampleC', 'SampleB'] == matches_df['Sample B'].tolist()
+    assert ['genome', 'SampleC', 'SampleB'] == matches_df['Match'].tolist()
 
 
 def test_find_matchesAB(mutation_query_service: MutationQueryService):
     matches_df = mutation_query_service.find_matches(['SampleA', 'SampleB'])
 
-    assert ['Type', 'Reference Genome', 'Sample A', 'Sample B', 'Distance', 'Distance (subs/site)',
+    assert ['Type', 'Reference Genome', 'Query', 'Match', 'Distance', 'Distance (subs/site)',
             'SNV Alignment Length'] == list(matches_df.columns)
     assert {58} == set(matches_df['SNV Alignment Length'].tolist())
     assert ['SampleA', 'SampleA', 'SampleA',
-            'SampleB', 'SampleB', 'SampleB'] == matches_df['Sample A'].tolist()
+            'SampleB', 'SampleB', 'SampleB'] == matches_df['Query'].tolist()
     assert {'genome'} == set(matches_df['Reference Genome'])
     assert ['genome', 'SampleC', 'SampleB',
-            'SampleC', 'genome', 'SampleA'] == matches_df['Sample B'].tolist()
+            'SampleC', 'genome', 'SampleA'] == matches_df['Match'].tolist()
 
 
 def test_find_by_features(database, mutation_query_service: MutationQueryService):
