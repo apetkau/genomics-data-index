@@ -4,6 +4,7 @@ from mimetypes import guess_type
 from os.path import basename, splitext
 from pathlib import Path
 from typing import Tuple, List
+import subprocess
 
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
@@ -36,3 +37,12 @@ def parse_sequence_file(sequence_file: Path) -> Tuple[str, List[SeqRecord]]:
         sequences = list(SeqIO.parse(f, 'fasta'))
 
         return ref_name, sequences
+
+
+def execute_commands(commands: List[List[str]]):
+    try:
+        for command in commands:
+            subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True, text=True)
+    except subprocess.CalledProcessError as e:
+        err_msg = str(e.stderr.strip())
+        raise Exception(f'Could not run [{" ".join(e.cmd)}]: error {err_msg}')

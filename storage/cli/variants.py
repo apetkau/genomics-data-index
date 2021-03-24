@@ -180,7 +180,9 @@ def load_vcf(ctx, vcf_fofns: Path, reference_file: Path, build_tree: bool, align
 @main.command(name='load-kmer')
 @click.pass_context
 @click.argument('kmer_fofns', type=click.Path(exists=True))
-def load_kmer(ctx, kmer_fofns):
+@click.option('--kmer-size|-k', help='Kmer size for indexing. List multiple for multiple kmer sizes in an index',
+              default=31, multiple=True, type=click.IntRange(min=1, max=num_cores))
+def load_kmer(ctx, kmer_fofns, kmer_size):
     filesystem_storage = ctx.obj['filesystem_storage']
     kmer_service = ctx.obj['kmer_service']
     index_manager = KmerIndexManager(filesystem_storage.kmer_dir)
@@ -194,8 +196,7 @@ def load_kmer(ctx, kmer_fofns):
         else:
             genome_files = row['Files'].split(',')
             index_file = index_manager.index_genome_files(sample_name, genome_files, KmerIndexerSourmash(
-                # k=[21, 31, 51],
-                k=31,
+                k=kmer_size,
                 scaled=5000,
                 abund=False,
             ))

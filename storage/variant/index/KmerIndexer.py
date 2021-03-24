@@ -2,7 +2,8 @@ from typing import List, Union
 import abc
 from pathlib import Path
 import logging
-import subprocess
+
+from storage.variant.util import execute_commands
 
 
 logger = logging.getLogger(__name__)
@@ -56,13 +57,7 @@ class KmerIndexerSourmash(KmerIndexer):
         command = ['sourmash', 'sketch', 'dna', '-p', self._params,
                    '--name', index_name, '--output', str(index_path)]
         command.extend([str(f) for f in files])
-        try:
-            logger.debug(f'Running: {" ".join(command)}')
-            subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                       check=True, text=True)
-        except subprocess.CalledProcessError as e:
-            err_msg = str(e.stderr.strip())
-            raise Exception(f'Could not run sourmash on alignment: error {err_msg}')
+        execute_commands([command])
 
 
 class KmerIndexManager:
