@@ -3,7 +3,6 @@ import multiprocessing
 import sys
 from os import path, listdir
 from pathlib import Path
-from typing import Dict
 from typing import List
 
 import click
@@ -14,7 +13,6 @@ from Bio import AlignIO
 
 from storage.cli import yaml_config_provider
 from storage.FilesystemStorage import FilesystemStorage
-from storage.variant.MaskedGenomicRegions import MaskedGenomicRegions
 from storage.variant.io.SnippyVariantsReader import SnippyVariantsReader
 from storage.variant.io.VcfVariantsReader import VcfVariantsReader
 from storage.variant.service import DatabaseConnection, EntityExistsError
@@ -27,7 +25,7 @@ from storage.variant.service.TreeService import TreeService
 from storage.variant.service.VariationService import VariationService
 from storage.variant.service.KmerService import KmerService
 from storage.variant.index.KmerIndexer import KmerIndexerSourmash, KmerIndexManager
-from storage.variant.util import get_genome_name, parse_sequence_file
+from storage.variant.util import get_genome_name
 
 logger = logging.getLogger('storage')
 num_cores = multiprocessing.cpu_count()
@@ -71,7 +69,8 @@ def main(ctx, database_connection, database_dir, verbose):
                                              variation_service=variation_service)
     tree_service = TreeService(database, reference_service, alignment_service)
     mutation_query_service = MutationQueryService(reference_service=reference_service,
-                                                  sample_service=sample_service)
+                                                  sample_service=sample_service,
+                                                  tree_service=tree_service)
 
     kmer_service = KmerService(database_connection=database,
                                sample_service=sample_service)
@@ -92,7 +91,7 @@ def load_variants_common(ctx, variants_reader, reference_file, input, build_tree
     reference_service = ctx.obj['reference_service']
     variation_service = ctx.obj['variation_service']
     sample_service = ctx.obj['sample_service']
-    # tree_service = ctx.obj['tree_service']
+    tree_service = ctx.obj['tree_service']
 
     try:
         reference_service.add_reference_genome(reference_file)
@@ -109,12 +108,12 @@ def load_variants_common(ctx, variants_reader, reference_file, input, build_tree
                                           variants_reader=variants_reader)
         click.echo(f'Loaded variants from [{input}] into database')
 
-        # if build_tree:
-        #     tree_service.rebuild_tree(reference_name=reference_name,
-        #                               align_type=align_type,
-        #                               num_cores=threads,
-        #                               extra_params=extra_tree_params)
-        #     click.echo('Finished building tree of all samples')
+        if build_tree:
+            tree_service.rebuild_tree(reference_name=reference_name,
+                                      align_type=align_type,
+                                      num_cores=threads,
+                                      extra_params=extra_tree_params)
+            click.echo('Finished building tree of all samples')
 
 
 @main.command(name='load-snippy')
@@ -122,15 +121,14 @@ def load_variants_common(ctx, variants_reader, reference_file, input, build_tree
 @click.argument('snippy_dir', type=click.Path(exists=True))
 @click.option('--reference-file', help='Reference genome', required=True, type=click.Path(exists=True))
 @click.option('--build-tree/--no-build-tree', default=False, help='Builds tree of all samples after loading')
-# @click.option('--align-type', help=f'The type of alignment to generate', default='core',
-#               type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
+@click.option('--align-type', help=f'The type of alignment to generate', default='core',
+              type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
 @click.option('--threads', help='Threads for building tree', default=1,
               type=click.IntRange(min=1, max=num_cores))
 @click.option('--extra-tree-params', help='Extra parameters to tree-building software',
               default=None)
-def load_snippy(ctx, snippy_dir: Path, reference_file: Path, build_tree: bool, threads: int,
+def load_snippy(ctx, snippy_dir: Path, reference_file: Path, build_tree: bool, align_type: str, threads: int,
                 extra_tree_params: str):
-    align_type = None
     snippy_dir = Path(snippy_dir)
     reference_file = Path(reference_file)
     click.echo(f'Loading {snippy_dir}')
@@ -147,15 +145,14 @@ def load_snippy(ctx, snippy_dir: Path, reference_file: Path, build_tree: bool, t
 @click.argument('vcf_fofns', type=click.Path(exists=True))
 @click.option('--reference-file', help='Reference genome', required=True, type=click.Path(exists=True))
 @click.option('--build-tree/--no-build-tree', default=False, help='Builds tree of all samples after loading')
-# @click.option('--align-type', help=f'The type of alignment to generate', default='core',
-#               type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
+@click.option('--align-type', help=f'The type of alignment to generate', default='core',
+              type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
 @click.option('--threads', help='Threads for building tree', default=1,
               type=click.IntRange(min=1, max=num_cores))
 @click.option('--extra-tree-params', help='Extra parameters to tree-building software',
               default=None)
-def load_vcf(ctx, vcf_fofns: Path, reference_file: Path, build_tree: bool, threads: int,
+def load_vcf(ctx, vcf_fofns: Path, reference_file: Path, build_tree: bool, align_type: str, threads: int,
              extra_tree_params: str):
-    align_type = None
     reference_file = Path(reference_file)
 
     logger.warning('TODO: I need to make sure "TYPE" is available in the input VCF/BCF files')
