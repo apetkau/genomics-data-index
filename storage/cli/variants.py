@@ -11,20 +11,20 @@ import coloredlogs
 import pandas as pd
 from Bio import AlignIO
 
-from storage.cli import yaml_config_provider
 from storage.FilesystemStorage import FilesystemStorage
+from storage.cli import yaml_config_provider
+from storage.variant.index.KmerIndexer import KmerIndexerSourmash, KmerIndexManager
 from storage.variant.io.SnippyVariantsReader import SnippyVariantsReader
 from storage.variant.io.VcfVariantsReader import VcfVariantsReader
 from storage.variant.service import DatabaseConnection, EntityExistsError
 from storage.variant.service.CoreAlignmentService import CoreAlignmentService
+from storage.variant.service.KmerService import KmerService
 from storage.variant.service.MutationQueryService import MutationQueryService, QueryFeatureMutation, \
     MutationQuerySummaries
 from storage.variant.service.ReferenceService import ReferenceService
 from storage.variant.service.SampleService import SampleService
 from storage.variant.service.TreeService import TreeService
 from storage.variant.service.VariationService import VariationService
-from storage.variant.service.KmerService import KmerService
-from storage.variant.index.KmerIndexer import KmerIndexerSourmash, KmerIndexManager
 from storage.variant.util import get_genome_name
 
 logger = logging.getLogger('storage')
@@ -359,10 +359,12 @@ def query(ctx, name: List[str], query_type: str, include_unknown: bool, summariz
         if summarize:
             sample_service = ctx.obj['sample_service']
             reference_service = ctx.obj['reference_service']
-            sequence_reference_map = {f.sequence_name: reference_service.find_reference_for_sequence(f.sequence_name) for f in features}
+            sequence_reference_map = {f.sequence_name: reference_service.find_reference_for_sequence(f.sequence_name)
+                                      for f in features}
             query_summaries = MutationQuerySummaries()
             feature_sample_counts = {
-                f.spdi: sample_service.count_samples_associated_with_reference(sequence_reference_map[f.sequence_name].name) for f in features
+                f.spdi: sample_service.count_samples_associated_with_reference(
+                    sequence_reference_map[f.sequence_name].name) for f in features
             }
             match_df = query_summaries.find_by_features_summary(find_by_features_results=match_df,
                                                                 sample_counts=feature_sample_counts,

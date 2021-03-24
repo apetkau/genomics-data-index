@@ -6,7 +6,6 @@ import pytest
 
 from storage.test.integration.variant import data_dir
 from storage.test.integration.variant import data_dir_empty
-from storage.variant.MaskedGenomicRegions import MaskedGenomicRegions
 from storage.variant.io.VcfVariantsReader import VcfVariantsReader
 
 

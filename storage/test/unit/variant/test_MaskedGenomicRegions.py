@@ -1,9 +1,9 @@
 import tempfile
 from pathlib import Path
 
+from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
-from Bio import SeqIO
 from pybedtools import BedTool
 
 from storage.variant.MaskedGenomicRegions import MaskedGenomicRegions

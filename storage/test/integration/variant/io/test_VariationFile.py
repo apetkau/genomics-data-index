@@ -2,8 +2,8 @@ import tempfile
 from pathlib import Path
 
 from storage.test.integration.variant import data_dir, variation_dir, reference_file, consensus_dir
-from storage.variant.io.VariationFile import VariationFile
 from storage.variant.MaskedGenomicRegions import MaskedGenomicRegions
+from storage.variant.io.VariationFile import VariationFile
 from storage.variant.util import parse_sequence_file
 
 
@@ -46,7 +46,7 @@ def test_consensus_empty_mask():
         empty_mask.write(mask_file)
 
         seq_records = VariationFile(sample_bcf).consensus(reference_file=reference_file,
-                                            mask_file=mask_file)
+                                                          mask_file=mask_file)
         assert 1 == len(seq_records)
         actual_seq_record = seq_records[0]
         assert 5180 == len(actual_seq_record)
@@ -63,7 +63,7 @@ def test_consensus_mask():
     expected_consensus_record = expected_consensus_records[0]
 
     seq_records = VariationFile(sample_bcf).consensus(reference_file=reference_file,
-                                        mask_file=sample_mask_file)
+                                                      mask_file=sample_mask_file)
     assert 1 == len(seq_records)
     actual_seq_record = seq_records[0]
     assert 5180 == len(actual_seq_record)
@@ -80,7 +80,7 @@ def test_consensus_mask_over_mutation():
     expected_consensus_record = expected_consensus_records[0]
 
     seq_records = VariationFile(sample_bcf).consensus(reference_file=reference_file,
-                                        mask_file=sample_mask_file)
+                                                      mask_file=sample_mask_file)
     assert 1 == len(seq_records)
     actual_seq_record = seq_records[0]
     assert 5180 == len(actual_seq_record)
