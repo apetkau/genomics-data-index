@@ -19,7 +19,7 @@ The types of queries I wish to perform are as follows:
 
 2. Feature-based queries
 
-   These could consist of questions such as "list all samples with an A -> T mutation at position 500" or "list all samples containing gene xyz (query based on k-mers similar to [BIGSI][] or [COBS][]".
+   These could consist of questions such as "list all samples with an A -> T mutation at position 500" or "list all samples containing gene xyz (query based on k-mers similar to [BIGSI][] or [COBS][]).
 
 3. Cluster-based queries
 
