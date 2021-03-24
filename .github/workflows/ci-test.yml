@@ -34,7 +34,7 @@ jobs:
           conda config --add channels defaults
           conda config --add channels conda-forge
           conda config --add channels bioconda
-          conda install htslib bcftools fasttree iqtree -y
+          conda install htslib bcftools bedtools fasttree iqtree -y
 
       - name: Setup python packages
         shell: bash -l {0}
