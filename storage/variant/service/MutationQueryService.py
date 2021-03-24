@@ -7,7 +7,6 @@ from pandas.api.types import CategoricalDtype
 from storage.variant.service.QueryService import QueryFeature
 from storage.variant.service.QueryService import QueryService
 from storage.variant.service.ReferenceService import ReferenceService
-# from storage.variant.service.SampleSequenceService import SampleSequenceService
 from storage.variant.service.SampleService import SampleService
 # from storage.variant.service.TreeService import TreeService
 
@@ -37,6 +36,14 @@ class QueryFeatureMutation(QueryFeature):
         return self._pos
 
     @property
+    def start(self):
+        return self.position
+
+    @property
+    def stop(self):
+        return self.position + len(self.ref)
+
+    @property
     def ref(self):
         return self._ref
 
@@ -53,7 +60,6 @@ class MutationQueryService(QueryService):
         # self._tree_service = tree_service
         self._reference_service = reference_service
         self._sample_service = sample_service
-        # self._sample_sequence_service = sample_sequence_service
 
     def _find_matches_internal(self, sample_names: List[str], distance_threshold: float = None) -> pd.DataFrame:
         raise Exception('Not implemented')
@@ -111,15 +117,15 @@ class MutationQueryService(QueryService):
             for sample in variation_samples[vid]:
                 data.append([vid, sample.name, sample.id, 'Present'])
 
-        # if include_unknown:
-        #     for feature in features:
-        #         missing_positions = list(range(feature.position, feature.position + len(feature.ref)))
-        #         samples_with_variants = self._sample_service.get_samples_associated_with_sequence(feature.sequence_name)
-        #         for sample in samples_with_variants:
-        #             if self._sample_sequence_service.missing_in_sequence(sample_name=sample.name,
-        #                                                                  sequence_name=feature.sequence_name,
-        #                                                                  positions=missing_positions):
-        #                 data.append([feature.spdi, sample.name, sample.id, 'Unknown'])
+        if include_unknown:
+            for feature in features:
+                reference = self._reference_service.find_reference_for_sequence(feature.sequence_name)
+
+                # TODO: I'm doing linear search over all samples, this could be improved
+                for sample_variation in reference.sample_nucleotide_variation:
+                    masked_regions = sample_variation.masked_regions
+                    if masked_regions.overlaps_range(feature.sequence_name, feature.start, feature.stop):
+                        data.append([feature.spdi, sample_variation.sample.name, sample_variation.sample.id, 'Unknown'])
 
         return pd.DataFrame(data=data, columns=[
             'Feature', 'Sample Name', 'Sample ID', 'Status']).sort_values(['Feature', 'Sample Name'])

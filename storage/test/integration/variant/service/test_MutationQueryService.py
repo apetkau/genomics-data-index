@@ -109,7 +109,6 @@ def test_find_by_features_2_features(mutation_query_service: MutationQueryServic
     assert len(matches_df) == 3
 
 
-@pytest.mark.skip()
 def test_find_by_features_unknown(mutation_query_service: MutationQueryService):
     matches_df = mutation_query_service.find_by_features([QueryFeatureMutation('reference:190:A:G')],
                                                          include_unknown=True)
@@ -135,12 +134,10 @@ def test_find_by_features_unknown(mutation_query_service: MutationQueryService):
     assert len(matches_df) == 1
 
 
-@pytest.mark.skip()
 def test_find_by_features_found_unknown(mutation_query_service: MutationQueryService):
     matches_df = mutation_query_service.find_by_features([QueryFeatureMutation('reference:5061:G:A'),
                                                           QueryFeatureMutation('reference:190:A:G')],
                                                          include_unknown=True)
-    print(matches_df)
 
     assert ['Type', 'Feature', 'Sample Name', 'Sample ID', 'Status'] == list(matches_df.columns.tolist())
 
