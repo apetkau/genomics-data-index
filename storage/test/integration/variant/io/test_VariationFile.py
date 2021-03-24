@@ -17,7 +17,23 @@ def test_write():
         assert out_file.exists()
 
 
-def test_consensus():
+def test_consensus_no_mask():
+    sample_bcf = variation_dir / 'SampleA.bcf'
+
+    expected_consensus_file = consensus_dir / 'SampleA-consensus-nomask.fasta.gz'
+    name, expected_consensus_records = parse_sequence_file(expected_consensus_file)
+    expected_consensus_record = expected_consensus_records[0]
+
+    seq_records = VariationFile(sample_bcf).consensus(reference_file=reference_file)
+    
+    assert 1 == len(seq_records)
+    actual_seq_record = seq_records[0]
+    assert 5180 == len(actual_seq_record)
+    assert expected_consensus_record.id == actual_seq_record.id
+    assert expected_consensus_record.seq == actual_seq_record.seq
+
+
+def test_consensus_empty_mask():
     sample_bcf = variation_dir / 'SampleA.bcf'
     empty_mask = MaskedGenomicRegions.empty_mask()
 

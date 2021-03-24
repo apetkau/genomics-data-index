@@ -25,16 +25,18 @@ class VariationFile:
         else:
             raise Exception(f'Invalid file_type=[{file_type}]')
 
-    def consensus(self, reference_file: Path, mask_file: Path, include_expression='TYPE="snp"',
+    def consensus(self, reference_file: Path, mask_file: Path = None, include_expression='TYPE="snp"',
                   mask_with: str = 'N') -> List[SeqRecord]:
         with tempfile.NamedTemporaryFile() as out_f:
-            execute_commands([
-                ['bcftools', 'consensus', '--fasta-ref', str(reference_file),
-                 '--mask', str(mask_file), '--mask-with', mask_with,
-                 '--include', include_expression,
+            command = ['bcftools', 'consensus', '--fasta-ref', str(reference_file)]
+            if mask_file is not None:
+                command.extend(['--mask', str(mask_file), '--mask-with', mask_with])
+            command.extend([
+                '--include', include_expression,
                  '--output', str(out_f.name),
-                 str(self._file)]
+                 str(self._file)
             ])
+            execute_commands([command])
             sequences = list(SeqIO.parse(out_f.name, 'fasta'))
             return sequences
 
