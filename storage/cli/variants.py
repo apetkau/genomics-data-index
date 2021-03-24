@@ -180,31 +180,43 @@ def load_vcf(ctx, vcf_fofns: Path, reference_file: Path, build_tree: bool, align
 @main.command(name='load-kmer')
 @click.pass_context
 @click.argument('kmer_fofns', type=click.Path(exists=True))
-@click.option('--kmer-size|-k', help='Kmer size for indexing. List multiple for multiple kmer sizes in an index',
-              default=31, multiple=True, type=click.IntRange(min=1, max=num_cores))
+@click.option('--kmer-size', help='Kmer size for indexing. List multiple for multiple kmer sizes in an index',
+              default=31, multiple=True, type=click.IntRange(min=1, max=201))
 def load_kmer(ctx, kmer_fofns, kmer_size):
     filesystem_storage = ctx.obj['filesystem_storage']
     kmer_service = ctx.obj['kmer_service']
-    index_manager = KmerIndexManager(filesystem_storage.kmer_dir)
+
+    kmer_size = list(kmer_size)
+
+    kmer_indexer = KmerIndexerSourmash(
+        k=kmer_size,
+        scaled=1000,
+        abund=False,
+        compress=True
+    )
+
+    index_manager = KmerIndexManager(filesystem_storage.kmer_dir, kmer_indexer=kmer_indexer)
+
+    files_to_index = []
 
     files_df = pd.read_csv(kmer_fofns, sep='\t')
-    index_count = 0
     for index, row in files_df.iterrows():
         sample_name = row['Sample']
         if kmer_service.has_kmer_index(sample_name):
             logger.warning(f'Sample [{sample_name}] already has kmer index, will not regenerate')
         else:
             genome_files = row['Files'].split(',')
-            index_file = index_manager.index_genome_files(sample_name, genome_files, KmerIndexerSourmash(
-                k=kmer_size,
-                scaled=5000,
-                abund=False,
-            ))
-            kmer_service.insert_kmer_index(sample_name=sample_name,
-                                           kmer_index_path=index_file)
-            index_count += 1
+            files_to_index.append((sample_name, genome_files))
 
-    print(f'Generated indexes for {index_count} samples')
+    logger.info(f'Indexing {len(files_to_index)} genomes')
+
+    indexed_genomes = index_manager.index_all_genomes(files_to_index)
+
+    for sample_name in indexed_genomes:
+        kmer_service.insert_kmer_index(sample_name=sample_name,
+                                       kmer_index_path=indexed_genomes[sample_name])
+
+    print(f'Generated indexes for {len(indexed_genomes)} samples')
 
 
 LIST_TYPES = ['genome', 'sample', 'reference']
