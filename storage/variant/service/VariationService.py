@@ -1,133 +1,118 @@
+from typing import Dict, List, Any, Set
 import logging
-from typing import Dict, List
+from pathlib import Path
+import shutil
 
 import pandas as pd
 
-from storage.variant.CoreBitMask import CoreBitMask
-from storage.variant.io import check_variants_table_columns
-from storage.variant.model import ReferenceSequence, VariationAllele, Sample, SampleSequence
+from storage.variant.MaskedGenomicRegions import MaskedGenomicRegions
+from storage.variant.io import VariantsReader
+from storage.variant.SampleSet import SampleSet
+from storage.variant.model import ReferenceSequence, Sample, SampleNucleotideVariation, NucleotideVariantsSamples
 from storage.variant.service import DatabaseConnection
 from storage.variant.service import EntityExistsError
 from storage.variant.service.ReferenceService import ReferenceService
 from storage.variant.service.SampleService import SampleService
+from storage.variant.io.VariationFile import VariationFile
 
 logger = logging.getLogger(__name__)
 
 
 class VariationService:
 
-    def __init__(self, database_connection: DatabaseConnection, reference_service: ReferenceService,
-                 sample_service: SampleService):
+    def __init__(self, database_connection: DatabaseConnection, variation_dir: Path,
+                 reference_service: ReferenceService, sample_service: SampleService):
         self._connection = database_connection
         self._reference_service = reference_service
         self._sample_service = sample_service
+        self._variation_dir = variation_dir
 
-    def get_variants(self, sequence_name: str, type: str = 'snp') -> Dict[int, Dict[str, VariationAllele]]:
-        variants = self._connection.get_session().query(VariationAllele) \
-            .join(ReferenceSequence) \
-            .filter(ReferenceSequence.sequence_name == sequence_name) \
-            .filter(VariationAllele.var_type == type) \
-            .order_by(VariationAllele.position) \
+    def get_variants_ordered(self, sequence_name: str, type: str = 'snp') -> List[NucleotideVariantsSamples]:
+        return self._connection.get_session().query(NucleotideVariantsSamples) \
+            .filter(NucleotideVariantsSamples.sequence == sequence_name) \
+            .filter(NucleotideVariantsSamples.var_type == type) \
+            .order_by(NucleotideVariantsSamples.position) \
             .all()
 
-        variants_dict = {}
+    def get_sample_nucleotide_variation(self, sample_names: List[str]) -> List[SampleNucleotideVariation]:
+        return self._connection.get_session().query(SampleNucleotideVariation) \
+            .join(SampleNucleotideVariation.sample) \
+            .filter(Sample.name.in_(sample_names)) \
+            .all()
 
-        for variant in variants:
-            if variant.position not in variants_dict:
-                variants_dict[variant.position] = {}
-            for sample in variant.samples:
-                variants_dict[variant.position][sample.name] = variant
+    def _create_nucleotide_variants(self, var_df: pd.DataFrame) -> List[NucleotideVariantsSamples]:
+        samples_names = set(var_df['SAMPLE'].tolist())
+        sample_name_ids = self._sample_service.find_sample_name_ids(samples_names)
 
-        return variants_dict
+        var_df['SPDI'] = var_df.apply(lambda x: NucleotideVariantsSamples.to_spdi(
+            sequence_name=x['CHROM'],
+            position=x['POS'],
+            ref=x['REF'],
+            alt=x['ALT']
+        ), axis='columns')
+        var_df['SAMPLE_ID'] = var_df.apply(lambda x: sample_name_ids[x['SAMPLE']], axis='columns')
 
-    def _create_file_variants(self, var_df: pd.DataFrame, ref_contigs: Dict[str, ReferenceSequence]) -> Dict[
-        str, List[VariationAllele]]:
-        variant_table = {}
-        file_variants = {}
-        for row in var_df.iterrows():
-            sample_name = row[1]['SAMPLE']
+        index_df = var_df.groupby('SPDI').agg({'TYPE': 'first', 'SAMPLE_ID': SampleSet}).reset_index()
 
-            ref_contig = ref_contigs[row[1]['CHROM']]
-            variant_id = VariationAllele.spdi(sequence_name=ref_contig.sequence_name,
-                                              position=row[1]['POS'],
-                                              ref=row[1]['REF'],
-                                              alt=row[1]['ALT']
-                                              )
+        return index_df.apply(lambda x: NucleotideVariantsSamples(
+            spdi=x['SPDI'], var_type=x['TYPE'], sample_ids=x['SAMPLE_ID']),
+            axis='columns').tolist()
 
-            if variant_id not in variant_table:
-                variant = VariationAllele(sequence=ref_contig, position=row[1]['POS'],
-                                          ref=row[1]['REF'], alt=row[1]['ALT'], var_type=row[1]['TYPE'])
-                variant_table[variant.id] = variant
-            else:
-                variant = variant_table[variant_id]
-
-            if sample_name not in file_variants:
-                file_variants[sample_name] = []
-
-            file_variants[sample_name].append(variant)
-
-        return file_variants
-
-    def check_samples_have_variants(self, var_df: pd.DataFrame, reference_name: str) -> bool:
+    def check_samples_have_variants(self, sample_names: Set[str], reference_name: str) -> bool:
         """
-        Checks if any of the samples loaded in the passed dataframe already have variants.
-        :param var_df: The dataframe of variants
+        Checks if any of the passed sample names already have variants.
+        :param sample_names: The dataframe of variants
         :param reference_name: The reference genome name.
         :return: True if any of the samples have variants, false otherwise.
         """
         samples_with_variants = {sample.name for sample in
                                  self._sample_service.get_samples_with_variants(reference_name)}
-        samples_from_df = set(var_df['SAMPLE'].tolist())
-        return len(samples_with_variants.intersection(samples_from_df)) != 0
+        return len(samples_with_variants.intersection(sample_names)) != 0
 
-    def insert_variants(self, var_df: pd.DataFrame, reference_name: str,
-                        core_masks: Dict[str, Dict[str, CoreBitMask]]) -> None:
-        check_variants_table_columns(var_df)
-        if self.check_samples_have_variants(var_df, reference_name):
+    def insert_variants(self, reference_name: str, variants_reader: VariantsReader) -> None:
+        reference = self._reference_service.find_reference_genome(reference_name)
+        sample_variant_files = variants_reader.sample_variant_files()
+        genomic_masked_regions = variants_reader.get_genomic_masked_regions()
+
+        if self.check_samples_have_variants(set(sample_variant_files.keys()), reference_name):
             raise EntityExistsError(f'Passed samples already have variants for reference genome [{reference_name}], '
                                     f'will not insert any new variants')
 
-        ref_contigs = self._reference_service.get_reference_contigs(reference_name)
-        file_variants = self._create_file_variants(var_df, ref_contigs)
+        for sample_name in sample_variant_files:
+            variant_file = sample_variant_files[sample_name]
+            sample = Sample(name=sample_name)
+            sample_nucleotide_variation = SampleNucleotideVariation(reference=reference)
+            sample_nucleotide_variation.nucleotide_variants_file = self._save_variation_file(variant_file, sample)
+            sample_nucleotide_variation.sample = sample
 
-        for s in file_variants:
-            ref_objects = {ref_contigs[v.sequence.sequence_name] for v in file_variants[s]}
-            sample_core_masks = core_masks[s]
-            sample_sequences = []
-            for r in ref_objects:
-                sample_sequence = SampleSequence(sequence=r)
-                sample_sequence.core_mask = sample_core_masks[r.sequence_name]
-                sample_sequences.append(sample_sequence)
-            sample = Sample(name=s, variants=file_variants[s], sample_sequences=sample_sequences)
-            self._connection.get_session().add(sample)
+            if sample_name in genomic_masked_regions:
+                masked_regions = genomic_masked_regions[sample_name]
+            else:
+                masked_regions = MaskedGenomicRegions.empty_mask()
 
+            sample_nucleotide_variation.masked_regions_file = self._save_masked_regions_file(masked_regions, sample)
+
+            self._connection.get_session().add(sample_nucleotide_variation)
         self._connection.get_session().commit()
 
-    def pairwise_distance(self, samples: List[str], var_type='all', distance_type='jaccard') -> pd.DataFrame:
-        sample_objs = self._connection.get_session().query(Sample).filter(Sample.name.in_(samples)).all()
+        self.index_variants(variants_reader=variants_reader)
 
-        if var_type == 'all':
-            sample_variants = {s.name: {v.to_spdi() for v in s.variants} for s in sample_objs}
-        else:
-            sample_variants = {s.name: {v.to_spdi() for v in s.variants if v.var_type == var_type} for s in sample_objs}
+    def index_variants(self, variants_reader: VariantsReader):
+        variants_df = variants_reader.get_variants_table()
+        self._connection.get_session().bulk_save_objects(self._create_nucleotide_variants(variants_df))
+        self._connection.get_session().commit()
 
-        names = list(sample_variants.keys())
-        distances = []
-        for name1 in names:
-            row = []
-            for name2 in names:
-                if name1 == name2:
-                    row.append(0)
-                else:
-                    if distance_type == 'jaccard':
-                        logger.debug(f'variants1=[{sample_variants[name1]}]')
-                        logger.debug(f'variants2=[{sample_variants[name2]}]')
-                        intersection = sample_variants[name1].intersection(sample_variants[name2])
-                        union = sample_variants[name1].union(sample_variants[name2])
+    def _save_variation_file(self, original_file: Path, sample: Sample) -> Path:
+        new_file = self._variation_dir / f'{sample.name}.bcf'
+        if new_file.exists():
+            raise Exception(f'File {new_file} already exists')
 
-                        row.append(1 - (len(intersection) / len(union)))
-                    else:
-                        raise Exception(f'Unsupported distance_type=[{distance_type}]')
-            distances.append(row)
+        return VariationFile(original_file).write(new_file)
 
-        return pd.DataFrame(distances, columns=names, index=names)
+    def _save_masked_regions_file(self, masked_regions, sample: Sample):
+        new_file = self._variation_dir / f'{sample.name}.bed.gz'
+        if new_file.exists():
+            raise Exception(f'File {new_file} already exists')
+
+        masked_regions.write(new_file)
+        return new_file

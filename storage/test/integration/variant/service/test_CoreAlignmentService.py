@@ -21,7 +21,7 @@ def replace_column_with_reference(alignment: MultipleSeqAlignment, position: int
                                   skip_missing=True) -> MultipleSeqAlignment:
     column = alignment[:, (position - 1):position]
     ref = None
-    ref_name = 'reference'
+    ref_name = 'genome'
     for s in column:
         if s.id == ref_name:
             ref = s
@@ -41,9 +41,11 @@ def replace_column_with_reference(alignment: MultipleSeqAlignment, position: int
 def replace_ref_name(alignment):
     # Change reference name
     for s in alignment:
-        s.description = 'generated automatically'
         if s.id == 'Reference':
-            s.id = 'reference'
+            s.id = 'genome'
+            s.description = '[reference genome]'
+        else:
+            s.description = 'generated automatically'
 
 
 def replace_gap_with_n_and_upper(alignment: MultipleSeqAlignment) -> MultipleSeqAlignment:
@@ -77,7 +79,7 @@ def expected_alignment_core() -> MultipleSeqAlignment:
 
         # Remove SNVs/SNPs introduced by complex events
         alignment = remove_column(alignment, 15)  # Position 1325
-        alignment = remove_column(alignment, 23)  # Position 1984
+        alignment = remove_column(alignment, 23 - 1)  # Position 1984 (-1 to account for previous removed column)
 
         alignment.sort()
 
@@ -120,10 +122,10 @@ def compare_alignments(a: MultipleSeqAlignment, b: MultipleSeqAlignment) -> None
     assert len(a) == len(b), 'Alignment has incorrect number of samples'
     assert a.get_alignment_length() == b.get_alignment_length()
 
-    alignment_length = a.get_alignment_length()
-    for i in range(0, alignment_length):
-        assert a[0].id == b[0].id, 'Alignment ids are not equal'
-        assert a[0].seq == b[0].seq, 'Alignment sequences are not equal'
+    number_of_sequences = len(a)
+    for i in range(0, number_of_sequences):
+        assert a[i].id == b[i].id, f'Alignment ids are not equal [{a[i].id}] != [{b[i].id}]'
+        assert a[i].seq == b[i].seq, f'Alignment sequences are not equal for [a.id={a[i].id}, b.id={b[i].id}]'
 
 
 def test_snippy_align(core_alignment_service, expected_alignment_core):

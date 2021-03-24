@@ -2,7 +2,9 @@ import gzip
 
 import pytest
 from Bio import SeqIO
+from Bio.Seq import Seq
 from ete3 import Tree
+from sqlalchemy.orm.exc import NoResultFound
 
 from storage.test.integration.variant import reference_file
 from storage.test.integration.variant import tree_file
@@ -99,3 +101,35 @@ def test_find_references_for_sample(reference_service_with_data, variation_servi
 def test_find_references_for_sample_not_exist(reference_service_with_data, variation_service):
     found_references = reference_service_with_data.find_references_for_sample('not_exist')
     assert len(found_references) == 0
+
+
+def test_get_reference_sequences(reference_service_with_data, variation_service):
+    reference_sequences = reference_service_with_data.get_reference_sequences('genome')
+
+    assert {'reference'} == set(reference_sequences.keys())
+
+
+def test_find_reference_for_sequence(reference_service_with_data, variation_service):
+    reference = reference_service_with_data.find_reference_for_sequence('reference')
+    assert 'genome' == reference.name
+
+
+def test_find_reference_for_sequence_not_exist(reference_service_with_data, variation_service):
+    with pytest.raises(NoResultFound) as execinfo:
+        reference_service_with_data.find_reference_for_sequence('not_exist')
+    assert 'No row was found' in str(execinfo.value)
+
+
+def test_get_sequence(reference_service_with_data):
+    seq_record = reference_service_with_data.get_sequence('reference')
+
+    assert 'reference' == seq_record.id
+    assert isinstance(seq_record.seq, Seq)
+
+
+def test_get_reference_genome_records(reference_service_with_data):
+    records = reference_service_with_data.get_reference_genome_records('genome')
+    assert 1 == len(records)
+
+    assert 'reference' == records[0].id
+    assert 5180 == len(records[0])

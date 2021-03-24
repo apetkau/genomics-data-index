@@ -1,13 +1,14 @@
 from pathlib import Path
-from typing import List
+from typing import List, Dict
 
 import ga4gh.vrs.dataproxy as dataproxy
 from Bio.SeqRecord import SeqRecord
+from Bio.Seq import Seq
 from biocommons.seqrepo import SeqRepo
 from ete3 import Tree
 
 from storage.variant.model import Reference
-from storage.variant.model import ReferenceSequence, SampleSequence, Sample
+from storage.variant.model import ReferenceSequence, SampleNucleotideVariation, Sample
 from storage.variant.service import DatabaseConnection, EntityExistsError
 from storage.variant.util import parse_sequence_file
 
@@ -36,14 +37,18 @@ class ReferenceService:
 
             self._create_reference_genome_db(genome_file)
 
-    def get_reference_contigs(self, reference_name: str):
+    def get_reference_sequences(self, reference_name: str) -> Dict[str, ReferenceSequence]:
         reference = self.find_reference_genome(reference_name)
         return {s.sequence_name: s for s in reference.sequences}
 
-    def get_sequence(self, sequence_name: str):
+    def get_sequence(self, sequence_name: str) -> SeqRecord:
         namespace = self._seq_repo_namespace
         seq_string = self._seq_repo_proxy.get_sequence(f'{namespace}:{sequence_name}')
-        return SeqRecord(seq_string, id=sequence_name)
+        return SeqRecord(Seq(seq_string), id=sequence_name)
+
+    def get_reference_genome_records(self, reference_name: str) -> List[SeqRecord]:
+        reference = self.find_reference_genome(reference_name)
+        return [self.get_sequence(sequence.sequence_name) for sequence in reference.sequences]
 
     def _create_reference_genome_db(self, reference_file: Path):
         ref_length = 0
@@ -80,8 +85,13 @@ class ReferenceService:
 
     def find_references_for_sample(self, sample_name: str) -> List[Reference]:
         return self._connection.get_session().query(Reference) \
-            .join(ReferenceSequence) \
-            .join(SampleSequence) \
+            .join(SampleNucleotideVariation) \
             .join(Sample) \
             .filter(Sample.name == sample_name) \
             .all()
+
+    def find_reference_for_sequence(self, sequence_name: str) -> Reference:
+        return self._connection.get_session().query(Reference) \
+            .join(Reference.sequences) \
+            .filter(ReferenceSequence.sequence_name == sequence_name) \
+            .one()

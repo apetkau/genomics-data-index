@@ -1,54 +1,72 @@
+from typing import Tuple
+from pathlib import Path
 from ete3 import Tree
 from sqlalchemy import Column, Integer, String, ForeignKey, Table, LargeBinary, UnicodeText
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 
-from storage.variant.CoreBitMask import CoreBitMask
+from storage.variant.MaskedGenomicRegions import MaskedGenomicRegions
+from storage.variant.SampleSet import SampleSet
 
 Base = declarative_base()
 
-sample_variation_association = Table('sample_variation_allele', Base.metadata,
-                                     Column('sample_id', Integer, ForeignKey('sample.id')),
-                                     Column('variantion_allele_id', String(255), ForeignKey('variation_allele.id')),
-                                     )
 
-
-class VariationAllele(Base):
-    __tablename__ = 'variation_allele'
-    id = Column(String(255), primary_key=True)
-    sequence_id = Column(Integer, ForeignKey('reference_sequence.id'))
-    position = Column(Integer)
-    ref = Column(String(255))
-    alt = Column(String(255))
+class NucleotideVariantsSamples(Base):
+    __tablename__ = 'nucleotide_variants_samples'
+    sequence = Column(String(255), primary_key=True)
+    position = Column(Integer, primary_key=True)
+    deletion = Column(String(255), primary_key=True)
+    insertion = Column(String(255), primary_key=True)
+    _spdi = Column('spdi', String(255))
     var_type = Column(String(255))
+    _sample_ids = Column(LargeBinary(length=500 * 10 ** 6))  # Max of 500 million
 
-    samples = relationship('Sample', secondary=sample_variation_association, back_populates='variants')
-    sequence = relationship('ReferenceSequence', back_populates='variants')
-
-    def __init__(self, sequence=None, position: int = -1, ref: str = None, alt: str = None,
-                 var_type: str = None):
-        self.sequence = sequence
-        self.position = position
-        self.ref = ref
-        self.alt = alt
+    def __init__(self, spdi: str = None, var_type: str = None, sample_ids: SampleSet = None):
+        self.spdi = spdi
         self.var_type = var_type
+        self.sample_ids = sample_ids
 
-        self.id = self.to_spdi()
+    @hybrid_property
+    def spdi(self) -> str:
+        return self.to_spdi(self.sequence, self.position, self.deletion, self.insertion)
 
-    def to_spdi(self):
-        return VariationAllele.spdi(sequence_name=self.sequence.sequence_name,
-                                    position=self.position,
-                                    ref=self.ref,
-                                    alt=self.alt)
+    @spdi.setter
+    def spdi(self, spdi_value: str):
+        self.sequence, self.position, self.deletion, self.insertion = self.from_spdi(spdi_value)
+        self._spdi = spdi_value
+
+    @hybrid_property
+    def sample_ids(self) -> SampleSet:
+        if self._sample_ids is None:
+            raise Exception('_sample_ids is not set')
+        else:
+            return SampleSet.from_bytes(self._sample_ids)
+
+    @sample_ids.setter
+    def sample_ids(self, sample_ids: SampleSet) -> None:
+        if sample_ids is None:
+            raise Exception('Cannot set sample_ids to None')
+        else:
+            self._sample_ids = sample_ids.get_bytes()
 
     @classmethod
-    def spdi(cls, sequence_name: str, position: int, ref: str, alt: str) -> str:
+    def to_spdi(cls, sequence_name: str, position: int, ref: str, alt: str) -> str:
         return f'{sequence_name}:{position}:{ref}:{alt}'
 
+    @classmethod
+    def from_spdi(cls, spdi: str) -> Tuple[str, int, str, str]:
+        if spdi is None:
+            raise Exception('Cannot parse value spdi=None')
+
+        values = spdi.split(':')
+        if len(values) != 4:
+            raise Exception(f'Incorrect number of items for spdi=[{spdi}]')
+        else:
+            return str(values[0]), int(values[1]), str(values[2]), str(values[3])
+
     def __repr__(self):
-        return (f'<VariationAllele(sequence_name={self.sequence.sequence_name}'
-                f', position={self.position}, ref={self.ref}, alt={self.alt}, var_type={self.var_type})>')
+        return (f'<NucleotideVariantsSamples(spdi={self.spdi}, var_type={self.var_type}, num_samples={len(self.sample_ids)})>')
 
 
 class Reference(Base):
@@ -58,7 +76,9 @@ class Reference(Base):
     length = Column(Integer)
     _tree = Column('tree', UnicodeText(10 ** 6))
     tree_alignment_length = Column(Integer)
+
     sequences = relationship('ReferenceSequence')
+    sample_nucleotide_variation = relationship('SampleNucleotideVariation', back_populates='reference')
 
     @hybrid_property
     def tree(self) -> Tree:
@@ -78,37 +98,47 @@ class Reference(Base):
         return f'<Reference(id={self.id}, name={self.name}, length={self.length})>'
 
 
-class SampleSequence(Base):
-    __tablename__ = 'sample_sequence'
+class SampleNucleotideVariation(Base):
+    __tablename__ = 'sample_nucleotide_variation'
     sample_id = Column(Integer, ForeignKey('sample.id'), primary_key=True)
-    sequence_id = Column(Integer, ForeignKey('reference_sequence.id'), primary_key=True)
-    _core_mask = Column(LargeBinary(length=100 * 10 ** 6))  # Max of 100 million
-    flag = Column(String(255))
-
-    sequence = relationship('ReferenceSequence', back_populates='sample_sequences')
-    sample = relationship('Sample', back_populates='sample_sequences')
+    reference_id = Column(Integer, ForeignKey('reference.id'), primary_key=True)
+    _masked_regions_file = Column('masked_regions_file', String(255))
+    _nucleotide_variants_file = Column('nucleotide_variants_file', String(255))
 
     @hybrid_property
-    def core_mask(self) -> CoreBitMask:
-        if self._core_mask is None:
-            raise Exception('core_mask is not set')
+    def nucleotide_variants_file(self) -> Path:
+        if self._nucleotide_variants_file is None:
+            raise Exception('Empty _nucleotide_variants_file')
         else:
-            return CoreBitMask.from_bytes(self._core_mask, self.sequence.sequence_length)
+            return Path(self._nucleotide_variants_file)
 
-    @core_mask.setter
-    def core_mask(self, core_mask: CoreBitMask) -> None:
-        if core_mask is None:
-            raise Exception('Cannot set core_mask to None')
-        elif self.sequence is None or self.sequence.sequence_length is None:
-            raise Exception(f'Cannot set core_mask without the corresponding sequence (and length) set')
-        elif self.sequence.sequence_length != len(core_mask):
-            raise Exception(f'Cannot set core_mask, len(core_mask)=[{len(core_mask)}] '
-                            f'is not the same as sequence_lenght=[{self.sequence.sequence_length}]')
+    @nucleotide_variants_file.setter
+    def nucleotide_variants_file(self, file: Path) -> None:
+        if file is None:
+            self._nucleotide_variants_file = None
         else:
-            self._core_mask = core_mask.get_bytes()
+            self._nucleotide_variants_file = str(file)
 
-    def __repr__(self):
-        return f'<SampleSequence(sample_id={self.sample_id}, sequence_id={self.sequence_id}, flag={self.flag})>'
+    @property
+    def masked_regions(self) -> MaskedGenomicRegions:
+        return MaskedGenomicRegions.from_file(self.masked_regions_file)
+
+    @hybrid_property
+    def masked_regions_file(self) -> Path:
+        if self._masked_regions_file is None:
+            raise Exception('Empty _masked_regions_file')
+        else:
+            return Path(self._masked_regions_file)
+
+    @masked_regions_file.setter
+    def masked_regions_file(self, file: Path) -> None:
+        if file is None:
+            self._masked_regions_file = None
+        else:
+            self._masked_regions_file = str(file)
+
+    sample = relationship('Sample', back_populates='sample_nucleotide_variation')
+    reference = relationship('Reference', back_populates='sample_nucleotide_variation')
 
 
 class ReferenceSequence(Base):
@@ -117,9 +147,6 @@ class ReferenceSequence(Base):
     reference_id = Column(Integer, ForeignKey('reference.id'))
     sequence_name = Column(String(255))
     sequence_length = Column(Integer)
-
-    variants = relationship('VariationAllele', back_populates='sequence')
-    sample_sequences = relationship('SampleSequence', back_populates='sequence')
 
     def __repr__(self):
         return (f'<ReferenceSequence(id={self.id}, sequence_name={self.sequence_name},'
@@ -131,8 +158,7 @@ class Sample(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(255))
 
-    variants = relationship('VariationAllele', secondary=sample_variation_association, back_populates='samples')
-    sample_sequences = relationship('SampleSequence', back_populates='sample')
+    sample_nucleotide_variation = relationship('SampleNucleotideVariation', back_populates='sample')
     sample_kmer_index = relationship('SampleKmerIndex', uselist=False, back_populates='sample')
 
     def __repr__(self):

@@ -6,7 +6,7 @@ from typing import List, Dict
 import pandas as pd
 import vcf
 
-from storage.variant.CoreBitMask import CoreBitMask
+from storage.variant.MaskedGenomicRegions import MaskedGenomicRegions
 from storage.variant.io import VariantsReader
 from storage.variant.util import parse_sequence_file
 
@@ -16,27 +16,14 @@ logger = logging.getLogger(__name__)
 class VcfVariantsReader(VariantsReader):
 
     def __init__(self, sample_vcf_map: Dict[str, Path],
-                 core_mask_files_map: Dict[str, Path] = None,
-                 empty_core_mask: Dict[str, CoreBitMask] = None):
+                 masked_genomic_files_map: Dict[str, Path] = None):
         super().__init__()
 
-        if core_mask_files_map is None and empty_core_mask is None:
-            raise Exception(f'Both core_mask_files_map and empty_core_mask are None. Must set one of them.')
-        elif core_mask_files_map is None:
-            core_mask_files_map: Dict[str, Path] = {}
-
-        sample_names_vcfs = set(sample_vcf_map.keys())
-        sample_names_masks = set(core_mask_files_map.keys())
-
-        if len(sample_names_masks - sample_names_vcfs) > 0:
-            raise Exception(f'Missing the following sample VCFs: {sample_names_masks - sample_names_vcfs}')
-        elif len(sample_names_vcfs - sample_names_masks) > 0 and empty_core_mask is None:
-            raise Exception(f'Cannot have empty_core_mask unset when missing sample_names_masks. '
-                            f'Missing samples: {sample_names_vcfs - sample_names_masks}')
+        if masked_genomic_files_map is None:
+            masked_genomic_files_map: Dict[str, Path] = {}
 
         self._sample_vcf_map = sample_vcf_map
-        self._core_mask_files_map = core_mask_files_map
-        self._empty_core_mask = empty_core_mask
+        self._genomic_mask_files_map = masked_genomic_files_map
 
     def _fix_df_columns(self, vcf_df: pd.DataFrame) -> pd.DataFrame:
         # If no data, I still want certain column names so that rest of code still works
@@ -47,6 +34,9 @@ class VcfVariantsReader(VariantsReader):
 
     def _drop_extra_columns(self, vcf_df: pd.DataFrame) -> pd.DataFrame:
         return vcf_df
+
+    def sample_variant_files(self) -> Dict[str, Path]:
+        return self._sample_vcf_map
 
     def read_vcf(self, file: Path, sample_name: str) -> pd.DataFrame:
         reader = vcf.Reader(filename=str(file))
@@ -111,25 +101,20 @@ class VcfVariantsReader(VariantsReader):
         """
         return str(element)
 
-    def _read_core_masks(self) -> Dict[str, Dict[str, CoreBitMask]]:
-        core_masks = {}
+    def _read_genomic_masked_regions(self) -> Dict[str, MaskedGenomicRegions]:
+        genomic_masks = {}
 
         for sample in self._sample_vcf_map:
-            if sample in self._core_mask_files_map:
-                core_masks[sample] = self.read_core_masks_from_file(self._core_mask_files_map[sample])
+            if sample in self._genomic_mask_files_map:
+                genomic_masks[sample] = self.read_genomic_masks_from_file(self._genomic_mask_files_map[sample])
             else:
-                core_masks[sample] = self._empty_core_mask
+                genomic_masks[sample] = MaskedGenomicRegions.empty_mask()
 
-        return core_masks
+        return genomic_masks
 
-    def read_core_masks_from_file(self, file: Path) -> Dict[str, CoreBitMask]:
-        sequence_masks = {}
+    def read_genomic_masks_from_file(self, file: Path) -> MaskedGenomicRegions:
         name, records = parse_sequence_file(file)
-        for record in records:
-            if record.id not in sequence_masks:
-                sequence_masks[record.id] = CoreBitMask.from_sequence(sequence=record.seq)
-
-        return sequence_masks
+        return MaskedGenomicRegions.from_sequences(sequences=records)
 
     def samples_list(self) -> List[str]:
-        return list(self._core_mask_files_map.keys())
+        return list(self._sample_vcf_map.keys())

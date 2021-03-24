@@ -3,7 +3,6 @@ import multiprocessing
 import sys
 from os import path, listdir
 from pathlib import Path
-from typing import Dict
 from typing import List
 
 import click
@@ -12,23 +11,21 @@ import coloredlogs
 import pandas as pd
 from Bio import AlignIO
 
-from storage.cli import yaml_config_provider
 from storage.FilesystemStorage import FilesystemStorage
-from storage.variant.CoreBitMask import CoreBitMask
+from storage.cli import yaml_config_provider
+from storage.variant.index.KmerIndexer import KmerIndexerSourmash, KmerIndexManager
 from storage.variant.io.SnippyVariantsReader import SnippyVariantsReader
 from storage.variant.io.VcfVariantsReader import VcfVariantsReader
 from storage.variant.service import DatabaseConnection, EntityExistsError
 from storage.variant.service.CoreAlignmentService import CoreAlignmentService
+from storage.variant.service.KmerService import KmerService
 from storage.variant.service.MutationQueryService import MutationQueryService, QueryFeatureMutation, \
     MutationQuerySummaries
 from storage.variant.service.ReferenceService import ReferenceService
-from storage.variant.service.SampleSequenceService import SampleSequenceService
 from storage.variant.service.SampleService import SampleService
 from storage.variant.service.TreeService import TreeService
 from storage.variant.service.VariationService import VariationService
-from storage.variant.service.KmerService import KmerService
-from storage.variant.index.KmerIndexer import KmerIndexerSourmash, KmerIndexManager
-from storage.variant.util import get_genome_name, parse_sequence_file
+from storage.variant.util import get_genome_name
 
 logger = logging.getLogger('storage')
 num_cores = multiprocessing.cpu_count()
@@ -62,19 +59,18 @@ def main(ctx, database_connection, database_dir, verbose):
     reference_service = ReferenceService(database, filesystem_storage.reference_dir)
 
     sample_service = SampleService(database)
-    sample_sequence_service = SampleSequenceService(database)
     variation_service = VariationService(database_connection=database,
+                                         variation_dir=filesystem_storage.variation_dir,
                                          reference_service=reference_service,
                                          sample_service=sample_service)
     alignment_service = CoreAlignmentService(database=database,
                                              reference_service=reference_service,
-                                             variation_service=variation_service,
-                                             sample_sequence_service=sample_sequence_service)
+                                             sample_service=sample_service,
+                                             variation_service=variation_service)
     tree_service = TreeService(database, reference_service, alignment_service)
-    mutation_query_service = MutationQueryService(tree_service=tree_service,
-                                                  reference_service=reference_service,
+    mutation_query_service = MutationQueryService(reference_service=reference_service,
                                                   sample_service=sample_service,
-                                                  sample_sequence_service=sample_sequence_service)
+                                                  tree_service=tree_service)
 
     kmer_service = KmerService(database_connection=database,
                                sample_service=sample_service)
@@ -106,14 +102,10 @@ def load_variants_common(ctx, variants_reader, reference_file, input, build_tree
     if len(samples_exist) > 0:
         logger.error(f'Samples {samples_exist} already exist, will not load any variants')
     else:
-        var_df = variants_reader.get_variants_table()
-        core_masks = variants_reader.get_core_masks()
-
         reference_name = get_genome_name(reference_file)
 
-        variation_service.insert_variants(var_df=var_df,
-                                          reference_name=reference_name,
-                                          core_masks=core_masks)
+        variation_service.insert_variants(reference_name=reference_name,
+                                          variants_reader=variants_reader)
         click.echo(f'Loaded variants from [{input}] into database')
 
         if build_tree:
@@ -163,27 +155,22 @@ def load_vcf(ctx, vcf_fofns: Path, reference_file: Path, build_tree: bool, align
              extra_tree_params: str):
     reference_file = Path(reference_file)
 
-    # Generate empty masks
-    empty_core_mask: Dict[str, CoreBitMask] = {}
-    ref_name, sequences = parse_sequence_file(reference_file)
-    for r in sequences:
-        empty_core_mask[r.id] = CoreBitMask.empty_mask(len(r))
+    logger.warning('TODO: I need to make sure "TYPE" is available in the input VCF/BCF files')
 
     click.echo(f'Loading files listed in {vcf_fofns}')
     sample_vcf_map = {}
-    core_mask_files_map = {}
+    mask_files_map = {}
     files_df = pd.read_csv(vcf_fofns, sep='\t')
     for index, row in files_df.iterrows():
         if row['Sample'] in sample_vcf_map:
             raise Exception(f'Error, duplicate samples {row["Sample"]} in file {vcf_fofns}')
 
         sample_vcf_map[row['Sample']] = row['VCF']
-        if not pd.isna(row['Core File']):
-            core_mask_files_map[row['Sample']] = row['Core File']
+        if not pd.isna(row['Mask File']):
+            mask_files_map[row['Sample']] = row['Mask File']
 
     variants_reader = VcfVariantsReader(sample_vcf_map=sample_vcf_map,
-                                        core_mask_files_map=core_mask_files_map,
-                                        empty_core_mask=empty_core_mask)
+                                        masked_genomic_files_map=mask_files_map)
 
     load_variants_common(ctx=ctx, variants_reader=variants_reader, reference_file=reference_file,
                          input=Path(vcf_fofns), build_tree=build_tree, align_type=align_type, threads=threads,
@@ -371,9 +358,13 @@ def query(ctx, name: List[str], query_type: str, include_unknown: bool, summariz
 
         if summarize:
             sample_service = ctx.obj['sample_service']
+            reference_service = ctx.obj['reference_service']
+            sequence_reference_map = {f.sequence_name: reference_service.find_reference_for_sequence(f.sequence_name)
+                                      for f in features}
             query_summaries = MutationQuerySummaries()
             feature_sample_counts = {
-                f.spdi: sample_service.count_samples_associated_with_sequence(f.sequence_name) for f in features
+                f.spdi: sample_service.count_samples_associated_with_reference(
+                    sequence_reference_map[f.sequence_name].name) for f in features
             }
             match_df = query_summaries.find_by_features_summary(find_by_features_results=match_df,
                                                                 sample_counts=feature_sample_counts,
