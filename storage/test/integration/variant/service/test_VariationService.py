@@ -163,17 +163,21 @@ def test_get_variants_ordered(database, snippy_variants_reader, reference_servic
 
     variation_service.insert_variants(reference_name='genome', variants_reader=snippy_variants_reader)
 
+    sampleA = database.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = database.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+
     variants = variation_service.get_variants_ordered(sequence_name='reference')
 
     assert 60 == len(variants), 'Incorrect number of variants returned (counting only SNV/SNPs)'
 
     v1 = find_variant_by_position(variants, 4265)
     assert 'reference:4265:G:C' == v1.spdi, 'Incorrect variant returned'
-    assert {1} == set(v1.sample_ids)
+    assert {sampleA.id} == set(v1.sample_ids)
 
     v2 = find_variant_by_position(variants, 839)
     assert 'reference:839:C:G' == v2.spdi, 'Incorrect variant returned'
-    assert {2,3} == set(v2.sample_ids)
+    assert {sampleB.id, sampleC.id} == set(v2.sample_ids)
 
 
 def test_get_sample_nucleotide_variation_one_sample(variation_service):
