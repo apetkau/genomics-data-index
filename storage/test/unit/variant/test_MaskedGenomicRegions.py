@@ -17,7 +17,9 @@ def test_create_from_sequence():
     assert not mask.is_empty()
     assert not mask.contains('record1', 0)
     assert not mask.contains('record1', 3)
+    assert not mask.contains('record1', 4, start_position_index='1')
     assert mask.contains('record1', 4)
+    assert mask.contains('record1', 5, start_position_index='1')
     assert mask.contains('record1', 6)
     assert not mask.contains('record1', 7)
 
@@ -213,7 +215,9 @@ def test_overlaps_region_multiple_regions():
                                                   ('ref2', 30, 40)]))
 
     assert not masked_region.overlaps_range('ref', 9, 10)
+    assert not masked_region.overlaps_range('ref', 10, 11, start_position_index='1')
     assert masked_region.overlaps_range('ref', 10, 11)
+    assert masked_region.overlaps_range('ref', 11, 12, start_position_index='1')
     assert masked_region.overlaps_range('ref', 11, 15)
     assert masked_region.overlaps_range('ref', 19, 25)
     assert not masked_region.overlaps_range('ref', 20, 25)

@@ -60,6 +60,6 @@ class VariationFile:
                 command
             ])
             var_df = pd.read_csv(union_file, sep='\t', dtype=str,
-                               names=['CHROM', 'POS', 'REF', 'ALT', 'INDEXES']).sort_values(['CHROM','POS'])
+                               names=['CHROM', 'POS', 'REF', 'ALT', 'INDEXES'])
             var_df['POS'] = var_df['POS'].astype(int)
-            return var_df
+            return var_df.sort_values(['CHROM','POS'])

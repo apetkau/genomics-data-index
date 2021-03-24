@@ -6,7 +6,7 @@ from pathlib import Path
 import tempfile
 
 from Bio.Align import MultipleSeqAlignment
-from Bio.Seq import Seq, MutableSeq
+from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from Bio import SeqIO
 
@@ -43,23 +43,45 @@ class CoreAlignmentService:
         masked_regions = [v.masked_regions for v in sample_variations]
         return MaskedGenomicRegions.union_all(masked_regions)
 
-    def _core_alignment_sequence_generator(self, reference_file: Path, core_mask_file: Path,
+    def _get_core_positions(self, sample_variations: List[SampleNucleotideVariation],
+                            core_mask: MaskedGenomicRegions) -> Dict[str, List[int]]:
+        variation_files = [v.nucleotide_variants_file for v in sample_variations]
+        union_df = VariationFile.union_all_files(variation_files)
+        union_df = union_df.sort_values(['CHROM','POS'])
+        core_positions = {}
+        for index, row in union_df.iterrows():
+            seq_name = row['CHROM']
+            position = row['POS']
+            if not core_mask.contains(seq_name, position, start_position_index='1'):
+                if seq_name not in core_positions:
+                    core_positions[seq_name] = [position]
+                else:
+                    core_positions[seq_name].append(position)
+
+        return core_positions
+
+    def _extract_sequence_from_positions(self, input_seq: Seq, positions: List[int]) -> Seq:
+        sequence_string = ''
+
+        for position in positions:
+            sequence_string += str(input_seq[position - 1:position])
+
+        return Seq(sequence_string)
+
+    def _core_alignment_sequence_generator(self, reference_file: Path, core_positions: Dict[str, List[int]],
                                            sample_variations: List[SampleNucleotideVariation]) -> Generator[Dict[str, SeqRecord], None, None]:
         for sample_variation in sample_variations:
             seq_records = {}
 
-            consensus_records = VariationFile(sample_variation.nucleotide_variants_file).consensus(
-                reference_file=reference_file,
-                mask_file=core_mask_file,
-                mask_with=self.CORE_MASK_CHAR
-            )
+            consensus_records = VariationFile(sample_variation.nucleotide_variants_file).consensus(reference_file)
             for record in consensus_records:
-                seq_records[record.id] = record
+                sequence_name = record.id
                 record.id = sample_variation.sample.name
                 record.description = 'generated automatically'
-                # Remove this character fro alignment sequences
-                # To produce a core-only alignment
-                record.seq = record.seq.ungap(self.CORE_MASK_CHAR)
+                record.seq = self._extract_sequence_from_positions(input_seq=record.seq,
+                                                                   positions=core_positions[sequence_name])
+
+                seq_records[sequence_name] = record
             yield seq_records
 
     def _full_alignment_sequence_generator(self, reference_file: Path,
@@ -98,26 +120,25 @@ class CoreAlignmentService:
                 SeqIO.write(reference_records, h, 'fasta')
 
             if align_type == 'core':
-                raise Exception('align_type=core not fully implemented')
-
                 core_mask = self._create_core_mask(sample_nucleotide_variants)
-                core_mask_file = Path(tmp_dir) / 'core-mask.bed.gz'
-                core_mask.write(core_mask_file)
+                core_positions = self._get_core_positions(sample_variations=sample_nucleotide_variants,
+                                                          core_mask=core_mask)
 
                 alignment_generator = self._core_alignment_sequence_generator(
                     reference_file=reference_file,
                     sample_variations=sample_nucleotide_variants,
-                    core_mask_file=core_mask_file
+                    core_positions=core_positions
                 )
 
                 if include_reference:
-                    # Add the reference sequence in
-                    reference_records = core_mask.mask_genome(genome_file=reference_file, mask_char='?', remove=True)
-                    for sequence in reference_records:
-                        record = reference_records[sequence]
-                        alignment_seqs[sequence] = [record]
-                        record.id = reference_name
-                        record.description = '[reference genome]'
+                    for record in reference_records:
+                        sequence_name = record.id
+                        core_seq = self._extract_sequence_from_positions(input_seq=record.seq,
+                                                                           positions=core_positions[sequence_name])
+                        new_record = SeqRecord(id=reference_name,
+                                               seq=core_seq,
+                                               description='[reference genome]')
+                        alignment_seqs[sequence_name] = [new_record]
 
             elif align_type == 'full':
                 alignment_generator = self._full_alignment_sequence_generator(

@@ -105,13 +105,26 @@ class MaskedGenomicRegions:
         """
         return {x.chrom for x in self._mask}
 
-    def contains(self, sequence: str, position: int) -> bool:
+    def contains(self, sequence: str, position: int, start_position_index: str = '0') -> bool:
+        if start_position_index != '0' and start_position_index != '1':
+            raise Exception((f'Unknown value start_position_index=[{start_position_index}].'
+                             'Should be "0" or "1" to indicate which is the starting base position'))
+        elif start_position_index == '1':
+            position = position - 1
+
         for i in self._mask:
             if i.chrom == sequence and i.start <= position < i.end:
                 return True
         return False
 
-    def overlaps_range(self, sequence: str, start: int, stop: int) -> bool:
+    def overlaps_range(self, sequence: str, start: int, stop: int, start_position_index: str = '0') -> bool:
+        if start_position_index != '0' and start_position_index != '1':
+            raise Exception((f'Unknown value start_position_index=[{start_position_index}].'
+                             'Should be "0" or "1" to indicate which is the starting base position'))
+        elif start_position_index == '1':
+            start = start - 1
+            stop = stop - 1
+
         if stop <= start:
             raise Exception(f'start=[{start}] is less than stop=[{stop}]')
 

@@ -25,7 +25,7 @@ def test_consensus_no_mask():
     expected_consensus_record = expected_consensus_records[0]
 
     seq_records = VariationFile(sample_bcf).consensus(reference_file=reference_file)
-    
+
     assert 1 == len(seq_records)
     actual_seq_record = seq_records[0]
     assert 5180 == len(actual_seq_record)

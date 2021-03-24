@@ -79,7 +79,7 @@ def expected_alignment_core() -> MultipleSeqAlignment:
 
         # Remove SNVs/SNPs introduced by complex events
         alignment = remove_column(alignment, 15)  # Position 1325
-        alignment = remove_column(alignment, 23)  # Position 1984
+        alignment = remove_column(alignment, 23 - 1)  # Position 1984 (-1 to account for previous removed column)
 
         alignment.sort()
 
@@ -124,11 +124,10 @@ def compare_alignments(a: MultipleSeqAlignment, b: MultipleSeqAlignment) -> None
 
     number_of_sequences = len(a)
     for i in range(0, number_of_sequences):
-        assert a[i].id == b[i].id, 'Alignment ids are not equal'
-        assert a[i].seq == b[i].seq, 'Alignment sequences are not equal'
+        assert a[i].id == b[i].id, f'Alignment ids are not equal [{a[i].id}] != [{b[i].id}]'
+        assert a[i].seq == b[i].seq, f'Alignment sequences are not equal for [a.id={a[i].id}, b.id={b[i].id}]'
 
 
-@pytest.mark.skip()
 def test_snippy_align(core_alignment_service, expected_alignment_core):
     actual_alignment = core_alignment_service.construct_alignment(reference_name='genome',
                                                                   samples=['SampleA', 'SampleB', 'SampleC'])
