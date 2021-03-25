@@ -40,7 +40,7 @@ class FilesystemStorage:
             dpath = self._check_make_dir(dname)
             # Line from https://stackoverflow.com/a/47930319
             number_of_files = file_count = sum(len(files) for _, _, files in os.walk(dpath))
-            size = subprocess.check_output(['du', '-sb', dpath]).split()[0].decode('utf-8')
+            size = subprocess.check_output(['du', '-s', '--block-size=1', dpath]).split()[0].decode('utf-8')
             sizes_list.append(['Filesystem',
                                self._root_dir.name,
                                dpath.name,
