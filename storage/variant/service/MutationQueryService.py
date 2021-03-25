@@ -104,6 +104,42 @@ class MutationQueryService(QueryService):
 
         return matches_df
 
+    def _count_by_features_internal(self, features: List[QueryFeature], include_unknown: bool) -> pd.DataFrame:
+        for feature in features:
+            if not isinstance(feature, QueryFeatureMutation):
+                raise Exception(f'feature=[{feature}] is not of type QueryFeatureMutation')
+
+        variation_ids = [f.spdi for f in features]
+        variation_samples = self._sample_service.count_samples_by_variation_ids(variation_ids)
+
+        sequence_reference_map = {f.sequence_name: self._reference_service.find_reference_for_sequence(f.sequence_name)
+                                  for f in features}
+        feature_sample_counts = {
+            f.spdi: self._sample_service.count_samples_associated_with_reference(
+                sequence_reference_map[f.sequence_name].name) for f in features
+        }
+
+        unknown_counts = {f.spdi: 0 for f in features}
+
+        data = [{
+            'Feature': spdi,
+            'Present': variation_samples[spdi],
+            'Absent': feature_sample_counts[spdi] - variation_samples[spdi] - unknown_counts[spdi],
+            'Unknown': unknown_counts[spdi]
+        } for spdi in variation_samples]
+
+        # if include_unknown:
+        #     for feature in features:
+        #         reference = self._reference_service.find_reference_for_sequence(feature.sequence_name)
+        #
+        #         # TODO: I'm doing linear search over all samples, this could be improved
+        #         for sample_variation in reference.sample_nucleotide_variation:
+        #             masked_regions = sample_variation.masked_regions
+        #             if masked_regions.overlaps_range(feature.sequence_name, feature.start, feature.stop):
+        #                 data.append([feature.spdi, sample_variation.sample.name, sample_variation.sample.id, 'Unknown'])
+
+        return pd.DataFrame(data=data).sort_values('Feature')
+
     def _find_by_features_internal(self, features: List[QueryFeature], include_unknown: bool) -> pd.DataFrame:
         for feature in features:
             if not isinstance(feature, QueryFeatureMutation):
