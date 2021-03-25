@@ -15,15 +15,22 @@ class VariationFile:
     def __init__(self, file: Path):
         self._file = file
 
-    def write(self, output: Path, file_type: str = 'bcf') -> Path:
-        if file_type == 'bcf':
-            execute_commands([
-                ['bcftools', 'view', str(self._file), '-o', str(output), '-O', 'b'],
-                ['bcftools', 'index', str(output)]
-            ])
-            return output
+    def write(self, output: Path) -> Path:
+        if output.suffix == '.bcf':
+            output_type = 'b'
+        elif str(output).endswith('.vcf.gz'):
+            output_type = 'z'
         else:
-            raise Exception(f'Invalid file_type=[{file_type}]')
+            raise Exception((f'Invalid file type [{output.suffix}] for output=[{output}]. '
+                             'Must be one of [".bcf", ".vcf.bz"]'))
+
+        execute_commands([
+            ['bcftools', 'plugin', 'fill-tags', str(self._file), '-O', output_type, '-o', str(output),
+             '--', '-t', 'TYPE'],
+            ['bcftools', 'index', str(output)]
+        ])
+        return output
+
 
     def consensus(self, reference_file: Path, mask_file: Path = None, include_expression='TYPE="snp"',
                   mask_with: str = 'N') -> List[SeqRecord]:

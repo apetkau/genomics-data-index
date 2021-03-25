@@ -3,6 +3,7 @@ from pathlib import Path
 
 root_data_dir = Path(path.dirname(__file__), '..', 'data')
 data_dir = root_data_dir / 'snippy'
+regular_vcf_dir = root_data_dir / 'regular-vcf'
 variation_dir = root_data_dir / 'variation'
 consensus_dir = root_data_dir / 'consensus'
 sample_dirs = [data_dir / d for d in listdir(data_dir) if path.isdir(data_dir / d)]
