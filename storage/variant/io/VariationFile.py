@@ -31,8 +31,7 @@ class VariationFile:
         ])
         return output
 
-
-    def consensus(self, reference_file: Path, mask_file: Path = None, include_expression='TYPE="snp"',
+    def consensus(self, reference_file: Path, mask_file: Path = None, include_expression='TYPE="SNP"',
                   mask_with: str = 'N') -> List[SeqRecord]:
         with tempfile.NamedTemporaryFile() as out_f:
             command = ['bcftools', 'consensus', '--fasta-ref', str(reference_file)]
@@ -40,15 +39,15 @@ class VariationFile:
                 command.extend(['--mask', str(mask_file), '--mask-with', mask_with])
             command.extend([
                 '--include', include_expression,
-                 '--output', str(out_f.name),
-                 str(self._file)
+                '--output', str(out_f.name),
+                str(self._file)
             ])
             execute_commands([command])
             sequences = list(SeqIO.parse(out_f.name, 'fasta'))
             return sequences
 
     @classmethod
-    def union_all_files(cls, variant_files: List[Path], include_expression: str = 'TYPE="snp"') -> pd.DataFrame:
+    def union_all_files(cls, variant_files: List[Path], include_expression: str = 'TYPE="SNP"') -> pd.DataFrame:
         with tempfile.TemporaryDirectory() as tmp_dir:
             union_file = Path(tmp_dir) / 'union.tsv'
 
@@ -67,6 +66,6 @@ class VariationFile:
                 command
             ])
             var_df = pd.read_csv(union_file, sep='\t', dtype=str,
-                               names=['CHROM', 'POS', 'REF', 'ALT', 'INDEXES'])
+                                 names=['CHROM', 'POS', 'REF', 'ALT', 'INDEXES'])
             var_df['POS'] = var_df['POS'].astype(int)
-            return var_df.sort_values(['CHROM','POS'])
+            return var_df.sort_values(['CHROM', 'POS'])

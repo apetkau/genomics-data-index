@@ -103,7 +103,7 @@ class VariationService:
         self._connection.get_session().commit()
 
     def _save_variation_file(self, original_file: Path, sample: Sample) -> Path:
-        new_file = self._variation_dir / f'{sample.name}.bcf'
+        new_file = self._variation_dir / f'{sample.name}.vcf.gz'
         if new_file.exists():
             raise Exception(f'File {new_file} already exists')
 

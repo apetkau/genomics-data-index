@@ -128,7 +128,7 @@ def compare_alignments(a: MultipleSeqAlignment, b: MultipleSeqAlignment) -> None
         assert a[i].seq == b[i].seq, f'Alignment sequences are not equal for [a.id={a[i].id}, b.id={b[i].id}]'
 
 
-def test_snippy_align(core_alignment_service, expected_alignment_core):
+def test_snippy_core_align(core_alignment_service, expected_alignment_core):
     actual_alignment = core_alignment_service.construct_alignment(reference_name='genome',
                                                                   samples=['SampleA', 'SampleB', 'SampleC'])
     compare_alignments(expected_alignment_core, actual_alignment)
@@ -139,3 +139,16 @@ def test_snippy_full_align(core_alignment_service, expected_alignment_full):
                                                                   samples=['SampleA', 'SampleB', 'SampleC'],
                                                                   align_type='full')
     compare_alignments(expected_alignment_full, actual_alignment)
+
+
+def test_regular_vcf_full_align(core_alignment_service_non_snippy_vcfs, expected_alignment_full):
+    actual_alignment = core_alignment_service_non_snippy_vcfs.construct_alignment(reference_name='genome',
+                                                                  samples=['SampleA', 'SampleB', 'SampleC'],
+                                                                  align_type='full')
+    compare_alignments(expected_alignment_full, actual_alignment)
+
+
+def test_regular_vcf_core_align(core_alignment_service_non_snippy_vcfs, expected_alignment_core):
+    actual_alignment = core_alignment_service_non_snippy_vcfs.construct_alignment(reference_name='genome',
+                                                                  samples=['SampleA', 'SampleB', 'SampleC'])
+    compare_alignments(expected_alignment_core, actual_alignment)
