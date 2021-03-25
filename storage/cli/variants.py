@@ -373,3 +373,48 @@ def query(ctx, name: List[str], query_type: str, include_unknown: bool, summariz
         sys.exit(1)
 
     match_df.to_csv(sys.stdout, sep='\t', index=False, float_format='%0.4g')
+
+
+@main.command()
+@click.pass_context
+@click.option('--size', help='Get database size', is_flag=True)
+@click.option('--kb', help='Print in KB', is_flag=True)
+@click.option('--mb', help='Print in MB', is_flag=True)
+@click.option('--gb', help='Print in GB', is_flag=True)
+def db(ctx, size: bool, kb, mb, gb):
+    database = ctx.obj['database']
+    filesystem_storage = ctx.obj['filesystem_storage']
+
+    factor = 1
+    unit = 'B'
+    if kb:
+        factor = 1024
+        unit = 'KB'
+    elif mb:
+        factor = 1024 ** 2
+        unit = 'MB'
+    elif gb:
+        factor = 1024 ** 3
+        unit = 'GB'
+
+    if size:
+        filesystem_df = filesystem_storage.get_storage_size()
+        database_df = database.get_database_size()
+
+        size_df = pd.concat([filesystem_df, database_df])
+        total_data_size = size_df['Data Size'].sum()
+        total_index_size = size_df['Index Size'].sum()
+        total_items = size_df['Number of Items'].sum()
+        total_row = pd.DataFrame([['Total', pd.NA, pd.NA, total_data_size, total_index_size, total_items]],
+                                 columns=['Type', 'Name', 'Division', 'Data Size', 'Index Size', 'Number of Items'])
+        size_df = pd.concat([size_df, total_row])
+
+        # Reorder columns
+        size_df = size_df[['Type', 'Name', 'Division', 'Data Size', 'Index Size', 'Number of Items']]
+
+        size_df['Data Size'] = size_df['Data Size'] / factor
+        size_df['Index Size'] = size_df['Index Size'] / factor
+        size_df = size_df.rename({'Data Size': f'Data Size ({unit})',
+                        'Index Size': f'Index Size ({unit})'}, axis='columns')
+
+        size_df.to_csv(sys.stdout, sep='\t', index=False, float_format='%0.2f', na_rep='-')
