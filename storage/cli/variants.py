@@ -155,8 +155,6 @@ def load_vcf(ctx, vcf_fofns: Path, reference_file: Path, build_tree: bool, align
              extra_tree_params: str):
     reference_file = Path(reference_file)
 
-    logger.warning('TODO: I need to make sure "TYPE" is available in the input VCF/BCF files')
-
     click.echo(f'Loading files listed in {vcf_fofns}')
     sample_vcf_map = {}
     mask_files_map = {}
