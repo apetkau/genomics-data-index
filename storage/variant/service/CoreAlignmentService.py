@@ -46,7 +46,7 @@ class CoreAlignmentService:
     def _get_core_positions(self, sample_variations: List[SampleNucleotideVariation],
                             core_mask: MaskedGenomicRegions) -> Dict[str, List[int]]:
         variation_files = [v.nucleotide_variants_file for v in sample_variations]
-        union_df = VariationFile.union_all_files(variation_files)
+        union_df = VariationFile.union_all_files(variation_files, include_expression='TYPE="SNP"')
         union_df = union_df.sort_values(['CHROM','POS'])
         core_positions = {}
         for index, row in union_df.iterrows():
@@ -73,7 +73,8 @@ class CoreAlignmentService:
         for sample_variation in sample_variations:
             seq_records = {}
 
-            consensus_records = VariationFile(sample_variation.nucleotide_variants_file).consensus(reference_file)
+            consensus_records = VariationFile(sample_variation.nucleotide_variants_file).consensus(
+                reference_file, include_expression='TYPE="SNP"')
             for record in consensus_records:
                 sequence_name = record.id
                 record.id = sample_variation.sample.name
@@ -91,6 +92,7 @@ class CoreAlignmentService:
 
             consensus_records = VariationFile(sample_variation.nucleotide_variants_file).consensus(
                 reference_file=reference_file,
+                include_expression='TYPE="SNP"',
                 mask_file=sample_variation.masked_regions_file
             )
             for record in consensus_records:

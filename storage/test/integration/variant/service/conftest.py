@@ -6,12 +6,13 @@ import pytest
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-from storage.test.integration.variant import sample_dirs, reference_file
+from storage.test.integration.variant import sample_dirs, reference_file, regular_vcf_dir, data_dir
 from storage.variant.service import DatabaseConnection
 from storage.variant.service.ReferenceService import ReferenceService
 from storage.variant.service.VariationService import VariationService
 from storage.variant.service.CoreAlignmentService import CoreAlignmentService
 from storage.variant.io.SnippyVariantsReader import SnippyVariantsReader
+from storage.variant.io.VcfVariantsReader import VcfVariantsReader
 from storage.variant.service.SampleService import SampleService
 from storage.variant.service.TreeService import TreeService
 from storage.FilesystemStorage import FilesystemStorage
@@ -39,6 +40,23 @@ def snippy_variants_reader() -> SnippyVariantsReader:
 
 
 @pytest.fixture
+def regular_variants_reader() -> VcfVariantsReader:
+    vcf_files = {
+        'SampleA': Path(regular_vcf_dir, 'SampleA.vcf.gz'),
+        'SampleB': Path(regular_vcf_dir, 'SampleB.vcf.gz'),
+        'SampleC': Path(regular_vcf_dir, 'SampleC.vcf.gz'),
+    }
+
+    mask_files = {
+        'SampleA': Path(data_dir, 'SampleA',  'snps.aligned.fa'),
+        'SampleB': Path(data_dir, 'SampleB', 'snps.aligned.fa'),
+        'SampleC': Path(data_dir, 'SampleC', 'snps.aligned.fa'),
+    }
+
+    return VcfVariantsReader(sample_vcf_map=vcf_files, masked_genomic_files_map=mask_files)
+
+
+@pytest.fixture
 def reference_service_with_data(reference_service) -> ReferenceService:
     reference_service.add_reference_genome(reference_file)
     return reference_service
@@ -62,11 +80,33 @@ def variation_service(database, reference_service_with_data,
 
 
 @pytest.fixture
+def variation_service_non_snippy_vcfs(database, reference_service_with_data,
+                      regular_variants_reader, sample_service, filesystem_storage) -> VariationService:
+    var_service = VariationService(database_connection=database,
+                                   reference_service=reference_service_with_data,
+                                   sample_service=sample_service,
+                                   variation_dir=filesystem_storage.variation_dir)
+    var_service.insert_variants(reference_name='genome',
+                                variants_reader=regular_variants_reader)
+    return var_service
+
+
+@pytest.fixture
 def core_alignment_service(database, reference_service_with_data, variation_service,
                            sample_service) -> CoreAlignmentService:
     return CoreAlignmentService(database=database,
                                 reference_service=reference_service_with_data,
                                 variation_service=variation_service,
+                                sample_service=sample_service,
+                                )
+
+
+@pytest.fixture
+def core_alignment_service_non_snippy_vcfs(database, reference_service_with_data, variation_service_non_snippy_vcfs,
+                           sample_service) -> CoreAlignmentService:
+    return CoreAlignmentService(database=database,
+                                reference_service=reference_service_with_data,
+                                variation_service=variation_service_non_snippy_vcfs,
                                 sample_service=sample_service,
                                 )
 

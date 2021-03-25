@@ -15,17 +15,23 @@ class VariationFile:
     def __init__(self, file: Path):
         self._file = file
 
-    def write(self, output: Path, file_type: str = 'bcf') -> Path:
-        if file_type == 'bcf':
-            execute_commands([
-                ['bcftools', 'view', str(self._file), '-o', str(output), '-O', 'b'],
-                ['bcftools', 'index', str(output)]
-            ])
-            return output
+    def write(self, output: Path) -> Path:
+        if output.suffix == '.bcf':
+            output_type = 'b'
+        elif str(output).endswith('.vcf.gz'):
+            output_type = 'z'
         else:
-            raise Exception(f'Invalid file_type=[{file_type}]')
+            raise Exception((f'Invalid file type [{output.suffix}] for output=[{output}]. '
+                             'Must be one of [".bcf", ".vcf.bz"]'))
 
-    def consensus(self, reference_file: Path, mask_file: Path = None, include_expression='TYPE="snp"',
+        execute_commands([
+            ['bcftools', 'plugin', 'fill-tags', str(self._file), '-O', output_type, '-o', str(output),
+             '--', '-t', 'TYPE'],
+            ['bcftools', 'index', str(output)]
+        ])
+        return output
+
+    def consensus(self, reference_file: Path, mask_file: Path = None, include_expression='TYPE="SNP"',
                   mask_with: str = 'N') -> List[SeqRecord]:
         with tempfile.NamedTemporaryFile() as out_f:
             command = ['bcftools', 'consensus', '--fasta-ref', str(reference_file)]
@@ -33,15 +39,15 @@ class VariationFile:
                 command.extend(['--mask', str(mask_file), '--mask-with', mask_with])
             command.extend([
                 '--include', include_expression,
-                 '--output', str(out_f.name),
-                 str(self._file)
+                '--output', str(out_f.name),
+                str(self._file)
             ])
             execute_commands([command])
             sequences = list(SeqIO.parse(out_f.name, 'fasta'))
             return sequences
 
     @classmethod
-    def union_all_files(cls, variant_files: List[Path], include_expression: str = 'TYPE="snp"') -> pd.DataFrame:
+    def union_all_files(cls, variant_files: List[Path], include_expression: str = 'TYPE="SNP"') -> pd.DataFrame:
         with tempfile.TemporaryDirectory() as tmp_dir:
             union_file = Path(tmp_dir) / 'union.tsv'
 
@@ -60,6 +66,6 @@ class VariationFile:
                 command
             ])
             var_df = pd.read_csv(union_file, sep='\t', dtype=str,
-                               names=['CHROM', 'POS', 'REF', 'ALT', 'INDEXES'])
+                                 names=['CHROM', 'POS', 'REF', 'ALT', 'INDEXES'])
             var_df['POS'] = var_df['POS'].astype(int)
-            return var_df.sort_values(['CHROM','POS'])
+            return var_df.sort_values(['CHROM', 'POS'])
