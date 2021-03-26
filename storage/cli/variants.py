@@ -357,7 +357,6 @@ def query(ctx, name: List[str], query_type: str, include_unknown: bool, summariz
             match_df = mutation_query_service.find_by_features(features, include_unknown=include_unknown)
         else:
             match_df = mutation_query_service.count_by_features(features, include_unknown=include_unknown)
-            match_df = match_df.reset_index()
     else:
         logger.error(f'Invalid query_type=[{query_type}]')
         sys.exit(1)

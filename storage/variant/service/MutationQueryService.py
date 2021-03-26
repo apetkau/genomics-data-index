@@ -125,7 +125,8 @@ class MutationQueryService(QueryService):
             'Feature': spdi,
             'Present': variation_samples[spdi],
             'Absent': feature_sample_counts[spdi] - variation_samples[spdi] - unknown_counts[spdi],
-            'Unknown': unknown_counts[spdi]
+            'Unknown': unknown_counts[spdi],
+            'Total': feature_sample_counts[spdi]
         } for spdi in variation_samples]
 
         # if include_unknown:
@@ -138,7 +139,12 @@ class MutationQueryService(QueryService):
         #             if masked_regions.overlaps_range(feature.sequence_name, feature.start, feature.stop):
         #                 data.append([feature.spdi, sample_variation.sample.name, sample_variation.sample.id, 'Unknown'])
 
-        return pd.DataFrame(data=data).sort_values('Feature')
+        count_df = pd.DataFrame(data=data)
+        count_df['% Present'] = 100 * count_df['Present'] / count_df['Total']
+        count_df['% Absent'] = 100 * count_df['Absent'] / count_df['Total']
+        count_df['% Unknown'] = 100 * count_df['Unknown'] / count_df['Total']
+
+        return count_df.sort_values('Feature')
 
     def _find_by_features_internal(self, features: List[QueryFeature], include_unknown: bool) -> pd.DataFrame:
         for feature in features:
