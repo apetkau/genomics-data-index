@@ -111,12 +111,13 @@ class MutationQueryService(QueryService):
 
         variation_ids = [f.spdi for f in features]
         variation_samples = self._sample_service.count_samples_by_variation_ids(variation_ids)
+        sequence_name_set = {f.sequence_name for f in features}
 
-        sequence_reference_map = {f.sequence_name: self._reference_service.find_reference_for_sequence(f.sequence_name)
-                                  for f in features}
-        feature_sample_counts = {
-            f.spdi: self._sample_service.count_samples_associated_with_reference(
-                sequence_reference_map[f.sequence_name].name) for f in features
+        sequence_reference_map = {n: self._reference_service.find_reference_for_sequence(n)
+                                  for n in sequence_name_set}
+        sequence_sample_counts = {
+            n: self._sample_service.count_samples_associated_with_reference(
+                sequence_reference_map[n].name) for n in sequence_reference_map
         }
 
         if include_unknown:
@@ -127,23 +128,23 @@ class MutationQueryService(QueryService):
             for feature in features:
                 if feature.spdi in grouped_df.index:
                     unknown_counts[feature.spdi] = grouped_df.loc[feature.spdi].values[0]
-                    absent_counts[feature.spdi] = feature_sample_counts[feature.spdi] \
+                    absent_counts[feature.spdi] = sequence_sample_counts[feature.sequence_name] \
                                                   - variation_samples[feature.spdi] - unknown_counts[feature.spdi]
                 else:
                     unknown_counts[feature.spdi] = 0
-                    absent_counts[feature.spdi] = feature_sample_counts[feature.spdi] - variation_samples[feature.spdi]
+                    absent_counts[feature.spdi] = sequence_sample_counts[feature.sequence_name] - variation_samples[feature.spdi]
         else:
             unknown_counts = {f.spdi: pd.NA for f in features}
-            absent_counts = {f.spdi: feature_sample_counts[f.spdi] - variation_samples[f.spdi]
+            absent_counts = {f.spdi: sequence_sample_counts[f.sequence_name] - variation_samples[f.spdi]
                              for f in features}
 
         data = [{
-            'Feature': spdi,
-            'Present': variation_samples[spdi],
-            'Absent': absent_counts[spdi],
-            'Unknown': unknown_counts[spdi],
-            'Total': feature_sample_counts[spdi]
-        } for spdi in variation_samples]
+            'Feature': f.spdi,
+            'Present': variation_samples[f.spdi],
+            'Absent': absent_counts[f.spdi],
+            'Unknown': unknown_counts[f.spdi],
+            'Total': sequence_sample_counts[f.sequence_name]
+        } for f in features]
 
         count_df = pd.DataFrame(data=data)
         count_df['% Present'] = 100 * count_df['Present'] / count_df['Total']
