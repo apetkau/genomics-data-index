@@ -1,5 +1,6 @@
 import pytest
 import math
+import pandas as pd
 
 from storage.variant.service.MutationQueryService import MutationQueryService
 from storage.variant.service.MutationQueryService import QueryFeatureMutation
@@ -85,12 +86,12 @@ def test_count_by_features(mutation_query_service: MutationQueryService):
     assert ['reference:5061:G:A'] == list(matches_df['Feature'].tolist())
     assert [1] == list(matches_df['Present'].tolist())
     assert [2] == list(matches_df['Absent'].tolist())
-    assert [0] == list(matches_df['Unknown'].tolist())
+    assert pd.isna(matches_df['Unknown'].tolist()[0])
     assert [3] == list(matches_df['Total'].tolist())
 
     assert math.isclose(100 * 1 / 3, matches_df['% Present'].tolist()[0])
     assert math.isclose(100 * 2 / 3, matches_df['% Absent'].tolist()[0])
-    assert math.isclose(100 * 0 / 3, matches_df['% Unknown'].tolist()[0])
+    assert pd.isna(matches_df['% Unknown'].tolist()[0])
 
 
 def test_find_by_features_2_results(database, mutation_query_service: MutationQueryService):
@@ -119,12 +120,12 @@ def test_count_by_features_2_results(mutation_query_service: MutationQueryServic
     assert ['reference:3063:A:ATGCAGC'] == list(matches_df['Feature'].tolist())
     assert [2] == list(matches_df['Present'].tolist())
     assert [1] == list(matches_df['Absent'].tolist())
-    assert [0] == list(matches_df['Unknown'].tolist())
+    assert pd.isna(matches_df['Unknown'].tolist()[0])
     assert [3] == list(matches_df['Total'].tolist())
 
     assert math.isclose(100 * 2 / 3, matches_df['% Present'].tolist()[0])
     assert math.isclose(100 * 1 / 3, matches_df['% Absent'].tolist()[0])
-    assert math.isclose(100 * 0 / 3, matches_df['% Unknown'].tolist()[0])
+    assert pd.isna(matches_df['% Unknown'].tolist()[0])
 
 
 def test_find_by_features_2_features(database, mutation_query_service: MutationQueryService):
@@ -156,16 +157,17 @@ def test_count_by_features_2_features(mutation_query_service: MutationQueryServi
     assert ['reference:3063:A:ATGCAGC', 'reference:5061:G:A'] == list(matches_df['Feature'].tolist())
     assert [2, 1] == list(matches_df['Present'].tolist())
     assert [1, 2] == list(matches_df['Absent'].tolist())
-    assert [0, 0] == list(matches_df['Unknown'].tolist())
+    assert pd.isna(matches_df['Unknown'].tolist()[0])
+    assert pd.isna(matches_df['Unknown'].tolist()[1])
     assert [3, 3] == list(matches_df['Total'].tolist())
 
     assert math.isclose(100 * 2 / 3, matches_df['% Present'].tolist()[0])
     assert math.isclose(100 * 1 / 3, matches_df['% Absent'].tolist()[0])
-    assert math.isclose(100 * 0 / 3, matches_df['% Unknown'].tolist()[0])
+    assert pd.isna(matches_df['% Unknown'].tolist()[0])
 
     assert math.isclose(100 * 1 / 3, matches_df['% Present'].tolist()[1])
     assert math.isclose(100 * 2 / 3, matches_df['% Absent'].tolist()[1])
-    assert math.isclose(100 * 0 / 3, matches_df['% Unknown'].tolist()[1])
+    assert pd.isna(matches_df['% Unknown'].tolist()[1])
 
 
 def test_find_by_features_unknown(database, mutation_query_service: MutationQueryService):
@@ -197,6 +199,24 @@ def test_find_by_features_unknown(database, mutation_query_service: MutationQuer
     assert len(matches_df) == 1
 
 
+def test_count_by_features_unknown(mutation_query_service: MutationQueryService):
+    matches_df = mutation_query_service.count_by_features([QueryFeatureMutation('reference:190:A:G')],
+                                                         include_unknown=True)
+
+    assert ['Type', 'Feature', 'Present', 'Absent', 'Unknown', 'Total',
+            '% Present', '% Absent', '% Unknown'] == list(matches_df.columns.tolist())
+
+    assert ['reference:190:A:G'] == list(matches_df['Feature'].tolist())
+    assert [1] == list(matches_df['Present'].tolist())
+    assert [0] == list(matches_df['Absent'].tolist())
+    assert [2] == list(matches_df['Unknown'].tolist())
+    assert [3] == list(matches_df['Total'].tolist())
+
+    assert math.isclose(100 * 1 / 3, matches_df['% Present'].tolist()[0])
+    assert math.isclose(100 * 0 / 3, matches_df['% Absent'].tolist()[0])
+    assert math.isclose(100 * 2 / 3, matches_df['% Unknown'].tolist()[0])
+
+
 def test_find_by_features_found_unknown(database, mutation_query_service: MutationQueryService):
     sampleA = database.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
     sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
@@ -218,3 +238,26 @@ def test_find_by_features_found_unknown(database, mutation_query_service: Mutati
     assert ['Unknown', 'Present', 'Unknown',
             'Unknown', 'Present'] == matches_df['Status'].tolist()
     assert len(matches_df) == 5
+
+
+def test_count_by_features_found_unknown(mutation_query_service: MutationQueryService):
+    matches_df = mutation_query_service.count_by_features([QueryFeatureMutation('reference:5061:G:A'),
+                                                          QueryFeatureMutation('reference:190:A:G')],
+                                                         include_unknown=True)
+
+    assert ['Type', 'Feature', 'Present', 'Absent', 'Unknown', 'Total',
+            '% Present', '% Absent', '% Unknown'] == list(matches_df.columns.tolist())
+
+    assert ['reference:190:A:G', 'reference:5061:G:A'] == list(matches_df['Feature'].tolist())
+    assert [1, 1] == list(matches_df['Present'].tolist())
+    assert [0, 1] == list(matches_df['Absent'].tolist())
+    assert [2, 1] == list(matches_df['Unknown'].tolist())
+    assert [3, 3] == list(matches_df['Total'].tolist())
+
+    assert math.isclose(100 * 1 / 3, matches_df['% Present'].tolist()[0])
+    assert math.isclose(100 * 0 / 3, matches_df['% Absent'].tolist()[0])
+    assert math.isclose(100 * 2 / 3, matches_df['% Unknown'].tolist()[0])
+
+    assert math.isclose(100 * 1 / 3, matches_df['% Present'].tolist()[1])
+    assert math.isclose(100 * 1 / 3, matches_df['% Absent'].tolist()[1])
+    assert math.isclose(100 * 1 / 3, matches_df['% Unknown'].tolist()[1])

@@ -90,7 +90,8 @@ class QueryService(abc.ABC):
 
         matches_df = self._count_by_features_internal(features, include_unknown)
         matches_df.insert(loc=0, column='Type', value=self.get_data_type())
-        verify_columns_match({'Type', 'Feature', 'Present'}, matches_df)
+        verify_columns_match({'Type', 'Feature', 'Present', 'Absent',
+                              'Unknown', 'Total', '% Present', '% Absent', '% Unknown'}, matches_df)
 
         return matches_df
 

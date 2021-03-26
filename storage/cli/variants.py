@@ -19,8 +19,7 @@ from storage.variant.io.VcfVariantsReader import VcfVariantsReader
 from storage.variant.service import DatabaseConnection, EntityExistsError
 from storage.variant.service.CoreAlignmentService import CoreAlignmentService
 from storage.variant.service.KmerService import KmerService
-from storage.variant.service.MutationQueryService import MutationQueryService, QueryFeatureMutation, \
-    MutationQuerySummaries
+from storage.variant.service.MutationQueryService import MutationQueryService, QueryFeatureMutation
 from storage.variant.service.ReferenceService import ReferenceService
 from storage.variant.service.SampleService import SampleService
 from storage.variant.service.TreeService import TreeService
@@ -361,7 +360,7 @@ def query(ctx, name: List[str], query_type: str, include_unknown: bool, summariz
         logger.error(f'Invalid query_type=[{query_type}]')
         sys.exit(1)
 
-    match_df.to_csv(sys.stdout, sep='\t', index=False, float_format='%0.4g')
+    match_df.to_csv(sys.stdout, sep='\t', index=False, float_format='%0.4g', na_rep='-')
 
 
 @main.command()
