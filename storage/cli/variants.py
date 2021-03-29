@@ -19,8 +19,7 @@ from storage.variant.io.VcfVariantsReader import VcfVariantsReader
 from storage.variant.service import DatabaseConnection, EntityExistsError
 from storage.variant.service.CoreAlignmentService import CoreAlignmentService
 from storage.variant.service.KmerService import KmerService
-from storage.variant.service.MutationQueryService import MutationQueryService, QueryFeatureMutation, \
-    MutationQuerySummaries
+from storage.variant.service.MutationQueryService import MutationQueryService, QueryFeatureMutation
 from storage.variant.service.ReferenceService import ReferenceService
 from storage.variant.service.SampleService import SampleService
 from storage.variant.service.TreeService import TreeService
@@ -154,8 +153,6 @@ def load_snippy(ctx, snippy_dir: Path, reference_file: Path, build_tree: bool, a
 def load_vcf(ctx, vcf_fofns: Path, reference_file: Path, build_tree: bool, align_type: str, threads: int,
              extra_tree_params: str):
     reference_file = Path(reference_file)
-
-    logger.warning('TODO: I need to make sure "TYPE" is available in the input VCF/BCF files')
 
     click.echo(f'Loading files listed in {vcf_fofns}')
     sample_vcf_map = {}
@@ -367,24 +364,58 @@ def query(ctx, name: List[str], query_type: str, include_unknown: bool, summariz
             logger.warning('--summarize is not implemented for --type=sample')
     elif query_type == 'mutation':
         features = [QueryFeatureMutation(n) for n in name]
-        match_df = mutation_query_service.find_by_features(features, include_unknown=include_unknown)
 
-        if summarize:
-            sample_service = ctx.obj['sample_service']
-            reference_service = ctx.obj['reference_service']
-            sequence_reference_map = {f.sequence_name: reference_service.find_reference_for_sequence(f.sequence_name)
-                                      for f in features}
-            query_summaries = MutationQuerySummaries()
-            feature_sample_counts = {
-                f.spdi: sample_service.count_samples_associated_with_reference(
-                    sequence_reference_map[f.sequence_name].name) for f in features
-            }
-            match_df = query_summaries.find_by_features_summary(find_by_features_results=match_df,
-                                                                sample_counts=feature_sample_counts,
-                                                                )
-            match_df = match_df.reset_index()
+        if not summarize:
+            match_df = mutation_query_service.find_by_features(features, include_unknown=include_unknown)
+        else:
+            match_df = mutation_query_service.count_by_features(features, include_unknown=include_unknown)
     else:
         logger.error(f'Invalid query_type=[{query_type}]')
         sys.exit(1)
 
-    match_df.to_csv(sys.stdout, sep='\t', index=False, float_format='%0.4g')
+    match_df.to_csv(sys.stdout, sep='\t', index=False, float_format='%0.4g', na_rep='-')
+
+
+@main.command()
+@click.pass_context
+@click.option('--size', help='Get database size', is_flag=True)
+@click.option('--kb', help='Print in KB', is_flag=True)
+@click.option('--mb', help='Print in MB', is_flag=True)
+@click.option('--gb', help='Print in GB', is_flag=True)
+def db(ctx, size: bool, kb, mb, gb):
+    database = ctx.obj['database']
+    filesystem_storage = ctx.obj['filesystem_storage']
+
+    factor = 1
+    unit = 'B'
+    if kb:
+        factor = 1024
+        unit = 'KB'
+    elif mb:
+        factor = 1024 ** 2
+        unit = 'MB'
+    elif gb:
+        factor = 1024 ** 3
+        unit = 'GB'
+
+    if size:
+        filesystem_df = filesystem_storage.get_storage_size()
+        database_df = database.get_database_size()
+
+        size_df = pd.concat([filesystem_df, database_df])
+        total_data_size = size_df['Data Size'].sum()
+        total_index_size = size_df['Index Size'].sum()
+        total_items = size_df['Number of Items'].sum()
+        total_row = pd.DataFrame([['Total', pd.NA, pd.NA, total_data_size, total_index_size, total_items]],
+                                 columns=['Type', 'Name', 'Division', 'Data Size', 'Index Size', 'Number of Items'])
+        size_df = pd.concat([size_df, total_row])
+
+        # Reorder columns
+        size_df = size_df[['Type', 'Name', 'Division', 'Data Size', 'Index Size', 'Number of Items']]
+
+        size_df['Data Size'] = size_df['Data Size'] / factor
+        size_df['Index Size'] = size_df['Index Size'] / factor
+        size_df = size_df.rename({'Data Size': f'Data Size ({unit})',
+                        'Index Size': f'Index Size ({unit})'}, axis='columns')
+
+        size_df.to_csv(sys.stdout, sep='\t', index=False, float_format='%0.2f', na_rep='-')

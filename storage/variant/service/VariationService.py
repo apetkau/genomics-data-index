@@ -78,6 +78,10 @@ class VariationService:
             raise EntityExistsError(f'Passed samples already have variants for reference genome [{reference_name}], '
                                     f'will not insert any new variants')
 
+        # TODO: keep track of saved variants files to index these ones
+        saved_variation_files = {}
+        saved_masked_regions = {}
+
         for sample_name in sample_variant_files:
             variant_file = sample_variant_files[sample_name]
             sample = Sample(name=sample_name)
@@ -103,7 +107,7 @@ class VariationService:
         self._connection.get_session().commit()
 
     def _save_variation_file(self, original_file: Path, sample: Sample) -> Path:
-        new_file = self._variation_dir / f'{sample.name}.bcf'
+        new_file = self._variation_dir / f'{sample.name}.vcf.gz'
         if new_file.exists():
             raise Exception(f'File {new_file} already exists')
 

@@ -84,6 +84,20 @@ class QueryService(abc.ABC):
     def _find_by_features_internal(self, features: List[QueryFeature], include_unknown: bool) -> pd.DataFrame:
         pass
 
+    def count_by_features(self, features: List[QueryFeature], include_unknown: bool) -> pd.DataFrame:
+        if features is None or len(features) == 0:
+            raise Exception(f'Cannot count by empty features')
+
+        matches_df = self._count_by_features_internal(features, include_unknown)
+        matches_df.insert(loc=0, column='Type', value=self.get_data_type())
+        verify_columns_match({'Type', 'Feature', 'Present', 'Absent',
+                              'Unknown', 'Total', '% Present', '% Absent', '% Unknown'}, matches_df)
+
+        return matches_df
+
+    def _count_by_features_internal(self, features: List[QueryFeature], include_unknown: bool) -> pd.DataFrame:
+        pass
+
     # Scenario 8 in TreeService
 
     # Scenario 9

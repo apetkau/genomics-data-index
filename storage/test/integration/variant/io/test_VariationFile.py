@@ -1,13 +1,90 @@
 import tempfile
 from pathlib import Path
 
-from storage.test.integration.variant import data_dir, variation_dir, reference_file, consensus_dir
+import vcf
+import pandas as pd
+
+from storage.test.integration.variant import data_dir, regular_vcf_dir, variation_dir, reference_file, consensus_dir
 from storage.variant.MaskedGenomicRegions import MaskedGenomicRegions
 from storage.variant.io.VariationFile import VariationFile
 from storage.variant.util import parse_sequence_file
 
 
+def read_vcf_df(file: Path) -> pd.DataFrame:
+    reader = vcf.Reader(filename=str(file))
+    df = pd.DataFrame([vars(r) for r in reader])
+    df['TYPE'] = df['INFO'].apply(lambda x: x['TYPE'][0])
+
+    return df
+
+
 def test_write():
+    sample_vcf = data_dir / 'SampleA' / 'snps.vcf.gz'
+    with tempfile.TemporaryDirectory() as out_dir:
+        out_file = Path(out_dir) / 'out.vcf.gz'
+
+        assert not out_file.exists()
+        VariationFile(sample_vcf).write(out_file)
+        assert out_file.exists()
+
+        df = read_vcf_df(out_file)
+        assert 'SNP' == df[df['POS'] == 293]['TYPE'].tolist()[0]
+        assert 'INDEL' == df[df['POS'] == 302]['TYPE'].tolist()[0]
+        assert 'INDEL' == df[df['POS'] == 324]['TYPE'].tolist()[0]
+        assert 'INDEL' == df[df['POS'] == 374]['TYPE'].tolist()[0]
+        assert 'OTHER' == df[df['POS'] == 461]['TYPE'].tolist()[0]
+        assert 'SNP' == df[df['POS'] == 506]['TYPE'].tolist()[0]
+
+
+def test_write_2():
+    sample_vcf = data_dir / 'SampleC' / 'snps.vcf.gz'
+    with tempfile.TemporaryDirectory() as out_dir:
+        out_file = Path(out_dir) / 'out.vcf.gz'
+
+        assert not out_file.exists()
+        VariationFile(sample_vcf).write(out_file)
+        assert out_file.exists()
+
+        df = read_vcf_df(out_file)
+        assert 'INDEL' == df[df['POS'] == 347]['TYPE'].tolist()[0]
+        assert 'SNP' == df[df['POS'] == 619]['TYPE'].tolist()[0]
+        assert 'OTHER' == df[df['POS'] == 1984]['TYPE'].tolist()[0]
+
+
+def test_write_missing_type_tag():
+    sample_vcf = regular_vcf_dir / 'SampleA.vcf.gz'
+    with tempfile.TemporaryDirectory() as out_dir:
+        out_file = Path(out_dir) / 'out.vcf.gz'
+
+        assert not out_file.exists()
+        VariationFile(sample_vcf).write(out_file)
+        assert out_file.exists()
+
+        df = read_vcf_df(out_file)
+        assert 'SNP' == df[df['POS'] == 293]['TYPE'].tolist()[0]
+        assert 'INDEL' == df[df['POS'] == 302]['TYPE'].tolist()[0]
+        assert 'INDEL' == df[df['POS'] == 324]['TYPE'].tolist()[0]
+        assert 'INDEL' == df[df['POS'] == 374]['TYPE'].tolist()[0]
+        assert 'OTHER' == df[df['POS'] == 461]['TYPE'].tolist()[0]
+        assert 'SNP' == df[df['POS'] == 506]['TYPE'].tolist()[0]
+
+
+def test_write_2_missing_type_tag():
+    sample_vcf = regular_vcf_dir / 'SampleC.vcf.gz'
+    with tempfile.TemporaryDirectory() as out_dir:
+        out_file = Path(out_dir) / 'out.vcf.gz'
+
+        assert not out_file.exists()
+        VariationFile(sample_vcf).write(out_file)
+        assert out_file.exists()
+
+        df = read_vcf_df(out_file)
+        assert 'INDEL' == df[df['POS'] == 347]['TYPE'].tolist()[0]
+        assert 'SNP' == df[df['POS'] == 619]['TYPE'].tolist()[0]
+        assert 'OTHER' == df[df['POS'] == 1984]['TYPE'].tolist()[0]
+
+
+def test_write_bcf():
     sample_vcf = data_dir / 'SampleA' / 'snps.vcf.gz'
     with tempfile.TemporaryDirectory() as out_dir:
         out_file = Path(out_dir) / 'out.bcf'

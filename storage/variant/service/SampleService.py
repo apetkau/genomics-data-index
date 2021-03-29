@@ -81,10 +81,20 @@ class SampleService:
             .filter(Sample.id.in_(sample_ids))\
             .all()
 
-    def find_samples_by_variation_ids(self, variation_ids: List[str]) -> Dict[str, List[Sample]]:
+    def _get_variants_samples_by_variation_ids(self, variation_ids: List[str]) -> List[NucleotideVariantsSamples]:
         variants = self._connection.get_session().query(NucleotideVariantsSamples) \
             .filter(NucleotideVariantsSamples._spdi.in_(variation_ids)) \
             .all()
+
+        return variants
+
+    def count_samples_by_variation_ids(self, variation_ids: List[str]) -> Dict[str, List[Sample]]:
+        variants = self._get_variants_samples_by_variation_ids(variation_ids)
+
+        return {v.spdi: len(v.sample_ids) for v in variants}
+
+    def find_samples_by_variation_ids(self, variation_ids: List[str]) -> Dict[str, List[Sample]]:
+        variants = self._get_variants_samples_by_variation_ids(variation_ids)
 
         return {v.spdi: self.find_samples_by_ids(v.sample_ids) for v in variants}
 
