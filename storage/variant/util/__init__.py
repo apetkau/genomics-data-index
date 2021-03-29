@@ -5,9 +5,12 @@ from os.path import basename, splitext
 from pathlib import Path
 from typing import Tuple, List
 import subprocess
+import logging
 
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
+
+logger = logging.getLogger(__name__)
 
 
 def get_genome_name(file: Path) -> str:
@@ -42,6 +45,7 @@ def parse_sequence_file(sequence_file: Path) -> Tuple[str, List[SeqRecord]]:
 def execute_commands(commands: List[List[str]]):
     try:
         for command in commands:
+            logger.debug(f'Running [{" ".join(command)}]')
             subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True, text=True)
     except subprocess.CalledProcessError as e:
         err_msg = str(e.stderr.strip())
