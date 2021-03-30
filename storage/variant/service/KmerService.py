@@ -1,3 +1,4 @@
+from typing import Dict
 from pathlib import Path
 
 from storage.variant.service import DatabaseConnection
@@ -20,12 +21,13 @@ class KmerService():
             return False
 
     def insert_kmer_index(self, sample_name: str, kmer_index_path: Path):
-        kmer_index = SampleKmerIndex(kmer_index_path=kmer_index_path)
 
         if self._sample_service.exists(sample_name):
             sample = self._sample_service.get_sample(sample_name)
         else:
             sample = Sample(name=sample_name)
             self._database.get_session().add(sample)
-        sample.sample_kmer_index = kmer_index
+
+        kmer_index = SampleKmerIndex(sample=sample, kmer_index_path=kmer_index_path)
+        self._database.get_session().add(kmer_index)
         self._database.get_session().commit()

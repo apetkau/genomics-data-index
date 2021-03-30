@@ -183,7 +183,8 @@ def load_kmer(ctx, kmer_fofns, kmer_size):
     filesystem_storage = ctx.obj['filesystem_storage']
     kmer_service = ctx.obj['kmer_service']
 
-    kmer_size = list(kmer_size)
+    if not isinstance(kmer_size, list):
+        kmer_size = list(kmer_size)
 
     kmer_indexer = KmerIndexerSourmash(
         k=kmer_size,

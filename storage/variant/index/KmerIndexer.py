@@ -109,14 +109,14 @@ class KmerIndexManager:
             raise Exception(f'Index output file {index_out} already exists')
 
         indexed_path = self._kmer_indexer.index(index_name=index_name,
-                           index_path=index_out,
-                           files=files)
+                                                index_path=index_out,
+                                                files=files)
 
         return indexed_path
 
     def index_all_genomes(self, genomes_files: List[Tuple[str, List[Path]]]) -> Dict[str, Path]:
         start_time = time.time()
-        logger.debug(f'Started building kmer indexes')
+        logger.debug('Start building kmer indexes')
 
         indexed_genomes = {}
 
