@@ -1,3 +1,5 @@
+[![Build Status](https://github.com/apetkau/thesis-index/workflows/Integration%20Tests/badge.svg?branch=development&event=schedule)](https://github.com/apetkau/thesis-index/actions?query=branch%development)
+
 # A framework for the indexing and clustering of pathogen genomes
 
 This project is to design a system which can index large amounts of genomics data and enable rapid querying of this data.
