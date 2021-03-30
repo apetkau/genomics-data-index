@@ -21,7 +21,7 @@ class KmerQueryService(QueryService):
 
     def _find_matches_internal(self, sample_names: List[str], distance_threshold: float):
         all_samples = self._sample_service.get_samples()
-        kmer_index_paths = [s.sample_kmer_index.kmer_index_path for s in all_samples]
+        kmer_index_paths = [s.sample_kmer_index.kmer_index_path for s in all_samples if s.sample_kmer_index is not None]
         kmer_size = 31
 
         matches_df = pd.DataFrame(data=[], columns=[
