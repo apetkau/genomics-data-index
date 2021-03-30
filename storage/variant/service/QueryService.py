@@ -51,7 +51,7 @@ class QueryService(abc.ABC):
         return matches_df
 
     @abc.abstractmethod
-    def _find_matches_internal(self, samples, distance_threshold: float):
+    def _find_matches_internal(self, sample_names: List[str], distance_threshold: float):
         pass
 
     # Scenario 5

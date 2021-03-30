@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, Union
 from pathlib import Path
 from ete3 import Tree
 from sqlalchemy import Column, Integer, String, ForeignKey, Table, LargeBinary, UnicodeText
@@ -168,6 +168,21 @@ class Sample(Base):
 class SampleKmerIndex(Base):
     __tablename__ = 'sample_kmer_index'
     sample_id = Column(Integer, ForeignKey('sample.id'), primary_key=True)
-    kmer_index_path = Column(String(255))
+    _kmer_index_path = Column('kmer_index_path', String(255))
 
     sample = relationship('Sample', uselist=False, back_populates='sample_kmer_index')
+
+    def __init__(self, sample: Sample, kmer_index_path: Union[str, Path]):
+        self.sample = sample
+        self.kmer_index_path = kmer_index_path
+
+    @hybrid_property
+    def kmer_index_path(self) -> Path:
+        return Path(self._kmer_index_path)
+
+    @kmer_index_path.setter
+    def kmer_index_path(self, file: Union[str, Path]):
+        if isinstance(file, Path):
+            self._kmer_index_path = str(file)
+        else:
+            self._kmer_index_path = file

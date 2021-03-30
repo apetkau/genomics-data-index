@@ -7,6 +7,7 @@ import pytest
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 from storage.test.integration.variant import sample_dirs, reference_file, regular_vcf_dir, data_dir
+from storage.test.integration.variant import sourmash_signatures
 from storage.variant.service import DatabaseConnection
 from storage.variant.service.ReferenceService import ReferenceService
 from storage.variant.service.VariationService import VariationService
@@ -15,6 +16,8 @@ from storage.variant.io.SnippyVariantsReader import SnippyVariantsReader
 from storage.variant.io.VcfVariantsReader import VcfVariantsReader
 from storage.variant.service.SampleService import SampleService
 from storage.variant.service.TreeService import TreeService
+from storage.variant.service.KmerQueryService import KmerQueryService
+from storage.variant.service.KmerService import KmerService
 from storage.FilesystemStorage import FilesystemStorage
 
 
@@ -125,3 +128,18 @@ def tree_service_with_tree_stored(database, reference_service_with_data,
                               extra_params='-m MFP+ASC --seed 42')
 
     return tree_service
+
+
+@pytest.fixture
+def kmer_service_with_data(database, sample_service) -> KmerService:
+    kmer_service = KmerService(database_connection=database,
+                               sample_service=sample_service)
+    for sample_name in sourmash_signatures:
+        kmer_service.insert_kmer_index(sample_name=sample_name,
+                                       kmer_index_path=sourmash_signatures[sample_name])
+
+    return kmer_service
+
+@pytest.fixture
+def kmer_query_service_with_data(sample_service, kmer_service_with_data) -> KmerQueryService:
+    return KmerQueryService(sample_service=sample_service)

@@ -20,6 +20,7 @@ from storage.variant.service import DatabaseConnection, EntityExistsError
 from storage.variant.service.CoreAlignmentService import CoreAlignmentService
 from storage.variant.service.KmerService import KmerService
 from storage.variant.service.MutationQueryService import MutationQueryService, QueryFeatureMutation
+from storage.variant.service.KmerQueryService import KmerQueryService
 from storage.variant.service.ReferenceService import ReferenceService
 from storage.variant.service.SampleService import SampleService
 from storage.variant.service.TreeService import TreeService
@@ -74,6 +75,8 @@ def main(ctx, database_connection, database_dir, verbose):
     kmer_service = KmerService(database_connection=database,
                                sample_service=sample_service)
 
+    kmer_query_service = KmerQueryService(sample_service=sample_service)
+
     ctx.obj['database'] = database
     ctx.obj['filesystem_storage'] = filesystem_storage
     ctx.obj['kmer_service'] = kmer_service
@@ -83,6 +86,7 @@ def main(ctx, database_connection, database_dir, verbose):
     ctx.obj['tree_service'] = tree_service
     ctx.obj['sample_service'] = sample_service
     ctx.obj['mutation_query_service'] = mutation_query_service
+    ctx.obj['kmer_query_service'] = kmer_query_service
 
 
 def load_variants_common(ctx, variants_reader, reference_file, input, build_tree, align_type, threads,
@@ -177,30 +181,44 @@ def load_vcf(ctx, vcf_fofns: Path, reference_file: Path, build_tree: bool, align
 @main.command(name='load-kmer')
 @click.pass_context
 @click.argument('kmer_fofns', type=click.Path(exists=True))
-def load_kmer(ctx, kmer_fofns):
+@click.option('--kmer-size', help='Kmer size for indexing. List multiple for multiple kmer sizes in an index',
+              default=31, multiple=True, type=click.IntRange(min=1, max=201))
+def load_kmer(ctx, kmer_fofns, kmer_size):
     filesystem_storage = ctx.obj['filesystem_storage']
     kmer_service = ctx.obj['kmer_service']
-    index_manager = KmerIndexManager(filesystem_storage.kmer_dir)
+
+    if not isinstance(kmer_size, list):
+        kmer_size = list(kmer_size)
+
+    kmer_indexer = KmerIndexerSourmash(
+        k=kmer_size,
+        scaled=1000,
+        abund=False,
+        compress=True
+    )
+
+    index_manager = KmerIndexManager(filesystem_storage.kmer_dir, kmer_indexer=kmer_indexer)
+
+    files_to_index = []
 
     files_df = pd.read_csv(kmer_fofns, sep='\t')
-    index_count = 0
     for index, row in files_df.iterrows():
         sample_name = row['Sample']
         if kmer_service.has_kmer_index(sample_name):
             logger.warning(f'Sample [{sample_name}] already has kmer index, will not regenerate')
         else:
             genome_files = row['Files'].split(',')
-            index_file = index_manager.index_genome_files(sample_name, genome_files, KmerIndexerSourmash(
-                # k=[21, 31, 51],
-                k=31,
-                scaled=5000,
-                abund=False,
-            ))
-            kmer_service.insert_kmer_index(sample_name=sample_name,
-                                           kmer_index_path=index_file)
-            index_count += 1
+            files_to_index.append((sample_name, genome_files))
 
-    print(f'Generated indexes for {index_count} samples')
+    logger.info(f'Indexing {len(files_to_index)} genomes')
+
+    indexed_genomes = index_manager.index_all_genomes(files_to_index)
+
+    for sample_name in indexed_genomes:
+        kmer_service.insert_kmer_index(sample_name=sample_name,
+                                       kmer_index_path=indexed_genomes[sample_name])
+
+    print(f'Generated indexes for {len(indexed_genomes)} samples')
 
 
 LIST_TYPES = ['genome', 'sample', 'reference']
@@ -329,7 +347,7 @@ def tree(ctx, output_file: Path, reference_name: str, align_type: str,
         click.echo(f'Wrote log file to [{log_file}]')
 
 
-QUERY_TYPES = ['sample', 'mutation']
+QUERY_TYPES = ['sample-mutation', 'sample-kmer', 'mutation']
 
 
 @main.command()
@@ -343,10 +361,15 @@ QUERY_TYPES = ['sample', 'mutation']
 @click.option('--summarize/--no-summarize', help='Print summary information on query')
 def query(ctx, name: List[str], query_type: str, include_unknown: bool, summarize: bool):
     mutation_query_service = ctx.obj['mutation_query_service']
+    kmer_query_service = ctx.obj['kmer_query_service']
 
     match_df = None
-    if query_type == 'sample':
+    if query_type == 'sample-mutation':
         match_df = mutation_query_service.find_matches(samples=name)
+        if summarize:
+            logger.warning('--summarize is not implemented for --type=sample')
+    elif query_type == 'sample-kmer':
+        match_df = kmer_query_service.find_matches(samples=name)
         if summarize:
             logger.warning('--summarize is not implemented for --type=sample')
     elif query_type == 'mutation':

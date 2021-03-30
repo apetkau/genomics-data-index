@@ -7,7 +7,7 @@ import pandas as pd
 from Bio.SeqRecord import SeqRecord
 from Bio import SeqIO
 
-from storage.variant.io import execute_commands
+from storage.variant.util import execute_commands
 
 
 class VariationFile:
