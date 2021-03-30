@@ -1,4 +1,4 @@
-[![Build Status](https://github.com/apetkau/thesis-index/workflows/Integration%20Tests/badge.svg?branch=development&event=schedule)](https://github.com/apetkau/thesis-index/actions?query=branch%development)
+[![Build Status](https://github.com/apetkau/thesis-index/workflows/Integration%20Tests/badge.svg?branch=development)](https://github.com/apetkau/thesis-index/actions?query=branch/development)
 
 # A framework for the indexing and clustering of pathogen genomes
 
