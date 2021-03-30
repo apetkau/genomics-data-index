@@ -20,6 +20,7 @@ from storage.variant.service import DatabaseConnection, EntityExistsError
 from storage.variant.service.CoreAlignmentService import CoreAlignmentService
 from storage.variant.service.KmerService import KmerService
 from storage.variant.service.MutationQueryService import MutationQueryService, QueryFeatureMutation
+from storage.variant.service.KmerQueryService import KmerQueryService
 from storage.variant.service.ReferenceService import ReferenceService
 from storage.variant.service.SampleService import SampleService
 from storage.variant.service.TreeService import TreeService
@@ -74,6 +75,8 @@ def main(ctx, database_connection, database_dir, verbose):
     kmer_service = KmerService(database_connection=database,
                                sample_service=sample_service)
 
+    kmer_query_service = KmerQueryService(sample_service=sample_service)
+
     ctx.obj['database'] = database
     ctx.obj['filesystem_storage'] = filesystem_storage
     ctx.obj['kmer_service'] = kmer_service
@@ -83,6 +86,7 @@ def main(ctx, database_connection, database_dir, verbose):
     ctx.obj['tree_service'] = tree_service
     ctx.obj['sample_service'] = sample_service
     ctx.obj['mutation_query_service'] = mutation_query_service
+    ctx.obj['kmer_query_service'] = kmer_query_service
 
 
 def load_variants_common(ctx, variants_reader, reference_file, input, build_tree, align_type, threads,
@@ -343,7 +347,7 @@ def tree(ctx, output_file: Path, reference_name: str, align_type: str,
         click.echo(f'Wrote log file to [{log_file}]')
 
 
-QUERY_TYPES = ['sample', 'mutation']
+QUERY_TYPES = ['sample-mutation', 'sample-kmer', 'mutation']
 
 
 @main.command()
@@ -357,10 +361,15 @@ QUERY_TYPES = ['sample', 'mutation']
 @click.option('--summarize/--no-summarize', help='Print summary information on query')
 def query(ctx, name: List[str], query_type: str, include_unknown: bool, summarize: bool):
     mutation_query_service = ctx.obj['mutation_query_service']
+    kmer_query_service = ctx.obj['kmer_query_service']
 
     match_df = None
-    if query_type == 'sample':
+    if query_type == 'sample-mutation':
         match_df = mutation_query_service.find_matches(samples=name)
+        if summarize:
+            logger.warning('--summarize is not implemented for --type=sample')
+    elif query_type == 'sample-kmer':
+        match_df = kmer_query_service.find_matches(samples=name)
         if summarize:
             logger.warning('--summarize is not implemented for --type=sample')
     elif query_type == 'mutation':

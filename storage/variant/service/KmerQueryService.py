@@ -27,6 +27,7 @@ class KmerQueryService(QueryService):
         matches_df = pd.DataFrame(data=[], columns=[
             'Query',
             'Match',
+            'Similarity',
             'Distance',
         ])
 
@@ -38,8 +39,9 @@ class KmerQueryService(QueryService):
             results_df['Query'] = sample_name
             results_df = results_df.rename({
                 'name': 'Match',
+                'similarity': 'Similarity',
             }, axis='columns')
-            results_df = results_df[['Query', 'Match', 'Distance']]
+            results_df = results_df[['Query', 'Match', 'Similarity', 'Distance']]
 
             matches_df = pd.concat([matches_df, results_df])
 
