@@ -89,6 +89,12 @@ def main(ctx, database_connection, database_dir, verbose):
     ctx.obj['kmer_query_service'] = kmer_query_service
 
 
+@main.group()
+@click.pass_context
+def load(ctx):
+    pass
+
+
 def load_variants_common(ctx, variants_reader, reference_file, input, build_tree, align_type, threads,
                          extra_tree_params: str):
     reference_service = ctx.obj['reference_service']
@@ -117,12 +123,6 @@ def load_variants_common(ctx, variants_reader, reference_file, input, build_tree
                                       num_cores=threads,
                                       extra_params=extra_tree_params)
             click.echo('Finished building tree of all samples')
-
-
-@main.group()
-@click.pass_context
-def load(ctx):
-    pass
 
 
 @load.command(name='snippy')
@@ -247,9 +247,6 @@ def list_samples(ctx):
     click.echo('\n'.join(items))
 
 
-EXPORT_TYPES = ['tree']
-
-
 @main.group()
 @click.pass_context
 def export(ctx):
@@ -272,7 +269,13 @@ def export_tree(ctx, name: List[str], ascii: bool):
             click.echo(reference.tree.write())
 
 
-@main.command()
+@main.group()
+@click.pass_context
+def build(ctx):
+    pass
+
+
+@build.command()
 @click.pass_context
 @click.option('--output-file', help='Output file', required=True, type=click.Path())
 @click.option('--reference-name', help='Reference genome name', required=True, type=str)
@@ -305,7 +308,7 @@ def alignment(ctx, output_file: Path, reference_name: str, align_type: str, samp
         click.echo(f'Wrote alignment to [{output_file}]')
 
 
-@main.command()
+@build.command()
 @click.pass_context
 @click.option('--output-file', help='Output file', required=True, type=click.Path())
 @click.option('--reference-name', help='Reference genome name', type=str, required=True)
