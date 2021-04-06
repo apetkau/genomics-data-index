@@ -361,6 +361,44 @@ def tree(ctx, output_file: Path, reference_name: str, align_type: str,
 
 @main.group()
 @click.pass_context
+def rebuild(ctx):
+    pass
+
+
+@rebuild.command(name='tree')
+@click.pass_context
+@click.argument('reference', type=str, nargs=-1)
+@click.option('--align-type', help=f'The type of alignment to use for generating the tree', default='core',
+              type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
+@click.option('--threads', help='Threads for building tree', default=1,
+              type=click.IntRange(min=1, max=num_cores))
+@click.option('--extra-params', help='Extra parameters to tree-building software',
+              default=None)
+def rebuild_tree(ctx, reference: List[str], align_type: str, threads: int, extra_params: str):
+    tree_service = ctx.obj['tree_service']
+    reference_service = ctx.obj['reference_service']
+
+    if len(reference) == 0:
+        logger.error('Must define name of reference genome to use. '
+                     'To see available genomes try "variants list genomes"')
+        sys.exit(1)
+
+    for reference_name in reference:
+        if not reference_service.exists_reference_genome(reference_name):
+            logger.error(f'Reference genome [{reference_name}] does not exist')
+            sys.exit(1)
+
+    for reference_name in reference:
+        logger.info(f'Started rebuilding tree for reference genome [{reference_name}]')
+        tree_service.rebuild_tree(reference_name=reference_name,
+                                  align_type=align_type,
+                                  num_cores=threads,
+                                  extra_params=extra_params)
+        logger.info(f'Finished rebuilding tree')
+
+
+@main.group()
+@click.pass_context
 def query(ctx):
     pass
 
