@@ -227,21 +227,23 @@ def load_kmer(ctx, kmer_fofns, kmer_size):
     print(f'Generated indexes for {len(indexed_genomes)} samples')
 
 
-LIST_TYPES = ['genome', 'sample', 'reference']
-
-
-@main.command(name='list')
+@main.group(name='list')
 @click.pass_context
-@click.option('--type', 'data_type', required=True, help='Type of data to list',
-              type=click.Choice(LIST_TYPES))
-def list_data(ctx, data_type):
-    if data_type == 'genome' or data_type == 'reference':
-        items = [genome.name for genome in ctx.obj['reference_service'].get_reference_genomes()]
-    elif data_type == 'sample':
-        items = [sample.name for sample in ctx.obj['sample_service'].get_samples()]
-    else:
-        raise Exception(f'Unknown data_type=[{data_type}]')
+def list_data(ctx):
+    pass
 
+
+@list_data.command(name='genomes')
+@click.pass_context
+def list_genomes(ctx):
+    items = [genome.name for genome in ctx.obj['reference_service'].get_reference_genomes()]
+    click.echo('\n'.join(items))
+
+
+@list_data.command(name='samples')
+@click.pass_context
+def list_samples(ctx):
+    items = [sample.name for sample in ctx.obj['sample_service'].get_samples()]
     click.echo('\n'.join(items))
 
 
