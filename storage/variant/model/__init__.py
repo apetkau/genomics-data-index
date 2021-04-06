@@ -153,6 +153,62 @@ class ReferenceSequence(Base):
                 f'sequence_length={self.sequence_length}, reference_id={self.reference_id})>')
 
 
+class MLSTScheme(Base):
+    __tablename__ = 'mlst_scheme'
+    id = Column(Integer, primary_key=True)
+    name = Column(String(255))
+    alleles_dir = Column(String(255))
+    sequence_types_file = Column(String(255))
+
+
+class SampleMLSTAlleles(Base):
+    __tablename__ = 'sample_mlst_alleles'
+    sample_id = Column(Integer, ForeignKey('sample.id'), primary_key=True)
+    scheme_id = Column(Integer, ForeignKey('mlst_scheme.id'), primary_key=True)
+    _alleles_file = Column('alleles_file', String(255))
+
+    @hybrid_property
+    def alleles_file(self) -> Path:
+        if self._alleles_file is None:
+            raise Exception('Empty _alleles_file')
+        else:
+            return Path(self._alleles_file)
+
+    @alleles_file.setter
+    def alleles_file(self, file: Path) -> None:
+        if file is None:
+            self._alleles_file = None
+        else:
+            self._alleles_file = str(file)
+
+    sample = relationship('Sample')
+    scheme = relationship('MLSTScheme')
+
+
+class MLSTAllelesSamples(Base):
+    __tablename__ = 'mlst_alleles_samples'
+    scheme_id = Column(Integer, ForeignKey('mlst_scheme.id'), primary_key=True)
+    locus = Column(String(255), primary_key=True)
+    allele = Column(Integer, primary_key=True)
+    _sample_ids = Column(LargeBinary(length=500 * 10 ** 6))  # Max of 500 million
+
+    @hybrid_property
+    def sample_ids(self) -> SampleSet:
+        if self._sample_ids is None:
+            raise Exception('_sample_ids is not set')
+        else:
+            return SampleSet.from_bytes(self._sample_ids)
+
+    @sample_ids.setter
+    def sample_ids(self, sample_ids: SampleSet) -> None:
+        if sample_ids is None:
+            raise Exception('Cannot set sample_ids to None')
+        else:
+            self._sample_ids = sample_ids.get_bytes()
+
+    scheme = relationship('MLSTScheme')
+
+
 class Sample(Base):
     __tablename__ = 'sample'
     id = Column(Integer, primary_key=True)
