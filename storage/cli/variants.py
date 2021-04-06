@@ -250,25 +250,26 @@ def list_samples(ctx):
 EXPORT_TYPES = ['tree']
 
 
-@main.command(name='export')
+@main.group()
+@click.pass_context
+def export(ctx):
+    pass
+
+
+@export.command(name='tree')
 @click.pass_context
 @click.argument('name', nargs=-1)
-@click.option('--type', 'data_type', required=True, help='Type of data to export',
-              type=click.Choice(EXPORT_TYPES))
 @click.option('--ascii/--no-ascii', help='Export as ASCII figure')
-def export(ctx, name: List[str], data_type, ascii: bool):
-    if data_type == 'tree':
-        if len(name) == 0:
-            logger.warning('No reference genome names passed, will not export tree')
+def export_tree(ctx, name: List[str], ascii: bool):
+    if len(name) == 0:
+        logger.warning('No reference genome names passed, will not export tree')
 
-        for ref_name in name:
-            reference = ctx.obj['reference_service'].find_reference_genome(ref_name)
-            if ascii:
-                click.echo(str(reference.tree))
-            else:
-                click.echo(reference.tree.write())
-    else:
-        raise Exception(f'Unknown data_type=[{data_type}]')
+    for ref_name in name:
+        reference = ctx.obj['reference_service'].find_reference_genome(ref_name)
+        if ascii:
+            click.echo(str(reference.tree))
+        else:
+            click.echo(reference.tree.write())
 
 
 @main.command()
@@ -355,52 +356,61 @@ def tree(ctx, output_file: Path, reference_name: str, align_type: str,
         click.echo(f'Wrote log file to [{log_file}]')
 
 
-QUERY_TYPES = ['sample-mutation', 'sample-kmer', 'mutation']
+@main.group()
+@click.pass_context
+def query(ctx):
+    pass
 
 
-@main.command()
+@query.command(name='sample-mutation')
 @click.pass_context
 @click.argument('name', nargs=-1)
-@click.option('--type', 'query_type', help='Query type',
-              required=True, type=click.Choice(QUERY_TYPES))
+def query_sample_mutation(ctx, name: List[str]):
+    mutation_query_service = ctx.obj['mutation_query_service']
+    match_df = mutation_query_service.find_matches(samples=name)
+    match_df.to_csv(sys.stdout, sep='\t', index=False, float_format='%0.4g', na_rep='-')
+
+
+@query.command(name='sample-kmer')
+@click.pass_context
+@click.argument('name', nargs=-1)
+def query_sample_kmer(ctx, name: List[str]):
+    kmer_query_service = ctx.obj['kmer_query_service']
+    match_df = kmer_query_service.find_matches(samples=name)
+    match_df.to_csv(sys.stdout, sep='\t', index=False, float_format='%0.4g', na_rep='-')
+
+
+@query.command(name='mutation')
+@click.pass_context
+@click.argument('name', nargs=-1)
 @click.option('--include-unknown/--no-include-unknown',
               help='Including results where it is unknown if the search term is present or not.',
               required=False)
 @click.option('--summarize/--no-summarize', help='Print summary information on query')
-def query(ctx, name: List[str], query_type: str, include_unknown: bool, summarize: bool):
+def query_mutation(ctx, name: List[str], include_unknown: bool, summarize: bool):
     mutation_query_service = ctx.obj['mutation_query_service']
-    kmer_query_service = ctx.obj['kmer_query_service']
 
-    match_df = None
-    if query_type == 'sample-mutation':
-        match_df = mutation_query_service.find_matches(samples=name)
-        if summarize:
-            logger.warning('--summarize is not implemented for --type=sample')
-    elif query_type == 'sample-kmer':
-        match_df = kmer_query_service.find_matches(samples=name)
-        if summarize:
-            logger.warning('--summarize is not implemented for --type=sample')
-    elif query_type == 'mutation':
-        features = [QueryFeatureMutation(n) for n in name]
-
-        if not summarize:
-            match_df = mutation_query_service.find_by_features(features, include_unknown=include_unknown)
-        else:
-            match_df = mutation_query_service.count_by_features(features, include_unknown=include_unknown)
+    features = [QueryFeatureMutation(n) for n in name]
+    if not summarize:
+        match_df = mutation_query_service.find_by_features(features, include_unknown=include_unknown)
     else:
-        logger.error(f'Invalid query_type=[{query_type}]')
-        sys.exit(1)
+        match_df = mutation_query_service.count_by_features(features, include_unknown=include_unknown)
 
     match_df.to_csv(sys.stdout, sep='\t', index=False, float_format='%0.4g', na_rep='-')
 
 
-@main.command()
+@main.group(name='db')
 @click.pass_context
-@click.option('--size', help='Get database size', is_flag=True)
+def db(ctx):
+    pass
+
+
+@db.command(name='size')
+@click.pass_context
 @click.option('--kb', help='Print in KB', is_flag=True)
 @click.option('--mb', help='Print in MB', is_flag=True)
 @click.option('--gb', help='Print in GB', is_flag=True)
-def db(ctx, size: bool, kb, mb, gb):
+def db_size(ctx, kb, mb, gb):
     database = ctx.obj['database']
     filesystem_storage = ctx.obj['filesystem_storage']
 
@@ -416,24 +426,23 @@ def db(ctx, size: bool, kb, mb, gb):
         factor = 1024 ** 3
         unit = 'GB'
 
-    if size:
-        filesystem_df = filesystem_storage.get_storage_size()
-        database_df = database.get_database_size()
+    filesystem_df = filesystem_storage.get_storage_size()
+    database_df = database.get_database_size()
 
-        size_df = pd.concat([filesystem_df, database_df])
-        total_data_size = size_df['Data Size'].sum()
-        total_index_size = size_df['Index Size'].sum()
-        total_items = size_df['Number of Items'].sum()
-        total_row = pd.DataFrame([['Total', pd.NA, pd.NA, total_data_size, total_index_size, total_items]],
-                                 columns=['Type', 'Name', 'Division', 'Data Size', 'Index Size', 'Number of Items'])
-        size_df = pd.concat([size_df, total_row])
+    size_df = pd.concat([filesystem_df, database_df])
+    total_data_size = size_df['Data Size'].sum()
+    total_index_size = size_df['Index Size'].sum()
+    total_items = size_df['Number of Items'].sum()
+    total_row = pd.DataFrame([['Total', pd.NA, pd.NA, total_data_size, total_index_size, total_items]],
+                             columns=['Type', 'Name', 'Division', 'Data Size', 'Index Size', 'Number of Items'])
+    size_df = pd.concat([size_df, total_row])
 
-        # Reorder columns
-        size_df = size_df[['Type', 'Name', 'Division', 'Data Size', 'Index Size', 'Number of Items']]
+    # Reorder columns
+    size_df = size_df[['Type', 'Name', 'Division', 'Data Size', 'Index Size', 'Number of Items']]
 
-        size_df['Data Size'] = size_df['Data Size'] / factor
-        size_df['Index Size'] = size_df['Index Size'] / factor
-        size_df = size_df.rename({'Data Size': f'Data Size ({unit})',
-                        'Index Size': f'Index Size ({unit})'}, axis='columns')
+    size_df['Data Size'] = size_df['Data Size'] / factor
+    size_df['Index Size'] = size_df['Index Size'] / factor
+    size_df = size_df.rename({'Data Size': f'Data Size ({unit})',
+                    'Index Size': f'Index Size ({unit})'}, axis='columns')
 
-        size_df.to_csv(sys.stdout, sep='\t', index=False, float_format='%0.2f', na_rep='-')
+    size_df.to_csv(sys.stdout, sep='\t', index=False, float_format='%0.2f', na_rep='-')
