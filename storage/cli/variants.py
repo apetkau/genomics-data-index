@@ -119,7 +119,13 @@ def load_variants_common(ctx, variants_reader, reference_file, input, build_tree
             click.echo('Finished building tree of all samples')
 
 
-@main.command(name='load-snippy')
+@main.group()
+@click.pass_context
+def load(ctx):
+    pass
+
+
+@load.command(name='snippy')
 @click.pass_context
 @click.argument('snippy_dir', type=click.Path(exists=True))
 @click.option('--reference-file', help='Reference genome', required=True, type=click.Path(exists=True))
@@ -143,7 +149,7 @@ def load_snippy(ctx, snippy_dir: Path, reference_file: Path, build_tree: bool, a
                          extra_tree_params=extra_tree_params)
 
 
-@main.command(name='load-vcf')
+@load.command(name='vcf')
 @click.pass_context
 @click.argument('vcf_fofns', type=click.Path(exists=True))
 @click.option('--reference-file', help='Reference genome', required=True, type=click.Path(exists=True))
@@ -178,11 +184,11 @@ def load_vcf(ctx, vcf_fofns: Path, reference_file: Path, build_tree: bool, align
                          extra_tree_params=extra_tree_params)
 
 
-@main.command(name='load-kmer')
+@load.command(name='kmer')
 @click.pass_context
 @click.argument('kmer_fofns', type=click.Path(exists=True))
 @click.option('--kmer-size', help='Kmer size for indexing. List multiple for multiple kmer sizes in an index',
-              default=31, multiple=True, type=click.IntRange(min=1, max=201))
+              default=[31], multiple=True, type=click.IntRange(min=1, max=201))
 def load_kmer(ctx, kmer_fofns, kmer_size):
     filesystem_storage = ctx.obj['filesystem_storage']
     kmer_service = ctx.obj['kmer_service']
