@@ -1,8 +1,8 @@
-from typing import Dict, List, Set
 import abc
+from pathlib import Path
+from typing import Dict, List, Set
 
 import pandas as pd
-from pathlib import Path
 
 
 class FeaturesReader(abc.ABC):

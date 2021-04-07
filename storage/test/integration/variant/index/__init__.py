@@ -1,7 +1,7 @@
 from typing import Dict, Set, Any
 
 
-def get_values_from_signatures(sigs) -> Dict[str,Set[Any]]:
+def get_values_from_signatures(sigs) -> Dict[str, Set[Any]]:
     ksizes = set()
     scales = set()
 

@@ -1,7 +1,7 @@
 import math
 
-from storage.variant.index.KmerSearchManager import KmerSearchManagerSourmash
 from storage.test.integration.variant import sourmash_dir
+from storage.variant.index.KmerSearchManager import KmerSearchManagerSourmash
 
 sigs = {
     'SampleA': sourmash_dir / 'SampleA.sig.gz',

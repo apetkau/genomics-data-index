@@ -1,10 +1,11 @@
-import pytest
 import math
-import pandas as pd
 
+import pandas as pd
+import pytest
+
+from storage.variant.model import Sample
 from storage.variant.service.MutationQueryService import MutationQueryService
 from storage.variant.service.MutationQueryService import QueryFeatureMutation
-from storage.variant.model import Sample
 
 
 @pytest.fixture
@@ -148,7 +149,7 @@ def test_find_by_features_2_features(database, mutation_query_service: MutationQ
 
 def test_count_by_features_2_features(mutation_query_service: MutationQueryService):
     matches_df = mutation_query_service.count_by_features([QueryFeatureMutation('reference:5061:G:A'),
-                                                          QueryFeatureMutation('reference:3063:A:ATGCAGC')],
+                                                           QueryFeatureMutation('reference:3063:A:ATGCAGC')],
                                                           include_unknown=False)
 
     assert ['Type', 'Feature', 'Present', 'Absent', 'Unknown', 'Total',
@@ -201,7 +202,7 @@ def test_find_by_features_unknown(database, mutation_query_service: MutationQuer
 
 def test_count_by_features_unknown(mutation_query_service: MutationQueryService):
     matches_df = mutation_query_service.count_by_features([QueryFeatureMutation('reference:190:A:G')],
-                                                         include_unknown=True)
+                                                          include_unknown=True)
 
     assert ['Type', 'Feature', 'Present', 'Absent', 'Unknown', 'Total',
             '% Present', '% Absent', '% Unknown'] == list(matches_df.columns.tolist())
@@ -242,8 +243,8 @@ def test_find_by_features_found_unknown(database, mutation_query_service: Mutati
 
 def test_count_by_features_found_unknown(mutation_query_service: MutationQueryService):
     matches_df = mutation_query_service.count_by_features([QueryFeatureMutation('reference:5061:G:A'),
-                                                          QueryFeatureMutation('reference:190:A:G')],
-                                                         include_unknown=True)
+                                                           QueryFeatureMutation('reference:190:A:G')],
+                                                          include_unknown=True)
 
     assert ['Type', 'Feature', 'Present', 'Absent', 'Unknown', 'Total',
             '% Present', '% Absent', '% Unknown'] == list(matches_df.columns.tolist())

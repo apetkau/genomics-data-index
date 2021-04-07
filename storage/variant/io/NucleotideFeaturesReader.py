@@ -1,8 +1,8 @@
 import abc
 from typing import Dict, Set
 
-from storage.variant.io.FeaturesReader import FeaturesReader
 from storage.variant.MaskedGenomicRegions import MaskedGenomicRegions
+from storage.variant.io.FeaturesReader import FeaturesReader
 
 
 class NucleotideFeaturesReader(FeaturesReader):

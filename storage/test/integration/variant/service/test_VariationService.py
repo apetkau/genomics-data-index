@@ -1,17 +1,16 @@
 from typing import List
-import math
+
 import pytest
 
+from storage.test.integration.variant import data_dir
+from storage.variant.io.SnippyVariantsReader import SnippyVariantsReader
 from storage.variant.model import Sample, NucleotideVariantsSamples, SampleNucleotideVariation
 from storage.variant.service import EntityExistsError
 from storage.variant.service.VariationService import VariationService
-from storage.variant.io.SnippyVariantsReader import SnippyVariantsReader
-
-from storage.test.integration.variant import data_dir
 
 
 def test_insert_variants_saved_files(database, snippy_variants_reader, reference_service_with_data,
-                         sample_service, filesystem_storage):
+                                     sample_service, filesystem_storage):
     variation_service = VariationService(database_connection=database,
                                          reference_service=reference_service_with_data,
                                          sample_service=sample_service,
@@ -33,7 +32,7 @@ def test_insert_variants_saved_files(database, snippy_variants_reader, reference
 
 
 def test_insert_variants_masked_regions(database, snippy_variants_reader, reference_service_with_data,
-                         sample_service, filesystem_storage):
+                                        sample_service, filesystem_storage):
     variation_service = VariationService(database_connection=database,
                                          reference_service=reference_service_with_data,
                                          sample_service=sample_service,
@@ -52,7 +51,7 @@ def test_insert_variants_masked_regions(database, snippy_variants_reader, refere
 
 
 def test_insert_variants_examine_variation(database, snippy_variants_reader, reference_service_with_data,
-                         sample_service, filesystem_storage):
+                                           sample_service, filesystem_storage):
     variation_service = VariationService(database_connection=database,
                                          reference_service=reference_service_with_data,
                                          sample_service=sample_service,
@@ -148,7 +147,7 @@ def test_insert_variants_duplicates_subset(database, snippy_variants_reader, ref
 
 
 def test_get_variants_ordered(database, snippy_variants_reader, reference_service_with_data,
-                      sample_service, filesystem_storage):
+                              sample_service, filesystem_storage):
     def find_variant_by_position(variants: List[NucleotideVariantsSamples], position: int) -> NucleotideVariantsSamples:
         for v in variants:
             if v.position == position:

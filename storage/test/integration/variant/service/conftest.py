@@ -51,7 +51,7 @@ def regular_variants_reader() -> VcfVariantsReader:
     }
 
     mask_files = {
-        'SampleA': Path(data_dir, 'SampleA',  'snps.aligned.fa'),
+        'SampleA': Path(data_dir, 'SampleA', 'snps.aligned.fa'),
         'SampleB': Path(data_dir, 'SampleB', 'snps.aligned.fa'),
         'SampleC': Path(data_dir, 'SampleC', 'snps.aligned.fa'),
     }
@@ -84,7 +84,7 @@ def variation_service(database, reference_service_with_data,
 
 @pytest.fixture
 def variation_service_non_snippy_vcfs(database, reference_service_with_data,
-                      regular_variants_reader, sample_service, filesystem_storage) -> VariationService:
+                                      regular_variants_reader, sample_service, filesystem_storage) -> VariationService:
     var_service = VariationService(database_connection=database,
                                    reference_service=reference_service_with_data,
                                    sample_service=sample_service,
@@ -106,7 +106,7 @@ def core_alignment_service(database, reference_service_with_data, variation_serv
 
 @pytest.fixture
 def core_alignment_service_non_snippy_vcfs(database, reference_service_with_data, variation_service_non_snippy_vcfs,
-                           sample_service) -> CoreAlignmentService:
+                                           sample_service) -> CoreAlignmentService:
     return CoreAlignmentService(database=database,
                                 reference_service=reference_service_with_data,
                                 variation_service=variation_service_non_snippy_vcfs,
@@ -139,6 +139,7 @@ def kmer_service_with_data(database, sample_service) -> KmerService:
                                        kmer_index_path=sourmash_signatures[sample_name])
 
     return kmer_service
+
 
 @pytest.fixture
 def kmer_query_service_with_data(sample_service, kmer_service_with_data) -> KmerQueryService:

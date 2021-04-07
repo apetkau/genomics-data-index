@@ -1,7 +1,5 @@
 from typing import Set
 
-import pandas as pd
-
 from storage.variant.io.FeaturesReader import FeaturesReader
 
 

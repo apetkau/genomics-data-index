@@ -143,12 +143,14 @@ def test_snippy_full_align(core_alignment_service, expected_alignment_full):
 
 def test_regular_vcf_full_align(core_alignment_service_non_snippy_vcfs, expected_alignment_full):
     actual_alignment = core_alignment_service_non_snippy_vcfs.construct_alignment(reference_name='genome',
-                                                                  samples=['SampleA', 'SampleB', 'SampleC'],
-                                                                  align_type='full')
+                                                                                  samples=['SampleA', 'SampleB',
+                                                                                           'SampleC'],
+                                                                                  align_type='full')
     compare_alignments(expected_alignment_full, actual_alignment)
 
 
 def test_regular_vcf_core_align(core_alignment_service_non_snippy_vcfs, expected_alignment_core):
     actual_alignment = core_alignment_service_non_snippy_vcfs.construct_alignment(reference_name='genome',
-                                                                  samples=['SampleA', 'SampleB', 'SampleC'])
+                                                                                  samples=['SampleA', 'SampleB',
+                                                                                           'SampleC'])
     compare_alignments(expected_alignment_core, actual_alignment)

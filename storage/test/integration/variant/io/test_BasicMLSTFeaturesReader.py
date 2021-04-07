@@ -1,8 +1,9 @@
 from typing import List
+
 import pytest
 
-from storage.variant.io.BasicMLSTFeaturesReader import BasicMLSTFeaturesReader
 from storage.test.integration.variant import basic_mlst_file
+from storage.variant.io.BasicMLSTFeaturesReader import BasicMLSTFeaturesReader
 
 
 @pytest.fixture
@@ -28,18 +29,18 @@ def test_get_features_table(mlst_reader):
 
     assert num_samples * num_loci == len(mlst_df)
     assert expand_list_by(['2014C-3598.fasta', '2014C-3599.fasta', '2014D-0067.fasta', '2014D-0068.fasta',
-            'CFSAN002349.fasta', 'CFSAN023463.fasta'], num_loci) == list(mlst_df['File'].tolist())
+                           'CFSAN002349.fasta', 'CFSAN023463.fasta'], num_loci) == list(mlst_df['File'].tolist())
     assert expand_list_by(['2014C-3598', '2014C-3599', '2014D-0067', '2014D-0068',
-            'CFSAN002349', 'CFSAN023463'], num_loci) == list(mlst_df['Sample'].tolist())
+                           'CFSAN002349', 'CFSAN023463'], num_loci) == list(mlst_df['Sample'].tolist())
 
     assert ['abcZ', 'bglA', 'cat', 'dapE', 'dat', 'ldh', 'lhkA'] == list(mlst_df.loc[mlst_df['Sample'] == 'CFSAN002349',
-                                                                               'Locus'].tolist())
+                                                                                     'Locus'].tolist())
     assert ['1', '51', '11', '13', '2', '5', '5'] == list(mlst_df.loc[mlst_df['Sample'] == 'CFSAN002349',
-                                                                               'Allele'].tolist())
+                                                                      'Allele'].tolist())
     assert ['adk', 'fumC', 'gyrB', 'icd', 'mdh', 'purA', 'recA'] == list(mlst_df.loc[mlst_df['Sample'] == '2014C-3598',
-                                                                               'Locus'].tolist())
+                                                                                     'Locus'].tolist())
     assert ['100', '23', '68', '45', '1', '35', '7'] == list(mlst_df.loc[mlst_df['Sample'] == '2014C-3598',
-                                                                               'Allele'].tolist())
+                                                                         'Allele'].tolist())
 
 
 def test_samples_list(mlst_reader):

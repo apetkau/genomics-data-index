@@ -18,9 +18,9 @@ from storage.variant.io.SnippyVariantsReader import SnippyVariantsReader
 from storage.variant.io.VcfVariantsReader import VcfVariantsReader
 from storage.variant.service import DatabaseConnection, EntityExistsError
 from storage.variant.service.CoreAlignmentService import CoreAlignmentService
+from storage.variant.service.KmerQueryService import KmerQueryService
 from storage.variant.service.KmerService import KmerService
 from storage.variant.service.MutationQueryService import MutationQueryService, QueryFeatureMutation
-from storage.variant.service.KmerQueryService import KmerQueryService
 from storage.variant.service.ReferenceService import ReferenceService
 from storage.variant.service.SampleService import SampleService
 from storage.variant.service.TreeService import TreeService
@@ -484,6 +484,6 @@ def db_size(ctx, kb, mb, gb):
     size_df['Data Size'] = size_df['Data Size'] / factor
     size_df['Index Size'] = size_df['Index Size'] / factor
     size_df = size_df.rename({'Data Size': f'Data Size ({unit})',
-                    'Index Size': f'Index Size ({unit})'}, axis='columns')
+                              'Index Size': f'Index Size ({unit})'}, axis='columns')
 
     size_df.to_csv(sys.stdout, sep='\t', index=False, float_format='%0.2f', na_rep='-')
