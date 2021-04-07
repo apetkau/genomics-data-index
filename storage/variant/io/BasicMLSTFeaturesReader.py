@@ -26,7 +26,21 @@ class BasicMLSTFeaturesReader(MLSTFeaturesReader):
             1: 'Scheme',
             2: 'Sequence Type',
         })
+
+        df['Sample'] = self._get_sample_from_filename(df['File'])
+        df = self._extract_locus_alleles(df)
+
+        df = df[['File', 'Sample', 'Scheme', 'Locus', 'Allele', 'Sequence Type']].sort_values(
+            by=['Sample', 'Scheme', 'Locus']).reset_index().drop(columns='index')
+
         return df
 
-    def add_sample_column(self, df: pd.DataFrame) -> pd.DataFrame:
-        df['']
+    def _get_sample_from_filename(self, filename_series: pd.Series) -> pd.Series:
+        file_sample_name_regex = r'^([^.]*)'
+        return filename_series.str.extract(file_sample_name_regex, expand=True)
+
+    def _extract_locus_alleles(self, df: pd.DataFrame) -> pd.DataFrame:
+        locus_allele_list = list(set(df.columns) - {'File', 'Sample', 'Scheme', 'Sequence Type'})
+        df = df.melt(id_vars=['File', 'Sample', 'Scheme', 'Sequence Type'], value_vars=locus_allele_list)
+        df[['Locus', 'Allele']] = df['value'].str.extract(r'^([^\(]*)\(([^\)]*)\)', expand=True)
+        return df
