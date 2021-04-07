@@ -11,6 +11,9 @@ from storage.variant.SampleSet import SampleSet
 
 Base = declarative_base()
 
+# Max of 500 million bytes
+MAX_SAMPLE_SET_BYTES = 500 * 10 ** 6
+
 
 class NucleotideVariantsSamples(Base):
     __tablename__ = 'nucleotide_variants_samples'
@@ -20,7 +23,7 @@ class NucleotideVariantsSamples(Base):
     insertion = Column(String(255), primary_key=True)
     _spdi = Column('spdi', String(255))
     var_type = Column(String(255))
-    _sample_ids = Column(LargeBinary(length=500 * 10 ** 6))  # Max of 500 million
+    _sample_ids = Column(LargeBinary(length=MAX_SAMPLE_SET_BYTES))
 
     def __init__(self, spdi: str = None, var_type: str = None, sample_ids: SampleSet = None):
         self.spdi = spdi
@@ -187,10 +190,10 @@ class SampleMLSTAlleles(Base):
 
 class MLSTAllelesSamples(Base):
     __tablename__ = 'mlst_alleles_samples'
-    scheme_id = Column(Integer, ForeignKey('mlst_scheme.id'), primary_key=True)
+    scheme = Column(String(255), primary_key=True)
     locus = Column(String(255), primary_key=True)
     allele = Column(Integer, primary_key=True)
-    _sample_ids = Column(LargeBinary(length=500 * 10 ** 6))  # Max of 500 million
+    _sample_ids = Column(LargeBinary(length=MAX_SAMPLE_SET_BYTES))
 
     @hybrid_property
     def sample_ids(self) -> SampleSet:
@@ -206,7 +209,28 @@ class MLSTAllelesSamples(Base):
         else:
             self._sample_ids = sample_ids.get_bytes()
 
-    scheme = relationship('MLSTScheme')
+    @hybrid_property
+    def sla(self) -> str:
+        return self.to_sla(self.scheme, self.locus, self.allele)
+
+    @sla.setter
+    def sla(self, sla_value: str):
+        self.scheme, self.locus, self.allele = self.from_sla(sla_value)
+
+    @classmethod
+    def to_sla(cls, scheme_name: str, locus: str, allele: str) -> str:
+        return f'{scheme_name}:{locus}:{allele}'
+
+    @classmethod
+    def from_sla(cls, sla: str) -> Tuple[str, str, str]:
+        if sla is None:
+            raise Exception('Cannot parse value sla=None')
+
+        values = sla.split(':')
+        if len(values) != 3:
+            raise Exception(f'Incorrect number of items for sla=[{sla}]')
+        else:
+            return str(values[0]), str(values[1]), str(values[2])
 
 
 class Sample(Base):
