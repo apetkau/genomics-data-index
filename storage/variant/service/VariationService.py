@@ -1,14 +1,13 @@
-from typing import Dict, List, Any, Set
+from typing import List, Set
 import logging
 from pathlib import Path
-import shutil
 
 import pandas as pd
 
 from storage.variant.MaskedGenomicRegions import MaskedGenomicRegions
-from storage.variant.io import VariantsReader
+from storage.variant.io import NucleotideFeaturesReader
 from storage.variant.SampleSet import SampleSet
-from storage.variant.model import ReferenceSequence, Sample, SampleNucleotideVariation, NucleotideVariantsSamples
+from storage.variant.model import Sample, SampleNucleotideVariation, NucleotideVariantsSamples
 from storage.variant.service import DatabaseConnection
 from storage.variant.service import EntityExistsError
 from storage.variant.service.ReferenceService import ReferenceService
@@ -69,9 +68,9 @@ class VariationService:
                                  self._sample_service.get_samples_with_variants(reference_name)}
         return len(samples_with_variants.intersection(sample_names)) != 0
 
-    def insert_variants(self, reference_name: str, variants_reader: VariantsReader) -> None:
+    def insert_variants(self, reference_name: str, variants_reader: NucleotideFeaturesReader) -> None:
         reference = self._reference_service.find_reference_genome(reference_name)
-        sample_variant_files = variants_reader.sample_variant_files()
+        sample_variant_files = variants_reader.sample_feature_files()
         genomic_masked_regions = variants_reader.get_genomic_masked_regions()
 
         if self.check_samples_have_variants(set(sample_variant_files.keys()), reference_name):
@@ -101,8 +100,8 @@ class VariationService:
 
         self.index_variants(variants_reader=variants_reader)
 
-    def index_variants(self, variants_reader: VariantsReader):
-        variants_df = variants_reader.get_variants_table()
+    def index_variants(self, variants_reader: NucleotideFeaturesReader):
+        variants_df = variants_reader.get_features_table()
         self._connection.get_session().bulk_save_objects(self._create_nucleotide_variants(variants_df))
         self._connection.get_session().commit()
 

@@ -42,7 +42,7 @@ def test_read_vcf(setup):
 
 
 def test_get_variants_table(setup):
-    df = setup['reader'].get_variants_table()
+    df = setup['reader'].get_features_table()
 
     assert 129 == len(df), 'Data has incorrect length'
     assert {'SampleA', 'SampleB', 'SampleC'} == set(df['SAMPLE'].tolist()), 'Incorrect sample names'
@@ -80,6 +80,6 @@ def test_get_samples_list_two_files():
 
 def test_read_empty_vcf():
     reader = SnippyVariantsReader(sample_dirs_empty)
-    df = reader.get_variants_table()
+    df = reader.get_features_table()
 
     assert 0 == len(df), 'Data has incorrect length'
