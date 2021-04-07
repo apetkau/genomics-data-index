@@ -40,3 +40,8 @@ def test_get_features_table(mlst_reader):
                                                                                'Locus'].tolist())
     assert ['100', '23', '68', '45', '1', '35', '7'] == list(mlst_df.loc[mlst_df['Sample'] == '2014C-3598',
                                                                                'Allele'].tolist())
+
+
+def test_samples_list(mlst_reader):
+    assert {'2014C-3598', '2014C-3599', '2014D-0067', '2014D-0068',
+            'CFSAN002349', 'CFSAN023463'} == set(mlst_reader.samples_list())

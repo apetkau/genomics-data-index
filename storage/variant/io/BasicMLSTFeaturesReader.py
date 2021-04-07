@@ -12,12 +12,19 @@ class BasicMLSTFeaturesReader(MLSTFeaturesReader):
         super().__init__()
 
         self._mlst_file = mlst_file
+        self._features_table = None
 
     def sample_feature_files(self) -> Dict[str, Path]:
         raise Exception('Not implemented')
 
     def samples_list(self) -> List[str]:
-        pass
+        mlst_df = self.get_features_table()
+        return list(set(mlst_df['Sample'].tolist()))
+
+    def get_features_table(self) -> pd.DataFrame:
+        if self._features_table is None:
+            self._features_table = super().get_features_table()
+        return self._features_table
 
     def _read_features_table(self) -> pd.DataFrame:
         df = pd.read_csv(self._mlst_file, sep='\t', header=None)

@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Set
 import abc
 
 import pandas as pd
@@ -11,6 +11,14 @@ class FeaturesReader(abc.ABC):
         pass
 
     def _check_features_table_columns(self, features_df: pd.DataFrame) -> None:
+        expected_columns = self._minimal_expected_columns()
+        actual_columns = set(features_df.columns.tolist())
+        if not expected_columns.issubset(actual_columns):
+            raise Exception('Variants table does not contain expected set of columns. '
+                            f'Expected {expected_columns}, actual {actual_columns}')
+
+    @abc.abstractmethod
+    def _minimal_expected_columns(self) -> Set[str]:
         pass
 
     def get_features_table(self) -> pd.DataFrame:
