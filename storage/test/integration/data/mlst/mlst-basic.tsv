@@ -1,0 +1,6 @@
+CFSAN002349.fasta	lmonocytogenes	382	abcZ(1)	bglA(51)	cat(11)	dapE(13)	dat(2)	ldh(5)	lhkA(5)
+CFSAN023463.fasta	lmonocytogenes	382	abcZ(1)	bglA(51)	cat(11)	dapE(13)	dat(2)	ldh(5)	lhkA(5)
+2014C-3598.fasta	ecoli	655	adk(100)	fumC(23)	gyrB(68)	icd(45)	mdh(1)	purA(35)	recA(7)
+2014C-3599.fasta	ecoli	655	adk(100)	fumC(23)	gyrB(68)	icd(45)	mdh(1)	purA(35)	recA(7)
+2014D-0067.fasta	campylobacter	8	aspA(2)	glnA(1)	gltA(1)	glyA(3)	pgm(2)	tkt(1)	uncA(6)
+2014D-0068.fasta	campylobacter	8	aspA(2)	glnA(1)	gltA(1)	glyA(3)	pgm(2)	tkt(1)	uncA(6)
