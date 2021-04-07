@@ -10,3 +10,6 @@ class MLSTFeaturesReader(FeaturesReader):
 
     def _minimal_expected_columns(self) -> Set[str]:
         return {'Sample', 'Scheme', 'Locus', 'Allele'}
+
+    def get_or_create_feature_file(self, sample_name: str):
+        raise Exception('Not implemented')

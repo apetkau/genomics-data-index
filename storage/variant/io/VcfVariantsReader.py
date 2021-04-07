@@ -35,6 +35,9 @@ class VcfVariantsReader(NucleotideFeaturesReader):
     def _drop_extra_columns(self, vcf_df: pd.DataFrame) -> pd.DataFrame:
         return vcf_df
 
+    def get_or_create_feature_file(self, sample_name: str):
+        return self._sample_vcf_map[sample_name]
+
     def sample_feature_files(self) -> Dict[str, Path]:
         return self._sample_vcf_map
 

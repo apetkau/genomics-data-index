@@ -98,3 +98,9 @@ def test_get_variants_table_empty(variants_reader_empty):
     df = variants_reader_empty.get_features_table()
 
     assert 0 == len(df), 'Data has incorrect length'
+
+
+def test_get_or_create_feature_file(variants_reader):
+    file = variants_reader.get_or_create_feature_file('SampleA')
+    assert file.exists()
+    assert 'SampleA' in str(file)
