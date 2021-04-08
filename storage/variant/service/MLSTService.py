@@ -6,7 +6,7 @@ import logging
 from storage.variant.io.FeaturesReader import FeaturesReader
 from storage.variant.service import DatabaseConnection
 from storage.variant.service.SampleService import SampleService
-from storage.variant.service.FeatureService import FeatureService
+from storage.variant.service.FeatureService import FeatureService, AUTO_SCOPE
 from storage.variant.model import Sample
 from storage.variant.SampleSet import SampleSet
 from storage.variant.model import MLSTScheme
@@ -72,6 +72,11 @@ class MLSTService(FeatureService):
 
     def get_correct_reader(self) -> Any:
         return MLSTFeaturesReader
+
+    def _update_scope(self, features_df: pd.DataFrame, feature_scope_name: str) -> pd.DataFrame:
+        if feature_scope_name != AUTO_SCOPE:
+            features_df['Scheme'] = feature_scope_name
+        return features_df
 
     def build_sample_feature_object(self, sample: Sample, features_reader: FeaturesReader,
                                     feature_scope_name: str) -> Any:

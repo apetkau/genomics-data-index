@@ -18,6 +18,8 @@ from storage.variant.io.VariationFile import VariationFile
 
 logger = logging.getLogger(__name__)
 
+AUTO_SCOPE = '__AUTO_SCOPE__'
+
 
 class FeatureService(abc.ABC):
 
@@ -77,11 +79,13 @@ class FeatureService(abc.ABC):
         else:
             return Sample(name=sample_name)
 
-    def insert(self, features_reader: FeaturesReader, feature_scope_name: str = None) -> None:
-        # reference = self._reference_service.find_reference_genome(reference_name)
-        # sample_variant_files = variants_reader.sample_feature_files()
-        # genomic_masked_regions = variants_reader.get_genomic_masked_regions()
+    def _verify_correct_feature_scope(self, feature_scope_name: str) -> None:
+        if feature_scope_name is None:
+            raise Exception('feature_scope_name cannot be None')
+
+    def insert(self, features_reader: FeaturesReader, feature_scope_name: str = AUTO_SCOPE) -> None:
         self._verify_correct_reader(features_reader=features_reader)
+        self._verify_correct_feature_scope(feature_scope_name)
 
         sample_names = features_reader.samples_set()
 
@@ -102,10 +106,14 @@ class FeatureService(abc.ABC):
             self._connection.get_session().add(sample_feature_object)
         self._connection.get_session().commit()
 
-        self.index_features(features_reader=features_reader)
+        self.index_features(features_reader=features_reader, feature_scope_name=feature_scope_name)
 
-    def index_features(self, features_reader: FeaturesReader):
+    def _update_scope(self, features_df: pd.DataFrame, feature_scope_name: str) -> pd.DataFrame:
+        return features_df
+
+    def index_features(self, features_reader: FeaturesReader, feature_scope_name: str) -> None:
         features_df = features_reader.get_features_table()
+        features_df = self._update_scope(features_df, feature_scope_name)
         sample_names = features_reader.samples_set()
         self._connection.get_session().bulk_save_objects(self._create_feature_objects(features_df, sample_names))
         self._connection.get_session().commit()

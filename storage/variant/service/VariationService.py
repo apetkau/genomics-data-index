@@ -67,6 +67,10 @@ class VariationService(FeatureService):
                                  self._sample_service.get_samples_with_variants(feature_scope_name)}
         return len(samples_with_variants.intersection(sample_names)) != 0
 
+    def _verify_correct_feature_scope(self, feature_scope_name: str) -> None:
+        if feature_scope_name is None:
+            raise Exception('feature_scope_name must not be None')
+
     def build_sample_feature_object(self, sample: Sample,
                                     features_reader: FeaturesReader, feature_scope_name: str) -> Any:
         self._verify_correct_reader(features_reader=features_reader)
