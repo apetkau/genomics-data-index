@@ -1,4 +1,4 @@
-from typing import List, Set, Any
+from typing import List, Set, Any, Dict
 import logging
 from pathlib import Path
 
@@ -41,28 +41,26 @@ class VariationService(FeatureService):
             .filter(Sample.name.in_(sample_names)) \
             .all()
 
-    def _create_feature_objects(self, var_df: pd.DataFrame) -> List[Any]:
-        samples_names = set(var_df['SAMPLE'].tolist())
-        sample_name_ids = self._sample_service.find_sample_name_ids(samples_names)
+    def _create_feature_identifier(self, features_df: pd.DataFrame) -> str:
+        return NucleotideVariantsSamples.to_spdi(
+            sequence_name=features_df['CHROM'],
+            position=features_df['POS'],
+            ref=features_df['REF'],
+            alt=features_df['ALT']
+        )
 
-        var_df['SPDI'] = var_df.apply(lambda x: NucleotideVariantsSamples.to_spdi(
-            sequence_name=x['CHROM'],
-            position=x['POS'],
-            ref=x['REF'],
-            alt=x['ALT']
-        ), axis='columns')
-        var_df['SAMPLE_ID'] = var_df.apply(lambda x: sample_name_ids[x['SAMPLE']], axis='columns')
+    def _get_sample_id_series(self, features_df: pd.DataFrame, sample_name_ids: Dict[str, int]) -> pd.Series:
+        return features_df.apply(lambda x: sample_name_ids[x['SAMPLE']], axis='columns')
 
-        index_df = var_df.groupby('SPDI').agg({'TYPE': 'first', 'SAMPLE_ID': SampleSet}).reset_index()
+    def _create_feature_object(self, features_df: pd.DataFrame):
+        return NucleotideVariantsSamples(spdi=features_df['_FEATURE_ID'], var_type=features_df['TYPE'],
+                                         sample_ids=features_df['_SAMPLE_ID'])
 
-        return index_df.apply(lambda x: NucleotideVariantsSamples(
-            spdi=x['SPDI'], var_type=x['TYPE'], sample_ids=x['SAMPLE_ID']),
-            axis='columns').tolist()
+    def get_correct_reader(self) -> Any:
+        return NucleotideFeaturesReader
 
-    def _verify_correct_reader(self, features_reader: FeaturesReader) -> None:
-        if not isinstance(features_reader, NucleotideFeaturesReader):
-            raise Exception(f'features_reader=[{features_reader}] is not of type'
-                            f' {NucleotideFeaturesReader.__name__}')
+    def aggregate_feature_column(self) -> Dict[str, Any]:
+        return {'TYPE': 'first', '_SAMPLE_ID': SampleSet}
 
     def check_samples_have_features(self, sample_names: Set[str], feature_scope_name: str) -> bool:
         samples_with_variants = {sample.name for sample in

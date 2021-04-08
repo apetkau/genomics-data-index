@@ -7,6 +7,7 @@ import pytest
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 from storage.test.integration.variant import sample_dirs, reference_file, regular_vcf_dir, data_dir
+from storage.test.integration.variant import mlst_file_single_scheme
 from storage.test.integration.variant import sourmash_signatures
 from storage.variant.service import DatabaseConnection
 from storage.variant.service.ReferenceService import ReferenceService
@@ -14,6 +15,8 @@ from storage.variant.service.VariationService import VariationService
 from storage.variant.service.CoreAlignmentService import CoreAlignmentService
 from storage.variant.io.SnippyVariantsReader import SnippyVariantsReader
 from storage.variant.io.VcfVariantsReader import VcfVariantsReader
+from storage.variant.io.MLSTFeaturesReader import MLSTFeaturesReader
+from storage.variant.io.BasicMLSTFeaturesReader import BasicMLSTFeaturesReader
 from storage.variant.service.SampleService import SampleService
 from storage.variant.service.TreeService import TreeService
 from storage.variant.service.KmerQueryService import KmerQueryService
@@ -144,3 +147,8 @@ def kmer_service_with_data(database, sample_service) -> KmerService:
 @pytest.fixture
 def kmer_query_service_with_data(sample_service, kmer_service_with_data) -> KmerQueryService:
     return KmerQueryService(sample_service=sample_service)
+
+
+@pytest.fixture
+def mlst_reader_single_scheme() -> MLSTFeaturesReader:
+    return BasicMLSTFeaturesReader(mlst_file=mlst_file_single_scheme)

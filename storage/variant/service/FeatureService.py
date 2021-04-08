@@ -1,4 +1,4 @@
-from typing import List, Set, Any
+from typing import List, Set, Any, Dict
 import abc
 import logging
 from pathlib import Path
@@ -27,8 +27,34 @@ class FeatureService(abc.ABC):
         self._features_dir = features_dir
 
     @abc.abstractmethod
-    def _create_feature_objects(self, features_df: pd.DataFrame) -> List[Any]:
+    def get_correct_reader(self) -> Any:
         pass
+
+    @abc.abstractmethod
+    def _create_feature_identifier(self, features_df: pd.DataFrame) -> str:
+        pass
+
+    @abc.abstractmethod
+    def _get_sample_id_series(self, features_df: pd.DataFrame, sample_name_ids: Dict[str, int]) -> pd.Series:
+        pass
+
+    @abc.abstractmethod
+    def _create_feature_object(self, features_df: pd.DataFrame):
+        pass
+
+    @abc.abstractmethod
+    def aggregate_feature_column(self) -> Dict[str, Any]:
+        pass
+
+    def _create_feature_objects(self, features_df: pd.DataFrame, sample_names: Set[str]) -> List[Any]:
+        sample_name_ids = self._sample_service.find_sample_name_ids(sample_names)
+
+        features_df['_FEATURE_ID'] = features_df.apply(self._create_feature_identifier, axis='columns')
+        features_df['_SAMPLE_ID'] = self._get_sample_id_series(features_df, sample_name_ids)
+
+        index_df = features_df.groupby('_FEATURE_ID').agg(self.aggregate_feature_column()).reset_index()
+
+        return index_df.apply(self._create_feature_object, axis='columns').tolist()
 
     @abc.abstractmethod
     def check_samples_have_features(self, sample_names: Set[str], feature_scope_name: str) -> bool:
@@ -40,9 +66,10 @@ class FeatureService(abc.ABC):
         """
         pass
 
-    @abc.abstractmethod
     def _verify_correct_reader(self, features_reader: FeaturesReader) -> None:
-        pass
+        if not isinstance(features_reader, self.get_correct_reader()):
+            raise Exception(f'features_reader=[{features_reader}] is not of type'
+                            f' {self.get_correct_reader().__name__}')
 
     def _get_or_create_sample(self, sample_name: str) -> Sample:
         if self._sample_service.exists(sample_name):
@@ -79,7 +106,8 @@ class FeatureService(abc.ABC):
 
     def index_features(self, features_reader: FeaturesReader):
         features_df = features_reader.get_features_table()
-        self._connection.get_session().bulk_save_objects(self._create_feature_objects(features_df))
+        sample_names = features_reader.samples_set()
+        self._connection.get_session().bulk_save_objects(self._create_feature_objects(features_df, sample_names))
         self._connection.get_session().commit()
 
     @abc.abstractmethod

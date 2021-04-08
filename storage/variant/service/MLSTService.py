@@ -1,19 +1,30 @@
-from typing import Dict, Set, List
+from typing import Dict, Set, List, Any
 from pathlib import Path
 import pandas as pd
+import logging
 
+from storage.variant.io.FeaturesReader import FeaturesReader
 from storage.variant.service import DatabaseConnection
 from storage.variant.service.SampleService import SampleService
+from storage.variant.service.FeatureService import FeatureService
 from storage.variant.model import Sample
 from storage.variant.SampleSet import SampleSet
 from storage.variant.model import MLSTScheme
 from storage.variant.model import MLSTAllelesSamples
+from storage.variant.model import SampleMLSTAlleles
+from storage.variant.io.MLSTFeaturesReader import MLSTFeaturesReader
 from storage.variant.service.QueryService import verify_columns_match
 
 
-class MLSTService:
+logger = logging.getLogger(__name__)
 
-    def __init__(self, database_connection: DatabaseConnection, sample_service: SampleService):
+
+class MLSTService(FeatureService):
+
+    def __init__(self, database_connection: DatabaseConnection, sample_service: SampleService, mlst_dir: Path):
+        super().__init__(database_connection=database_connection,
+                         features_dir=mlst_dir,
+                         sample_service=sample_service)
         self._database = database_connection
         self._sample_service = sample_service
 
@@ -21,6 +32,15 @@ class MLSTService:
         return self._database.get_session().query(MLSTScheme)\
             .filter(MLSTScheme.name == name)\
             .one()
+
+    def exists_mlst_scheme(self, name: str):
+        return self._connection.get_session().query(MLSTScheme.id).filter_by(name=name).scalar() is not None
+
+    def get_or_create_mlst_scheme(self, name: str) -> MLSTScheme:
+        if self.exists_mlst_scheme(name):
+            return self.find_mlst_scheme(name)
+        else:
+            return MLSTScheme(name=name)
 
     def find_mlst_schemes(self, scheme_names: Set[str]) -> Dict[str, MLSTScheme]:
         schemes = {}
@@ -30,36 +50,35 @@ class MLSTService:
 
         return schemes
 
-    def _create_mlst_alleles(self, mlst_df: pd.DataFrame) -> List[MLSTAllelesSamples]:
-        samples_names = set(mlst_df['Sample'].tolist())
-        sample_name_ids = self._sample_service.find_sample_name_ids(samples_names)
+    def _create_feature_identifier(self, features_df: pd.DataFrame) -> str:
+        return MLSTAllelesSamples.to_sla(
+            scheme_name=features_df['Scheme'],
+            locus=features_df['Locus'],
+            allele=features_df['Allele']
+        )
 
-        mlst_df['SLA'] = mlst_df.apply(lambda x: MLSTAllelesSamples.to_sla(
-            scheme=x['Scheme'],
-            locu=x['Locus'],
-            allele=x['Allele'],
-        ), axis='columns')
-        mlst_df['SAMPLE_ID'] = mlst_df.apply(lambda x: sample_name_ids[x['Sample']], axis='columns')
+    def aggregate_feature_column(self) -> Dict[str, Any]:
+        return {'_SAMPLE_ID': SampleSet}
 
-        index_df = mlst_df.groupby('SLA').agg({'TYPE': 'first', 'SAMPLE_ID': SampleSet}).reset_index()
+    def _get_sample_id_series(self, features_df: pd.DataFrame, sample_name_ids: Dict[str, int]) -> pd.Series:
+        return features_df.apply(lambda x: sample_name_ids[x['Sample']], axis='columns')
 
-        return index_df.apply(lambda x: MLSTAllelesSamples(
-            sla=x['SLA'], sample_ids=x['SAMPLE_ID']),
-            axis='columns').tolist()
+    def _create_feature_object(self, features_df: pd.DataFrame):
+        return MLSTAllelesSamples(sla=features_df['_FEATURE_ID'], sample_ids=features_df['_SAMPLE_ID'])
 
-    # def insert_mlst_results(self, mlst_reader) -> None:
-    #     """
-    #     Inserts MLST results into the database.
-    #     :param mlst_df: The dataframe containing the MLST results.
-    #     :return: None
-    #     """
-    #     if mlst_df is None:
-    #         raise Exception(f'mlst_df is None')
-    #     verify_columns_match({'Sample', 'Scheme', 'Locus', 'Allele'}, mlst_df)
-    #
-    #     schemes = self.find_mlst_schemes(set(mlst_df['Scheme'].tolist()))
-    #     mlst_df['Scheme_obj'] = mlst_df['Scheme'].apply(lambda x: schemes[x])
-    #
-    #     mlst_df = mlst_reader.get_variants_table()
-    #     self._connection.get_session().bulk_save_objects(self._create_mlst_alleles(mlst_df))
-    #     self._connection.get_session().commit()
+    def check_samples_have_features(self, sample_names: Set[str], feature_scope_name: str) -> bool:
+        logger.warning('TODO: implement check_samples_have_features')
+        return False
+
+    def get_correct_reader(self) -> Any:
+        return MLSTFeaturesReader
+
+    def build_sample_feature_object(self, sample: Sample, features_reader: FeaturesReader,
+                                    feature_scope_name: str) -> Any:
+        self._verify_correct_reader(features_reader=features_reader)
+        mlst_reader : MLSTFeaturesReader = features_reader
+
+        mlst_scheme = self.get_or_create_mlst_scheme(feature_scope_name)
+        sample_mlst_alleles = SampleMLSTAlleles(sample=sample, scheme=mlst_scheme)
+
+        return sample_mlst_alleles

@@ -195,6 +195,10 @@ class MLSTAllelesSamples(Base):
     allele = Column(Integer, primary_key=True)
     _sample_ids = Column(LargeBinary(length=MAX_SAMPLE_SET_BYTES))
 
+    def __init__(self, sla: str = None, sample_ids: SampleSet = None):
+        self.sla = sla
+        self.sample_ids = sample_ids
+
     @hybrid_property
     def sample_ids(self) -> SampleSet:
         if self._sample_ids is None:

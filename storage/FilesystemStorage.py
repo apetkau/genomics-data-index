@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 class FilesystemStorage:
-    ALL_SUBDIRECTORIES = ['reference', 'kmer', 'variation']
+    ALL_SUBDIRECTORIES = ['reference', 'kmer', 'variation', 'mlst']
 
     def __init__(self, root_dir: Path):
         self._root_dir = root_dir
@@ -60,3 +60,7 @@ class FilesystemStorage:
     @property
     def variation_dir(self):
         return self._check_make_dir('variation')
+
+    @property
+    def mlst_dir(self):
+        return self._check_make_dir('mlst')
