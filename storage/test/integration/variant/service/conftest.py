@@ -77,8 +77,8 @@ def variation_service(database, reference_service_with_data,
                                    reference_service=reference_service_with_data,
                                    sample_service=sample_service,
                                    variation_dir=filesystem_storage.variation_dir)
-    var_service.insert_variants(reference_name='genome',
-                                variants_reader=snippy_variants_reader)
+    var_service.insert(feature_scope_name='genome',
+                       features_reader=snippy_variants_reader)
     return var_service
 
 
@@ -89,8 +89,8 @@ def variation_service_non_snippy_vcfs(database, reference_service_with_data,
                                    reference_service=reference_service_with_data,
                                    sample_service=sample_service,
                                    variation_dir=filesystem_storage.variation_dir)
-    var_service.insert_variants(reference_name='genome',
-                                variants_reader=regular_variants_reader)
+    var_service.insert(feature_scope_name='genome',
+                       features_reader=regular_variants_reader)
     return var_service
 
 

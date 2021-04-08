@@ -51,6 +51,13 @@ class FeaturesReader(abc.ABC):
         """
         pass
 
+    def samples_set(self) -> Set[str]:
+        """
+        Gets a set of sample names that will be read by this reader.
+        :return: A set of sample names that will be read by this reader.
+        """
+        return set(self.samples_list())
+
     @abc.abstractmethod
     def _read_features_table(self) -> pd.DataFrame:
         pass

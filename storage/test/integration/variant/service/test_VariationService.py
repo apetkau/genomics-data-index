@@ -18,7 +18,7 @@ def test_insert_variants_saved_files(database, snippy_variants_reader, reference
 
     session = database.get_session()
 
-    variation_service.insert_variants(reference_name='genome', variants_reader=snippy_variants_reader)
+    variation_service.insert(feature_scope_name='genome', features_reader=snippy_variants_reader)
 
     samples = session.query(Sample).all()
 
@@ -40,7 +40,7 @@ def test_insert_variants_masked_regions(database, snippy_variants_reader, refere
 
     session = database.get_session()
 
-    variation_service.insert_variants(reference_name='genome', variants_reader=snippy_variants_reader)
+    variation_service.insert(feature_scope_name='genome', features_reader=snippy_variants_reader)
 
     samples = session.query(Sample).all()
 
@@ -58,7 +58,7 @@ def test_insert_variants_examine_variation(database, snippy_variants_reader, ref
                                          variation_dir=filesystem_storage.variation_dir)
     session = database.get_session()
 
-    variation_service.insert_variants(reference_name='genome', variants_reader=snippy_variants_reader)
+    variation_service.insert(feature_scope_name='genome', features_reader=snippy_variants_reader)
 
     sample_name_ids = sample_service.find_sample_name_ids({'SampleA', 'SampleB', 'SampleC'})
     assert 3 == len(sample_name_ids.values())
@@ -100,16 +100,16 @@ def test_insert_variants_duplicates(database, snippy_variants_reader, reference_
     assert 0 == session.query(Sample).count(), 'Incorrect number of Samples'
     assert 0 == session.query(SampleNucleotideVariation).count(), 'Incorrect number of SampleNucleotideVariation'
 
-    variation_service.insert_variants(reference_name='genome', variants_reader=snippy_variants_reader)
+    variation_service.insert(feature_scope_name='genome', features_reader=snippy_variants_reader)
 
     assert 112 == session.query(NucleotideVariantsSamples).count(), 'Incorrect number of variant entries'
     assert 3 == session.query(Sample).count(), 'Incorrect number of Samples'
     assert 3 == session.query(SampleNucleotideVariation).count(), 'Incorrect number of SampleNucleotideVariation'
 
     with pytest.raises(EntityExistsError) as execinfo:
-        variation_service.insert_variants(reference_name='genome', variants_reader=snippy_variants_reader)
+        variation_service.insert(feature_scope_name='genome', features_reader=snippy_variants_reader)
 
-    assert 'Passed samples already have variants for reference genome [genome]' in str(execinfo.value)
+    assert 'Passed samples already have features for feature scope [genome]' in str(execinfo.value)
     assert 112 == session.query(NucleotideVariantsSamples).count(), 'Incorrect number of variant entries'
     assert 3 == session.query(Sample).count(), 'Incorrect number of Samples'
     assert 3 == session.query(SampleNucleotideVariation).count(), 'Incorrect number of SampleNucleotideVariation'
@@ -127,7 +127,7 @@ def test_insert_variants_duplicates_subset(database, snippy_variants_reader, ref
     assert 0 == session.query(Sample).count(), 'Incorrect number of Samples'
     assert 0 == session.query(SampleNucleotideVariation).count(), 'Incorrect number of SampleSequences'
 
-    variation_service.insert_variants(reference_name='genome', variants_reader=snippy_variants_reader)
+    variation_service.insert(feature_scope_name='genome', features_reader=snippy_variants_reader)
 
     assert 112 == session.query(NucleotideVariantsSamples).count(), 'Incorrect number of variant entries'
     assert 3 == session.query(Sample).count(), 'Incorrect number of Samples'
@@ -138,9 +138,9 @@ def test_insert_variants_duplicates_subset(database, snippy_variants_reader, ref
     snippy_variants_reader_subset = SnippyVariantsReader(sample_dirs_subset)
 
     with pytest.raises(EntityExistsError) as execinfo:
-        variation_service.insert_variants(reference_name='genome', variants_reader=snippy_variants_reader_subset)
+        variation_service.insert(feature_scope_name='genome', features_reader=snippy_variants_reader_subset)
 
-    assert 'Passed samples already have variants for reference genome [genome]' in str(execinfo.value)
+    assert 'Passed samples already have features for feature scope [genome]' in str(execinfo.value)
     assert 112 == session.query(NucleotideVariantsSamples).count(), 'Incorrect number of variant entries'
     assert 3 == session.query(Sample).count(), 'Incorrect number of Samples'
     assert 3 == session.query(SampleNucleotideVariation).count(), 'Incorrect number of SampleSequences'
@@ -160,7 +160,7 @@ def test_get_variants_ordered(database, snippy_variants_reader, reference_servic
                                          sample_service=sample_service,
                                          variation_dir=filesystem_storage.variation_dir)
 
-    variation_service.insert_variants(reference_name='genome', variants_reader=snippy_variants_reader)
+    variation_service.insert(feature_scope_name='genome', features_reader=snippy_variants_reader)
 
     sampleA = database.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
     sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()

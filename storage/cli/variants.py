@@ -113,8 +113,8 @@ def load_variants_common(ctx, variants_reader, reference_file, input, build_tree
     else:
         reference_name = get_genome_name(reference_file)
 
-        variation_service.insert_variants(reference_name=reference_name,
-                                          variants_reader=variants_reader)
+        variation_service.insert(feature_scope_name=reference_name,
+                                 features_reader=variants_reader)
         click.echo(f'Loaded variants from [{input}] into database')
 
         if build_tree:
