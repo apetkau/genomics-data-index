@@ -2,8 +2,8 @@
 
 # A framework for the indexing and clustering of pathogen genomes
 
-This project is to design a system which can index large amounts of genomics data and enable rapid querying of this data.
-This is an ongoing (in-development) project and so not all (or even most) of the ideas below are implemented yet.
+This project is to design a system which can index large amounts of genomics data and enable rapid querying of this
+data. This is an ongoing (in-development) project and so not all (or even most) of the ideas below are implemented yet.
 
 The type of genomic features that I will index are:
 
@@ -16,16 +16,18 @@ The goal is to abstract out the common methods to index these different types of
 The types of queries I wish to perform are as follows:
 
 1. Sample-based queries (or sample-relatedness queries)
-   
+
    These could consist of questions such as "list samples related to Sample X"
 
 2. Feature-based queries
 
-   These could consist of questions such as "list all samples with an A -> T mutation at position 500" or "list all samples containing gene xyz (query based on k-mers similar to [BIGSI][] or [COBS][]).
+   These could consist of questions such as "list all samples with an A -> T mutation at position 500" or "list all
+   samples containing gene xyz (query based on k-mers similar to [BIGSI][] or [COBS][]).
 
 3. Cluster-based queries
 
-   These could consist of questions such as "list all samples in cluster X" (where cluster X is defined based on shared features or placement in a phylogenetic tree).
+   These could consist of questions such as "list all samples in cluster X" (where cluster X is defined based on shared
+   features or placement in a phylogenetic tree).
 
 You can see more details in my [Thesis proposal][thesis-proposal].
 
@@ -47,7 +49,8 @@ conda create --name index python=3.8 htslib bcftools==1.12 bedtools fasttree iqt
 conda activate index
 ```
 
-This is an on-going project which will undergo a lot of changes and so the exact conda dependnecies are probably best found in the [CI test script][ci-dependencies] (for now).
+This is an on-going project which will undergo a lot of changes and so the exact conda dependnecies are probably best
+found in the [CI test script][ci-dependencies] (for now).
 
 Once these are installed you can setup the Python package with:
 
@@ -57,8 +60,8 @@ pip install .
 
 In addition, you will also have to setup a relational database (I've been using MariaDB).
 
-Data is stored in two separate locations: in the database and in a directory on the filesystem.
-To configure both and not have to pass command-line arguments all the time you can define a file `config.yaml`.
+Data is stored in two separate locations: in the database and in a directory on the filesystem. To configure both and
+not have to pass command-line arguments all the time you can define a file `config.yaml`.
 
 ```yaml
 database_connection: mysql+pymysql://test:test@localhost/thesis?charset=utf8mb4
@@ -106,7 +109,11 @@ mutation  reference:528:C:CAG  SampleB      2          Present
 ```
 
 [thesis-proposal]: https://drive.google.com/file/d/1sd0WjmwO_KU5wacfpUiPGT20xVOwBc8i/view?usp=sharing
+
 [BIGSI]: https://bigsi.readme.io/
+
 [COBS]: https://github.com/bingmann/cobs
+
 [ci-dependencies]: https://github.com/apetkau/thesis-index/blob/development/.github/workflows/ci-test.yml#L37
+
 [snippy]: https://github.com/tseemann/snippy

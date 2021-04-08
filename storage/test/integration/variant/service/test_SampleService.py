@@ -103,3 +103,15 @@ def test_find_samples_by_variation_ids(database, sample_service, variation_servi
     assert 'reference:5061:G:A' in variant_samples
     assert {'SampleB'} == {s.name for s in variant_samples['reference:5061:G:A']}
     assert {sampleB.id} == {s.id for s in variant_samples['reference:5061:G:A']}
+
+
+def test_get_samples_with_mlst_alleles(sample_service, mlst_service_loaded):
+    samples = sample_service.get_samples_with_mlst_alleles('lmonocytogenes')
+
+    assert {'CFSAN002349', 'CFSAN023463'} == {sample.name for sample in samples}
+
+
+def test_get_samples_with_mlst_alleles2(sample_service, mlst_service_loaded):
+    samples = sample_service.get_samples_with_mlst_alleles('ecoli')
+
+    assert {'2014C-3598', '2014C-3599'} == {sample.name for sample in samples}

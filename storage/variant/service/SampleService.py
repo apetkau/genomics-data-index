@@ -2,6 +2,7 @@ from typing import List, Dict, Set, Union
 
 from storage.variant.SampleSet import SampleSet
 from storage.variant.model import Sample, Reference, ReferenceSequence, NucleotideVariantsSamples
+from storage.variant.model import SampleMLSTAlleles, MLSTScheme
 from storage.variant.service import DatabaseConnection
 
 
@@ -19,6 +20,19 @@ class SampleService:
         samples = self._connection.get_session().query(Sample) \
             .join(Sample.sample_nucleotide_variation) \
             .filter(Reference.name == reference_name) \
+            .all()
+        return samples
+
+    def get_samples_with_mlst_alleles(self, scheme_name: str) -> List[Sample]:
+        """
+        Gets a list of all samples that have MLST alleles associated with the given scheme name.
+        :scheme_name: The scheme name.
+        :return: A list of Samples with MLST alleles with respect to the scheme name, empty list of no Samples.
+        """
+        samples = self._connection.get_session().query(Sample) \
+            .join(Sample.sample_mlst_alleles) \
+            .join(SampleMLSTAlleles.scheme) \
+            .filter(MLSTScheme.name == scheme_name) \
             .all()
         return samples
 

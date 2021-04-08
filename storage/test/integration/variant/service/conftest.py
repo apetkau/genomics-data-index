@@ -22,6 +22,7 @@ from storage.variant.service.TreeService import TreeService
 from storage.variant.service.KmerQueryService import KmerQueryService
 from storage.variant.service.KmerService import KmerService
 from storage.FilesystemStorage import FilesystemStorage
+from storage.variant.service.MLSTService import MLSTService
 
 
 @pytest.fixture
@@ -157,3 +158,13 @@ def mlst_reader_single_scheme() -> MLSTFeaturesReader:
 @pytest.fixture
 def mlst_reader_basic() -> MLSTFeaturesReader:
     return BasicMLSTFeaturesReader(mlst_file=basic_mlst_file)
+
+
+@pytest.fixture
+def mlst_service_loaded(mlst_reader_basic, database, sample_service, filesystem_storage) -> MLSTService:
+    mlst_service = MLSTService(database_connection=database,
+                       sample_service=sample_service,
+                       mlst_dir=filesystem_storage.mlst_dir)
+    mlst_service.insert(features_reader=mlst_reader_basic)
+
+    return mlst_service

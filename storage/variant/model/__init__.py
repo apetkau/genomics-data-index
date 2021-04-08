@@ -165,6 +165,10 @@ class MLSTScheme(Base):
     alleles_dir = Column(String(255))
     sequence_types_file = Column(String(255))
 
+    def __repr__(self):
+        return (f'<MLSTScheme(id={self.id}, name={self.name}, '
+                f'alleles_dir={self.alleles_dir}, sequence_types_file={self.sequence_types_file})>')
+
 
 class SampleMLSTAlleles(Base):
     __tablename__ = 'sample_mlst_alleles'
@@ -186,8 +190,12 @@ class SampleMLSTAlleles(Base):
         else:
             self._alleles_file = str(file)
 
-    sample = relationship('Sample')
+    sample = relationship('Sample', back_populates='sample_mlst_alleles')
     scheme = relationship('MLSTScheme')
+
+    def __repr__(self):
+        return f'<SampleMLSTAlleles(sample_id={self.sample_id}, scheme_id={self.scheme_id}, ' \
+               f'_alleles_file={self._alleles_file})>'
 
 
 class MLSTAllelesSamples(Base):
@@ -245,6 +253,7 @@ class Sample(Base):
     name = Column(String(255))
 
     sample_nucleotide_variation = relationship('SampleNucleotideVariation', back_populates='sample')
+    sample_mlst_alleles = relationship('SampleMLSTAlleles', back_populates='sample')
     sample_kmer_index = relationship('SampleKmerIndex', uselist=False, back_populates='sample')
 
     def __repr__(self):

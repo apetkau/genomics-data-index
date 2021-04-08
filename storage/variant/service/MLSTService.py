@@ -80,9 +80,14 @@ class MLSTService(FeatureService):
     def build_sample_feature_object(self, sample: Sample, features_reader: FeaturesReader,
                                     feature_scope_name: str) -> Any:
         self._verify_correct_reader(features_reader=features_reader)
-        mlst_reader: MLSTFeaturesReader = features_reader
+        mlst_reader : MLSTFeaturesReader = features_reader
 
-        mlst_scheme = self.get_or_create_mlst_scheme(feature_scope_name)
+        if feature_scope_name == AUTO_SCOPE:
+            scheme_name = mlst_reader.get_scheme_for_sample(sample.name)
+        else:
+            scheme_name = feature_scope_name
+
+        mlst_scheme = self.get_or_create_mlst_scheme(scheme_name)
         sample_mlst_alleles = SampleMLSTAlleles(sample=sample, scheme=mlst_scheme)
 
         return sample_mlst_alleles
