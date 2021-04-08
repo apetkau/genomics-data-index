@@ -2,7 +2,6 @@ from pathlib import Path
 from typing import List, Dict
 
 import pandas as pd
-from pandas.api.types import CategoricalDtype
 
 from storage.variant.service.QueryService import QueryFeature
 from storage.variant.service.QueryService import QueryService
@@ -132,7 +131,8 @@ class MutationQueryService(QueryService):
                                                   - variation_samples[feature.spdi] - unknown_counts[feature.spdi]
                 else:
                     unknown_counts[feature.spdi] = 0
-                    absent_counts[feature.spdi] = sequence_sample_counts[feature.sequence_name] - variation_samples[feature.spdi]
+                    absent_counts[feature.spdi] = sequence_sample_counts[feature.sequence_name] - variation_samples[
+                        feature.spdi]
         else:
             unknown_counts = {f.spdi: pd.NA for f in features}
             absent_counts = {f.spdi: sequence_sample_counts[f.sequence_name] - variation_samples[f.spdi]

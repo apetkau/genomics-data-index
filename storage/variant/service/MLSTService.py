@@ -1,20 +1,19 @@
-from typing import Dict, Set, List, Any
-from pathlib import Path
-import pandas as pd
 import logging
+from pathlib import Path
+from typing import Dict, Set, Any
 
-from storage.variant.io.FeaturesReader import FeaturesReader
-from storage.variant.service import DatabaseConnection
-from storage.variant.service.SampleService import SampleService
-from storage.variant.service.FeatureService import FeatureService, AUTO_SCOPE
-from storage.variant.model import Sample
+import pandas as pd
+
 from storage.variant.SampleSet import SampleSet
-from storage.variant.model import MLSTScheme
-from storage.variant.model import MLSTAllelesSamples
-from storage.variant.model import SampleMLSTAlleles
+from storage.variant.io.FeaturesReader import FeaturesReader
 from storage.variant.io.MLSTFeaturesReader import MLSTFeaturesReader
-from storage.variant.service.QueryService import verify_columns_match
-
+from storage.variant.model import MLSTAllelesSamples
+from storage.variant.model import MLSTScheme
+from storage.variant.model import Sample
+from storage.variant.model import SampleMLSTAlleles
+from storage.variant.service import DatabaseConnection
+from storage.variant.service.FeatureService import FeatureService, AUTO_SCOPE
+from storage.variant.service.SampleService import SampleService
 
 logger = logging.getLogger(__name__)
 
@@ -29,8 +28,8 @@ class MLSTService(FeatureService):
         self._sample_service = sample_service
 
     def find_mlst_scheme(self, name: str) -> MLSTScheme:
-        return self._database.get_session().query(MLSTScheme)\
-            .filter(MLSTScheme.name == name)\
+        return self._database.get_session().query(MLSTScheme) \
+            .filter(MLSTScheme.name == name) \
             .one()
 
     def exists_mlst_scheme(self, name: str):
@@ -81,7 +80,7 @@ class MLSTService(FeatureService):
     def build_sample_feature_object(self, sample: Sample, features_reader: FeaturesReader,
                                     feature_scope_name: str) -> Any:
         self._verify_correct_reader(features_reader=features_reader)
-        mlst_reader : MLSTFeaturesReader = features_reader
+        mlst_reader: MLSTFeaturesReader = features_reader
 
         mlst_scheme = self.get_or_create_mlst_scheme(feature_scope_name)
         sample_mlst_alleles = SampleMLSTAlleles(sample=sample, scheme=mlst_scheme)

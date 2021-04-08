@@ -1,7 +1,8 @@
-from typing import Tuple, Union
 from pathlib import Path
+from typing import Tuple, Union
+
 from ete3 import Tree
-from sqlalchemy import Column, Integer, String, ForeignKey, Table, LargeBinary, UnicodeText
+from sqlalchemy import Column, Integer, String, ForeignKey, LargeBinary, UnicodeText
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
@@ -69,7 +70,8 @@ class NucleotideVariantsSamples(Base):
             return str(values[0]), int(values[1]), str(values[2]), str(values[3])
 
     def __repr__(self):
-        return (f'<NucleotideVariantsSamples(spdi={self.spdi}, var_type={self.var_type}, num_samples={len(self.sample_ids)})>')
+        return (
+            f'<NucleotideVariantsSamples(spdi={self.spdi}, var_type={self.var_type}, num_samples={len(self.sample_ids)})>')
 
 
 class Reference(Base):

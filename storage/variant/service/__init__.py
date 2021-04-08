@@ -1,6 +1,6 @@
+import pandas as pd
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-import pandas as pd
 
 from storage.variant.model import Base
 

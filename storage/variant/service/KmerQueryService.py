@@ -3,9 +3,9 @@ from typing import List, Dict
 
 import pandas as pd
 
+from storage.variant.index.KmerSearchManager import KmerSearchManagerSourmash
 from storage.variant.service.QueryService import QueryService
 from storage.variant.service.SampleService import SampleService
-from storage.variant.index.KmerSearchManager import KmerSearchManagerSourmash
 
 
 class KmerQueryService(QueryService):

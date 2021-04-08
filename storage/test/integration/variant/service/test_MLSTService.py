@@ -1,8 +1,7 @@
-from storage.variant.service.MLSTService import MLSTService
+from storage.variant.model import MLSTAllelesSamples
 from storage.variant.model import Sample
 from storage.variant.model import SampleMLSTAlleles
-from storage.variant.model import MLSTAllelesSamples
-from storage.variant.service.FeatureService import AUTO_SCOPE
+from storage.variant.service.MLSTService import MLSTService
 
 
 def test_insert_mlst_results(database, mlst_reader_single_scheme, sample_service, filesystem_storage):

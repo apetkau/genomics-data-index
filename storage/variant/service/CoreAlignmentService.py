@@ -1,18 +1,18 @@
 import copy
 import logging
-import time
-from typing import List, Dict, Generator
-from pathlib import Path
 import tempfile
+import time
+from pathlib import Path
+from typing import List, Dict, Generator
 
+from Bio import SeqIO
 from Bio.Align import MultipleSeqAlignment
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
-from Bio import SeqIO
 
 from storage.variant.MaskedGenomicRegions import MaskedGenomicRegions
 from storage.variant.io.VariationFile import VariationFile
-from storage.variant.model import Sample, Reference, ReferenceSequence, NucleotideVariantsSamples, SampleNucleotideVariation
+from storage.variant.model import SampleNucleotideVariation
 from storage.variant.service import DatabaseConnection
 from storage.variant.service.ReferenceService import ReferenceService
 from storage.variant.service.SampleService import SampleService
@@ -47,7 +47,7 @@ class CoreAlignmentService:
                             core_mask: MaskedGenomicRegions) -> Dict[str, List[int]]:
         variation_files = [v.nucleotide_variants_file for v in sample_variations]
         union_df = VariationFile.union_all_files(variation_files, include_expression='TYPE="SNP"')
-        union_df = union_df.sort_values(['CHROM','POS'])
+        union_df = union_df.sort_values(['CHROM', 'POS'])
         core_positions = {}
         for index, row in union_df.iterrows():
             seq_name = row['CHROM']
@@ -69,7 +69,8 @@ class CoreAlignmentService:
         return Seq(sequence_string)
 
     def _core_alignment_sequence_generator(self, reference_file: Path, core_positions: Dict[str, List[int]],
-                                           sample_variations: List[SampleNucleotideVariation]) -> Generator[Dict[str, SeqRecord], None, None]:
+                                           sample_variations: List[SampleNucleotideVariation]) -> Generator[
+        Dict[str, SeqRecord], None, None]:
         for sample_variation in sample_variations:
             seq_records = {}
 
@@ -86,7 +87,8 @@ class CoreAlignmentService:
             yield seq_records
 
     def _full_alignment_sequence_generator(self, reference_file: Path,
-                                           sample_variations: List[SampleNucleotideVariation]) -> Generator[Dict[str, SeqRecord], None, None]:
+                                           sample_variations: List[SampleNucleotideVariation]) -> Generator[
+        Dict[str, SeqRecord], None, None]:
         for sample_variation in sample_variations:
             seq_records = {}
 
@@ -136,7 +138,7 @@ class CoreAlignmentService:
                     for record in reference_records:
                         sequence_name = record.id
                         core_seq = self._extract_sequence_from_positions(input_seq=record.seq,
-                                                                           positions=core_positions[sequence_name])
+                                                                         positions=core_positions[sequence_name])
                         new_record = SeqRecord(id=reference_name,
                                                seq=core_seq,
                                                description='[reference genome]')
@@ -162,7 +164,8 @@ class CoreAlignmentService:
             for sequence_record in alignment_generator:
                 for sequence in sequence_record:
                     if sequence == reference_name:
-                        raise Exception(f'Data contains a sequence with name [{sequence}], which is the same as the reference genome name')
+                        raise Exception(
+                            f'Data contains a sequence with name [{sequence}], which is the same as the reference genome name')
                     elif sequence not in alignment_seqs:
                         alignment_seqs[sequence] = [sequence_record[sequence]]
                     else:

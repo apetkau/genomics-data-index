@@ -1,6 +1,6 @@
-from typing import List, Set, Any, Dict
 import logging
 from pathlib import Path
+from typing import List, Set, Any, Dict
 
 import pandas as pd
 
@@ -8,13 +8,12 @@ from storage.variant.MaskedGenomicRegions import MaskedGenomicRegions
 from storage.variant.SampleSet import SampleSet
 from storage.variant.io.FeaturesReader import FeaturesReader
 from storage.variant.io.NucleotideFeaturesReader import NucleotideFeaturesReader
+from storage.variant.io.VariationFile import VariationFile
 from storage.variant.model import Sample, SampleNucleotideVariation, NucleotideVariantsSamples
 from storage.variant.service import DatabaseConnection
-from storage.variant.service import EntityExistsError
+from storage.variant.service.FeatureService import FeatureService
 from storage.variant.service.ReferenceService import ReferenceService
 from storage.variant.service.SampleService import SampleService
-from storage.variant.io.VariationFile import VariationFile
-from storage.variant.service.FeatureService import FeatureService
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +73,7 @@ class VariationService(FeatureService):
     def build_sample_feature_object(self, sample: Sample,
                                     features_reader: FeaturesReader, feature_scope_name: str) -> Any:
         self._verify_correct_reader(features_reader=features_reader)
-        variants_reader : NucleotideFeaturesReader = features_reader
+        variants_reader: NucleotideFeaturesReader = features_reader
 
         reference = self._reference_service.find_reference_genome(feature_scope_name)
 

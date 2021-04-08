@@ -1,20 +1,15 @@
-from typing import List, Set, Any, Dict
 import abc
 import logging
 from pathlib import Path
+from typing import List, Set, Any, Dict
 
 import pandas as pd
 
-from storage.variant.MaskedGenomicRegions import MaskedGenomicRegions
-from storage.variant.io import NucleotideFeaturesReader
-from storage.variant.SampleSet import SampleSet
-from storage.variant.model import Sample, SampleNucleotideVariation, NucleotideVariantsSamples
+from storage.variant.io.FeaturesReader import FeaturesReader
+from storage.variant.model import Sample
 from storage.variant.service import DatabaseConnection
 from storage.variant.service import EntityExistsError
-from storage.variant.service.ReferenceService import ReferenceService
-from storage.variant.io.FeaturesReader import FeaturesReader
 from storage.variant.service.SampleService import SampleService
-from storage.variant.io.VariationFile import VariationFile
 
 logger = logging.getLogger(__name__)
 

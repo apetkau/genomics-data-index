@@ -1,7 +1,7 @@
-from pathlib import Path
+import logging
 import os
 import subprocess
-import logging
+from pathlib import Path
 
 import pandas as pd
 
@@ -33,7 +33,8 @@ class FilesystemStorage:
         # This thread (https://stackoverflow.com/questions/1392413/calculating-a-directorys-size-using-python/1392549)
         # has a lot of different implementations but they all have complexities with symlinks, subdirectories,
         # broken links, etc.
-        logger.warning('A reminder to myself to look for a Python solution for directory sizes (instead of running `du`)')
+        logger.warning(
+            'A reminder to myself to look for a Python solution for directory sizes (instead of running `du`)')
 
         sizes_list = []
         for dname in self.ALL_SUBDIRECTORIES:

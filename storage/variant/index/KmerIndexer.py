@@ -1,9 +1,9 @@
-from typing import List, Union, Tuple, Dict
 import abc
-from pathlib import Path
 import logging
 import os
 import time
+from pathlib import Path
+from typing import List, Union, Tuple, Dict
 
 from storage.variant.util import execute_commands
 

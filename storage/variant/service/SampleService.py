@@ -1,8 +1,8 @@
 from typing import List, Dict, Set, Union
 
+from storage.variant.SampleSet import SampleSet
 from storage.variant.model import Sample, Reference, ReferenceSequence, NucleotideVariantsSamples
 from storage.variant.service import DatabaseConnection
-from storage.variant.SampleSet import SampleSet
 
 
 class SampleService:
@@ -65,20 +65,20 @@ class SampleService:
         return [sample.name for sample in samples]
 
     def get_sample(self, sample_name: str) -> Sample:
-        return self._connection.get_session().query(Sample)\
-            .filter(Sample.name == sample_name)\
+        return self._connection.get_session().query(Sample) \
+            .filter(Sample.name == sample_name) \
             .one()
 
     def exists(self, sample_name: str):
-        return self._connection.get_session().query(Sample)\
-            .filter(Sample.name == sample_name).count() > 0
+        return self._connection.get_session().query(Sample) \
+                   .filter(Sample.name == sample_name).count() > 0
 
     def find_samples_by_ids(self, sample_ids: Union[List[int], SampleSet]) -> List[Sample]:
         if isinstance(sample_ids, SampleSet):
             sample_ids = list(sample_ids)
 
-        return self._connection.get_session().query(Sample)\
-            .filter(Sample.id.in_(sample_ids))\
+        return self._connection.get_session().query(Sample) \
+            .filter(Sample.id.in_(sample_ids)) \
             .all()
 
     def _get_variants_samples_by_variation_ids(self, variation_ids: List[str]) -> List[NucleotideVariantsSamples]:

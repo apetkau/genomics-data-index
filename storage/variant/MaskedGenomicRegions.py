@@ -1,11 +1,12 @@
 from __future__ import annotations
-from typing import List, Set, Dict
-import tempfile
 
+import tempfile
 from pathlib import Path
-from pybedtools import BedTool
-from Bio.SeqRecord import SeqRecord
+from typing import List, Set, Dict
+
 from Bio import SeqIO
+from Bio.SeqRecord import SeqRecord
+from pybedtools import BedTool
 
 
 class MaskedGenomicRegions:

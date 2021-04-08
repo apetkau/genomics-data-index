@@ -1,11 +1,11 @@
 import gzip
+import logging
+import subprocess
 from functools import partial
 from mimetypes import guess_type
 from os.path import basename, splitext
 from pathlib import Path
 from typing import Tuple, List
-import subprocess
-import logging
 
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
