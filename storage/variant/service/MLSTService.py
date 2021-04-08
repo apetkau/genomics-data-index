@@ -66,8 +66,9 @@ class MLSTService(FeatureService):
         return MLSTAllelesSamples(sla=features_df['_FEATURE_ID'], sample_ids=features_df['_SAMPLE_ID'])
 
     def check_samples_have_features(self, sample_names: Set[str], feature_scope_name: str) -> bool:
-        logger.warning('TODO: implement check_samples_have_features')
-        return False
+        samples_with_mlst = {sample.name for sample in
+                                 self._sample_service.get_samples_with_mlst_alleles(feature_scope_name)}
+        return len(samples_with_mlst.intersection(sample_names)) != 0
 
     def get_correct_reader(self) -> Any:
         return MLSTFeaturesReader
