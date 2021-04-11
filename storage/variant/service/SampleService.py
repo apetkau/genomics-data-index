@@ -4,6 +4,7 @@ from storage.variant.SampleSet import SampleSet
 from storage.variant.model import Sample, Reference, ReferenceSequence, NucleotideVariantsSamples
 from storage.variant.model import SampleMLSTAlleles, MLSTScheme
 from storage.variant.service import DatabaseConnection
+from storage.variant.service.QueryService import QueryFeature
 
 
 class SampleService:
@@ -101,6 +102,27 @@ class SampleService:
             .all()
 
         return variants
+
+    def _get_feature_type(self, features: List[QueryFeature]) -> str:
+        feature_types = {type(f).__name__ for f in features}
+
+        if len(feature_types) != 1:
+            raise Exception(f'Should only be one feature type but instead got: {feature_types}.')
+        else:
+            return feature_types.pop()
+
+    def find_samples_by_features(self, features: List[QueryFeature]) -> Dict[str, List[Sample]]:
+        feature_type = self._get_feature_type(features)
+        print(feature_type)
+
+        feature_ids = {f.id for f in features}
+
+        if feature_type == 'QueryFeatureMutation':
+            variants = self._get_variants_samples_by_variation_ids(feature_ids)
+
+            return {v.spdi: self.find_samples_by_ids(v.sample_ids) for v in variants}
+        else:
+            raise Exception(f'Invalid feature type {feature_type}')
 
     def count_samples_by_variation_ids(self, variation_ids: List[str]) -> Dict[str, List[Sample]]:
         variants = self._get_variants_samples_by_variation_ids(variation_ids)

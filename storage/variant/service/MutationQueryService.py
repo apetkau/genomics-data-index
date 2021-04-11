@@ -1,10 +1,10 @@
 from pathlib import Path
-from typing import List, Dict
+from typing import List, Dict, Any
 
 import pandas as pd
 
 from storage.variant.service.QueryService import QueryFeature
-from storage.variant.service.QueryService import QueryService
+from storage.variant.service.FullFeatureQueryService import FullFeatureQueryService
 from storage.variant.service.ReferenceService import ReferenceService
 from storage.variant.service.SampleService import SampleService
 from storage.variant.service.TreeService import TreeService
@@ -23,7 +23,7 @@ class QueryFeatureMutation(QueryFeature):
         self._alt = alt
 
     @property
-    def spdi(self):
+    def id(self):
         return self._spdi
 
     @property
@@ -51,15 +51,14 @@ class QueryFeatureMutation(QueryFeature):
         return self._alt
 
 
-class MutationQueryService(QueryService):
+class MutationQueryService(FullFeatureQueryService):
 
     def __init__(self, reference_service: ReferenceService,
                  sample_service: SampleService,
                  tree_service: TreeService):
-        super().__init__()
+        super().__init__(sample_service)
         self._tree_service = tree_service
         self._reference_service = reference_service
-        self._sample_service = sample_service
 
     def _find_matches_internal(self, sample_names: List[str], distance_threshold: float = None) -> pd.DataFrame:
         sample_distances = []
@@ -103,12 +102,15 @@ class MutationQueryService(QueryService):
 
         return matches_df
 
+    def get_correct_query_feature(self) -> Any:
+        return QueryFeatureMutation
+
     def _count_by_features_internal(self, features: List[QueryFeature], include_unknown: bool) -> pd.DataFrame:
         for feature in features:
             if not isinstance(feature, QueryFeatureMutation):
                 raise Exception(f'feature=[{feature}] is not of type QueryFeatureMutation')
 
-        variation_ids = [f.spdi for f in features]
+        variation_ids = [f.id for f in features]
         variation_samples = self._sample_service.count_samples_by_variation_ids(variation_ids)
         sequence_name_set = {f.sequence_name for f in features}
 
@@ -125,24 +127,24 @@ class MutationQueryService(QueryService):
             unknown_counts = {}
             absent_counts = {}
             for feature in features:
-                if feature.spdi in grouped_df.index:
-                    unknown_counts[feature.spdi] = grouped_df.loc[feature.spdi].values[0]
-                    absent_counts[feature.spdi] = sequence_sample_counts[feature.sequence_name] \
-                                                  - variation_samples[feature.spdi] - unknown_counts[feature.spdi]
+                if feature.id in grouped_df.index:
+                    unknown_counts[feature.id] = grouped_df.loc[feature.id].values[0]
+                    absent_counts[feature.id] = sequence_sample_counts[feature.sequence_name] \
+                                                  - variation_samples[feature.id] - unknown_counts[feature.id]
                 else:
-                    unknown_counts[feature.spdi] = 0
-                    absent_counts[feature.spdi] = sequence_sample_counts[feature.sequence_name] - variation_samples[
-                        feature.spdi]
+                    unknown_counts[feature.id] = 0
+                    absent_counts[feature.id] = sequence_sample_counts[feature.sequence_name] - variation_samples[
+                        feature.id]
         else:
-            unknown_counts = {f.spdi: pd.NA for f in features}
-            absent_counts = {f.spdi: sequence_sample_counts[f.sequence_name] - variation_samples[f.spdi]
+            unknown_counts = {f.id: pd.NA for f in features}
+            absent_counts = {f.id: sequence_sample_counts[f.sequence_name] - variation_samples[f.id]
                              for f in features}
 
         data = [{
-            'Feature': f.spdi,
-            'Present': variation_samples[f.spdi],
-            'Absent': absent_counts[f.spdi],
-            'Unknown': unknown_counts[f.spdi],
+            'Feature': f.id,
+            'Present': variation_samples[f.id],
+            'Absent': absent_counts[f.id],
+            'Unknown': unknown_counts[f.id],
             'Total': sequence_sample_counts[f.sequence_name]
         } for f in features]
 
@@ -162,29 +164,9 @@ class MutationQueryService(QueryService):
             for sample_variation in reference.sample_nucleotide_variation:
                 masked_regions = sample_variation.masked_regions
                 if masked_regions.overlaps_range(feature.sequence_name, feature.start, feature.stop):
-                    data.append([feature.spdi, sample_variation.sample.name, sample_variation.sample.id, 'Unknown'])
+                    data.append([feature.id, sample_variation.sample.name, sample_variation.sample.id, 'Unknown'])
 
         return pd.DataFrame(data, columns=['Feature', 'Sample Name', 'Sample ID', 'Status'])
-
-    def _find_by_features_internal(self, features: List[QueryFeature], include_unknown: bool) -> pd.DataFrame:
-        for feature in features:
-            if not isinstance(feature, QueryFeatureMutation):
-                raise Exception(f'feature=[{feature}] is not of type QueryFeatureMutation')
-
-        variation_ids = [f.spdi for f in features]
-        variation_samples = self._sample_service.find_samples_by_variation_ids(variation_ids)
-
-        data = []
-        for vid in variation_samples:
-            for sample in variation_samples[vid]:
-                data.append([vid, sample.name, sample.id, 'Present'])
-
-        results_df = pd.DataFrame(data=data, columns=['Feature', 'Sample Name', 'Sample ID', 'Status'])
-        if include_unknown:
-            unknown_features_df = self._get_unknown_features(features)
-            results_df = pd.concat([results_df, unknown_features_df])
-
-        return results_df.sort_values(['Feature', 'Sample Name'])
 
     def _find_matches_genome_files_internal(self, sample_reads: Dict[str, List[Path]],
                                             distance_threshold: float = None) -> pd.DataFrame:
