@@ -27,7 +27,7 @@ class QueryFeatureMutation(QueryFeature):
         return self._spdi
 
     @property
-    def sequence_name(self):
+    def scope(self):
         return self._seq_name
 
     @property
@@ -105,14 +105,8 @@ class MutationQueryService(FullFeatureQueryService):
     def get_correct_query_feature(self) -> Any:
         return QueryFeatureMutation
 
-    def _count_by_features_internal(self, features: List[QueryFeature], include_unknown: bool) -> pd.DataFrame:
-        for feature in features:
-            if not isinstance(feature, QueryFeatureMutation):
-                raise Exception(f'feature=[{feature}] is not of type QueryFeatureMutation')
-
-        variation_ids = [f.id for f in features]
-        variation_samples = self._sample_service.count_samples_by_variation_ids(variation_ids)
-        sequence_name_set = {f.sequence_name for f in features}
+    def _get_feature_scope_sample_counts(self, features: List[QueryFeature]) -> Dict[str, int]:
+        sequence_name_set = {f.scope for f in features}
 
         sequence_reference_map = {n: self._reference_service.find_reference_for_sequence(n)
                                   for n in sequence_name_set}
@@ -121,49 +115,17 @@ class MutationQueryService(FullFeatureQueryService):
                 sequence_reference_map[n].name) for n in sequence_reference_map
         }
 
-        if include_unknown:
-            unknown_features_df = self._get_unknown_features(features)
-            grouped_df = unknown_features_df.groupby('Feature').agg('count')
-            unknown_counts = {}
-            absent_counts = {}
-            for feature in features:
-                if feature.id in grouped_df.index:
-                    unknown_counts[feature.id] = grouped_df.loc[feature.id].values[0]
-                    absent_counts[feature.id] = sequence_sample_counts[feature.sequence_name] \
-                                                  - variation_samples[feature.id] - unknown_counts[feature.id]
-                else:
-                    unknown_counts[feature.id] = 0
-                    absent_counts[feature.id] = sequence_sample_counts[feature.sequence_name] - variation_samples[
-                        feature.id]
-        else:
-            unknown_counts = {f.id: pd.NA for f in features}
-            absent_counts = {f.id: sequence_sample_counts[f.sequence_name] - variation_samples[f.id]
-                             for f in features}
-
-        data = [{
-            'Feature': f.id,
-            'Present': variation_samples[f.id],
-            'Absent': absent_counts[f.id],
-            'Unknown': unknown_counts[f.id],
-            'Total': sequence_sample_counts[f.sequence_name]
-        } for f in features]
-
-        count_df = pd.DataFrame(data=data)
-        count_df['% Present'] = 100 * count_df['Present'] / count_df['Total']
-        count_df['% Absent'] = 100 * count_df['Absent'] / count_df['Total']
-        count_df['% Unknown'] = 100 * count_df['Unknown'] / count_df['Total']
-
-        return count_df.sort_values('Feature')
+        return sequence_sample_counts
 
     def _get_unknown_features(self, features: List[QueryFeature]) -> pd.DataFrame:
         data = []
         for feature in features:
-            reference = self._reference_service.find_reference_for_sequence(feature.sequence_name)
+            reference = self._reference_service.find_reference_for_sequence(feature.scope)
 
             # TODO: I'm doing linear search over all samples, this could be improved
             for sample_variation in reference.sample_nucleotide_variation:
                 masked_regions = sample_variation.masked_regions
-                if masked_regions.overlaps_range(feature.sequence_name, feature.start, feature.stop):
+                if masked_regions.overlaps_range(feature.scope, feature.start, feature.stop):
                     data.append([feature.id, sample_variation.sample.name, sample_variation.sample.id, 'Unknown'])
 
         return pd.DataFrame(data, columns=['Feature', 'Sample Name', 'Sample ID', 'Status'])

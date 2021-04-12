@@ -1,5 +1,6 @@
 from storage.variant.SampleSet import SampleSet
 from storage.variant.model import Sample
+from storage.variant.service.MutationQueryService import QueryFeatureMutation
 
 
 def test_samples_with_variants(sample_service, variation_service):
@@ -103,6 +104,25 @@ def test_find_samples_by_variation_ids(database, sample_service, variation_servi
     assert 'reference:5061:G:A' in variant_samples
     assert {'SampleB'} == {s.name for s in variant_samples['reference:5061:G:A']}
     assert {sampleB.id} == {s.id for s in variant_samples['reference:5061:G:A']}
+
+
+def test_count_samples_by_variation_features_single_feature(sample_service, variation_service):
+    features = [QueryFeatureMutation('reference:5061:G:A')]
+
+    variant_counts = sample_service.count_samples_by_features(features)
+
+    assert 1 == len(variant_counts)
+    assert 1 == variant_counts['reference:5061:G:A']
+
+
+def test_count_samples_by_variation_features_multiple_features(sample_service, variation_service):
+    features = [QueryFeatureMutation('reference:5061:G:A'), QueryFeatureMutation('reference:3063:A:ATGCAGC')]
+
+    variant_counts = sample_service.count_samples_by_features(features)
+
+    assert 2 == len(variant_counts)
+    assert 1 == variant_counts['reference:5061:G:A']
+    assert 2 == variant_counts['reference:3063:A:ATGCAGC']
 
 
 def test_get_samples_with_mlst_alleles(sample_service, mlst_service_loaded):

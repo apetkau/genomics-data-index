@@ -21,6 +21,11 @@ class QueryFeature(abc.ABC):
     def id(self):
         pass
 
+    @property
+    @abc.abstractmethod
+    def scope(self):
+        pass
+
 
 class QueryService(abc.ABC):
 

@@ -1,4 +1,4 @@
-from typing import List, Any
+from typing import List, Any, Dict
 import abc
 
 import pandas as pd
@@ -38,6 +38,50 @@ class FullFeatureQueryService(QueryService):
             results_df = pd.concat([results_df, unknown_features_df])
 
         return results_df.sort_values(['Feature', 'Sample Name'])
+
+    @abc.abstractmethod
+    def _get_feature_scope_sample_counts(self, features: List[QueryFeature]) -> Dict[str, int]:
+        pass
+
+    def _count_by_features_internal(self, features: List[QueryFeature], include_unknown: bool) -> pd.DataFrame:
+        self.validate_query_features(features)
+
+        feature_sample_counts = self._sample_service.count_samples_by_features(features)
+        feature_scope_sample_counts = self._get_feature_scope_sample_counts(features)
+
+        if include_unknown:
+            unknown_features_df = self._get_unknown_features(features)
+            grouped_df = unknown_features_df.groupby('Feature').agg('count')
+            unknown_counts = {}
+            absent_counts = {}
+            for feature in features:
+                if feature.id in grouped_df.index:
+                    unknown_counts[feature.id] = grouped_df.loc[feature.id].values[0]
+                    absent_counts[feature.id] = feature_scope_sample_counts[feature.scope] \
+                                                - feature_sample_counts[feature.id] - unknown_counts[feature.id]
+                else:
+                    unknown_counts[feature.id] = 0
+                    absent_counts[feature.id] = feature_scope_sample_counts[feature.scope] - feature_sample_counts[
+                        feature.id]
+        else:
+            unknown_counts = {f.id: pd.NA for f in features}
+            absent_counts = {f.id: feature_scope_sample_counts[f.scope] - feature_sample_counts[f.id]
+                             for f in features}
+
+        data = [{
+            'Feature': f.id,
+            'Present': feature_sample_counts[f.id],
+            'Absent': absent_counts[f.id],
+            'Unknown': unknown_counts[f.id],
+            'Total': feature_scope_sample_counts[f.scope]
+        } for f in features]
+
+        count_df = pd.DataFrame(data=data)
+        count_df['% Present'] = 100 * count_df['Present'] / count_df['Total']
+        count_df['% Absent'] = 100 * count_df['Absent'] / count_df['Total']
+        count_df['% Unknown'] = 100 * count_df['Unknown'] / count_df['Total']
+
+        return count_df.sort_values('Feature')
 
     @abc.abstractmethod
     def _get_unknown_features(self, features: List[QueryFeature]) -> pd.DataFrame:

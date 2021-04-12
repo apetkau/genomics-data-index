@@ -113,9 +113,8 @@ class SampleService:
 
     def find_samples_by_features(self, features: List[QueryFeature]) -> Dict[str, List[Sample]]:
         feature_type = self._get_feature_type(features)
-        print(feature_type)
 
-        feature_ids = {f.id for f in features}
+        feature_ids = list({f.id for f in features})
 
         if feature_type == 'QueryFeatureMutation':
             variants = self._get_variants_samples_by_variation_ids(feature_ids)
@@ -124,10 +123,17 @@ class SampleService:
         else:
             raise Exception(f'Invalid feature type {feature_type}')
 
-    def count_samples_by_variation_ids(self, variation_ids: List[str]) -> Dict[str, List[Sample]]:
-        variants = self._get_variants_samples_by_variation_ids(variation_ids)
+    def count_samples_by_features(self, features: List[QueryFeature]) -> Dict[str, List[Sample]]:
+        feature_type = self._get_feature_type(features)
 
-        return {v.spdi: len(v.sample_ids) for v in variants}
+        feature_ids = list({f.id for f in features})
+
+        if feature_type == 'QueryFeatureMutation':
+            variants = self._get_variants_samples_by_variation_ids(feature_ids)
+
+            return {v.spdi: len(v.sample_ids) for v in variants}
+        else:
+            raise Exception(f'Invalid feature type {feature_type}')
 
     def find_samples_by_variation_ids(self, variation_ids: List[str]) -> Dict[str, List[Sample]]:
         variants = self._get_variants_samples_by_variation_ids(variation_ids)
