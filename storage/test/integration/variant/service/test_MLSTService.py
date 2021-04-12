@@ -100,8 +100,6 @@ def test_insert_mlst_results_multiple_schemes_override_scheme(database, mlst_rea
 
 
 def test_double_insert_mlst(database, mlst_reader_single_scheme, sample_service, filesystem_storage):
-    num_loci = 7
-
     mlst_service = MLSTService(database_connection=database,
                                sample_service=sample_service,
                                mlst_dir=filesystem_storage.mlst_dir)
