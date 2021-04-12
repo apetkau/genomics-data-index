@@ -203,6 +203,7 @@ class MLSTAllelesSamples(Base):
     scheme = Column(String(255), primary_key=True)
     locus = Column(String(255), primary_key=True)
     allele = Column(Integer, primary_key=True)
+    _sla = Column('sla', String(255))
     _sample_ids = Column(LargeBinary(length=MAX_SAMPLE_SET_BYTES))
 
     def __init__(self, sla: str = None, sample_ids: SampleSet = None):
@@ -230,6 +231,7 @@ class MLSTAllelesSamples(Base):
     @sla.setter
     def sla(self, sla_value: str):
         self.scheme, self.locus, self.allele = self.from_sla(sla_value)
+        self._sla = sla_value
 
     @classmethod
     def to_sla(cls, scheme_name: str, locus: str, allele: str) -> str:

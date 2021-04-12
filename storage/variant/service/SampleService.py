@@ -2,7 +2,7 @@ from typing import List, Dict, Set, Union
 
 from storage.variant.SampleSet import SampleSet
 from storage.variant.model import Sample, Reference, ReferenceSequence, NucleotideVariantsSamples
-from storage.variant.model import SampleMLSTAlleles, MLSTScheme
+from storage.variant.model import SampleMLSTAlleles, MLSTScheme, MLSTAllelesSamples
 from storage.variant.service import DatabaseConnection
 from storage.variant.service.QueryService import QueryFeature
 
@@ -65,6 +65,9 @@ class SampleService:
     def count_samples_associated_with_reference(self, reference_name: str) -> int:
         return len(self.get_samples_associated_with_reference(reference_name))
 
+    def count_samples_associated_with_mlst_scheme(self, scheme_name: str) -> int:
+        return len(self.get_samples_with_mlst_alleles(scheme_name))
+
     def get_samples(self) -> List[Sample]:
         return self._connection.get_session().query(Sample).all()
 
@@ -103,6 +106,13 @@ class SampleService:
 
         return variants
 
+    def _get_mlst_samples_by_mlst_allele_ids(self, mlst_allele_ids: List[str]) -> List[MLSTAllelesSamples]:
+        mlst_alleles = self._connection.get_session().query(MLSTAllelesSamples) \
+            .filter(MLSTAllelesSamples._sla.in_(mlst_allele_ids)) \
+            .all()
+
+        return mlst_alleles
+
     def _get_feature_type(self, features: List[QueryFeature]) -> str:
         feature_types = {type(f).__name__ for f in features}
 
@@ -120,6 +130,10 @@ class SampleService:
             variants = self._get_variants_samples_by_variation_ids(feature_ids)
 
             return {v.spdi: self.find_samples_by_ids(v.sample_ids) for v in variants}
+        elif feature_type == 'QueryFeatureMLST':
+            mlst_alleles = self._get_mlst_samples_by_mlst_allele_ids(feature_ids)
+
+            return {a.sla: self.find_samples_by_ids(a.sample_ids) for a in mlst_alleles}
         else:
             raise Exception(f'Invalid feature type {feature_type}')
 
@@ -132,13 +146,12 @@ class SampleService:
             variants = self._get_variants_samples_by_variation_ids(feature_ids)
 
             return {v.spdi: len(v.sample_ids) for v in variants}
+        elif feature_type == 'QueryFeatureMLST':
+            mlst_alleles = self._get_mlst_samples_by_mlst_allele_ids(feature_ids)
+
+            return {a.sla: len(a.sample_ids) for a in mlst_alleles}
         else:
             raise Exception(f'Invalid feature type {feature_type}')
-
-    def find_samples_by_variation_ids(self, variation_ids: List[str]) -> Dict[str, List[Sample]]:
-        variants = self._get_variants_samples_by_variation_ids(variation_ids)
-
-        return {v.spdi: self.find_samples_by_ids(v.sample_ids) for v in variants}
 
     def find_sample_name_ids(self, sample_names: Set[str]) -> Dict[str, int]:
         """

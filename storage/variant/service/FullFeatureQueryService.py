@@ -1,4 +1,4 @@
-from typing import List, Any, Dict
+from typing import List, Any, Dict, Set
 import abc
 
 import pandas as pd
@@ -40,14 +40,16 @@ class FullFeatureQueryService(QueryService):
         return results_df.sort_values(['Feature', 'Sample Name'])
 
     @abc.abstractmethod
-    def _get_feature_scope_sample_counts(self, features: List[QueryFeature]) -> Dict[str, int]:
+    def _get_feature_scope_sample_counts(self, feature_scopes: Set[str]) -> Dict[str, int]:
         pass
 
     def _count_by_features_internal(self, features: List[QueryFeature], include_unknown: bool) -> pd.DataFrame:
         self.validate_query_features(features)
 
         feature_sample_counts = self._sample_service.count_samples_by_features(features)
-        feature_scope_sample_counts = self._get_feature_scope_sample_counts(features)
+
+        scope_set = {f.scope for f in features}
+        feature_scope_sample_counts = self._get_feature_scope_sample_counts(scope_set)
 
         if include_unknown:
             unknown_features_df = self._get_unknown_features(features)

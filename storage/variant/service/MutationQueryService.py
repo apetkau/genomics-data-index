@@ -1,5 +1,5 @@
+from typing import List, Dict, Any, Set
 from pathlib import Path
-from typing import List, Dict, Any
 
 import pandas as pd
 
@@ -105,11 +105,9 @@ class MutationQueryService(FullFeatureQueryService):
     def get_correct_query_feature(self) -> Any:
         return QueryFeatureMutation
 
-    def _get_feature_scope_sample_counts(self, features: List[QueryFeature]) -> Dict[str, int]:
-        sequence_name_set = {f.scope for f in features}
-
+    def _get_feature_scope_sample_counts(self, feature_scopes: Set[str]) -> Dict[str, int]:
         sequence_reference_map = {n: self._reference_service.find_reference_for_sequence(n)
-                                  for n in sequence_name_set}
+                                  for n in feature_scopes}
         sequence_sample_counts = {
             n: self._sample_service.count_samples_associated_with_reference(
                 sequence_reference_map[n].name) for n in sequence_reference_map

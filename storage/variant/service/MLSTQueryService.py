@@ -1,9 +1,10 @@
 from pathlib import Path
-from typing import List, Dict
+from typing import List, Dict, Any, Set
 
 import pandas as pd
 
-from storage.variant.service.QueryService import QueryService, QueryFeature
+from storage.variant.service.QueryService import QueryFeature
+from storage.variant.service.FullFeatureQueryService import FullFeatureQueryService
 from storage.variant.service.SampleService import SampleService
 from storage.variant.service.MLSTService import MLSTService
 
@@ -24,7 +25,7 @@ class QueryFeatureMLST(QueryFeature):
         return self._sla
 
     @property
-    def scheme(self):
+    def scope(self):
         return self._scheme
 
     @property
@@ -36,26 +37,38 @@ class QueryFeatureMLST(QueryFeature):
         return self._allele
 
 
-class MLSTQueryService(QueryService):
+class MLSTQueryService(FullFeatureQueryService):
 
     def __init__(self, mlst_service: MLSTService,
                  sample_service: SampleService):
-        super().__init__()
+        super().__init__(sample_service=sample_service)
         self._mlst_service = mlst_service
-        self._sample_service = sample_service
+
+    def get_correct_query_feature(self) -> Any:
+        return QueryFeatureMLST
+
+    def _get_feature_scope_sample_counts(self, feature_scopes: Set[str]) -> Dict[str, int]:
+        scheme_sample_counts = {
+            scope: self._sample_service.count_samples_associated_with_mlst_scheme(scope) for scope in feature_scopes
+        }
+
+        return scheme_sample_counts
+
+    def _get_unknown_features(self, features: List[QueryFeature]) -> pd.DataFrame:
+        raise Exception('Not implemented')
 
     def _find_matches_genome_files_internal(self, sample_reads: Dict[str, List[Path]],
                                             distance_threshold: float = None) -> pd.DataFrame:
-        pass
+        raise Exception('Not implemented')
 
     def _find_matches_internal(self, sample_names: List[str], distance_threshold: float):
-        pass
+        raise Exception('Not implemented')
 
     def _pairwise_distance_internal(self, samples: List[str]) -> pd.DataFrame:
-        pass
+        raise Exception('Not implemented')
 
     def _differences_between_genomes_internal(self, sample1: str, sample2: str):
-        pass
+        raise Exception('Not implemented')
 
     def get_data_type(self) -> str:
         return 'mlst'
