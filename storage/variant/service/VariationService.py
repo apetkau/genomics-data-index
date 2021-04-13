@@ -7,8 +7,8 @@ import pandas as pd
 from storage.variant.MaskedGenomicRegions import MaskedGenomicRegions
 from storage.variant.SampleSet import SampleSet
 from storage.variant.io.FeaturesReader import FeaturesReader
-from storage.variant.io.NucleotideFeaturesReader import NucleotideFeaturesReader
-from storage.variant.io.VariationFile import VariationFile
+from storage.variant.io.mutation.NucleotideFeaturesReader import NucleotideFeaturesReader
+from storage.variant.io.mutation.VariationFile import VariationFile
 from storage.variant.model import Sample, SampleNucleotideVariation, NucleotideVariantsSamples
 from storage.variant.service import DatabaseConnection
 from storage.variant.service.FeatureService import FeatureService

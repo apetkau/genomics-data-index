@@ -7,16 +7,16 @@ import pytest
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 from storage.test.integration.variant import sample_dirs, reference_file, regular_vcf_dir, data_dir
-from storage.test.integration.variant import mlst_file_single_scheme, basic_mlst_file
+from storage.test.integration.variant import mlst_file_single_scheme, basic_mlst_file, mlst_file_unknown
 from storage.test.integration.variant import sourmash_signatures
 from storage.variant.service import DatabaseConnection
 from storage.variant.service.ReferenceService import ReferenceService
 from storage.variant.service.VariationService import VariationService
 from storage.variant.service.CoreAlignmentService import CoreAlignmentService
-from storage.variant.io.SnippyVariantsReader import SnippyVariantsReader
-from storage.variant.io.VcfVariantsReader import VcfVariantsReader
-from storage.variant.io.MLSTFeaturesReader import MLSTFeaturesReader
-from storage.variant.io.BasicMLSTFeaturesReader import BasicMLSTFeaturesReader
+from storage.variant.io.mutation.SnippyVariantsReader import SnippyVariantsReader
+from storage.variant.io.mutation.VcfVariantsReader import VcfVariantsReader
+from storage.variant.io.mlst.MLSTFeaturesReader import MLSTFeaturesReader
+from storage.variant.io.mlst.MLSTTSeemannFeaturesReader import MLSTTSeemannFeaturesReader
 from storage.variant.service.SampleService import SampleService
 from storage.variant.service.TreeService import TreeService
 from storage.variant.service.KmerQueryService import KmerQueryService
@@ -152,12 +152,17 @@ def kmer_query_service_with_data(sample_service, kmer_service_with_data) -> Kmer
 
 @pytest.fixture
 def mlst_reader_single_scheme() -> MLSTFeaturesReader:
-    return BasicMLSTFeaturesReader(mlst_file=mlst_file_single_scheme)
+    return MLSTTSeemannFeaturesReader(mlst_file=mlst_file_single_scheme)
 
 
 @pytest.fixture
 def mlst_reader_basic() -> MLSTFeaturesReader:
-    return BasicMLSTFeaturesReader(mlst_file=basic_mlst_file)
+    return MLSTTSeemannFeaturesReader(mlst_file=basic_mlst_file)
+
+
+@pytest.fixture
+def mlst_reader_unknown() -> MLSTFeaturesReader:
+    return MLSTTSeemannFeaturesReader(mlst_file=mlst_file_unknown)
 
 
 @pytest.fixture
@@ -166,5 +171,15 @@ def mlst_service_loaded(mlst_reader_basic, database, sample_service, filesystem_
                                sample_service=sample_service,
                                mlst_dir=filesystem_storage.mlst_dir)
     mlst_service.insert(features_reader=mlst_reader_basic)
+
+    return mlst_service
+
+
+@pytest.fixture
+def mlst_service_loaded_unknown(mlst_reader_unknown, database, sample_service, filesystem_storage) -> MLSTService:
+    mlst_service = MLSTService(database_connection=database,
+                               sample_service=sample_service,
+                               mlst_dir=filesystem_storage.mlst_dir)
+    mlst_service.insert(features_reader=mlst_reader_unknown)
 
     return mlst_service

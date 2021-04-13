@@ -6,7 +6,7 @@ import pandas as pd
 
 from storage.variant.SampleSet import SampleSet
 from storage.variant.io.FeaturesReader import FeaturesReader
-from storage.variant.io.MLSTFeaturesReader import MLSTFeaturesReader
+from storage.variant.io.mlst.MLSTFeaturesReader import MLSTFeaturesReader
 from storage.variant.model import MLSTAllelesSamples
 from storage.variant.model import MLSTScheme
 from storage.variant.model import Sample

@@ -6,7 +6,7 @@ import vcf
 
 from storage.test.integration.variant import data_dir, regular_vcf_dir, variation_dir, reference_file, consensus_dir
 from storage.variant.MaskedGenomicRegions import MaskedGenomicRegions
-from storage.variant.io.VariationFile import VariationFile
+from storage.variant.io.mutation.VariationFile import VariationFile
 from storage.variant.util import parse_sequence_file
 
 

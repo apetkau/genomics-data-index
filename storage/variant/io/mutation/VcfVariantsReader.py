@@ -7,7 +7,7 @@ import pandas as pd
 import vcf
 
 from storage.variant.MaskedGenomicRegions import MaskedGenomicRegions
-from storage.variant.io.NucleotideFeaturesReader import NucleotideFeaturesReader
+from storage.variant.io.mutation.NucleotideFeaturesReader import NucleotideFeaturesReader
 from storage.variant.util import parse_sequence_file
 
 logger = logging.getLogger(__name__)

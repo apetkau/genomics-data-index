@@ -6,7 +6,7 @@ import pytest
 
 from storage.test.integration.variant import data_dir
 from storage.test.integration.variant import data_dir_empty
-from storage.variant.io.VcfVariantsReader import VcfVariantsReader
+from storage.variant.io.mutation.VcfVariantsReader import VcfVariantsReader
 
 
 @pytest.fixture

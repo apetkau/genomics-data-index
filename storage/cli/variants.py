@@ -15,9 +15,9 @@ import storage.variant.service.FeatureService as FeatureService
 from storage.FilesystemStorage import FilesystemStorage
 from storage.cli import yaml_config_provider
 from storage.variant.index.KmerIndexer import KmerIndexerSourmash, KmerIndexManager
-from storage.variant.io.BasicMLSTFeaturesReader import BasicMLSTFeaturesReader
-from storage.variant.io.SnippyVariantsReader import SnippyVariantsReader
-from storage.variant.io.VcfVariantsReader import VcfVariantsReader
+from storage.variant.io.mlst.MLSTTSeemannFeaturesReader import MLSTTSeemannFeaturesReader
+from storage.variant.io.mutation.SnippyVariantsReader import SnippyVariantsReader
+from storage.variant.io.mutation.VcfVariantsReader import VcfVariantsReader
 from storage.variant.service import DatabaseConnection, EntityExistsError
 from storage.variant.service.CoreAlignmentService import CoreAlignmentService
 from storage.variant.service.KmerQueryService import KmerQueryService
@@ -246,7 +246,7 @@ def load_kmer(ctx, kmer_fofns, kmer_size):
 def load_mlst(ctx, mlst_file: List[Path], scheme_name: str):
     for file in mlst_file:
         click.echo(f'Loading MLST results from {str(file)}')
-        reader = BasicMLSTFeaturesReader(mlst_file=file)
+        reader = MLSTTSeemannFeaturesReader(mlst_file=file)
         ctx.obj['mlst_service'].insert(features_reader=reader, feature_scope_name=scheme_name)
 
 

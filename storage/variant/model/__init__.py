@@ -15,6 +15,10 @@ Base = declarative_base()
 # Max of 500 million bytes
 MAX_SAMPLE_SET_BYTES = 500 * 10 ** 6
 
+# String representing an unknown allele
+MLST_UNKNOWN_ALLELE = '?'
+NUCLEOTIDE_UNKNOWN = '?'
+
 
 class NucleotideVariantsSamples(Base):
     __tablename__ = 'nucleotide_variants_samples'
@@ -202,7 +206,7 @@ class MLSTAllelesSamples(Base):
     __tablename__ = 'mlst_alleles_samples'
     scheme = Column(String(255), primary_key=True)
     locus = Column(String(255), primary_key=True)
-    allele = Column(Integer, primary_key=True)
+    allele = Column(String(255), primary_key=True)
     _sla = Column('sla', String(255))
     _sample_ids = Column(LargeBinary(length=MAX_SAMPLE_SET_BYTES))
 

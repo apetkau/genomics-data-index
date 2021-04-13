@@ -8,6 +8,7 @@ from storage.variant.service.QueryService import QueryFeature
 from storage.variant.service.ReferenceService import ReferenceService
 from storage.variant.service.SampleService import SampleService
 from storage.variant.service.TreeService import TreeService
+from storage.variant.model import NUCLEOTIDE_UNKNOWN
 
 
 class QueryFeatureMutation(QueryFeature):
@@ -49,6 +50,14 @@ class QueryFeatureMutation(QueryFeature):
     @property
     def alt(self):
         return self._alt
+
+    def to_unknown(self) -> QueryFeature:
+        return QueryFeatureMutation(':'.join([
+            self._seq_name,
+            self._pos,
+            self._ref,
+            NUCLEOTIDE_UNKNOWN
+        ]))
 
 
 class MutationQueryService(FullFeatureQueryService):
