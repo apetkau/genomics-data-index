@@ -7,7 +7,7 @@ import pytest
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 from storage.test.integration.variant import sample_dirs, reference_file, regular_vcf_dir, data_dir
-from storage.test.integration.variant import mlst_file_single_scheme, basic_mlst_file
+from storage.test.integration.variant import mlst_file_single_scheme, basic_mlst_file, mlst_file_unknown
 from storage.test.integration.variant import sourmash_signatures
 from storage.variant.service import DatabaseConnection
 from storage.variant.service.ReferenceService import ReferenceService
@@ -161,10 +161,25 @@ def mlst_reader_basic() -> MLSTFeaturesReader:
 
 
 @pytest.fixture
+def mlst_reader_unknown() -> MLSTFeaturesReader:
+    return MLSTTSeemannFeaturesReader(mlst_file=mlst_file_unknown)
+
+
+@pytest.fixture
 def mlst_service_loaded(mlst_reader_basic, database, sample_service, filesystem_storage) -> MLSTService:
     mlst_service = MLSTService(database_connection=database,
                                sample_service=sample_service,
                                mlst_dir=filesystem_storage.mlst_dir)
     mlst_service.insert(features_reader=mlst_reader_basic)
+
+    return mlst_service
+
+
+@pytest.fixture
+def mlst_service_loaded_unknown(mlst_reader_unknown, database, sample_service, filesystem_storage) -> MLSTService:
+    mlst_service = MLSTService(database_connection=database,
+                               sample_service=sample_service,
+                               mlst_dir=filesystem_storage.mlst_dir)
+    mlst_service.insert(features_reader=mlst_reader_unknown)
 
     return mlst_service

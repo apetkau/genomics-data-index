@@ -7,6 +7,7 @@ from storage.variant.service.FullFeatureQueryService import FullFeatureQueryServ
 from storage.variant.service.MLSTService import MLSTService
 from storage.variant.service.QueryService import QueryFeature
 from storage.variant.service.SampleService import SampleService
+from storage.variant.model import MLST_UNKNOWN_ALLELE
 
 
 class QueryFeatureMLST(QueryFeature):
@@ -36,6 +37,13 @@ class QueryFeatureMLST(QueryFeature):
     def allele(self):
         return self._allele
 
+    def to_unknown(self) -> QueryFeature:
+        return QueryFeatureMLST(':'.join([
+            self._scheme,
+            self._locus,
+            MLST_UNKNOWN_ALLELE
+        ]))
+
 
 class MLSTQueryService(FullFeatureQueryService):
 
@@ -55,7 +63,20 @@ class MLSTQueryService(FullFeatureQueryService):
         return scheme_sample_counts
 
     def _get_unknown_features(self, features: List[QueryFeature]) -> pd.DataFrame:
-        raise Exception('Not implemented')
+        data = []
+        unknown_feature_map = {}
+        unknown_features_list = []
+        for feature in features:
+            unknown_feature = feature.to_unknown()
+            unknown_features_list.append(unknown_feature)
+            unknown_feature_map[unknown_feature.id] = feature
+
+        unknown_feature_samples = self._sample_service.find_samples_by_features(unknown_features_list)
+        for uid in unknown_feature_samples:
+            for sample in unknown_feature_samples[uid]:
+                data.append([unknown_feature_map[uid].id, sample.name, sample.id, 'Unknown'])
+
+        return pd.DataFrame(data, columns=['Feature', 'Sample Name', 'Sample ID', 'Status'])
 
     def _find_matches_genome_files_internal(self, sample_reads: Dict[str, List[Path]],
                                             distance_threshold: float = None) -> pd.DataFrame:

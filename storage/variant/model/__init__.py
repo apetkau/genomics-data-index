@@ -17,6 +17,7 @@ MAX_SAMPLE_SET_BYTES = 500 * 10 ** 6
 
 # String representing an unknown allele
 MLST_UNKNOWN_ALLELE = '?'
+NUCLEOTIDE_UNKNOWN = '?'
 
 
 class NucleotideVariantsSamples(Base):

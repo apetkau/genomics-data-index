@@ -1,3 +1,4 @@
+from __future__ import annotations
 import abc
 from pathlib import Path
 from typing import List, Dict, Set
@@ -24,6 +25,14 @@ class QueryFeature(abc.ABC):
     @property
     @abc.abstractmethod
     def scope(self):
+        pass
+
+    @abc.abstractmethod
+    def to_unknown(self) -> QueryFeature:
+        """
+        Converts this given QueryFeature to one representing an unknown (e.g., unknown mutation or MLST allele).
+        :return: The equivalent of this feature but representing an unknown.
+        """
         pass
 
 

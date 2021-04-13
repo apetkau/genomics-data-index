@@ -59,7 +59,7 @@ def test_get_features_table_with_unknown(mlst_reader_unknown):
 
     assert ['abcZ', 'bglA', 'cat', 'dapE', 'dat', 'ldh', 'lhkA'] == list(mlst_df.loc[mlst_df['Sample'] == 'CFSAN002349',
                                                                                      'Locus'].tolist())
-    assert ['1', '51', '11', '13', '2', '5', '5'] == list(mlst_df.loc[mlst_df['Sample'] == 'CFSAN002349',
+    assert ['1', '?', '11', '13', '2', '5', '5'] == list(mlst_df.loc[mlst_df['Sample'] == 'CFSAN002349',
                                                                       'Allele'].tolist())
     assert ['abcZ', 'bglA', 'cat', 'dapE', 'dat', 'ldh', 'lhkA'] == list(mlst_df.loc[mlst_df['Sample'] == 'CFSAN023463',
                                                                                      'Locus'].tolist())
