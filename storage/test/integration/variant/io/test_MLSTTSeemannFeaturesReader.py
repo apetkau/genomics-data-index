@@ -1,8 +1,6 @@
-from typing import List
-
 import pytest
 
-from storage.test.integration.variant import basic_mlst_file, mlst_file_unknown
+from storage.test.integration.variant import basic_mlst_file, mlst_file_unknown, expand_list_by
 from storage.variant.io.mlst.MLSTTSeemannFeaturesReader import MLSTTSeemannFeaturesReader
 
 
@@ -13,14 +11,6 @@ def mlst_reader() -> MLSTTSeemannFeaturesReader:
 @pytest.fixture
 def mlst_reader_unknown() -> MLSTTSeemannFeaturesReader:
     return MLSTTSeemannFeaturesReader(mlst_file=mlst_file_unknown)
-
-
-def expand_list_by(list_in: List[str], number: int) -> List[str]:
-    new_list = []
-    for value in list_in:
-        new_list.extend([value] * number)
-
-    return new_list
 
 
 def test_get_features_table(mlst_reader):
