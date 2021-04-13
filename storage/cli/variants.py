@@ -17,6 +17,7 @@ from storage.cli import yaml_config_provider
 from storage.variant.index.KmerIndexer import KmerIndexerSourmash, KmerIndexManager
 from storage.variant.io.mlst.MLSTTSeemannFeaturesReader import MLSTTSeemannFeaturesReader
 from storage.variant.io.mlst.MLSTSistrReader import MLSTSistrReader
+from storage.variant.io.mlst.MLSTChewbbacaReader import MLSTChewbbacaReader
 from storage.variant.io.mutation.SnippyVariantsReader import SnippyVariantsReader
 from storage.variant.io.mutation.VcfVariantsReader import VcfVariantsReader
 from storage.variant.service import DatabaseConnection, EntityExistsError
@@ -261,6 +262,18 @@ def load_mlst_sistr(ctx, mlst_file: List[Path], scheme_name: str):
         click.echo(f'Loading cgMLST results from {str(file)}')
         reader = MLSTSistrReader(mlst_file=file)
         ctx.obj['mlst_service'].insert(features_reader=reader, feature_scope_name=scheme_name)
+
+
+@load.command(name='mlst-chewbbaca')
+@click.pass_context
+@click.argument('mlst_file', type=click.Path(exists=True), nargs=-1)
+@click.option('--scheme-name', help='Set scheme name',
+              required=True, type=str)
+def load_mlst_sistr(ctx, mlst_file: List[Path], scheme_name: str):
+    for file in mlst_file:
+        click.echo(f'Loading MLST results from [{str(file)}] under scheme [{scheme_name}]')
+        reader = MLSTChewbbacaReader(mlst_file=file, scheme=scheme_name)
+        ctx.obj['mlst_service'].insert(features_reader=reader, feature_scope_name=FeatureService.AUTO_SCOPE)
 
 
 @main.group(name='list')
