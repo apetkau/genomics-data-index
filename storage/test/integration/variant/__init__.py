@@ -13,6 +13,7 @@ reference_file = data_dir / 'genome.fasta.gz'
 tree_file = data_dir / 'tree.tre'
 basic_mlst_file = mlst_dir / 'mlst-basic.tsv'
 mlst_file_unknown = mlst_dir / 'mlst-unknown.tsv'
+sistr_mlst_file = mlst_dir / 'mlst-sistr.csv'
 mlst_file_single_scheme = mlst_dir / 'mlst-single-scheme.tsv'
 
 data_dir_empty = root_data_dir / 'empty_vcfs'

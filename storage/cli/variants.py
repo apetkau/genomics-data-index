@@ -16,6 +16,7 @@ from storage.FilesystemStorage import FilesystemStorage
 from storage.cli import yaml_config_provider
 from storage.variant.index.KmerIndexer import KmerIndexerSourmash, KmerIndexManager
 from storage.variant.io.mlst.MLSTTSeemannFeaturesReader import MLSTTSeemannFeaturesReader
+from storage.variant.io.mlst.MLSTSistrReader import MLSTSistrReader
 from storage.variant.io.mutation.SnippyVariantsReader import SnippyVariantsReader
 from storage.variant.io.mutation.VcfVariantsReader import VcfVariantsReader
 from storage.variant.service import DatabaseConnection, EntityExistsError
@@ -238,15 +239,27 @@ def load_kmer(ctx, kmer_fofns, kmer_size):
     print(f'Generated indexes for {len(indexed_genomes)} samples')
 
 
-@load.command(name='mlst')
+@load.command(name='mlst-tseemann')
 @click.pass_context
 @click.argument('mlst_file', type=click.Path(exists=True), nargs=-1)
 @click.option('--scheme-name', help='Override scheme name found in MLST file',
               default=FeatureService.AUTO_SCOPE, type=str)
-def load_mlst(ctx, mlst_file: List[Path], scheme_name: str):
+def load_mlst_tseemann(ctx, mlst_file: List[Path], scheme_name: str):
     for file in mlst_file:
         click.echo(f'Loading MLST results from {str(file)}')
         reader = MLSTTSeemannFeaturesReader(mlst_file=file)
+        ctx.obj['mlst_service'].insert(features_reader=reader, feature_scope_name=scheme_name)
+
+
+@load.command(name='mlst-sistr')
+@click.pass_context
+@click.argument('mlst_file', type=click.Path(exists=True), nargs=-1)
+@click.option('--scheme-name', help='Override scheme name found in SISTR MLST file',
+              default=FeatureService.AUTO_SCOPE, type=str)
+def load_mlst_sistr(ctx, mlst_file: List[Path], scheme_name: str):
+    for file in mlst_file:
+        click.echo(f'Loading cgMLST results from {str(file)}')
+        reader = MLSTSistrReader(mlst_file=file)
         ctx.obj['mlst_service'].insert(features_reader=reader, feature_scope_name=scheme_name)
 
 

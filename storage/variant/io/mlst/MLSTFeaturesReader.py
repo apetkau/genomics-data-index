@@ -1,4 +1,5 @@
 from typing import Set, List, Dict
+import abc
 from pathlib import Path
 
 import pandas as pd
@@ -22,6 +23,7 @@ class MLSTFeaturesReader(FeaturesReader):
     def _minimal_expected_columns(self) -> Set[str]:
         return {'Sample', 'Scheme', 'Locus', 'Allele'}
 
+    @abc.abstractmethod
     def _is_valid_allele(self, allele: str) -> bool:
         pass
 
