@@ -1,23 +1,12 @@
-from typing import List
-
 import pytest
 
-from storage.test.integration.variant import sistr_mlst_file
+from storage.test.integration.variant import sistr_mlst_file, expand_list_by
 from storage.variant.io.mlst.MLSTSistrReader import MLSTSistrReader
-
 
 
 @pytest.fixture
 def mlst_reader() -> MLSTSistrReader:
     return MLSTSistrReader(mlst_file=sistr_mlst_file)
-
-
-def expand_list_by(list_in: List[str], number: int) -> List[str]:
-    new_list = []
-    for value in list_in:
-        new_list.extend([value] * number)
-
-    return new_list
 
 
 def test_get_features_table(mlst_reader):
