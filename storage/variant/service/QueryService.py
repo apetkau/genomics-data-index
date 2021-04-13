@@ -12,8 +12,18 @@ def verify_columns_match(expected_columns: Set[str], result_df: pd.DataFrame) ->
                         f'Expected {expected_columns}, actual {actual_columns}')
 
 
-class QueryFeature:
+class QueryFeature(abc.ABC):
     def __init__(self):
+        pass
+
+    @property
+    @abc.abstractmethod
+    def id(self):
+        pass
+
+    @property
+    @abc.abstractmethod
+    def scope(self):
         pass
 
 

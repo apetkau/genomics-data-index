@@ -57,7 +57,7 @@ def variants_reader_empty_masks(sample_dirs) -> VcfVariantsReader:
 
 
 def test_get_variants_table(variants_reader):
-    df = variants_reader.get_variants_table()
+    df = variants_reader.get_features_table()
 
     assert 129 == len(df), 'Data has incorrect length'
     assert {'SampleA', 'SampleB', 'SampleC'} == set(df['SAMPLE'].tolist()), 'Incorrect sample names'
@@ -95,6 +95,12 @@ def test_get_samples_list(variants_reader):
 
 
 def test_get_variants_table_empty(variants_reader_empty):
-    df = variants_reader_empty.get_variants_table()
+    df = variants_reader_empty.get_features_table()
 
     assert 0 == len(df), 'Data has incorrect length'
+
+
+def test_get_or_create_feature_file(variants_reader):
+    file = variants_reader.get_or_create_feature_file('SampleA')
+    assert file.exists()
+    assert 'SampleA' in str(file)

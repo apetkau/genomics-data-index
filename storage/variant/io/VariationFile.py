@@ -1,11 +1,10 @@
-from typing import List
-
 import tempfile
 from pathlib import Path
+from typing import List
 
 import pandas as pd
-from Bio.SeqRecord import SeqRecord
 from Bio import SeqIO
+from Bio.SeqRecord import SeqRecord
 
 from storage.variant.util import execute_commands
 

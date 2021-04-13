@@ -1,9 +1,10 @@
-from typing import List
-from pathlib import Path
 import logging
-import time
-import pandas as pd
 import tempfile
+import time
+from pathlib import Path
+from typing import List
+
+import pandas as pd
 
 from storage.variant.util import execute_commands
 
@@ -21,7 +22,7 @@ class KmerSearchManagerSourmash:
 
         with tempfile.TemporaryDirectory() as tmp:
             out_file = Path(tmp, 'output.csv')
-            command = ['sourmash', 'search', '-k', str(kmer_size) , '-o', str(out_file),
+            command = ['sourmash', 'search', '-k', str(kmer_size), '-o', str(out_file),
                        str(query_file)]
             command.extend([str(f) for f in search_files])
 

@@ -1,13 +1,12 @@
-from typing import Dict
 from pathlib import Path
 
-from storage.variant.service import DatabaseConnection
-from storage.variant.service.SampleService import SampleService
 from storage.variant.model import Sample
 from storage.variant.model import SampleKmerIndex
+from storage.variant.service import DatabaseConnection
+from storage.variant.service.SampleService import SampleService
 
 
-class KmerService():
+class KmerService:
 
     def __init__(self, database_connection: DatabaseConnection, sample_service: SampleService):
         self._database = database_connection

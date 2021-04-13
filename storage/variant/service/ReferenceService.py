@@ -2,8 +2,8 @@ from pathlib import Path
 from typing import List, Dict
 
 import ga4gh.vrs.dataproxy as dataproxy
-from Bio.SeqRecord import SeqRecord
 from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
 from biocommons.seqrepo import SeqRepo
 from ete3 import Tree
 

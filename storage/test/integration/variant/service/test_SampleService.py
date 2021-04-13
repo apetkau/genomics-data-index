@@ -1,5 +1,7 @@
 from storage.variant.SampleSet import SampleSet
 from storage.variant.model import Sample
+from storage.variant.service.MLSTQueryService import QueryFeatureMLST
+from storage.variant.service.MutationQueryService import QueryFeatureMutation
 
 
 def test_samples_with_variants(sample_service, variation_service):
@@ -95,11 +97,90 @@ def test_find_samples_by_ids_3_samples(sample_service, variation_service):
     assert {'SampleA', 'SampleB', 'SampleC'} == {s.name for s in samples}
 
 
-def test_find_samples_by_variation_ids(database, sample_service, variation_service):
+def test_find_samples_by_features_variations(database, sample_service, variation_service):
     sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
 
-    variant_samples = sample_service.find_samples_by_variation_ids(['reference:5061:G:A'])
+    variant_samples = sample_service.find_samples_by_features([QueryFeatureMutation('reference:5061:G:A')])
 
     assert 'reference:5061:G:A' in variant_samples
     assert {'SampleB'} == {s.name for s in variant_samples['reference:5061:G:A']}
     assert {sampleB.id} == {s.id for s in variant_samples['reference:5061:G:A']}
+
+
+def test_count_samples_by_variation_features_single_feature(sample_service, variation_service):
+    features = [QueryFeatureMutation('reference:5061:G:A')]
+
+    variant_counts = sample_service.count_samples_by_features(features)
+
+    assert 1 == len(variant_counts)
+    assert 1 == variant_counts['reference:5061:G:A']
+
+
+def test_count_samples_by_variation_features_multiple_features(sample_service, variation_service):
+    features = [QueryFeatureMutation('reference:5061:G:A'), QueryFeatureMutation('reference:3063:A:ATGCAGC')]
+
+    variant_counts = sample_service.count_samples_by_features(features)
+
+    assert 2 == len(variant_counts)
+    assert 1 == variant_counts['reference:5061:G:A']
+    assert 2 == variant_counts['reference:3063:A:ATGCAGC']
+
+
+def test_get_samples_with_mlst_alleles(sample_service, mlst_service_loaded):
+    samples = sample_service.get_samples_with_mlst_alleles('lmonocytogenes')
+
+    assert {'CFSAN002349', 'CFSAN023463'} == {sample.name for sample in samples}
+
+
+def test_get_samples_with_mlst_alleles2(sample_service, mlst_service_loaded):
+    samples = sample_service.get_samples_with_mlst_alleles('ecoli')
+
+    assert {'2014C-3598', '2014C-3599'} == {sample.name for sample in samples}
+
+
+def test_find_samples_by_features_mlst(database, sample_service, mlst_service_loaded):
+    sample1 = database.get_session().query(Sample).filter(Sample.name == 'CFSAN002349').one()
+    sample2 = database.get_session().query(Sample).filter(Sample.name == 'CFSAN023463').one()
+
+    mlst_samples = sample_service.find_samples_by_features([QueryFeatureMLST('lmonocytogenes:abcZ:1')])
+
+    assert {'lmonocytogenes:abcZ:1'} == set(mlst_samples.keys())
+    assert {'CFSAN002349', 'CFSAN023463'} == {s.name for s in mlst_samples['lmonocytogenes:abcZ:1']}
+    assert {sample1.id, sample2.id} == {s.id for s in mlst_samples['lmonocytogenes:abcZ:1']}
+
+
+def test_find_samples_by_features_mlst_two(database, sample_service, mlst_service_loaded):
+    sample1 = database.get_session().query(Sample).filter(Sample.name == 'CFSAN002349').one()
+    sample2 = database.get_session().query(Sample).filter(Sample.name == 'CFSAN023463').one()
+    sample3 = database.get_session().query(Sample).filter(Sample.name == '2014C-3599').one()
+    sample4 = database.get_session().query(Sample).filter(Sample.name == '2014C-3598').one()
+
+    mlst_samples = sample_service.find_samples_by_features([QueryFeatureMLST('lmonocytogenes:abcZ:1'),
+                                                            QueryFeatureMLST('ecoli:adk:100')])
+
+    assert {'lmonocytogenes:abcZ:1', 'ecoli:adk:100'} == set(mlst_samples.keys())
+
+    assert {'CFSAN002349', 'CFSAN023463'} == {s.name for s in mlst_samples['lmonocytogenes:abcZ:1']}
+    assert {sample1.id, sample2.id} == {s.id for s in mlst_samples['lmonocytogenes:abcZ:1']}
+
+    assert {'2014C-3599', '2014C-3598'} == {s.name for s in mlst_samples['ecoli:adk:100']}
+    assert {sample3.id, sample4.id} == {s.id for s in mlst_samples['ecoli:adk:100']}
+
+
+def test_count_samples_by_mlst_features_single_feature(sample_service, mlst_service_loaded):
+    features = [QueryFeatureMLST('lmonocytogenes:abcZ:1')]
+
+    mlst_counts = sample_service.count_samples_by_features(features)
+
+    assert 1 == len(mlst_counts)
+    assert 2 == mlst_counts['lmonocytogenes:abcZ:1']
+
+
+def test_count_samples_by_mlst_features_multiple_features(sample_service, mlst_service_loaded):
+    features = [QueryFeatureMLST('lmonocytogenes:abcZ:1'), QueryFeatureMLST('ecoli:adk:100')]
+
+    mlst_counts = sample_service.count_samples_by_features(features)
+
+    assert 2 == len(mlst_counts)
+    assert 2 == mlst_counts['lmonocytogenes:abcZ:1']
+    assert 2 == mlst_counts['ecoli:adk:100']

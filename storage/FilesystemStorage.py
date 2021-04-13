@@ -1,7 +1,7 @@
-from pathlib import Path
+import logging
 import os
 import subprocess
-import logging
+from pathlib import Path
 
 import pandas as pd
 
@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 class FilesystemStorage:
-    ALL_SUBDIRECTORIES = ['reference', 'kmer', 'variation']
+    ALL_SUBDIRECTORIES = ['reference', 'kmer', 'variation', 'mlst']
 
     def __init__(self, root_dir: Path):
         self._root_dir = root_dir
@@ -33,7 +33,8 @@ class FilesystemStorage:
         # This thread (https://stackoverflow.com/questions/1392413/calculating-a-directorys-size-using-python/1392549)
         # has a lot of different implementations but they all have complexities with symlinks, subdirectories,
         # broken links, etc.
-        logger.warning('A reminder to myself to look for a Python solution for directory sizes (instead of running `du`)')
+        logger.warning(
+            'A reminder to myself to look for a Python solution for directory sizes (instead of running `du`)')
 
         sizes_list = []
         for dname in self.ALL_SUBDIRECTORIES:
@@ -60,3 +61,7 @@ class FilesystemStorage:
     @property
     def variation_dir(self):
         return self._check_make_dir('variation')
+
+    @property
+    def mlst_dir(self):
+        return self._check_make_dir('mlst')

@@ -1,12 +1,12 @@
-from pathlib import Path
 import tempfile
+from pathlib import Path
 
 from sourmash import load_file_as_signatures
 
-from storage.variant.index.KmerIndexer import KmerIndexerSourmash
-from storage.variant.index.KmerIndexer import KmerIndexManager
 from storage.test.integration.variant import data_dir
 from storage.test.integration.variant.index import get_values_from_signatures
+from storage.variant.index.KmerIndexer import KmerIndexManager
+from storage.variant.index.KmerIndexer import KmerIndexerSourmash
 
 
 def test_index_multiple_files():

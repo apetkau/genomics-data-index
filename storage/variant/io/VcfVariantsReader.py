@@ -7,13 +7,13 @@ import pandas as pd
 import vcf
 
 from storage.variant.MaskedGenomicRegions import MaskedGenomicRegions
-from storage.variant.io import VariantsReader
+from storage.variant.io.NucleotideFeaturesReader import NucleotideFeaturesReader
 from storage.variant.util import parse_sequence_file
 
 logger = logging.getLogger(__name__)
 
 
-class VcfVariantsReader(VariantsReader):
+class VcfVariantsReader(NucleotideFeaturesReader):
 
     def __init__(self, sample_vcf_map: Dict[str, Path],
                  masked_genomic_files_map: Dict[str, Path] = None):
@@ -35,7 +35,10 @@ class VcfVariantsReader(VariantsReader):
     def _drop_extra_columns(self, vcf_df: pd.DataFrame) -> pd.DataFrame:
         return vcf_df
 
-    def sample_variant_files(self) -> Dict[str, Path]:
+    def get_or_create_feature_file(self, sample_name: str):
+        return self._sample_vcf_map[sample_name]
+
+    def sample_feature_files(self) -> Dict[str, Path]:
         return self._sample_vcf_map
 
     def read_vcf(self, file: Path, sample_name: str) -> pd.DataFrame:
@@ -76,7 +79,7 @@ class VcfVariantsReader(VariantsReader):
         else:
             return pd.Series(dtype='object')
 
-    def _read_variants_table(self) -> pd.DataFrame:
+    def _read_features_table(self) -> pd.DataFrame:
         frames = []
         for sample in self._sample_vcf_map:
             vcf_file = self._sample_vcf_map[sample]

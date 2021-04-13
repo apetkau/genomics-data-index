@@ -3,9 +3,9 @@ from pathlib import Path
 
 from sourmash import load_file_as_signatures
 
+from storage.test.integration.variant import data_dir
 from storage.test.integration.variant.index import get_values_from_signatures
 from storage.variant.index.KmerIndexer import KmerIndexerSourmash
-from storage.test.integration.variant import data_dir
 
 
 def test_index_single_file_uncompressed():
@@ -53,7 +53,7 @@ def test_index_single_file_multiple_k():
         tmp_path = Path(tmp_dir)
         index_out = tmp_path / 'SampleA.sig.gz'
 
-        kmer_indexer = KmerIndexerSourmash(k=[21,31], scaled=1000, compress=True)
+        kmer_indexer = KmerIndexerSourmash(k=[21, 31], scaled=1000, compress=True)
         indexed_path = kmer_indexer.index('SampleA', index_out, [sampleA])
 
         assert indexed_path.exists()

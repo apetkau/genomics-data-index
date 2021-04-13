@@ -7,6 +7,7 @@ import pytest
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 from storage.test.integration.variant import sample_dirs, reference_file, regular_vcf_dir, data_dir
+from storage.test.integration.variant import mlst_file_single_scheme, basic_mlst_file
 from storage.test.integration.variant import sourmash_signatures
 from storage.variant.service import DatabaseConnection
 from storage.variant.service.ReferenceService import ReferenceService
@@ -14,11 +15,14 @@ from storage.variant.service.VariationService import VariationService
 from storage.variant.service.CoreAlignmentService import CoreAlignmentService
 from storage.variant.io.SnippyVariantsReader import SnippyVariantsReader
 from storage.variant.io.VcfVariantsReader import VcfVariantsReader
+from storage.variant.io.MLSTFeaturesReader import MLSTFeaturesReader
+from storage.variant.io.BasicMLSTFeaturesReader import BasicMLSTFeaturesReader
 from storage.variant.service.SampleService import SampleService
 from storage.variant.service.TreeService import TreeService
 from storage.variant.service.KmerQueryService import KmerQueryService
 from storage.variant.service.KmerService import KmerService
 from storage.FilesystemStorage import FilesystemStorage
+from storage.variant.service.MLSTService import MLSTService
 
 
 @pytest.fixture
@@ -51,7 +55,7 @@ def regular_variants_reader() -> VcfVariantsReader:
     }
 
     mask_files = {
-        'SampleA': Path(data_dir, 'SampleA',  'snps.aligned.fa'),
+        'SampleA': Path(data_dir, 'SampleA', 'snps.aligned.fa'),
         'SampleB': Path(data_dir, 'SampleB', 'snps.aligned.fa'),
         'SampleC': Path(data_dir, 'SampleC', 'snps.aligned.fa'),
     }
@@ -77,20 +81,20 @@ def variation_service(database, reference_service_with_data,
                                    reference_service=reference_service_with_data,
                                    sample_service=sample_service,
                                    variation_dir=filesystem_storage.variation_dir)
-    var_service.insert_variants(reference_name='genome',
-                                variants_reader=snippy_variants_reader)
+    var_service.insert(feature_scope_name='genome',
+                       features_reader=snippy_variants_reader)
     return var_service
 
 
 @pytest.fixture
 def variation_service_non_snippy_vcfs(database, reference_service_with_data,
-                      regular_variants_reader, sample_service, filesystem_storage) -> VariationService:
+                                      regular_variants_reader, sample_service, filesystem_storage) -> VariationService:
     var_service = VariationService(database_connection=database,
                                    reference_service=reference_service_with_data,
                                    sample_service=sample_service,
                                    variation_dir=filesystem_storage.variation_dir)
-    var_service.insert_variants(reference_name='genome',
-                                variants_reader=regular_variants_reader)
+    var_service.insert(feature_scope_name='genome',
+                       features_reader=regular_variants_reader)
     return var_service
 
 
@@ -106,7 +110,7 @@ def core_alignment_service(database, reference_service_with_data, variation_serv
 
 @pytest.fixture
 def core_alignment_service_non_snippy_vcfs(database, reference_service_with_data, variation_service_non_snippy_vcfs,
-                           sample_service) -> CoreAlignmentService:
+                                           sample_service) -> CoreAlignmentService:
     return CoreAlignmentService(database=database,
                                 reference_service=reference_service_with_data,
                                 variation_service=variation_service_non_snippy_vcfs,
@@ -140,6 +144,27 @@ def kmer_service_with_data(database, sample_service) -> KmerService:
 
     return kmer_service
 
+
 @pytest.fixture
 def kmer_query_service_with_data(sample_service, kmer_service_with_data) -> KmerQueryService:
     return KmerQueryService(sample_service=sample_service)
+
+
+@pytest.fixture
+def mlst_reader_single_scheme() -> MLSTFeaturesReader:
+    return BasicMLSTFeaturesReader(mlst_file=mlst_file_single_scheme)
+
+
+@pytest.fixture
+def mlst_reader_basic() -> MLSTFeaturesReader:
+    return BasicMLSTFeaturesReader(mlst_file=basic_mlst_file)
+
+
+@pytest.fixture
+def mlst_service_loaded(mlst_reader_basic, database, sample_service, filesystem_storage) -> MLSTService:
+    mlst_service = MLSTService(database_connection=database,
+                               sample_service=sample_service,
+                               mlst_dir=filesystem_storage.mlst_dir)
+    mlst_service.insert(features_reader=mlst_reader_basic)
+
+    return mlst_service
