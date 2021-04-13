@@ -16,7 +16,7 @@ class MLSTSistrReader(MLSTFeaturesReader):
         self._mlst_file = mlst_file
 
     def _read_features_table(self) -> pd.DataFrame:
-        df = pd.read_csv(self._mlst_file, sep=',')
+        df = pd.read_csv(self._mlst_file, sep=',', dtype=str)
         df = df.rename(columns={
             'Unnamed: 0': 'File',
         })

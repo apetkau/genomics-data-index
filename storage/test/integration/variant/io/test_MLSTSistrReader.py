@@ -41,3 +41,29 @@ def test_get_features_table(mlst_reader):
 
     assert ['3848099890'] == list(mlst_df.loc[(mlst_df['Sample'] == 'GCF_000007545') &
                                        (mlst_df['Locus'] == 'NZ_AOXE01000019.1_14'), 'Allele'].tolist())
+
+
+def test_get_features_table_missing_feature(mlst_reader):
+    mlst_df = mlst_reader.get_features_table()
+
+    assert ['File', 'Sample', 'Scheme', 'Locus', 'Allele'] == list(mlst_df.columns)
+    assert {'sistr_330'} == set(mlst_df['Scheme'].tolist())
+
+    assert ['?'] == list(mlst_df.loc[(mlst_df['Sample'] == 'GCF_000006945') &
+                                       (mlst_df['Locus'] == 'NZ_AOXE01000085.1_58'), 'Allele'].tolist())
+
+    assert ['3038970538'] == list(mlst_df.loc[(mlst_df['Sample'] == 'GCF_000007545') &
+                                       (mlst_df['Locus'] == 'NZ_AOXE01000085.1_58'), 'Allele'].tolist())
+
+
+def test_get_features_table_invalid_feature(mlst_reader):
+    mlst_df = mlst_reader.get_features_table()
+
+    assert ['File', 'Sample', 'Scheme', 'Locus', 'Allele'] == list(mlst_df.columns)
+    assert {'sistr_330'} == set(mlst_df['Scheme'].tolist())
+
+    assert ['?'] == list(mlst_df.loc[(mlst_df['Sample'] == 'GCF_000006945') &
+                                       (mlst_df['Locus'] == 'NZ_AOXE01000034.1_134'), 'Allele'].tolist())
+
+    assert ['682273023'] == list(mlst_df.loc[(mlst_df['Sample'] == 'GCF_000007545') &
+                                       (mlst_df['Locus'] == 'NZ_AOXE01000034.1_134'), 'Allele'].tolist())
