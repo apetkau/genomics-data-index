@@ -1,30 +1,22 @@
 from pathlib import Path
-from typing import Dict, List
 
 import pandas as pd
 
-from storage.variant.io.MLSTFeaturesReader import MLSTFeaturesReader
+from storage.variant.io.mlst.MLSTFeaturesReader import MLSTFeaturesReader
 
 
-class BasicMLSTFeaturesReader(MLSTFeaturesReader):
+class MLSTTSeemannFeaturesReader(MLSTFeaturesReader):
+    """
+    A reader for results from the MLST software developed by Torsten Seemann (https://github.com/tseemann/mlst).
+    Assumes output has been produced like:
+
+    mlst --nopath *.fasta > mlst.tsv
+    """
 
     def __init__(self, mlst_file: Path):
         super().__init__()
 
         self._mlst_file = mlst_file
-        self._features_table = None
-
-    def sample_feature_files(self) -> Dict[str, Path]:
-        raise Exception('Not implemented')
-
-    def samples_list(self) -> List[str]:
-        mlst_df = self.get_features_table()
-        return list(set(mlst_df['Sample'].tolist()))
-
-    def get_features_table(self) -> pd.DataFrame:
-        if self._features_table is None:
-            self._features_table = super().get_features_table()
-        return self._features_table
 
     def _read_features_table(self) -> pd.DataFrame:
         df = pd.read_csv(self._mlst_file, sep='\t', header=None)

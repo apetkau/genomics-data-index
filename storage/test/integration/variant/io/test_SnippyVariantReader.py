@@ -5,7 +5,7 @@ import pytest
 
 from storage.test.integration.variant import data_dir
 from storage.test.integration.variant import data_dir_empty
-from storage.variant.io.SnippyVariantsReader import SnippyVariantsReader
+from storage.variant.io.mutation.SnippyVariantsReader import SnippyVariantsReader
 
 sample_dirs = [data_dir / d for d in listdir(data_dir) if path.isdir(data_dir / d)]
 sample_dirs_empty = [data_dir_empty / d for d in listdir(data_dir_empty) if path.isdir(data_dir_empty / d)]

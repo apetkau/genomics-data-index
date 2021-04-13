@@ -3,12 +3,12 @@ from typing import List
 import pytest
 
 from storage.test.integration.variant import basic_mlst_file
-from storage.variant.io.BasicMLSTFeaturesReader import BasicMLSTFeaturesReader
+from storage.variant.io.mlst.MLSTTSeemannFeaturesReader import MLSTTSeemannFeaturesReader
 
 
 @pytest.fixture
-def mlst_reader() -> BasicMLSTFeaturesReader:
-    return BasicMLSTFeaturesReader(mlst_file=basic_mlst_file)
+def mlst_reader() -> MLSTTSeemannFeaturesReader:
+    return MLSTTSeemannFeaturesReader(mlst_file=basic_mlst_file)
 
 
 def expand_list_by(list_in: List[str], number: int) -> List[str]:

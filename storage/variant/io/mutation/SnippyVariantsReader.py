@@ -5,7 +5,7 @@ from typing import List
 
 import pandas as pd
 
-from storage.variant.io.VcfVariantsReader import VcfVariantsReader
+from storage.variant.io.mutation.VcfVariantsReader import VcfVariantsReader
 
 logger = logging.getLogger(__name__)
 

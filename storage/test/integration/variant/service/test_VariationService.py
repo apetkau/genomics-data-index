@@ -3,7 +3,7 @@ from typing import List
 import pytest
 
 from storage.test.integration.variant import data_dir
-from storage.variant.io.SnippyVariantsReader import SnippyVariantsReader
+from storage.variant.io.mutation.SnippyVariantsReader import SnippyVariantsReader
 from storage.variant.model import Sample, NucleotideVariantsSamples, SampleNucleotideVariation
 from storage.variant.service import EntityExistsError
 from storage.variant.service.VariationService import VariationService
