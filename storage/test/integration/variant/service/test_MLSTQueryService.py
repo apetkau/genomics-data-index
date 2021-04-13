@@ -51,6 +51,13 @@ def test_find_by_features_unknown(database, mlst_query_service_unknown: MLSTQuer
     assert len(matches_df) == 2
 
 
+def test_find_by_features_empty(mlst_query_service: MLSTQueryService):
+    matches_df = mlst_query_service.find_by_features([QueryFeatureMLST('campylobacter:abcZ:20')])
+
+    assert ['Type', 'Feature', 'Sample Name', 'Sample ID', 'Status'] == list(matches_df.columns.tolist())
+    assert len(matches_df) == 0
+
+
 def test_find_by_features_unknown_two_features(database, mlst_query_service_unknown: MLSTQueryService):
     sample1 = database.get_session().query(Sample).filter(Sample.name == 'CFSAN002349').one()
     sample2 = database.get_session().query(Sample).filter(Sample.name == 'CFSAN023463').one()
@@ -106,6 +113,24 @@ def test_count_by_features(mlst_query_service: MLSTQueryService):
 
     assert math.isclose(100 * 2 / 2, matches_df['% Present'].tolist()[0])
     assert math.isclose(100 * 0 / 2, matches_df['% Absent'].tolist()[0])
+    assert pd.isna(matches_df['% Unknown'].tolist()[0])
+
+
+def test_count_by_features_empty(mlst_query_service: MLSTQueryService):
+    matches_df = mlst_query_service.count_by_features([QueryFeatureMLST('campylobacter:aspA:20')],
+                                                      include_unknown=False)
+
+    assert ['Type', 'Feature', 'Present', 'Absent', 'Unknown', 'Total',
+            '% Present', '% Absent', '% Unknown'] == list(matches_df.columns.tolist())
+
+    assert ['campylobacter:aspA:20'] == list(matches_df['Feature'].tolist())
+    assert [0] == list(matches_df['Present'].tolist())
+    assert [2] == list(matches_df['Absent'].tolist())
+    assert pd.isna(matches_df['Unknown'].tolist()[0])
+    assert [2] == list(matches_df['Total'].tolist())
+
+    assert math.isclose(100 * 0 / 2, matches_df['% Present'].tolist()[0])
+    assert math.isclose(100 * 2 / 2, matches_df['% Absent'].tolist()[0])
     assert pd.isna(matches_df['% Unknown'].tolist()[0])
 
 

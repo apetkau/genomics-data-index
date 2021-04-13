@@ -149,7 +149,11 @@ class SampleService:
         elif feature_type == 'QueryFeatureMLST':
             mlst_alleles = self._get_mlst_samples_by_mlst_allele_ids(feature_ids)
 
-            return {a.sla: len(a.sample_ids) for a in mlst_alleles}
+            allele_id_to_count =  {a.sla: len(a.sample_ids) for a in mlst_alleles}
+            for f in features:
+                if f.id not in allele_id_to_count:
+                    allele_id_to_count[f.id] = 0
+            return allele_id_to_count
         else:
             raise Exception(f'Invalid feature type {feature_type}')
 
