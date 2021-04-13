@@ -15,6 +15,9 @@ Base = declarative_base()
 # Max of 500 million bytes
 MAX_SAMPLE_SET_BYTES = 500 * 10 ** 6
 
+# String representing an unknown allele
+MLST_UNKNOWN_ALLELE = '?'
+
 
 class NucleotideVariantsSamples(Base):
     __tablename__ = 'nucleotide_variants_samples'

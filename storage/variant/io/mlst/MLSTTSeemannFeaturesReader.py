@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 
 import pandas as pd
 
@@ -33,6 +34,9 @@ class MLSTTSeemannFeaturesReader(MLSTFeaturesReader):
             by=['Sample', 'Scheme', 'Locus']).reset_index().drop(columns='index')
 
         return df
+
+    def _is_valid_allele(self, allele: str) -> bool:
+        return bool(re.match(r'^\d+$', allele))
 
     def _get_sample_from_filename(self, filename_series: pd.Series) -> pd.Series:
         file_sample_name_regex = r'^([^.]*)'
