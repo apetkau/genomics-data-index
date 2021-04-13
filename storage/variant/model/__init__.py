@@ -202,7 +202,7 @@ class MLSTAllelesSamples(Base):
     __tablename__ = 'mlst_alleles_samples'
     scheme = Column(String(255), primary_key=True)
     locus = Column(String(255), primary_key=True)
-    allele = Column(Integer, primary_key=True)
+    allele = Column(String(255), primary_key=True)
     _sla = Column('sla', String(255))
     _sample_ids = Column(LargeBinary(length=MAX_SAMPLE_SET_BYTES))
 
