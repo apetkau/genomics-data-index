@@ -4,7 +4,7 @@ from storage.variant.SampleSet import SampleSet
 from storage.variant.model import Sample, Reference, ReferenceSequence, NucleotideVariantsSamples
 from storage.variant.model import SampleMLSTAlleles, MLSTScheme, MLSTAllelesSamples
 from storage.variant.service import DatabaseConnection
-from storage.variant.service.QueryService import QueryFeature
+from storage.variant.model.QueryFeature import QueryFeature
 
 
 class SampleService:

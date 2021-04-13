@@ -4,7 +4,8 @@ import pandas as pd
 import pytest
 
 from storage.variant.model import Sample
-from storage.variant.service.MLSTQueryService import MLSTQueryService, QueryFeatureMLST
+from storage.variant.service.MLSTQueryService import MLSTQueryService
+from storage.variant.model.QueryFeatureMLST import QueryFeatureMLST
 
 
 @pytest.fixture

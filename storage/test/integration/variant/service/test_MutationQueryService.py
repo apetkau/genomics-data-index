@@ -5,7 +5,7 @@ import pytest
 
 from storage.variant.model import Sample
 from storage.variant.service.MutationQueryService import MutationQueryService
-from storage.variant.service.MutationQueryService import QueryFeatureMutation
+from storage.variant.model.QueryFeatureMutation import QueryFeatureMutation
 
 
 @pytest.fixture

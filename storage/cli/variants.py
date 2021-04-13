@@ -24,9 +24,11 @@ from storage.variant.service import DatabaseConnection, EntityExistsError
 from storage.variant.service.CoreAlignmentService import CoreAlignmentService
 from storage.variant.service.KmerQueryService import KmerQueryService
 from storage.variant.service.KmerService import KmerService
-from storage.variant.service.MLSTQueryService import MLSTQueryService, QueryFeatureMLST
+from storage.variant.service.MLSTQueryService import MLSTQueryService
+from storage.variant.model.QueryFeatureMLST import QueryFeatureMLST
 from storage.variant.service.MLSTService import MLSTService
-from storage.variant.service.MutationQueryService import MutationQueryService, QueryFeatureMutation
+from storage.variant.service.MutationQueryService import MutationQueryService
+from storage.variant.model.QueryFeatureMutation import QueryFeatureMutation
 from storage.variant.service.ReferenceService import ReferenceService
 from storage.variant.service.SampleService import SampleService
 from storage.variant.service.TreeService import TreeService

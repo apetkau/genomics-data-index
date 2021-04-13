@@ -4,7 +4,8 @@ from typing import List, Any, Dict, Set
 import pandas as pd
 
 from storage.variant.service import SampleService
-from storage.variant.service.QueryService import QueryService, QueryFeature
+from storage.variant.service.QueryService import QueryService
+from storage.variant.model.QueryFeature import QueryFeature
 
 
 class FullFeatureQueryService(QueryService):
