@@ -25,6 +25,10 @@ from storage.variant.service.ReferenceService import ReferenceService
 from storage.variant.service.SampleService import SampleService
 from storage.variant.service.TreeService import TreeService
 from storage.variant.service.VariationService import VariationService
+from storage.variant.service.MLSTQueryService import MLSTQueryService, QueryFeatureMLST
+import storage.variant.service.FeatureService as FeatureService
+from storage.variant.service.MLSTService import MLSTService
+from storage.variant.io.BasicMLSTFeaturesReader import BasicMLSTFeaturesReader
 from storage.variant.util import get_genome_name
 
 logger = logging.getLogger('storage')
@@ -77,6 +81,11 @@ def main(ctx, database_connection, database_dir, verbose):
 
     kmer_query_service = KmerQueryService(sample_service=sample_service)
 
+    mlst_service = MLSTService(database_connection=database, sample_service=sample_service,
+                               mlst_dir=filesystem_storage.mlst_dir)
+    mlst_query_service = MLSTQueryService(sample_service=sample_service,
+                                          mlst_service=mlst_service)
+
     ctx.obj['database'] = database
     ctx.obj['filesystem_storage'] = filesystem_storage
     ctx.obj['kmer_service'] = kmer_service
@@ -86,6 +95,8 @@ def main(ctx, database_connection, database_dir, verbose):
     ctx.obj['tree_service'] = tree_service
     ctx.obj['sample_service'] = sample_service
     ctx.obj['mutation_query_service'] = mutation_query_service
+    ctx.obj['mlst_service'] = mlst_service
+    ctx.obj['mlst_query_service'] = mlst_query_service
     ctx.obj['kmer_query_service'] = kmer_query_service
 
 
@@ -225,6 +236,18 @@ def load_kmer(ctx, kmer_fofns, kmer_size):
                                        kmer_index_path=indexed_genomes[sample_name])
 
     print(f'Generated indexes for {len(indexed_genomes)} samples')
+
+
+@load.command(name='mlst')
+@click.pass_context
+@click.argument('mlst_file', type=click.Path(exists=True), nargs=-1)
+@click.option('--scheme-name', help='Override scheme name found in MLST file',
+              default=FeatureService.AUTO_SCOPE, type=str)
+def load_mlst(ctx, mlst_file: List[Path], scheme_name: str):
+    for file in mlst_file:
+        click.echo(f'Loading MLST results from {str(file)}')
+        reader = BasicMLSTFeaturesReader(mlst_file=file)
+        ctx.obj['mlst_service'].insert(features_reader=reader, feature_scope_name=scheme_name)
 
 
 @main.group(name='list')
@@ -436,6 +459,25 @@ def query_mutation(ctx, name: List[str], include_unknown: bool, summarize: bool)
         match_df = mutation_query_service.find_by_features(features, include_unknown=include_unknown)
     else:
         match_df = mutation_query_service.count_by_features(features, include_unknown=include_unknown)
+
+    match_df.to_csv(sys.stdout, sep='\t', index=False, float_format='%0.4g', na_rep='-')
+
+
+@query.command(name='mlst')
+@click.pass_context
+@click.argument('name', nargs=-1)
+@click.option('--include-unknown/--no-include-unknown',
+              help='Including results where it is unknown if the search term is present or not.',
+              required=False)
+@click.option('--summarize/--no-summarize', help='Print summary information on query')
+def query_mlst(ctx, name: List[str], include_unknown: bool, summarize: bool):
+    mlst_query_service = ctx.obj['mlst_query_service']
+
+    features = [QueryFeatureMLST(n) for n in name]
+    if not summarize:
+        match_df = mlst_query_service.find_by_features(features, include_unknown=include_unknown)
+    else:
+        match_df = mlst_query_service.count_by_features(features, include_unknown=include_unknown)
 
     match_df.to_csv(sys.stdout, sep='\t', index=False, float_format='%0.4g', na_rep='-')
 
