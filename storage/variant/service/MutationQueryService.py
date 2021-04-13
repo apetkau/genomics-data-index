@@ -1,10 +1,10 @@
-from typing import List, Dict, Any, Set
 from pathlib import Path
+from typing import List, Dict, Any, Set
 
 import pandas as pd
 
-from storage.variant.service.QueryService import QueryFeature
 from storage.variant.service.FullFeatureQueryService import FullFeatureQueryService
+from storage.variant.service.QueryService import QueryFeature
 from storage.variant.service.ReferenceService import ReferenceService
 from storage.variant.service.SampleService import SampleService
 from storage.variant.service.TreeService import TreeService

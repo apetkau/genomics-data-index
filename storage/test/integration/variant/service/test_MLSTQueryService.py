@@ -1,16 +1,16 @@
-import pytest
-
-import pandas as pd
 import math
 
-from storage.variant.service.MLSTQueryService import MLSTQueryService, QueryFeatureMLST
+import pandas as pd
+import pytest
+
 from storage.variant.model import Sample
+from storage.variant.service.MLSTQueryService import MLSTQueryService, QueryFeatureMLST
 
 
 @pytest.fixture
 def mlst_query_service(mlst_service_loaded, sample_service) -> MLSTQueryService:
     return MLSTQueryService(mlst_service=mlst_service_loaded,
-                                sample_service=sample_service)
+                            sample_service=sample_service)
 
 
 def test_find_by_features(database, mlst_query_service: MLSTQueryService):

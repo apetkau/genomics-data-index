@@ -163,8 +163,8 @@ def mlst_reader_basic() -> MLSTFeaturesReader:
 @pytest.fixture
 def mlst_service_loaded(mlst_reader_basic, database, sample_service, filesystem_storage) -> MLSTService:
     mlst_service = MLSTService(database_connection=database,
-                       sample_service=sample_service,
-                       mlst_dir=filesystem_storage.mlst_dir)
+                               sample_service=sample_service,
+                               mlst_dir=filesystem_storage.mlst_dir)
     mlst_service.insert(features_reader=mlst_reader_basic)
 
     return mlst_service

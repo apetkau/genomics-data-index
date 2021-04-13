@@ -67,7 +67,7 @@ class MLSTService(FeatureService):
 
     def check_samples_have_features(self, sample_names: Set[str], feature_scope_name: str) -> bool:
         samples_with_mlst = {sample.name for sample in
-                                 self._sample_service.get_samples_with_mlst_alleles(feature_scope_name)}
+                             self._sample_service.get_samples_with_mlst_alleles(feature_scope_name)}
         return len(samples_with_mlst.intersection(sample_names)) != 0
 
     def get_correct_reader(self) -> Any:
@@ -81,7 +81,7 @@ class MLSTService(FeatureService):
     def build_sample_feature_object(self, sample: Sample, features_reader: FeaturesReader,
                                     feature_scope_name: str) -> Any:
         self._verify_correct_reader(features_reader=features_reader)
-        mlst_reader : MLSTFeaturesReader = features_reader
+        mlst_reader: MLSTFeaturesReader = features_reader
 
         if feature_scope_name == AUTO_SCOPE:
             scheme_name = mlst_reader.get_scheme_for_sample(sample.name)

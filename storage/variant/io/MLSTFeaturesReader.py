@@ -24,4 +24,3 @@ class MLSTFeaturesReader(FeaturesReader):
         else:
             raise Exception(f'More than one schemes found in the MLST table for sample '
                             f'[{sample_name}]: [{scheme_set}]')
-

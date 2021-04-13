@@ -11,24 +11,24 @@ import coloredlogs
 import pandas as pd
 from Bio import AlignIO
 
+import storage.variant.service.FeatureService as FeatureService
 from storage.FilesystemStorage import FilesystemStorage
 from storage.cli import yaml_config_provider
 from storage.variant.index.KmerIndexer import KmerIndexerSourmash, KmerIndexManager
+from storage.variant.io.BasicMLSTFeaturesReader import BasicMLSTFeaturesReader
 from storage.variant.io.SnippyVariantsReader import SnippyVariantsReader
 from storage.variant.io.VcfVariantsReader import VcfVariantsReader
 from storage.variant.service import DatabaseConnection, EntityExistsError
 from storage.variant.service.CoreAlignmentService import CoreAlignmentService
 from storage.variant.service.KmerQueryService import KmerQueryService
 from storage.variant.service.KmerService import KmerService
+from storage.variant.service.MLSTQueryService import MLSTQueryService, QueryFeatureMLST
+from storage.variant.service.MLSTService import MLSTService
 from storage.variant.service.MutationQueryService import MutationQueryService, QueryFeatureMutation
 from storage.variant.service.ReferenceService import ReferenceService
 from storage.variant.service.SampleService import SampleService
 from storage.variant.service.TreeService import TreeService
 from storage.variant.service.VariationService import VariationService
-from storage.variant.service.MLSTQueryService import MLSTQueryService, QueryFeatureMLST
-import storage.variant.service.FeatureService as FeatureService
-from storage.variant.service.MLSTService import MLSTService
-from storage.variant.io.BasicMLSTFeaturesReader import BasicMLSTFeaturesReader
 from storage.variant.util import get_genome_name
 
 logger = logging.getLogger('storage')

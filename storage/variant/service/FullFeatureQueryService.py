@@ -1,10 +1,10 @@
-from typing import List, Any, Dict, Set
 import abc
+from typing import List, Any, Dict, Set
 
 import pandas as pd
 
-from storage.variant.service.QueryService import QueryService, QueryFeature
 from storage.variant.service import SampleService
+from storage.variant.service.QueryService import QueryService, QueryFeature
 
 
 class FullFeatureQueryService(QueryService):

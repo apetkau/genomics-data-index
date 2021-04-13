@@ -3,8 +3,8 @@ import pytest
 from storage.variant.model import MLSTAllelesSamples
 from storage.variant.model import Sample
 from storage.variant.model import SampleMLSTAlleles
-from storage.variant.service.MLSTService import MLSTService
 from storage.variant.service import EntityExistsError
+from storage.variant.service.MLSTService import MLSTService
 
 
 def test_insert_mlst_results(database, mlst_reader_single_scheme, sample_service, filesystem_storage):
