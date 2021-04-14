@@ -62,6 +62,7 @@ class FullFeatureQueryService(QueryService):
 
     def _count_by_features_internal(self, features: List[QueryFeature], include_unknown: bool) -> pd.DataFrame:
         self.validate_query_features(features)
+        features = self.expand_features(features)
 
         feature_sample_counts = self._sample_service.count_samples_by_features(features)
 

@@ -182,6 +182,28 @@ def test_count_by_features(mlst_query_service: MLSTQueryService):
     assert pd.isna(matches_df['% Unknown'].tolist()[0])
 
 
+def test_count_by_features_wild(mlst_query_service: MLSTQueryService):
+    matches_df = mlst_query_service.count_by_features([QueryFeatureMLST('lmonocytogenes:lhkA:*')],
+                                                      include_unknown=False)
+
+    assert ['Type', 'Feature', 'Present', 'Absent', 'Unknown', 'Total',
+            '% Present', '% Absent', '% Unknown'] == list(matches_df.columns.tolist())
+
+    assert ['lmonocytogenes:lhkA:4', 'lmonocytogenes:lhkA:5'] == list(matches_df['Feature'].tolist())
+    assert [1, 1] == list(matches_df['Present'].tolist())
+    assert [1, 1] == list(matches_df['Absent'].tolist())
+    assert pd.isna(matches_df['Unknown'].tolist()[0])
+    assert pd.isna(matches_df['Unknown'].tolist()[1])
+    assert [2, 2] == list(matches_df['Total'].tolist())
+
+    assert math.isclose(100 * 1 / 2, matches_df['% Present'].tolist()[0])
+    assert math.isclose(100 * 1 / 2, matches_df['% Absent'].tolist()[0])
+    assert pd.isna(matches_df['% Unknown'].tolist()[0])
+    assert math.isclose(100 * 1 / 2, matches_df['% Present'].tolist()[1])
+    assert math.isclose(100 * 1 / 2, matches_df['% Absent'].tolist()[1])
+    assert pd.isna(matches_df['% Unknown'].tolist()[1])
+
+
 def test_count_by_features_empty(mlst_query_service: MLSTQueryService):
     matches_df = mlst_query_service.count_by_features([QueryFeatureMLST('campylobacter:aspA:20')],
                                                       include_unknown=False)
@@ -202,6 +224,24 @@ def test_count_by_features_empty(mlst_query_service: MLSTQueryService):
 
 def test_count_by_features_unknown(mlst_query_service_unknown: MLSTQueryService):
     matches_df = mlst_query_service_unknown.count_by_features([QueryFeatureMLST('lmonocytogenes:abcZ:1')],
+                                                      include_unknown=True)
+
+    assert ['Type', 'Feature', 'Present', 'Absent', 'Unknown', 'Total',
+            '% Present', '% Absent', '% Unknown'] == list(matches_df.columns.tolist())
+
+    assert ['lmonocytogenes:abcZ:1'] == list(matches_df['Feature'].tolist())
+    assert [1] == list(matches_df['Present'].tolist())
+    assert [0] == list(matches_df['Absent'].tolist())
+    assert [1] == list(matches_df['Unknown'].tolist())
+    assert [2] == list(matches_df['Total'].tolist())
+
+    assert math.isclose(100 * 1 / 2, matches_df['% Present'].tolist()[0])
+    assert math.isclose(100 * 1 / 2, matches_df['% Unknown'].tolist()[0])
+    assert math.isclose(100 * 0 / 2, matches_df['% Absent'].tolist()[0])
+
+
+def test_count_by_features_wild_unknown_single_allele(mlst_query_service_unknown: MLSTQueryService):
+    matches_df = mlst_query_service_unknown.count_by_features([QueryFeatureMLST('lmonocytogenes:abcZ:*')],
                                                       include_unknown=True)
 
     assert ['Type', 'Feature', 'Present', 'Absent', 'Unknown', 'Total',
