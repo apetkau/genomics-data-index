@@ -23,8 +23,24 @@ class FullFeatureQueryService(QueryService):
             if not isinstance(feature, self.get_correct_query_feature()):
                 raise Exception(f'feature=[{feature}] is not of type {self.get_correct_query_feature()}')
 
+    def expand_features(self, features: List[QueryFeature]) -> List[QueryFeature]:
+        expanded_features = []
+        for feature in features:
+            if feature.is_wild():
+                expanded = self.expand_feature(feature)
+                expanded_features.extend(expanded)
+            else:
+                expanded_features.append(feature)
+
+        return expanded_features
+
+    @abc.abstractmethod
+    def expand_feature(self, feature: QueryFeature) -> List[QueryFeature]:
+        pass
+
     def _find_by_features_internal(self, features: List[QueryFeature], include_unknown: bool) -> pd.DataFrame:
         self.validate_query_features(features)
+        features = self.expand_features(features)
 
         feature_samples = self._sample_service.find_samples_by_features(features)
 

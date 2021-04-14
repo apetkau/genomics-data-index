@@ -65,6 +65,9 @@ class MutationQueryService(FullFeatureQueryService):
     def get_correct_query_feature(self) -> Any:
         return QueryFeatureMutation
 
+    def expand_feature(self, feature: QueryFeature):
+        raise Exception('Not implemented')
+
     def _get_feature_scope_sample_counts(self, feature_scopes: Set[str]) -> Dict[str, int]:
         sequence_reference_map = {n: self._reference_service.find_reference_for_sequence(n)
                                   for n in feature_scopes}

@@ -3,17 +3,23 @@ import abc
 
 
 class QueryFeature(abc.ABC):
+    WILD = '*'
+    SPLIT_CHAR = ':'
+
     def __init__(self):
         pass
 
     @property
     @abc.abstractmethod
-    def id(self):
+    def id(self) -> str:
         pass
+
+    def is_wild(self) -> bool:
+        return self.WILD in self.id
 
     @property
     @abc.abstractmethod
-    def scope(self):
+    def scope(self) -> str:
         pass
 
     @abc.abstractmethod

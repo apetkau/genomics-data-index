@@ -60,7 +60,7 @@ def test_insert_mlst_results_multiple_schemes(database, mlst_reader_basic, sampl
 
     mlst_alleles_all = session.query(MLSTAllelesSamples).all()
     mlst_alleles_all_id = {allele.sla: allele for allele in mlst_alleles_all}
-    assert num_loci * num_schemes == len(mlst_alleles_all)
+    assert num_loci * num_schemes + 1 == len(mlst_alleles_all)
 
     assert {'lmonocytogenes', 'ecoli', 'campylobacter'} == {allele.scheme for allele in mlst_alleles_all}
 
@@ -68,11 +68,11 @@ def test_insert_mlst_results_multiple_schemes(database, mlst_reader_basic, sampl
     assert 2 == len(mlst_alleles_all_id['ecoli:fumC:23'].sample_ids)
 
     mlst_alleles_lmono = session.query(MLSTAllelesSamples).filter(MLSTAllelesSamples.scheme == 'lmonocytogenes').all()
-    mlst_alleles_id_lmono = {allele.sla: allele for allele in mlst_alleles_lmono}
+    mlst_alleles_id_lmono = {allele.sla for allele in mlst_alleles_lmono}
 
     assert {'lmonocytogenes:abcZ:1', 'lmonocytogenes:bglA:51', 'lmonocytogenes:cat:11',
             'lmonocytogenes:dapE:13', 'lmonocytogenes:dat:2', 'lmonocytogenes:ldh:5',
-            'lmonocytogenes:lhkA:5'} == set(mlst_alleles_id_lmono.keys())
+            'lmonocytogenes:lhkA:4', 'lmonocytogenes:lhkA:5'} == mlst_alleles_id_lmono
 
 
 def test_insert_mlst_results_multiple_schemes_override_scheme(database, mlst_reader_basic,
@@ -94,7 +94,7 @@ def test_insert_mlst_results_multiple_schemes_override_scheme(database, mlst_rea
     mlst_alleles_samples = session.query(MLSTAllelesSamples).all()
     mlst_alleles_samples_id_allele = {allele.sla: allele for allele in mlst_alleles_samples}
 
-    assert num_loci * num_alt_schemes == len(mlst_alleles_samples)
+    assert num_loci * num_alt_schemes + 1 == len(mlst_alleles_samples)
     assert 2 == len(mlst_alleles_samples_id_allele['lmonocytogenes:abcZ:1'].sample_ids)
     assert 2 == len(mlst_alleles_samples_id_allele['lmonocytogenes:fumC:23'].sample_ids)
 
@@ -123,3 +123,19 @@ def test_double_insert_mlst(database, mlst_reader_single_scheme, sample_service,
 
     sample_mlst_alleles = session.query(SampleMLSTAlleles).all()
     assert 2 == len(sample_mlst_alleles)
+
+
+def test_get_all_alleles(mlst_service_loaded: MLSTService):
+    assert {'1'} == mlst_service_loaded.get_all_alleles('lmonocytogenes', 'abcZ')
+
+
+def test_get_all_alleles_multiple_alleles(mlst_service_loaded: MLSTService):
+    assert {'4', '5'} == mlst_service_loaded.get_all_alleles('lmonocytogenes', 'lhkA')
+
+
+def test_get_all_alleles_unknown_alleles(mlst_service_loaded_unknown: MLSTService):
+    assert {'1', '?'} == mlst_service_loaded_unknown.get_all_alleles('lmonocytogenes', 'abcZ')
+
+
+def test_get_all_alleles_unknown_alleles2(mlst_service_loaded_unknown: MLSTService):
+    assert {'?'} == mlst_service_loaded_unknown.get_all_alleles('lmonocytogenes', 'bglA')

@@ -99,6 +99,71 @@ def test_find_by_features_two_features(database, mlst_query_service: MLSTQuerySe
     assert len(matches_df) == 4
 
 
+def test_find_by_features_allele_wild(database, mlst_query_service: MLSTQueryService):
+    sample1 = database.get_session().query(Sample).filter(Sample.name == '2014D-0067').one()
+    sample2 = database.get_session().query(Sample).filter(Sample.name == '2014D-0068').one()
+
+    matches_df = mlst_query_service.find_by_features([QueryFeatureMLST('campylobacter:aspA:*')])
+
+    assert ['Type', 'Feature', 'Sample Name', 'Sample ID', 'Status'] == list(matches_df.columns.tolist())
+
+    assert ['2014D-0067', '2014D-0068'] == list(matches_df['Sample Name'].tolist())
+    assert [sample1.id, sample2.id] == list(matches_df['Sample ID'].tolist())
+    assert ['campylobacter:aspA:2', 'campylobacter:aspA:2'] == list(matches_df['Feature'].tolist())
+    assert {'mlst'} == set(matches_df['Type'].tolist())
+    assert {'Present'} == set(matches_df['Status'].tolist())
+    assert len(matches_df) == 2
+
+
+def test_find_by_features_allele_wild2(database, mlst_query_service: MLSTQueryService):
+    sample1 = database.get_session().query(Sample).filter(Sample.name == 'CFSAN002349').one()
+    sample2 = database.get_session().query(Sample).filter(Sample.name == 'CFSAN023463').one()
+
+    matches_df = mlst_query_service.find_by_features([QueryFeatureMLST('lmonocytogenes:lhkA:*')])
+
+    assert ['Type', 'Feature', 'Sample Name', 'Sample ID', 'Status'] == list(matches_df.columns.tolist())
+
+    assert ['CFSAN002349', 'CFSAN023463'] == list(matches_df['Sample Name'].tolist())
+    assert [sample1.id, sample2.id] == list(matches_df['Sample ID'].tolist())
+    assert ['lmonocytogenes:lhkA:4', 'lmonocytogenes:lhkA:5'] == list(matches_df['Feature'].tolist())
+    assert {'mlst'} == set(matches_df['Type'].tolist())
+    assert {'Present'} == set(matches_df['Status'].tolist())
+    assert len(matches_df) == 2
+
+
+def test_find_by_features_allele_wild_unknown(database, mlst_query_service_unknown: MLSTQueryService):
+    sample1 = database.get_session().query(Sample).filter(Sample.name == 'CFSAN002349').one()
+    sample2 = database.get_session().query(Sample).filter(Sample.name == 'CFSAN023463').one()
+
+    matches_df = mlst_query_service_unknown.find_by_features([QueryFeatureMLST('lmonocytogenes:abcZ:*')],
+                                                             include_unknown=True)
+
+    assert ['Type', 'Feature', 'Sample Name', 'Sample ID', 'Status'] == list(matches_df.columns.tolist())
+
+    assert ['CFSAN002349', 'CFSAN023463'] == list(matches_df['Sample Name'].tolist())
+    assert [sample1.id, sample2.id] == list(matches_df['Sample ID'].tolist())
+    assert ['lmonocytogenes:abcZ:1', 'lmonocytogenes:abcZ:1'] == list(matches_df['Feature'].tolist())
+    assert {'mlst'} == set(matches_df['Type'].tolist())
+    assert ['Present', 'Unknown'] == list(matches_df['Status'].tolist())
+    assert len(matches_df) == 2
+
+
+def test_find_by_features_allele_wild_unknown_no_include_unknown(database, mlst_query_service_unknown: MLSTQueryService):
+    sample1 = database.get_session().query(Sample).filter(Sample.name == 'CFSAN002349').one()
+
+    matches_df = mlst_query_service_unknown.find_by_features([QueryFeatureMLST('lmonocytogenes:abcZ:*')],
+                                                             include_unknown=False)
+
+    assert ['Type', 'Feature', 'Sample Name', 'Sample ID', 'Status'] == list(matches_df.columns.tolist())
+
+    assert ['CFSAN002349'] == list(matches_df['Sample Name'].tolist())
+    assert [sample1.id] == list(matches_df['Sample ID'].tolist())
+    assert ['lmonocytogenes:abcZ:1'] == list(matches_df['Feature'].tolist())
+    assert {'mlst'} == set(matches_df['Type'].tolist())
+    assert ['Present'] == list(matches_df['Status'].tolist())
+    assert len(matches_df) == 1
+
+
 def test_count_by_features(mlst_query_service: MLSTQueryService):
     matches_df = mlst_query_service.count_by_features([QueryFeatureMLST('campylobacter:aspA:2')],
                                                       include_unknown=False)

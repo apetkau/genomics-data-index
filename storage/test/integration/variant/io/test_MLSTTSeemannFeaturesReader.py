@@ -29,7 +29,7 @@ def test_get_features_table(mlst_reader):
 
     assert ['abcZ', 'bglA', 'cat', 'dapE', 'dat', 'ldh', 'lhkA'] == list(mlst_df.loc[mlst_df['Sample'] == 'CFSAN002349',
                                                                                      'Locus'].tolist())
-    assert ['1', '51', '11', '13', '2', '5', '5'] == list(mlst_df.loc[mlst_df['Sample'] == 'CFSAN002349',
+    assert ['1', '51', '11', '13', '2', '5', '4'] == list(mlst_df.loc[mlst_df['Sample'] == 'CFSAN002349',
                                                                       'Allele'].tolist())
     assert ['adk', 'fumC', 'gyrB', 'icd', 'mdh', 'purA', 'recA'] == list(mlst_df.loc[mlst_df['Sample'] == '2014C-3598',
                                                                                      'Locus'].tolist())

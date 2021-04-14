@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, Dict, Any, Set
+from typing import List, Dict, Any, Set, cast
 
 import pandas as pd
 
@@ -7,6 +7,7 @@ from storage.variant.model.QueryFeatureMLST import QueryFeatureMLST
 from storage.variant.service.FullFeatureQueryService import FullFeatureQueryService
 from storage.variant.service.MLSTService import MLSTService
 from storage.variant.model.QueryFeature import QueryFeature
+from storage.variant.model import MLST_UNKNOWN_ALLELE
 from storage.variant.service.SampleService import SampleService
 
 
@@ -26,6 +27,24 @@ class MLSTQueryService(FullFeatureQueryService):
         }
 
         return scheme_sample_counts
+
+    def expand_feature(self, feature: QueryFeature) -> List[QueryFeature]:
+        if not feature.is_wild():
+            return [feature]
+
+        mlst_feature = cast(QueryFeatureMLST, feature)
+
+        new_query_features = []
+        if mlst_feature.allele == mlst_feature.WILD:
+            new_query_features = []
+            all_alleles = self._mlst_service.get_all_alleles(scheme=mlst_feature.scope,
+                                                             locus=mlst_feature.locus)
+            for allele in all_alleles:
+                if allele != MLST_UNKNOWN_ALLELE:
+                    new_query_features.append(QueryFeatureMLST.create_feature(scheme=mlst_feature.scope,
+                                                                              locus=mlst_feature.locus,
+                                                                              allele=allele))
+        return new_query_features
 
     def _get_unknown_features(self, features: List[QueryFeature]) -> pd.DataFrame:
         data = []

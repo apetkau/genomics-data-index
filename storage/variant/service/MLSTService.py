@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Dict, Set, Any
+from typing import Dict, Set, Any, List, cast
 
 import pandas as pd
 
@@ -49,6 +49,11 @@ class MLSTService(FeatureService):
 
         return schemes
 
+    def get_all_alleles(self, scheme: str, locus: str) -> Set[str]:
+        return {a for a, in self._database.get_session().query(MLSTAllelesSamples.allele) \
+            .filter(MLSTAllelesSamples.scheme == scheme, MLSTAllelesSamples.locus == locus) \
+            .all()}
+
     def _create_feature_identifier(self, features_df: pd.DataFrame) -> str:
         return MLSTAllelesSamples.to_sla(
             scheme_name=features_df['Scheme'],
@@ -81,7 +86,7 @@ class MLSTService(FeatureService):
     def build_sample_feature_object(self, sample: Sample, features_reader: FeaturesReader,
                                     feature_scope_name: str) -> Any:
         self._verify_correct_reader(features_reader=features_reader)
-        mlst_reader: MLSTFeaturesReader = features_reader
+        mlst_reader = cast(MLSTFeaturesReader, features_reader)
 
         if feature_scope_name == AUTO_SCOPE:
             scheme_name = mlst_reader.get_scheme_for_sample(sample.name)
