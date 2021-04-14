@@ -58,6 +58,9 @@ class QueryFeatureMutation(QueryFeature):
     def alt(self) -> str:
         return self._alt
 
+    def is_unknown(self) -> bool:
+        return False
+
     def to_unknown(self) -> QueryFeature:
         return QueryFeatureMutation(':'.join([
             self._seq_name,

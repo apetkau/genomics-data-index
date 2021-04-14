@@ -17,6 +17,10 @@ class QueryFeature(abc.ABC):
     def is_wild(self) -> bool:
         return self.WILD in self.id
 
+    @abc.abstractmethod
+    def is_unknown(self) -> bool:
+        pass
+
     @property
     @abc.abstractmethod
     def scope(self) -> str:

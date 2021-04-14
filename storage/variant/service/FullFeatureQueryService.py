@@ -64,6 +64,10 @@ class FullFeatureQueryService(QueryService):
         self.validate_query_features(features)
         features = self.expand_features(features)
 
+        # Remove unknown features if they are not to be included
+        if not include_unknown:
+            features = [f for f in features if not f.is_unknown()]
+
         feature_sample_counts = self._sample_service.count_samples_by_features(features)
 
         scope_set = {f.scope for f in features}
@@ -75,7 +79,12 @@ class FullFeatureQueryService(QueryService):
             unknown_counts = {}
             absent_counts = {}
             for feature in features:
-                if feature.id in grouped_df.index:
+                # If unknown feature, then all counts should be unknown counts
+                if feature.is_unknown():
+                    feature_sample_counts[feature.id] = 0
+                    unknown_counts[feature.id] = feature_scope_sample_counts[feature.scope]
+                    absent_counts[feature.id] = 0
+                elif feature.id in grouped_df.index:
                     unknown_counts[feature.id] = grouped_df.loc[feature.id].values[0]
                     absent_counts[feature.id] = feature_scope_sample_counts[feature.scope] \
                                                 - feature_sample_counts[feature.id] - unknown_counts[feature.id]

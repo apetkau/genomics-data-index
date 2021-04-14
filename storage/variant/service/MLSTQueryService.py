@@ -35,8 +35,26 @@ class MLSTQueryService(FullFeatureQueryService):
         mlst_feature = cast(QueryFeatureMLST, feature)
 
         new_query_features = []
-        if mlst_feature.allele == mlst_feature.WILD:
-            new_query_features = []
+        if mlst_feature.locus == mlst_feature.WILD:
+            loci_with_found_alleles = set()
+            all_loci = set()
+            all_loci_alleles = self._mlst_service.get_all_loci_alleles(scheme=mlst_feature.scope)
+            for (locus, allele) in all_loci_alleles:
+                all_loci.add(locus)
+
+                if allele != MLST_UNKNOWN_ALLELE:
+                    loci_with_found_alleles.add(locus)
+                    new_query_features.append(QueryFeatureMLST.create_feature(scheme=mlst_feature.scope,
+                                                                              locus=locus,
+                                                                              allele=allele))
+
+            loci_with_only_unknown_alleles = all_loci - loci_with_found_alleles
+            # Add feature for loci with invalid alleles if they exist
+            for locus in loci_with_only_unknown_alleles:
+                new_query_features.append(QueryFeatureMLST.create_feature(scheme=mlst_feature.scope,
+                                                                          locus=locus,
+                                                                          allele=MLST_UNKNOWN_ALLELE))
+        elif mlst_feature.allele == mlst_feature.WILD:
             all_alleles = self._mlst_service.get_all_alleles(scheme=mlst_feature.scope,
                                                              locus=mlst_feature.locus)
             for allele in all_alleles:

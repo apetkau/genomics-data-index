@@ -139,3 +139,15 @@ def test_get_all_alleles_unknown_alleles(mlst_service_loaded_unknown: MLSTServic
 
 def test_get_all_alleles_unknown_alleles2(mlst_service_loaded_unknown: MLSTService):
     assert {'?'} == mlst_service_loaded_unknown.get_all_alleles('lmonocytogenes', 'bglA')
+
+
+def test_get_all_loci_alleles(mlst_service_loaded: MLSTService):
+    assert {('abcZ', '1'), ('bglA', '51'), ('cat', '11'),
+            ('dapE', '13'), ('dat', '2'), ('ldh', '5'),
+            ('lhkA', '4'), ('lhkA', '5')} == mlst_service_loaded.get_all_loci_alleles('lmonocytogenes')
+
+
+def test_get_all_loci_alleles_unknown(mlst_service_loaded_unknown: MLSTService):
+    assert {('abcZ', '1'), ('abcZ', '?'),('bglA', '?'), ('cat', '11'),
+            ('dapE', '13'), ('dat', '2'), ('ldh', '5'),
+            ('lhkA', '5')} == mlst_service_loaded_unknown.get_all_loci_alleles('lmonocytogenes')

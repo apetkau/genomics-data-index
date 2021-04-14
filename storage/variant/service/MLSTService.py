@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Dict, Set, Any, List, cast
+from typing import Dict, Set, Any, Tuple, cast
 
 import pandas as pd
 
@@ -52,6 +52,16 @@ class MLSTService(FeatureService):
     def get_all_alleles(self, scheme: str, locus: str) -> Set[str]:
         return {a for a, in self._database.get_session().query(MLSTAllelesSamples.allele) \
             .filter(MLSTAllelesSamples.scheme == scheme, MLSTAllelesSamples.locus == locus) \
+            .all()}
+
+    def get_all_loci_alleles(self, scheme: str) -> Set[Tuple[str, str]]:
+        """
+        Gets all (loci, allele) pairs from the database given a scheme.
+        :param scheme: The scheme.
+        :return: Gets a list of tuples of the form (loci, allele).
+        """
+        return {a for a in self._database.get_session().query(MLSTAllelesSamples.locus, MLSTAllelesSamples.allele) \
+            .filter(MLSTAllelesSamples.scheme == scheme) \
             .all()}
 
     def _create_feature_identifier(self, features_df: pd.DataFrame) -> str:

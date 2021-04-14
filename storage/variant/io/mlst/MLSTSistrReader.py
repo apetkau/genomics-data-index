@@ -4,6 +4,7 @@ import re
 import pandas as pd
 
 from storage.variant.io.mlst.MLSTFeaturesReader import MLSTFeaturesReader
+from storage.variant.model import MLST_UNKNOWN_ALLELE
 
 
 class MLSTSistrReader(MLSTFeaturesReader):
@@ -31,7 +32,7 @@ class MLSTSistrReader(MLSTFeaturesReader):
         return df
 
     def _is_valid_allele(self, allele: str) -> bool:
-        return bool(re.match(r'^\d+$', allele))
+        return allele != MLST_UNKNOWN_ALLELE and bool(re.match(r'^\d+$', allele))
 
     def _get_sample_from_filename(self, filename_series: pd.Series) -> pd.Series:
         file_sample_name_regex = r'^([^.]*)'
