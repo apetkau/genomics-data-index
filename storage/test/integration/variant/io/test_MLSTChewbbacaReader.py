@@ -25,10 +25,10 @@ def test_get_features_table(mlst_reader):
                           num_loci) == list(mlst_df['Sample'].tolist())
 
     assert ['1'] == list(mlst_df.loc[(mlst_df['Sample'] == 'GCF_000006945') &
-                                       (mlst_df['Locus'] == 'GCF-000006945-protein10.fasta'), 'Allele'].tolist())
+                                     (mlst_df['Locus'] == 'GCF-000006945-protein10.fasta'), 'Allele'].tolist())
 
     assert ['2'] == list(mlst_df.loc[(mlst_df['Sample'] == 'GCF_000007545') &
-                                       (mlst_df['Locus'] == 'GCF-000006945-protein1004.fasta'), 'Allele'].tolist())
+                                     (mlst_df['Locus'] == 'GCF-000006945-protein1004.fasta'), 'Allele'].tolist())
 
 
 def test_get_features_table_unknown(mlst_reader):
@@ -38,7 +38,7 @@ def test_get_features_table_unknown(mlst_reader):
     assert {'test-scheme'} == set(mlst_df['Scheme'].tolist())
 
     assert ['?'] == list(mlst_df.loc[(mlst_df['Sample'] == 'GCF_000007545') &
-                                       (mlst_df['Locus'] == 'GCF-000006945-protein1.fasta'), 'Allele'].tolist())
+                                     (mlst_df['Locus'] == 'GCF-000006945-protein1.fasta'), 'Allele'].tolist())
 
     assert ['?'] == list(mlst_df.loc[(mlst_df['Sample'] == 'GCF_000007545') &
-                                       (mlst_df['Locus'] == 'GCF-000006945-protein1008.fasta'), 'Allele'].tolist())
+                                     (mlst_df['Locus'] == 'GCF-000006945-protein1008.fasta'), 'Allele'].tolist())

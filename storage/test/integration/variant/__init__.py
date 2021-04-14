@@ -1,6 +1,6 @@
-from typing import List
 from os import path, listdir
 from pathlib import Path
+from typing import List
 
 root_data_dir = Path(path.dirname(__file__), '..', 'data')
 mlst_dir = root_data_dir / 'mlst'

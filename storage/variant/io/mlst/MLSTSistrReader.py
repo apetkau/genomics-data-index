@@ -1,5 +1,5 @@
-from pathlib import Path
 import re
+from pathlib import Path
 
 import pandas as pd
 
@@ -8,7 +8,6 @@ from storage.variant.model import MLST_UNKNOWN_ALLELE
 
 
 class MLSTSistrReader(MLSTFeaturesReader):
-
     SCHEME_NAME = 'sistr_330'
 
     def __init__(self, mlst_file: Path):

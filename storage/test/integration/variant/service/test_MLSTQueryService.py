@@ -4,14 +4,15 @@ import pandas as pd
 import pytest
 
 from storage.variant.model import Sample
-from storage.variant.service.MLSTQueryService import MLSTQueryService
 from storage.variant.model.QueryFeatureMLST import QueryFeatureMLST
+from storage.variant.service.MLSTQueryService import MLSTQueryService
 
 
 @pytest.fixture
 def mlst_query_service(mlst_service_loaded, sample_service) -> MLSTQueryService:
     return MLSTQueryService(mlst_service=mlst_service_loaded,
                             sample_service=sample_service)
+
 
 @pytest.fixture
 def mlst_query_service_unknown(mlst_service_loaded_unknown, sample_service) -> MLSTQueryService:
@@ -40,7 +41,7 @@ def test_find_by_features_unknown(database, mlst_query_service_unknown: MLSTQuer
     sample2 = database.get_session().query(Sample).filter(Sample.name == 'CFSAN023463').one()
 
     matches_df = mlst_query_service_unknown.find_by_features([QueryFeatureMLST('lmonocytogenes:abcZ:1')],
-                                                     include_unknown=True)
+                                                             include_unknown=True)
 
     assert ['Type', 'Feature', 'Sample Name', 'Sample ID', 'Status'] == list(matches_df.columns.tolist())
 
@@ -64,9 +65,9 @@ def test_find_by_features_unknown_two_features(database, mlst_query_service_unkn
     sample2 = database.get_session().query(Sample).filter(Sample.name == 'CFSAN023463').one()
 
     matches_df = mlst_query_service_unknown.find_by_features([
-            QueryFeatureMLST('lmonocytogenes:abcZ:1'),
-            QueryFeatureMLST('lmonocytogenes:bglA:51'),
-        ],
+        QueryFeatureMLST('lmonocytogenes:abcZ:1'),
+        QueryFeatureMLST('lmonocytogenes:bglA:51'),
+    ],
         include_unknown=True)
 
     assert ['Type', 'Feature', 'Sample Name', 'Sample ID', 'Status'] == list(matches_df.columns.tolist())
@@ -166,7 +167,8 @@ def test_find_by_features_allele_wild_unknown(database, mlst_query_service_unkno
     assert len(matches_df) == 2
 
 
-def test_find_by_features_allele_wild_unknown_no_include_unknown(database, mlst_query_service_unknown: MLSTQueryService):
+def test_find_by_features_allele_wild_unknown_no_include_unknown(database,
+                                                                 mlst_query_service_unknown: MLSTQueryService):
     sample1 = database.get_session().query(Sample).filter(Sample.name == 'CFSAN002349').one()
 
     matches_df = mlst_query_service_unknown.find_by_features([QueryFeatureMLST('lmonocytogenes:abcZ:*')],
@@ -242,7 +244,7 @@ def test_count_by_features_empty(mlst_query_service: MLSTQueryService):
 
 def test_count_by_features_unknown(mlst_query_service_unknown: MLSTQueryService):
     matches_df = mlst_query_service_unknown.count_by_features([QueryFeatureMLST('lmonocytogenes:abcZ:1')],
-                                                      include_unknown=True)
+                                                              include_unknown=True)
 
     assert ['Type', 'Feature', 'Present', 'Absent', 'Unknown', 'Total',
             '% Present', '% Absent', '% Unknown'] == list(matches_df.columns.tolist())
@@ -260,7 +262,7 @@ def test_count_by_features_unknown(mlst_query_service_unknown: MLSTQueryService)
 
 def test_count_by_features_wild_unknown_single_allele(mlst_query_service_unknown: MLSTQueryService):
     matches_df = mlst_query_service_unknown.count_by_features([QueryFeatureMLST('lmonocytogenes:abcZ:*')],
-                                                      include_unknown=True)
+                                                              include_unknown=True)
 
     assert ['Type', 'Feature', 'Present', 'Absent', 'Unknown', 'Total',
             '% Present', '% Absent', '% Unknown'] == list(matches_df.columns.tolist())
@@ -278,7 +280,7 @@ def test_count_by_features_wild_unknown_single_allele(mlst_query_service_unknown
 
 def test_count_by_features_locus_wild_with_unknown(mlst_query_service_unknown: MLSTQueryService):
     matches_df = mlst_query_service_unknown.count_by_features([QueryFeatureMLST('lmonocytogenes:*')],
-                                                      include_unknown=True)
+                                                              include_unknown=True)
 
     assert ['Type', 'Feature', 'Present', 'Absent', 'Unknown', 'Total',
             '% Present', '% Absent', '% Unknown'] == list(matches_df.columns.tolist())

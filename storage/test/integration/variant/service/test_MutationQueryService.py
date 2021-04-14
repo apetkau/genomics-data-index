@@ -4,8 +4,8 @@ import pandas as pd
 import pytest
 
 from storage.variant.model import Sample
-from storage.variant.service.MutationQueryService import MutationQueryService
 from storage.variant.model.QueryFeatureMutation import QueryFeatureMutation
+from storage.variant.service.MutationQueryService import MutationQueryService
 
 
 @pytest.fixture

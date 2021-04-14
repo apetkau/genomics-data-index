@@ -8,6 +8,7 @@ from storage.variant.io.mlst.MLSTTSeemannFeaturesReader import MLSTTSeemannFeatu
 def mlst_reader() -> MLSTTSeemannFeaturesReader:
     return MLSTTSeemannFeaturesReader(mlst_file=basic_mlst_file)
 
+
 @pytest.fixture
 def mlst_reader_unknown() -> MLSTTSeemannFeaturesReader:
     return MLSTTSeemannFeaturesReader(mlst_file=mlst_file_unknown)
@@ -50,15 +51,15 @@ def test_get_features_table_with_unknown(mlst_reader_unknown):
     assert ['abcZ', 'bglA', 'cat', 'dapE', 'dat', 'ldh', 'lhkA'] == list(mlst_df.loc[mlst_df['Sample'] == 'CFSAN002349',
                                                                                      'Locus'].tolist())
     assert ['1', '?', '11', '13', '2', '5', '5'] == list(mlst_df.loc[mlst_df['Sample'] == 'CFSAN002349',
-                                                                      'Allele'].tolist())
+                                                                     'Allele'].tolist())
     assert ['abcZ', 'bglA', 'cat', 'dapE', 'dat', 'ldh', 'lhkA'] == list(mlst_df.loc[mlst_df['Sample'] == 'CFSAN023463',
                                                                                      'Locus'].tolist())
     assert ['?', '?', '11', '13', '2', '5', '5'] == list(mlst_df.loc[mlst_df['Sample'] == 'CFSAN023463',
-                                                                      'Allele'].tolist())
+                                                                     'Allele'].tolist())
     assert ['adk', 'fumC', 'gyrB', 'icd', 'mdh', 'purA', 'recA'] == list(mlst_df.loc[mlst_df['Sample'] == '2014C-3598',
                                                                                      'Locus'].tolist())
     assert ['100', '?', '?', '45', '1', '35', '7'] == list(mlst_df.loc[mlst_df['Sample'] == '2014C-3598',
-                                                                         'Allele'].tolist())
+                                                                       'Allele'].tolist())
 
 
 def test_samples_list(mlst_reader):
