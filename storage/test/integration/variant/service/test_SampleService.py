@@ -1,7 +1,7 @@
 from storage.variant.SampleSet import SampleSet
 from storage.variant.model import Sample
-from storage.variant.service.MLSTQueryService import QueryFeatureMLST
-from storage.variant.service.MutationQueryService import QueryFeatureMutation
+from storage.variant.model.QueryFeatureMLST import QueryFeatureMLST
+from storage.variant.model.QueryFeatureMutation import QueryFeatureMutation
 
 
 def test_samples_with_variants(sample_service, variation_service):

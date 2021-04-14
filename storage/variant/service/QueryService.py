@@ -1,9 +1,10 @@
-from __future__ import annotations
 import abc
 from pathlib import Path
 from typing import List, Dict, Set
 
 import pandas as pd
+
+from storage.variant.model.QueryFeature import QueryFeature
 
 
 def verify_columns_match(expected_columns: Set[str], result_df: pd.DataFrame) -> None:
@@ -11,29 +12,6 @@ def verify_columns_match(expected_columns: Set[str], result_df: pd.DataFrame) ->
     if not expected_columns.issubset(actual_columns):
         raise Exception('Results table does not contain expected set of columns. '
                         f'Expected {expected_columns}, actual {actual_columns}')
-
-
-class QueryFeature(abc.ABC):
-    def __init__(self):
-        pass
-
-    @property
-    @abc.abstractmethod
-    def id(self):
-        pass
-
-    @property
-    @abc.abstractmethod
-    def scope(self):
-        pass
-
-    @abc.abstractmethod
-    def to_unknown(self) -> QueryFeature:
-        """
-        Converts this given QueryFeature to one representing an unknown (e.g., unknown mutation or MLST allele).
-        :return: The equivalent of this feature but representing an unknown.
-        """
-        pass
 
 
 class QueryService(abc.ABC):

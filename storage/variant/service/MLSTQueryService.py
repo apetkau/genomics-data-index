@@ -1,48 +1,14 @@
 from pathlib import Path
-from typing import List, Dict, Any, Set
+from typing import List, Dict, Any, Set, cast
 
 import pandas as pd
 
+from storage.variant.model.QueryFeatureMLST import QueryFeatureMLST
 from storage.variant.service.FullFeatureQueryService import FullFeatureQueryService
 from storage.variant.service.MLSTService import MLSTService
-from storage.variant.service.QueryService import QueryFeature
-from storage.variant.service.SampleService import SampleService
+from storage.variant.model.QueryFeature import QueryFeature
 from storage.variant.model import MLST_UNKNOWN_ALLELE
-
-
-class QueryFeatureMLST(QueryFeature):
-
-    def __init__(self, sla: str):
-        super().__init__()
-        self._sla = sla
-
-        scheme, locus, allele = self._sla.split(':')
-        self._scheme = scheme
-        self._locus = locus
-        self._allele = allele
-
-    @property
-    def id(self):
-        return self._sla
-
-    @property
-    def scope(self):
-        return self._scheme
-
-    @property
-    def locus(self):
-        return self._locus
-
-    @property
-    def allele(self):
-        return self._allele
-
-    def to_unknown(self) -> QueryFeature:
-        return QueryFeatureMLST(':'.join([
-            self._scheme,
-            self._locus,
-            MLST_UNKNOWN_ALLELE
-        ]))
+from storage.variant.service.SampleService import SampleService
 
 
 class MLSTQueryService(FullFeatureQueryService):
@@ -61,6 +27,42 @@ class MLSTQueryService(FullFeatureQueryService):
         }
 
         return scheme_sample_counts
+
+    def expand_feature(self, feature: QueryFeature) -> List[QueryFeature]:
+        if not feature.is_wild():
+            return [feature]
+
+        mlst_feature = cast(QueryFeatureMLST, feature)
+
+        new_query_features = []
+        if mlst_feature.locus == mlst_feature.WILD:
+            loci_with_found_alleles = set()
+            all_loci = set()
+            all_loci_alleles = self._mlst_service.get_all_loci_alleles(scheme=mlst_feature.scope)
+            for (locus, allele) in all_loci_alleles:
+                all_loci.add(locus)
+
+                if allele != MLST_UNKNOWN_ALLELE:
+                    loci_with_found_alleles.add(locus)
+                    new_query_features.append(QueryFeatureMLST.create_feature(scheme=mlst_feature.scope,
+                                                                              locus=locus,
+                                                                              allele=allele))
+
+            loci_with_only_unknown_alleles = all_loci - loci_with_found_alleles
+            # Add feature for loci with invalid alleles if they exist
+            for locus in loci_with_only_unknown_alleles:
+                new_query_features.append(QueryFeatureMLST.create_feature(scheme=mlst_feature.scope,
+                                                                          locus=locus,
+                                                                          allele=MLST_UNKNOWN_ALLELE))
+        elif mlst_feature.allele == mlst_feature.WILD:
+            all_alleles = self._mlst_service.get_all_alleles(scheme=mlst_feature.scope,
+                                                             locus=mlst_feature.locus)
+            for allele in all_alleles:
+                if allele != MLST_UNKNOWN_ALLELE:
+                    new_query_features.append(QueryFeatureMLST.create_feature(scheme=mlst_feature.scope,
+                                                                              locus=mlst_feature.locus,
+                                                                              allele=allele))
+        return new_query_features
 
     def _get_unknown_features(self, features: List[QueryFeature]) -> pd.DataFrame:
         data = []

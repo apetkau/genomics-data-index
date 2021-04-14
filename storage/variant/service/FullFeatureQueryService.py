@@ -4,7 +4,8 @@ from typing import List, Any, Dict, Set
 import pandas as pd
 
 from storage.variant.service import SampleService
-from storage.variant.service.QueryService import QueryService, QueryFeature
+from storage.variant.service.QueryService import QueryService
+from storage.variant.model.QueryFeature import QueryFeature
 
 
 class FullFeatureQueryService(QueryService):
@@ -22,8 +23,24 @@ class FullFeatureQueryService(QueryService):
             if not isinstance(feature, self.get_correct_query_feature()):
                 raise Exception(f'feature=[{feature}] is not of type {self.get_correct_query_feature()}')
 
+    def expand_features(self, features: List[QueryFeature]) -> List[QueryFeature]:
+        expanded_features = []
+        for feature in features:
+            if feature.is_wild():
+                expanded = self.expand_feature(feature)
+                expanded_features.extend(expanded)
+            else:
+                expanded_features.append(feature)
+
+        return expanded_features
+
+    @abc.abstractmethod
+    def expand_feature(self, feature: QueryFeature) -> List[QueryFeature]:
+        pass
+
     def _find_by_features_internal(self, features: List[QueryFeature], include_unknown: bool) -> pd.DataFrame:
         self.validate_query_features(features)
+        features = self.expand_features(features)
 
         feature_samples = self._sample_service.find_samples_by_features(features)
 
@@ -45,6 +62,11 @@ class FullFeatureQueryService(QueryService):
 
     def _count_by_features_internal(self, features: List[QueryFeature], include_unknown: bool) -> pd.DataFrame:
         self.validate_query_features(features)
+        features = self.expand_features(features)
+
+        # Remove unknown features if they are not to be included
+        if not include_unknown:
+            features = [f for f in features if not f.is_unknown()]
 
         feature_sample_counts = self._sample_service.count_samples_by_features(features)
 
@@ -57,7 +79,12 @@ class FullFeatureQueryService(QueryService):
             unknown_counts = {}
             absent_counts = {}
             for feature in features:
-                if feature.id in grouped_df.index:
+                # If unknown feature, then all counts should be unknown counts
+                if feature.is_unknown():
+                    feature_sample_counts[feature.id] = 0
+                    unknown_counts[feature.id] = feature_scope_sample_counts[feature.scope]
+                    absent_counts[feature.id] = 0
+                elif feature.id in grouped_df.index:
                     unknown_counts[feature.id] = grouped_df.loc[feature.id].values[0]
                     absent_counts[feature.id] = feature_scope_sample_counts[feature.scope] \
                                                 - feature_sample_counts[feature.id] - unknown_counts[feature.id]
