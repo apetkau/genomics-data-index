@@ -1,5 +1,5 @@
-from typing import Union, Tuple
 import re
+from typing import Union, Tuple
 
 from storage.variant.model.QueryFeatureMutation import QueryFeatureMutation
 
@@ -10,9 +10,9 @@ class NucleotideMutationTranslater:
     def convert_deletion(cls, deletion: Union[str, int]) -> int:
         if isinstance(deletion, str):
             if re.match(r'^\d+$', deletion):
-               deletion = int(deletion)
+                deletion = int(deletion)
             else:
-                if not set(deletion).issubset({'A','T','C','G'}):
+                if not set(deletion).issubset({'A', 'T', 'C', 'G'}):
                     raise Exception('Deletion must either be an integer or a string with alphabet {A,T,C,G}'
                                     f': {deletion}')
                 deletion = len(deletion)

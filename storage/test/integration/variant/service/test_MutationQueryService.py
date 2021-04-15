@@ -3,8 +3,8 @@ import math
 import pandas as pd
 import pytest
 
-from storage.variant.model.db import Sample
 from storage.variant.model.QueryFeatureMutation import QueryFeatureMutation
+from storage.variant.model.db import Sample
 from storage.variant.service.MutationQueryService import MutationQueryService
 
 

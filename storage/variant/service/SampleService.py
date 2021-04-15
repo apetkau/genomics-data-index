@@ -1,13 +1,13 @@
 from typing import List, Dict, Set, Union
 
 from storage.variant.SampleSet import SampleSet
-from storage.variant.model.db import NucleotideVariantsSamples, Reference, ReferenceSequence, MLSTScheme, \
-    SampleMLSTAlleles, MLSTAllelesSamples, Sample
-from storage.variant.service import DatabaseConnection
+from storage.variant.model.NucleotideMutationTranslater import NucleotideMutationTranslater
 from storage.variant.model.QueryFeature import QueryFeature
 from storage.variant.model.QueryFeatureMLST import QueryFeatureMLST
 from storage.variant.model.QueryFeatureMutation import QueryFeatureMutation
-from storage.variant.model.NucleotideMutationTranslater import NucleotideMutationTranslater
+from storage.variant.model.db import NucleotideVariantsSamples, Reference, ReferenceSequence, MLSTScheme, \
+    SampleMLSTAlleles, MLSTAllelesSamples, Sample
+from storage.variant.service import DatabaseConnection
 
 
 class SampleService:
@@ -102,7 +102,8 @@ class SampleService:
             .filter(Sample.id.in_(sample_ids)) \
             .all()
 
-    def _get_variants_samples_by_variation_features(self, features: List[QueryFeatureMutation]) -> Dict[str, NucleotideVariantsSamples]:
+    def _get_variants_samples_by_variation_features(self, features: List[QueryFeatureMutation]) -> Dict[
+        str, NucleotideVariantsSamples]:
         standardized_features_to_input_feature = {}
         standardized_features_ids = set()
         for feature in features:
