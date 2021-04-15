@@ -78,11 +78,16 @@ class FeatureService(abc.ABC):
         if feature_scope_name is None:
             raise Exception('feature_scope_name cannot be None')
 
+    def progress_hook(self, number: int, print_every: int, total: int) -> None:
+        if number % print_every == 0:
+            logger.info(f'Proccessed {number/total*100:0.0f}% ({number}/{total}) samples')
+
     def insert(self, features_reader: FeaturesReader, feature_scope_name: str = AUTO_SCOPE) -> None:
         self._verify_correct_reader(features_reader=features_reader)
         self._verify_correct_feature_scope(feature_scope_name)
 
         sample_names = features_reader.samples_set()
+        num_samples = len(sample_names)
 
         if self.check_samples_have_features(sample_names, feature_scope_name):
             raise EntityExistsError(f'Passed samples already have features for feature scope [{feature_scope_name}], '
@@ -92,15 +97,20 @@ class FeatureService(abc.ABC):
         saved_variation_files = {}
         saved_masked_regions = {}
 
+        interval = max(1, int(num_samples / 50))
+        processed_samples = 0
         for sample_name in sample_names:
-            logger.info(f'Loading sample {sample_name}')
+            self.progress_hook(processed_samples, print_every=interval, total=num_samples)
+            logger.debug(f'Loading sample {sample_name}')
             sample = self._get_or_create_sample(sample_name)
             sample_feature_object = self.build_sample_feature_object(sample=sample,
                                                                      features_reader=features_reader,
                                                                      feature_scope_name=feature_scope_name)
 
             self._connection.get_session().add(sample_feature_object)
+            processed_samples += 1
         self._connection.get_session().commit()
+        logger.info(f'Finished processings {num_samples} samples')
 
         self.index_features(features_reader=features_reader, feature_scope_name=feature_scope_name)
 
@@ -114,6 +124,7 @@ class FeatureService(abc.ABC):
         sample_names = features_reader.samples_set()
         self._connection.get_session().bulk_save_objects(self._create_feature_objects(features_df, sample_names))
         self._connection.get_session().commit()
+        logger.info('Finished indexing features from all samples')
 
     @abc.abstractmethod
     def build_sample_feature_object(self, sample: Sample,
