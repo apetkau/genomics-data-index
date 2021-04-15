@@ -38,26 +38,27 @@ from storage.variant.util import get_genome_name
 logger = logging.getLogger('storage')
 num_cores = multiprocessing.cpu_count()
 
+LOG_LEVELS = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
+
 
 @click.group()
 @click.pass_context
 @click.option('--database-connection', help='A connection string for the database.')
 @click.option('--database-dir', help='The root directory for the database files.',
               type=click.Path())
-@click.option('--verbose/--no-verbose', default=False, help='Turn up verbosity of command')
+@click.option('--log-level', default='WARNING', help='Sets the log level', type=click.Choice(LOG_LEVELS))
 @click_config_file.configuration_option(provider=yaml_config_provider,
                                         config_file_name='config.yaml',
                                         implicit=True)
-def main(ctx, database_connection, database_dir, verbose):
+def main(ctx, database_connection, database_dir, log_level):
     ctx.ensure_object(dict)
 
-    if verbose:
-        coloredlogs.install(level='DEBUG',
-                            fmt='%(asctime)s %(levelname)s %(name)s.%(funcName)s,%(lineno)s: %(message)s',
-                            logger=logger)
+    if log_level == 'INFO' or log_level == 'DEBUG':
+        log_format = '%(asctime)s %(levelname)s %(name)s.%(funcName)s,%(lineno)s: %(message)s'
     else:
-        coloredlogs.install(level='WARNING', fmt='%(asctime)s %(levelname)s: %(message)s',
-                            logger=logger)
+        log_format = '%(asctime)s %(levelname)s: %(message)s'
+
+    coloredlogs.install(level=log_level, fmt=log_format, logger=logger)
 
     logger.info(f'Connecting to database {database_connection}')
     database = DatabaseConnection(database_connection)
