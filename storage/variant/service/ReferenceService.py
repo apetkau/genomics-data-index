@@ -7,8 +7,7 @@ from Bio.SeqRecord import SeqRecord
 from biocommons.seqrepo import SeqRepo
 from ete3 import Tree
 
-from storage.variant.model import Reference
-from storage.variant.model import ReferenceSequence, SampleNucleotideVariation, Sample
+from storage.variant.model.db import Reference, SampleNucleotideVariation, ReferenceSequence, Sample
 from storage.variant.service import DatabaseConnection, EntityExistsError
 from storage.variant.util import parse_sequence_file
 

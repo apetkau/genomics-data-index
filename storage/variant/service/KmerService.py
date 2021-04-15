@@ -1,7 +1,6 @@
 from pathlib import Path
 
-from storage.variant.model import Sample
-from storage.variant.model import SampleKmerIndex
+from storage.variant.model.db import Sample, SampleKmerIndex
 from storage.variant.service import DatabaseConnection
 from storage.variant.service.SampleService import SampleService
 

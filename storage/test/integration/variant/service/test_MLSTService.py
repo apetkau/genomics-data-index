@@ -1,8 +1,6 @@
 import pytest
 
-from storage.variant.model import MLSTAllelesSamples
-from storage.variant.model import Sample
-from storage.variant.model import SampleMLSTAlleles
+from storage.variant.model.db import SampleMLSTAlleles, MLSTAllelesSamples, Sample
 from storage.variant.service import EntityExistsError
 from storage.variant.service.MLSTService import MLSTService
 

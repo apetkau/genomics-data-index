@@ -6,7 +6,7 @@ from typing import List, Set, Any, Dict
 import pandas as pd
 
 from storage.variant.io.FeaturesReader import FeaturesReader
-from storage.variant.model import Sample
+from storage.variant.model.db import Sample
 from storage.variant.service import DatabaseConnection
 from storage.variant.service import EntityExistsError
 from storage.variant.service.SampleService import SampleService

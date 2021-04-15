@@ -12,7 +12,7 @@ from Bio.SeqRecord import SeqRecord
 
 from storage.variant.MaskedGenomicRegions import MaskedGenomicRegions
 from storage.variant.io.mutation.VariationFile import VariationFile
-from storage.variant.model import SampleNucleotideVariation
+from storage.variant.model.db import SampleNucleotideVariation
 from storage.variant.service import DatabaseConnection
 from storage.variant.service.ReferenceService import ReferenceService
 from storage.variant.service.SampleService import SampleService

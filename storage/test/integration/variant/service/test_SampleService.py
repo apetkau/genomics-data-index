@@ -1,7 +1,7 @@
 from storage.variant.SampleSet import SampleSet
-from storage.variant.model import Sample
 from storage.variant.model.QueryFeatureMLST import QueryFeatureMLST
 from storage.variant.model.QueryFeatureMutation import QueryFeatureMutation
+from storage.variant.model.db import Sample
 
 
 def test_samples_with_variants(sample_service, variation_service):
@@ -102,9 +102,19 @@ def test_find_samples_by_features_variations(database, sample_service, variation
 
     variant_samples = sample_service.find_samples_by_features([QueryFeatureMutation('reference:5061:G:A')])
 
-    assert 'reference:5061:G:A' in variant_samples
-    assert {'SampleB'} == {s.name for s in variant_samples['reference:5061:G:A']}
-    assert {sampleB.id} == {s.id for s in variant_samples['reference:5061:G:A']}
+    assert f'reference:5061:G:A' in variant_samples
+    assert {'SampleB'} == {s.name for s in variant_samples[f'reference:5061:G:A']}
+    assert {sampleB.id} == {s.id for s in variant_samples[f'reference:5061:G:A']}
+
+
+def test_find_samples_by_features_variations_numeric_deletion(database, sample_service, variation_service):
+    sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+
+    variant_samples = sample_service.find_samples_by_features([QueryFeatureMutation('reference:5061:1:A')])
+
+    assert f'reference:5061:1:A' in variant_samples
+    assert {'SampleB'} == {s.name for s in variant_samples[f'reference:5061:1:A']}
+    assert {sampleB.id} == {s.id for s in variant_samples[f'reference:5061:1:A']}
 
 
 def test_count_samples_by_variation_features_single_feature(sample_service, variation_service):
@@ -113,7 +123,7 @@ def test_count_samples_by_variation_features_single_feature(sample_service, vari
     variant_counts = sample_service.count_samples_by_features(features)
 
     assert 1 == len(variant_counts)
-    assert 1 == variant_counts['reference:5061:G:A']
+    assert 1 == variant_counts[f'reference:5061:G:A']
 
 
 def test_count_samples_by_variation_features_multiple_features(sample_service, variation_service):
@@ -122,8 +132,18 @@ def test_count_samples_by_variation_features_multiple_features(sample_service, v
     variant_counts = sample_service.count_samples_by_features(features)
 
     assert 2 == len(variant_counts)
-    assert 1 == variant_counts['reference:5061:G:A']
-    assert 2 == variant_counts['reference:3063:A:ATGCAGC']
+    assert 1 == variant_counts[f'reference:5061:G:A']
+    assert 2 == variant_counts[f'reference:3063:A:ATGCAGC']
+
+
+def test_count_samples_by_variation_features_multiple_features_numeric_deletion(sample_service, variation_service):
+    features = [QueryFeatureMutation('reference:5061:1:A'), QueryFeatureMutation('reference:3063:1:ATGCAGC')]
+
+    variant_counts = sample_service.count_samples_by_features(features)
+
+    assert 2 == len(variant_counts)
+    assert 1 == variant_counts[f'reference:5061:1:A']
+    assert 2 == variant_counts[f'reference:3063:1:ATGCAGC']
 
 
 def test_get_samples_with_mlst_alleles(sample_service, mlst_service_loaded):

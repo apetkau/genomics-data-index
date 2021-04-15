@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from storage.variant.model import NUCLEOTIDE_UNKNOWN
 from storage.variant.model.QueryFeature import QueryFeature
 

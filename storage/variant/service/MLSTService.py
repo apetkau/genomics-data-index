@@ -7,10 +7,7 @@ import pandas as pd
 from storage.variant.SampleSet import SampleSet
 from storage.variant.io.FeaturesReader import FeaturesReader
 from storage.variant.io.mlst.MLSTFeaturesReader import MLSTFeaturesReader
-from storage.variant.model import MLSTAllelesSamples
-from storage.variant.model import MLSTScheme
-from storage.variant.model import Sample
-from storage.variant.model import SampleMLSTAlleles
+from storage.variant.model.db import MLSTScheme, SampleMLSTAlleles, MLSTAllelesSamples, Sample
 from storage.variant.service import DatabaseConnection
 from storage.variant.service.FeatureService import FeatureService, AUTO_SCOPE
 from storage.variant.service.SampleService import SampleService

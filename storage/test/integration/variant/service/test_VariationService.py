@@ -4,7 +4,7 @@ import pytest
 
 from storage.test.integration.variant import data_dir
 from storage.variant.io.mutation.SnippyVariantsReader import SnippyVariantsReader
-from storage.variant.model import Sample, NucleotideVariantsSamples, SampleNucleotideVariation
+from storage.variant.model.db import NucleotideVariantsSamples, SampleNucleotideVariation, Sample
 from storage.variant.service import EntityExistsError
 from storage.variant.service.VariationService import VariationService
 
@@ -71,7 +71,7 @@ def test_insert_variants_examine_variation(database, snippy_variants_reader, ref
     v = session.query(NucleotideVariantsSamples).get({
         'sequence': 'reference',
         'position': 1048,
-        'deletion': 'C',
+        'deletion': len('C'),
         'insertion': 'G'
     })
     assert v is not None, 'Particular variant does not exist'
@@ -81,11 +81,29 @@ def test_insert_variants_examine_variation(database, snippy_variants_reader, ref
     v = session.query(NucleotideVariantsSamples).get({
         'sequence': 'reference',
         'position': 1135,
-        'deletion': 'CCT',
+        'deletion': len('CCT'),
         'insertion': 'C'
     })
     assert 'del' == v.var_type, 'Type is incorrect'
     assert {sample_name_ids['SampleB'], sample_name_ids['SampleC']} == set(v.sample_ids)
+
+    v = session.query(NucleotideVariantsSamples).get({
+        'sequence': 'reference',
+        'position': 883,
+        'deletion': len('CACATG'),
+        'insertion': 'C'
+    })
+    assert 'del' == v.var_type, 'Type is incorrect'
+    assert {sample_name_ids['SampleB']} == set(v.sample_ids)
+
+    v = session.query(NucleotideVariantsSamples).get({
+        'sequence': 'reference',
+        'position': 1984,
+        'deletion': len('GTGATTG'),
+        'insertion': 'TTGA'
+    })
+    assert 'complex' == v.var_type, 'Type is incorrect'
+    assert {sample_name_ids['SampleC']} == set(v.sample_ids)
 
 
 def test_insert_variants_duplicates(database, snippy_variants_reader, reference_service_with_data,
@@ -171,11 +189,11 @@ def test_get_variants_ordered(database, snippy_variants_reader, reference_servic
     assert 60 == len(variants), 'Incorrect number of variants returned (counting only SNV/SNPs)'
 
     v1 = find_variant_by_position(variants, 4265)
-    assert 'reference:4265:G:C' == v1.spdi, 'Incorrect variant returned'
+    assert 'reference:4265:1:C' == v1.spdi, 'Incorrect variant returned'
     assert {sampleA.id} == set(v1.sample_ids)
 
     v2 = find_variant_by_position(variants, 839)
-    assert 'reference:839:C:G' == v2.spdi, 'Incorrect variant returned'
+    assert 'reference:839:1:G' == v2.spdi, 'Incorrect variant returned'
     assert {sampleB.id, sampleC.id} == set(v2.sample_ids)
 
 

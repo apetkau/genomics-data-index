@@ -3,8 +3,8 @@ import math
 import pandas as pd
 import pytest
 
-from storage.variant.model import Sample
 from storage.variant.model.QueryFeatureMLST import QueryFeatureMLST
+from storage.variant.model.db import Sample
 from storage.variant.service.MLSTQueryService import MLSTQueryService
 
 

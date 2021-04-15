@@ -2,7 +2,7 @@ import pandas as pd
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from storage.variant.model import Base
+from storage.variant.model.db import Base
 
 
 class DatabaseConnection:

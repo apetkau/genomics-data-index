@@ -3,11 +3,11 @@ from typing import List, Dict, Any, Set, cast
 
 import pandas as pd
 
+from storage.variant.model import MLST_UNKNOWN_ALLELE
+from storage.variant.model.QueryFeature import QueryFeature
 from storage.variant.model.QueryFeatureMLST import QueryFeatureMLST
 from storage.variant.service.FullFeatureQueryService import FullFeatureQueryService
 from storage.variant.service.MLSTService import MLSTService
-from storage.variant.model.QueryFeature import QueryFeature
-from storage.variant.model import MLST_UNKNOWN_ALLELE
 from storage.variant.service.SampleService import SampleService
 
 
