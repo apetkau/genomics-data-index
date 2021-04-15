@@ -117,6 +117,7 @@ class VcfVariantsReader(NucleotideFeaturesReader):
 
     def read_genomic_masks_from_file(self, file: Path) -> MaskedGenomicRegions:
         name, records = parse_sequence_file(file)
+        logger.debug(f'Getting genomic masks from {file}')
         return MaskedGenomicRegions.from_sequences(sequences=records)
 
     def samples_list(self) -> List[str]:
