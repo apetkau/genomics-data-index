@@ -106,6 +106,7 @@ class VcfVariantsReader(NucleotideFeaturesReader):
 
     def _read_genomic_masked_regions(self) -> Dict[str, MaskedGenomicRegions]:
         genomic_masks = {}
+        logger.info(f'Reading {len(self._genomic_mask_files_map)} genomic masked regions')
 
         for sample in self._sample_vcf_map:
             if sample in self._genomic_mask_files_map:

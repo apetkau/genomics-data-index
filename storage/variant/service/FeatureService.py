@@ -93,6 +93,7 @@ class FeatureService(abc.ABC):
         saved_masked_regions = {}
 
         for sample_name in sample_names:
+            logger.info(f'Loading sample {sample_name}')
             sample = self._get_or_create_sample(sample_name)
             sample_feature_object = self.build_sample_feature_object(sample=sample,
                                                                      features_reader=features_reader,
@@ -107,6 +108,7 @@ class FeatureService(abc.ABC):
         return features_df
 
     def index_features(self, features_reader: FeaturesReader, feature_scope_name: str) -> None:
+        logger.info('Indexing features from all samples')
         features_df = features_reader.get_features_table()
         features_df = self._update_scope(features_df, feature_scope_name)
         sample_names = features_reader.samples_set()
