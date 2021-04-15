@@ -110,7 +110,7 @@ class VcfVariantsReader(NucleotideFeaturesReader):
 
     def _read_genomic_masked_regions(self) -> Dict[str, MaskedGenomicRegions]:
         genomic_masks = {}
-        num_samples = len(self._genomic_mask_files_map)
+        num_samples = len(self._sample_vcf_map)
         logger.info(f'Reading {num_samples} genomic masked regions')
 
         processed = 0
