@@ -8,7 +8,7 @@ from sqlalchemy.orm.exc import NoResultFound
 
 from storage.test.integration.variant import reference_file
 from storage.test.integration.variant import tree_file
-from storage.variant.model import Reference
+from storage.variant.model.db import Reference
 from storage.variant.service import EntityExistsError
 
 

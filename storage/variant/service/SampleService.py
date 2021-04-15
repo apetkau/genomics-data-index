@@ -1,10 +1,12 @@
-from typing import List, Dict, Set, Union
+from typing import List, Dict, Set, Union, cast
 
 from storage.variant.SampleSet import SampleSet
-from storage.variant.model import Sample, Reference, ReferenceSequence, NucleotideVariantsSamples
-from storage.variant.model import SampleMLSTAlleles, MLSTScheme, MLSTAllelesSamples
+from storage.variant.model.db import NucleotideVariantsSamples, Reference, ReferenceSequence, MLSTScheme, \
+    SampleMLSTAlleles, MLSTAllelesSamples, Sample
 from storage.variant.service import DatabaseConnection
 from storage.variant.model.QueryFeature import QueryFeature
+from storage.variant.model.QueryFeatureMLST import QueryFeatureMLST
+from storage.variant.model.QueryFeatureMutation import QueryFeatureMutation
 
 
 class SampleService:
@@ -99,16 +101,25 @@ class SampleService:
             .filter(Sample.id.in_(sample_ids)) \
             .all()
 
-    def _get_variants_samples_by_variation_ids(self, variation_ids: List[str]) -> List[NucleotideVariantsSamples]:
+    def _get_variants_samples_by_variation_features(self, features: List[QueryFeatureMutation]) -> Dict[str, NucleotideVariantsSamples]:
+        standardized_features_to_input_feature = {}
+        standardized_features_ids = set()
+        for feature in features:
+            sf = feature.standardize_feature()
+            standardized_features_to_input_feature[sf.id] = feature.id
+            standardized_features_ids.add(sf.id)
+
         variants = self._connection.get_session().query(NucleotideVariantsSamples) \
-            .filter(NucleotideVariantsSamples._spdi.in_(variation_ids)) \
+            .filter(NucleotideVariantsSamples._spdi.in_(standardized_features_ids)) \
             .all()
 
-        return variants
+        unstandardized_variants = {standardized_features_to_input_feature[v.spdi]: v for v in variants}
+        return unstandardized_variants
 
-    def _get_mlst_samples_by_mlst_allele_ids(self, mlst_allele_ids: List[str]) -> List[MLSTAllelesSamples]:
+    def _get_mlst_samples_by_mlst_features(self, features: List[QueryFeatureMLST]) -> List[MLSTAllelesSamples]:
+        feature_ids = list({f.id for f in features})
         mlst_alleles = self._connection.get_session().query(MLSTAllelesSamples) \
-            .filter(MLSTAllelesSamples._sla.in_(mlst_allele_ids)) \
+            .filter(MLSTAllelesSamples._sla.in_(feature_ids)) \
             .all()
 
         return mlst_alleles
@@ -124,14 +135,12 @@ class SampleService:
     def find_samples_by_features(self, features: List[QueryFeature]) -> Dict[str, List[Sample]]:
         feature_type = self._get_feature_type(features)
 
-        feature_ids = list({f.id for f in features})
-
         if feature_type == 'QueryFeatureMutation':
-            variants = self._get_variants_samples_by_variation_ids(feature_ids)
+            variants_dict = self._get_variants_samples_by_variation_features(features)
 
-            return {v.spdi: self.find_samples_by_ids(v.sample_ids) for v in variants}
+            return {id: self.find_samples_by_ids(variants_dict[id].sample_ids) for id in variants_dict}
         elif feature_type == 'QueryFeatureMLST':
-            mlst_alleles = self._get_mlst_samples_by_mlst_allele_ids(feature_ids)
+            mlst_alleles = self._get_mlst_samples_by_mlst_features(features)
 
             return {a.sla: self.find_samples_by_ids(a.sample_ids) for a in mlst_alleles}
         else:
@@ -140,16 +149,14 @@ class SampleService:
     def count_samples_by_features(self, features: List[QueryFeature]) -> Dict[str, List[Sample]]:
         feature_type = self._get_feature_type(features)
 
-        feature_ids = list({f.id for f in features})
-
         if feature_type == 'QueryFeatureMutation':
-            variants = self._get_variants_samples_by_variation_ids(feature_ids)
+            variants_dict = self._get_variants_samples_by_variation_features(features)
 
-            return {v.spdi: len(v.sample_ids) for v in variants}
+            return {id: len(variants_dict[id].sample_ids) for id in variants_dict}
         elif feature_type == 'QueryFeatureMLST':
-            mlst_alleles = self._get_mlst_samples_by_mlst_allele_ids(feature_ids)
+            mlst_alleles = self._get_mlst_samples_by_mlst_features(features)
 
-            allele_id_to_count =  {a.sla: len(a.sample_ids) for a in mlst_alleles}
+            allele_id_to_count = {a.sla: len(a.sample_ids) for a in mlst_alleles}
             for f in features:
                 if f.id not in allele_id_to_count:
                     allele_id_to_count[f.id] = 0
