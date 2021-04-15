@@ -1,4 +1,4 @@
-from typing import List, Dict, Set, Union, cast
+from typing import List, Dict, Set, Union
 
 from storage.variant.SampleSet import SampleSet
 from storage.variant.model.db import NucleotideVariantsSamples, Reference, ReferenceSequence, MLSTScheme, \
@@ -7,6 +7,7 @@ from storage.variant.service import DatabaseConnection
 from storage.variant.model.QueryFeature import QueryFeature
 from storage.variant.model.QueryFeatureMLST import QueryFeatureMLST
 from storage.variant.model.QueryFeatureMutation import QueryFeatureMutation
+from storage.variant.model.NucleotideMutationTranslater import NucleotideMutationTranslater
 
 
 class SampleService:
@@ -105,9 +106,9 @@ class SampleService:
         standardized_features_to_input_feature = {}
         standardized_features_ids = set()
         for feature in features:
-            sf = feature.standardize_feature()
-            standardized_features_to_input_feature[sf.id] = feature.id
-            standardized_features_ids.add(sf.id)
+            dbf = NucleotideMutationTranslater.to_db_feature(feature)
+            standardized_features_to_input_feature[dbf.id] = feature.id
+            standardized_features_ids.add(dbf.id)
 
         variants = self._connection.get_session().query(NucleotideVariantsSamples) \
             .filter(NucleotideVariantsSamples._spdi.in_(standardized_features_ids)) \

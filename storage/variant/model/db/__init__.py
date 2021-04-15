@@ -9,7 +9,7 @@ from sqlalchemy.orm import relationship
 
 from storage.variant.MaskedGenomicRegions import MaskedGenomicRegions
 from storage.variant.SampleSet import SampleSet
-from storage.variant.model.QueryFeatureMutation import QueryFeatureMutation
+from storage.variant.model.NucleotideMutationTranslater import NucleotideMutationTranslater
 
 Base = declarative_base()
 
@@ -57,11 +57,11 @@ class NucleotideVariantsSamples(Base):
 
     @classmethod
     def to_spdi(cls, sequence_name: str, position: int, ref: Union[str, int], alt: str) -> str:
-        return QueryFeatureMutation.to_spdi(sequence_name, position, ref, alt)
+        return NucleotideMutationTranslater.to_spdi(sequence_name, position, ref, alt)
 
     @classmethod
     def from_spdi(cls, spdi: str) -> Tuple[str, int, int, str]:
-        return QueryFeatureMutation.from_spdi(spdi)
+        return NucleotideMutationTranslater.from_spdi(spdi)
 
     def __repr__(self):
         return (
