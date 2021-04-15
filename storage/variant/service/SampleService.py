@@ -7,6 +7,7 @@ from storage.variant.model.QueryFeatureMLST import QueryFeatureMLST
 from storage.variant.model.QueryFeatureMutation import QueryFeatureMutation
 from storage.variant.model.db import NucleotideVariantsSamples, Reference, ReferenceSequence, MLSTScheme, \
     SampleMLSTAlleles, MLSTAllelesSamples, Sample
+from storage.variant.model.db import SampleNucleotideVariation
 from storage.variant.service import DatabaseConnection
 
 
@@ -23,6 +24,7 @@ class SampleService:
         """
         samples = self._connection.get_session().query(Sample) \
             .join(Sample.sample_nucleotide_variation) \
+            .join(SampleNucleotideVariation.reference) \
             .filter(Reference.name == reference_name) \
             .all()
         return samples
@@ -61,6 +63,7 @@ class SampleService:
         """
         samples = self._connection.get_session().query(Sample) \
             .join(Sample.sample_nucleotide_variation) \
+            .join(SampleNucleotideVariation.reference) \
             .filter(Reference.name == reference_name) \
             .all()
         return samples

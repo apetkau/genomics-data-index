@@ -84,8 +84,8 @@ class ReferenceService:
 
     def find_references_for_sample(self, sample_name: str) -> List[Reference]:
         return self._connection.get_session().query(Reference) \
-            .join(SampleNucleotideVariation) \
-            .join(Sample) \
+            .join(Reference.sample_nucleotide_variation) \
+            .join(SampleNucleotideVariation.sample) \
             .filter(Sample.name == sample_name) \
             .all()
 
