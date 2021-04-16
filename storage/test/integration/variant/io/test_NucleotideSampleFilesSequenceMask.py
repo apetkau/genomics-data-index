@@ -31,7 +31,7 @@ def test_get_vcf_file_no_preprocess(files_map: Dict[str, Dict[str, Path]]):
     with TemporaryDirectory() as tmp_dir:
         sample_files = NucleotideSampleFilesSequenceMask.create(sample_name='SampleA',
                                                          vcf_file=files_map['SampleA']['vcf'],
-                                                         sample_mask=files_map['SampleA']['mask'],
+                                                         sample_mask_sequence=files_map['SampleA']['mask'],
                                                          tmp_dir=Path(tmp_dir))
         vcf_file, index_file = sample_files.get_vcf_file(ignore_preprocessed=True)
         assert vcf_file.exists()
@@ -40,11 +40,56 @@ def test_get_vcf_file_no_preprocess(files_map: Dict[str, Dict[str, Path]]):
         assert len(df[df['TYPE'].isna()]) > 0
 
 
+def test_get_sample_mask_no_preprocess(files_map: Dict[str, Dict[str, Path]]):
+    with TemporaryDirectory() as tmp_dir:
+        sample_files = NucleotideSampleFilesSequenceMask.create(sample_name='SampleA',
+                                                         vcf_file=files_map['SampleA']['vcf'],
+                                                         sample_mask_sequence=files_map['SampleA']['mask'],
+                                                         tmp_dir=Path(tmp_dir))
+        with pytest.raises(Exception) as execinfo:
+            sample_files.get_mask()
+        assert 'Sample mask file is not preprocessed for sample' in str(execinfo.value)
+
+
+def test_get_sample_mask_after_preprocess(files_map: Dict[str, Dict[str, Path]]):
+    with TemporaryDirectory() as tmp_dir:
+        sample_files = NucleotideSampleFilesSequenceMask.create(sample_name='SampleA',
+                                                         vcf_file=files_map['SampleA']['vcf'],
+                                                         sample_mask_sequence=files_map['SampleA']['mask'],
+                                                         tmp_dir=Path(tmp_dir))
+        assert not sample_files.is_preprocessed()
+        processed_sample_files = sample_files.preprocess()
+        assert processed_sample_files.is_preprocessed()
+        mask = processed_sample_files.get_mask()
+        assert 437 == len(mask)
+        assert {'reference'} == mask.sequence_names()
+
+
+def test_get_sample_mask_double_preprocess(files_map: Dict[str, Dict[str, Path]]):
+    with TemporaryDirectory() as tmp_dir:
+        sample_files = NucleotideSampleFilesSequenceMask.create(sample_name='SampleA',
+                                                         vcf_file=files_map['SampleA']['vcf'],
+                                                         sample_mask_sequence=files_map['SampleA']['mask'],
+                                                         tmp_dir=Path(tmp_dir))
+        assert not sample_files.is_preprocessed()
+        processed_sample_files = sample_files.preprocess()
+        assert processed_sample_files.is_preprocessed()
+        mask = processed_sample_files.get_mask()
+        assert 437 == len(mask)
+        assert {'reference'} == mask.sequence_names()
+
+        processed_sample_files_2 = processed_sample_files.preprocess()
+        assert processed_sample_files_2.is_preprocessed()
+        mask_2 = processed_sample_files_2.get_mask()
+        assert 437 == len(mask)
+        assert {'reference'} == mask_2.sequence_names()
+
+
 def test_get_vcf_file_no_preprocess_exception(files_map: Dict[str, Dict[str, Path]]):
     with TemporaryDirectory() as tmp_dir:
         sample_files = NucleotideSampleFilesSequenceMask.create(sample_name='SampleA',
                                                          vcf_file=files_map['SampleA']['vcf'],
-                                                         sample_mask=files_map['SampleA']['mask'],
+                                                         sample_mask_sequence=files_map['SampleA']['mask'],
                                                          tmp_dir=Path(tmp_dir))
         with pytest.raises(Exception) as execinfo:
             sample_files.get_vcf_file()
@@ -55,7 +100,7 @@ def test_get_vcf_file_with_preprocess(files_map: Dict[str, Dict[str, Path]]):
     with TemporaryDirectory() as tmp_dir:
         sample_files = NucleotideSampleFilesSequenceMask.create(sample_name='SampleA',
                                                          vcf_file=files_map['SampleA']['vcf'],
-                                                         sample_mask=files_map['SampleA']['mask'],
+                                                         sample_mask_sequence=files_map['SampleA']['mask'],
                                                          tmp_dir=Path(tmp_dir))
         assert not sample_files.is_preprocessed()
         with pytest.raises(Exception) as execinfo:
@@ -82,7 +127,7 @@ def test_get_vcf_file_double_preprocess(files_map: Dict[str, Dict[str, Path]]):
     with TemporaryDirectory() as tmp_dir:
         sample_files = NucleotideSampleFilesSequenceMask.create(sample_name='SampleA',
                                                          vcf_file=files_map['SampleA']['vcf'],
-                                                         sample_mask=files_map['SampleA']['mask'],
+                                                         sample_mask_sequence=files_map['SampleA']['mask'],
                                                          tmp_dir=Path(tmp_dir))
         assert not sample_files.is_preprocessed()
         processed_sample_files = sample_files.preprocess()
