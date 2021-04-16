@@ -38,9 +38,6 @@ class VcfVariantsReader(NucleotideFeaturesReader):
     def get_or_create_feature_file(self, sample_name: str):
         return self._sample_vcf_map[sample_name]
 
-    def sample_feature_files(self) -> Dict[str, Path]:
-        return self._sample_vcf_map
-
     def read_vcf(self, file: Path, sample_name: str) -> pd.DataFrame:
         reader = vcf.Reader(filename=str(file))
         df = pd.DataFrame([vars(r) for r in reader])

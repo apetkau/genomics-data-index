@@ -36,9 +36,6 @@ class MLSTFeaturesReader(FeaturesReader):
         mlst_df = self.get_features_table()
         return list(set(mlst_df['Sample'].tolist()))
 
-    def sample_feature_files(self) -> Dict[str, Path]:
-        raise Exception('Not implemented')
-
     def get_or_create_feature_file(self, sample_name: str):
         raise Exception('Not implemented')
 

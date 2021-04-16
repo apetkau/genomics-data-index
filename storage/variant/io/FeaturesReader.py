@@ -27,14 +27,6 @@ class FeaturesReader(abc.ABC):
         return features_df
 
     @abc.abstractmethod
-    def sample_feature_files(self) -> Dict[str, Path]:
-        """
-        Gets a dictionary of sample names to feature files to be read by this reader.
-        :return: A dictionary of sample names to feature files ('name' => 'file')
-        """
-        pass
-
-    @abc.abstractmethod
     def get_or_create_feature_file(self, sample_name: str):
         """
         Gets a file of the features associated with the sample (or creates such a file if it doesn't exist).
