@@ -57,12 +57,18 @@ def test_read_genomic_masks_from_file(setup):
 
 
 def test_get_genomic_masks(setup):
-    genomic_masks = setup['reader'].get_genomic_masked_regions()
+    variants_reader = setup['reader']
+    mask = variants_reader.get_genomic_masked_region('SampleA')
+    assert 437 == len(mask)
+    assert {'reference'} == mask.sequence_names()
 
-    assert {'SampleA', 'SampleB', 'SampleC'} == set(genomic_masks.keys()), 'Incorrect samples'
-    assert 437 == len(genomic_masks['SampleA'])
-    assert 276 == len(genomic_masks['SampleB'])
-    assert 329 == len(genomic_masks['SampleC'])
+    mask = variants_reader.get_genomic_masked_region('SampleB')
+    assert 276 == len(mask)
+    assert {'reference'} == mask.sequence_names()
+
+    mask = variants_reader.get_genomic_masked_region('SampleC')
+    assert 329 == len(mask)
+    assert {'reference'} == mask.sequence_names()
 
 
 def test_get_samples_list(setup):

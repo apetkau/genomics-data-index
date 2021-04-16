@@ -104,28 +104,11 @@ class VcfVariantsReader(NucleotideFeaturesReader):
         """
         return str(element)
 
-    def _progress_hook(self, number: int, print_every: int, total: int) -> None:
-        if number % print_every == 0:
-            logger.info(f'Proccessed {number/total*100:0.0f}% ({number}/{total})')
-
-    def _read_genomic_masked_regions(self) -> Dict[str, MaskedGenomicRegions]:
-        genomic_masks = {}
-        num_samples = len(self._sample_vcf_map)
-        logger.info(f'Reading {num_samples} genomic masked regions')
-
-        processed = 0
-        interval = max(1, int(num_samples / 50))
-        for sample in self._sample_vcf_map:
-            self._progress_hook(processed, print_every=interval, total=num_samples)
-            if sample in self._genomic_mask_files_map:
-                genomic_masks[sample] = self.read_genomic_masks_from_file(self._genomic_mask_files_map[sample])
-            else:
-                genomic_masks[sample] = MaskedGenomicRegions.empty_mask()
-            processed += 1
-
-        logger.info(f'Finished reading {num_samples} genomic masked regions')
-
-        return genomic_masks
+    def get_genomic_masked_region(self, sample_name: str) -> MaskedGenomicRegions:
+        if sample_name in self._genomic_mask_files_map:
+            return self.read_genomic_masks_from_file(self._genomic_mask_files_map[sample_name])
+        else:
+            return MaskedGenomicRegions.empty_mask()
 
     def read_genomic_masks_from_file(self, file: Path) -> MaskedGenomicRegions:
         name, records = parse_sequence_file(file)

@@ -82,13 +82,7 @@ class VariationService(FeatureService):
         sample_nucleotide_variation.nucleotide_variants_file = self._save_variation_file(feature_file, sample)
         sample_nucleotide_variation.sample = sample
 
-        genomic_masked_regions = variants_reader.get_genomic_masked_regions()
-
-        if sample.name in genomic_masked_regions:
-            masked_regions = genomic_masked_regions[sample.name]
-        else:
-            masked_regions = MaskedGenomicRegions.empty_mask()
-
+        masked_regions = variants_reader.get_genomic_masked_region(sample.name)
         sample_nucleotide_variation.masked_regions_file = self._save_masked_regions_file(masked_regions, sample)
 
         return sample_nucleotide_variation

@@ -72,22 +72,28 @@ def test_get_variants_table(variants_reader):
 
 
 def test_get_genomic_masks(variants_reader):
-    genomic_masks = variants_reader.get_genomic_masked_regions()
+    mask = variants_reader.get_genomic_masked_region('SampleA')
+    assert 437 == len(mask)
+    assert {'reference'} == mask.sequence_names()
 
-    assert {'SampleA', 'SampleB', 'SampleC'} == set(genomic_masks.keys()), 'Incorrect samples'
-    assert 437 == len(genomic_masks['SampleA'])
-    assert 276 == len(genomic_masks['SampleB'])
-    assert 329 == len(genomic_masks['SampleC'])
+    mask = variants_reader.get_genomic_masked_region('SampleB')
+    assert 276 == len(mask)
+    assert {'reference'} == mask.sequence_names()
 
-    assert {'reference'} == genomic_masks['SampleA'].sequence_names()
-    assert {'reference'} == genomic_masks['SampleB'].sequence_names()
-    assert {'reference'} == genomic_masks['SampleC'].sequence_names()
+    mask = variants_reader.get_genomic_masked_region('SampleC')
+    assert 329 == len(mask)
+    assert {'reference'} == mask.sequence_names()
 
 
 def test_get_genomic_masks_empty(variants_reader_empty_masks):
-    genomic_masks = variants_reader_empty_masks.get_genomic_masked_regions()
-    assert {'SampleA', 'SampleB', 'SampleC'} == set(genomic_masks.keys())
-    assert genomic_masks['SampleA'].is_empty()
+    mask = variants_reader_empty_masks.get_genomic_masked_region('SampleA')
+    assert mask.is_empty()
+
+    mask = variants_reader_empty_masks.get_genomic_masked_region('SampleB')
+    assert mask.is_empty()
+
+    mask = variants_reader_empty_masks.get_genomic_masked_region('SampleC')
+    assert mask.is_empty()
 
 
 def test_get_samples_list(variants_reader):
