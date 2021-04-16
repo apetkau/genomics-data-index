@@ -11,37 +11,34 @@ class NucleotideSampleFiles(SampleFiles):
 
     def __init__(self, sample_name: str, vcf_file: Path, vcf_file_index: Path,
                  mask_bed_file: Optional[Path],
-                 preprocessed: bool,
-                 tmp_dir: Path):
+                 preprocessed: bool):
         super().__init__(sample_name=sample_name)
         self._vcf_file = vcf_file
         self._vcf_file_index = vcf_file_index
-        self._tmp_dir = tmp_dir
         self._preprocessed = preprocessed
         self._mask_bed_file = mask_bed_file
 
-    def _preprocess_mask(self) -> Path:
+    def _preprocess_mask(self, output_dir: Path) -> Path:
         if self._mask_bed_file is None:
             raise Exception('mask_bed_file does not exist')
         else:
             return self._mask_bed_file
 
-    def _do_preprocess(self) -> SampleFiles:
-        processed_vcf, processed_vcf_index = self._preprocess_vcf()
-        processed_mask = self._preprocess_mask()
+    def _do_preprocess(self, output_dir: Path) -> SampleFiles:
+        processed_vcf, processed_vcf_index = self._preprocess_vcf(output_dir)
+        processed_mask = self._preprocess_mask(output_dir)
 
         return NucleotideSampleFiles(sample_name=self.sample_name,
                                      vcf_file=processed_vcf,
                                      vcf_file_index=processed_vcf_index,
                                      mask_bed_file=processed_mask,
-                                     preprocessed=True,
-                                     tmp_dir=self._tmp_dir)
+                                     preprocessed=True)
 
     def is_preprocessed(self) -> bool:
         return self._preprocessed
 
-    def _preprocess_vcf(self) -> Tuple[Path, Path]:
-        new_file = self._tmp_dir / f'{self.sample_name}.vcf.gz'
+    def _preprocess_vcf(self, output_dir: Path) -> Tuple[Path, Path]:
+        new_file = output_dir / f'{self.sample_name}.vcf.gz'
         return VariationFile(self._vcf_file).write(new_file)
 
     def get_vcf_file(self, ignore_preprocessed = False) -> Tuple[Path, Path]:

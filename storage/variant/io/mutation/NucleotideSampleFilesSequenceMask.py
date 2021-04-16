@@ -11,18 +11,16 @@ logger = logging.getLogger(__name__)
 
 class NucleotideSampleFilesSequenceMask(NucleotideSampleFiles):
 
-    def __init__(self, sample_name: str, vcf_file: Path, vcf_file_index: Optional[Path], sample_mask_sequence: Path,
-                 tmp_dir: Path):
+    def __init__(self, sample_name: str, vcf_file: Path, vcf_file_index: Optional[Path], sample_mask_sequence: Path):
         super().__init__(sample_name=sample_name,
                          vcf_file=vcf_file,
                          vcf_file_index=vcf_file_index,
                          mask_bed_file=None,
-                         preprocessed=False,
-                         tmp_dir=tmp_dir)
+                         preprocessed=False)
         self._sample_mask_sequence = sample_mask_sequence
 
-    def _preprocess_mask(self) -> Path:
-        new_file = self._tmp_dir / f'{self.sample_name}.bed.gz'
+    def _preprocess_mask(self, output_dir: Path) -> Path:
+        new_file = output_dir / f'{self.sample_name}.bed.gz'
         if new_file.exists():
             raise Exception(f'File {new_file} already exists')
 
@@ -33,10 +31,8 @@ class NucleotideSampleFilesSequenceMask(NucleotideSampleFiles):
         return new_file
 
     @classmethod
-    def create(cls, sample_name: str, vcf_file: Path, sample_mask_sequence: Path,
-               tmp_dir: Path) -> NucleotideSampleFiles:
+    def create(cls, sample_name: str, vcf_file: Path, sample_mask_sequence: Path) -> NucleotideSampleFiles:
         return NucleotideSampleFilesSequenceMask(sample_name=sample_name,
                                                  vcf_file=vcf_file,
                                                  vcf_file_index=None,
-                                                 sample_mask_sequence=sample_mask_sequence,
-                                                 tmp_dir=tmp_dir)
+                                                 sample_mask_sequence=sample_mask_sequence)

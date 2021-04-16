@@ -1,5 +1,6 @@
 from __future__ import annotations
 import abc
+from pathlib import Path
 
 
 class SampleFiles(abc.ABC):
@@ -15,12 +16,12 @@ class SampleFiles(abc.ABC):
     def is_preprocessed(self) -> bool:
         pass
 
-    def preprocess(self) -> SampleFiles:
+    def preprocess(self, output_dir: Path) -> SampleFiles:
         if not self.is_preprocessed():
-            return self._do_preprocess()
+            return self._do_preprocess(output_dir)
         else:
             return self
 
     @abc.abstractmethod
-    def _do_preprocess(self) -> SampleFiles:
+    def _do_preprocess(self, output_dir: Path) -> SampleFiles:
         pass
