@@ -1,10 +1,13 @@
-from abc import ABC
 from typing import Tuple, Optional
 from pathlib import Path
+import shutil
+import logging
 
 from storage.variant.io.SampleFiles import SampleFiles
 from storage.variant.MaskedGenomicRegions import MaskedGenomicRegions
 from storage.variant.io.mutation.VariationFile import VariationFile
+
+logger = logging.getLogger(__name__)
 
 
 class NucleotideSampleFiles(SampleFiles):
@@ -24,7 +27,7 @@ class NucleotideSampleFiles(SampleFiles):
         else:
             return self._mask_bed_file
 
-    def _do_preprocess(self, output_dir: Path) -> SampleFiles:
+    def _do_preprocess_and_persist(self, output_dir: Path) -> SampleFiles:
         processed_vcf, processed_vcf_index = self._preprocess_vcf(output_dir)
         processed_mask = self._preprocess_mask(output_dir)
 
@@ -34,6 +37,23 @@ class NucleotideSampleFiles(SampleFiles):
                                      mask_bed_file=processed_mask,
                                      preprocessed=True)
 
+    def _do_persist(self, output_dir: Path) -> SampleFiles:
+        new_vcf_file = output_dir / self._vcf_file.name
+        new_vcf_index = output_dir / self._vcf_file_index.name
+        new_mask_bed_file = output_dir / self._mask_bed_file.name
+
+        logger.debug(f'Copying VCF and BED files to [{output_dir}] for sample [{self.sample_name}]')
+
+        shutil.copy(self._vcf_file, new_vcf_file)
+        shutil.copy(self._vcf_file_index, new_vcf_index)
+        shutil.copy(self._mask_bed_file, new_mask_bed_file)
+
+        return NucleotideSampleFiles(sample_name=self.sample_name,
+                                     vcf_file=new_vcf_file,
+                                     vcf_file_index=new_vcf_index,
+                                     mask_bed_file=new_mask_bed_file,
+                                     preprocessed=True)
+
     def is_preprocessed(self) -> bool:
         return self._preprocessed
 
@@ -41,14 +61,17 @@ class NucleotideSampleFiles(SampleFiles):
         new_file = output_dir / f'{self.sample_name}.vcf.gz'
         return VariationFile(self._vcf_file).write(new_file)
 
-    def get_vcf_file(self, ignore_preprocessed = False) -> Tuple[Path, Path]:
+    def get_vcf_file(self, ignore_preprocessed=False) -> Tuple[Path, Path]:
         if ignore_preprocessed or self._preprocessed:
             return self._vcf_file, self._vcf_file_index
         else:
             raise Exception(f'VCF file for sample [{self.sample_name}] is not preprocessed: {self._vcf_file}')
 
     def get_mask(self) -> MaskedGenomicRegions:
+        return MaskedGenomicRegions.from_file(self.get_mask_file())
+
+    def get_mask_file(self) -> Path:
         if self._preprocessed and self._mask_bed_file is not None:
-            return MaskedGenomicRegions.from_file(self._mask_bed_file)
+            return self._mask_bed_file
         else:
             raise Exception(f'Sample mask file is not preprocessed for sample [{self.sample_name}]')

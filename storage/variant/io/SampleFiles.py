@@ -16,12 +16,16 @@ class SampleFiles(abc.ABC):
     def is_preprocessed(self) -> bool:
         pass
 
-    def preprocess(self, output_dir: Path) -> SampleFiles:
+    def persist(self, output_dir: Path) -> SampleFiles:
         if not self.is_preprocessed():
-            return self._do_preprocess(output_dir)
+            return self._do_preprocess_and_persist(output_dir)
         else:
-            return self
+            return self._do_persist(output_dir)
 
     @abc.abstractmethod
-    def _do_preprocess(self, output_dir: Path) -> SampleFiles:
+    def _do_preprocess_and_persist(self, output_dir: Path) -> SampleFiles:
+        pass
+
+    @abc.abstractmethod
+    def _do_persist(self, output_dir: Path) -> SampleFiles:
         pass
