@@ -7,7 +7,7 @@ import pandas as pd
 
 class FeaturesReader(abc.ABC):
 
-    def __init(self):
+    def __init__(self):
         pass
 
     def _check_features_table_columns(self, features_df: pd.DataFrame) -> None:

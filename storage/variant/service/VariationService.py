@@ -92,7 +92,8 @@ class VariationService(FeatureService):
         if new_file.exists():
             raise Exception(f'File {new_file} already exists')
 
-        return VariationFile(original_file).write(new_file)
+        saved_file, index_file = VariationFile(original_file).write(new_file)
+        return saved_file
 
     def _save_masked_regions_file(self, masked_regions, sample: Sample):
         new_file = self._features_dir / f'{sample.name}.bed.gz'

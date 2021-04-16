@@ -1,0 +1,97 @@
+import pytest
+from typing import Dict
+from pathlib import Path
+from tempfile import TemporaryDirectory
+import os
+
+from storage.test.integration.variant.io import read_vcf_df
+from storage.test.integration.variant import regular_vcf_dir, data_dir
+from storage.variant.io.mutation.NucleotideSampleFilesSequenceMask import NucleotideSampleFilesSequenceMask
+
+
+@pytest.fixture
+def files_map():
+    return {
+        'SampleA': {
+            'vcf': Path(regular_vcf_dir, 'SampleA.vcf.gz'),
+            'mask': Path(data_dir, 'SampleA', 'snps.aligned.fa'),
+        },
+        'SampleB': {
+            'vcf': Path(regular_vcf_dir, 'SampleB.vcf.gz'),
+            'mask': Path(data_dir, 'SampleB', 'snps.aligned.fa'),
+        },
+        'SampleC': {
+            'vcf': Path(regular_vcf_dir, 'SampleC.vcf.gz'),
+            'mask': Path(data_dir, 'SampleC', 'snps.aligned.fa'),
+        }
+    }
+
+
+def test_get_vcf_file_no_preprocess(files_map: Dict[str, Dict[str, Path]]):
+    with TemporaryDirectory() as tmp_dir:
+        sample_files = NucleotideSampleFilesSequenceMask.create(sample_name='SampleA',
+                                                         vcf_file=files_map['SampleA']['vcf'],
+                                                         sample_mask=files_map['SampleA']['mask'],
+                                                         tmp_dir=Path(tmp_dir))
+        vcf_file, index_file = sample_files.get_vcf_file(ignore_preprocessed=True)
+        assert vcf_file.exists()
+        assert index_file is None
+        df = read_vcf_df(vcf_file)
+        assert len(df[df['TYPE'].isna()]) > 0
+
+
+def test_get_vcf_file_no_preprocess_exception(files_map: Dict[str, Dict[str, Path]]):
+    with TemporaryDirectory() as tmp_dir:
+        sample_files = NucleotideSampleFilesSequenceMask.create(sample_name='SampleA',
+                                                         vcf_file=files_map['SampleA']['vcf'],
+                                                         sample_mask=files_map['SampleA']['mask'],
+                                                         tmp_dir=Path(tmp_dir))
+        with pytest.raises(Exception) as execinfo:
+            sample_files.get_vcf_file()
+        assert 'VCF file for sample' in str(execinfo.value)
+
+
+def test_get_vcf_file_with_preprocess(files_map: Dict[str, Dict[str, Path]]):
+    with TemporaryDirectory() as tmp_dir:
+        sample_files = NucleotideSampleFilesSequenceMask.create(sample_name='SampleA',
+                                                         vcf_file=files_map['SampleA']['vcf'],
+                                                         sample_mask=files_map['SampleA']['mask'],
+                                                         tmp_dir=Path(tmp_dir))
+        assert not sample_files.is_preprocessed()
+        with pytest.raises(Exception) as execinfo:
+            sample_files.get_vcf_file()
+        assert 'VCF file for sample' in str(execinfo.value)
+
+        processed_sample_files = sample_files.preprocess()
+        assert processed_sample_files.is_preprocessed()
+
+        vcf_file, index_file = processed_sample_files.get_vcf_file()
+        assert vcf_file.exists()
+        assert index_file.exists()
+        df = read_vcf_df(vcf_file)
+        assert len(df[df['TYPE'].isna()]) == 0
+        assert 'SNP' == df[df['POS'] == 293]['TYPE'].tolist()[0]
+        assert 'INDEL' == df[df['POS'] == 302]['TYPE'].tolist()[0]
+        assert 'INDEL' == df[df['POS'] == 324]['TYPE'].tolist()[0]
+        assert 'INDEL' == df[df['POS'] == 374]['TYPE'].tolist()[0]
+        assert 'OTHER' == df[df['POS'] == 461]['TYPE'].tolist()[0]
+        assert 'SNP' == df[df['POS'] == 506]['TYPE'].tolist()[0]
+
+
+def test_get_vcf_file_double_preprocess(files_map: Dict[str, Dict[str, Path]]):
+    with TemporaryDirectory() as tmp_dir:
+        sample_files = NucleotideSampleFilesSequenceMask.create(sample_name='SampleA',
+                                                         vcf_file=files_map['SampleA']['vcf'],
+                                                         sample_mask=files_map['SampleA']['mask'],
+                                                         tmp_dir=Path(tmp_dir))
+        assert not sample_files.is_preprocessed()
+        processed_sample_files = sample_files.preprocess()
+        assert processed_sample_files.is_preprocessed()
+        vcf_file, index_file = processed_sample_files.get_vcf_file()
+
+        processed_sample_files_2 = processed_sample_files.preprocess()
+        assert processed_sample_files_2.is_preprocessed()
+        vcf_file_2, index_file_2 = processed_sample_files_2.get_vcf_file()
+
+        assert vcf_file == vcf_file_2
+        assert index_file == index_file_2
