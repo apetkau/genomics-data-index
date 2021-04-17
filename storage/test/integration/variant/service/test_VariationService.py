@@ -1,12 +1,15 @@
 from typing import List
+from pathlib import Path
+from tempfile import TemporaryDirectory
 
 import pytest
 
 from storage.test.integration.variant import data_dir
-from storage.variant.io.mutation.SnippyVariantsReader import SnippyVariantsReader
 from storage.variant.model.db import NucleotideVariantsSamples, SampleNucleotideVariation, Sample
 from storage.variant.service import EntityExistsError
 from storage.variant.service.VariationService import VariationService
+from storage.variant.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor
+from storage.variant.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
 
 
 def test_insert_variants_saved_files(database, snippy_nucleotide_data_package, reference_service_with_data,
@@ -209,16 +212,21 @@ def test_insert_variants_duplicates_subset(database, snippy_nucleotide_data_pack
     assert 3 == session.query(SampleNucleotideVariation).count(), 'Incorrect number of SampleSequences'
 
     # Select a subset of samples
-    sample_dirs_subset = [data_dir / 'SampleA']
-    snippy_variants_reader_subset = SnippyVariantsReader.create(sample_dirs_subset)
+    with TemporaryDirectory() as tmp_dir_str:
+        tmp_dir = Path(tmp_dir_str)
+        sample_dirs_subset = [data_dir / 'SampleA']
+        subset_snippy_data_package = NucleotideSampleDataPackage.create_from_snippy(
+            sample_dirs_subset,
+            sample_files_processor=SerialSampleFilesProcessor(tmp_dir)
+        )
 
-    with pytest.raises(EntityExistsError) as execinfo:
-        variation_service.insert(feature_scope_name='genome', data_package=snippy_nucleotide_data_package)
+        with pytest.raises(EntityExistsError) as execinfo:
+            variation_service.insert(feature_scope_name='genome', data_package=subset_snippy_data_package)
 
-    assert 'Passed samples already have features for feature scope [genome]' in str(execinfo.value)
-    assert 112 == session.query(NucleotideVariantsSamples).count(), 'Incorrect number of variant entries'
-    assert 3 == session.query(Sample).count(), 'Incorrect number of Samples'
-    assert 3 == session.query(SampleNucleotideVariation).count(), 'Incorrect number of SampleSequences'
+        assert 'Passed samples already have features for feature scope [genome]' in str(execinfo.value)
+        assert 112 == session.query(NucleotideVariantsSamples).count(), 'Incorrect number of variant entries'
+        assert 3 == session.query(Sample).count(), 'Incorrect number of Samples'
+        assert 3 == session.query(SampleNucleotideVariation).count(), 'Incorrect number of SampleSequences'
 
 
 def test_get_variants_ordered(database, snippy_nucleotide_data_package, reference_service_with_data,
