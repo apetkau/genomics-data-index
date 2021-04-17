@@ -10,7 +10,7 @@ from storage.variant.model.db import Sample
 from storage.variant.service import DatabaseConnection
 from storage.variant.service import EntityExistsError
 from storage.variant.service.SampleService import SampleService
-from storage.variant.io.SampleFiles import SampleFiles
+from storage.variant.io.SampleData import SampleData
 
 logger = logging.getLogger(__name__)
 
@@ -132,17 +132,17 @@ class FeatureService(abc.ABC):
 
     @abc.abstractmethod
     def build_sample_feature_object(self, sample: Sample,
-                                    sample_files: SampleFiles,
+                                    sample_files: SampleData,
                                     features_reader: FeaturesReader, feature_scope_name: str) -> Any:
         pass
 
-    def _persist_sample_files(self, sample_files: SampleFiles) -> Optional[SampleFiles]:
+    def _persist_sample_files(self, sample_files: SampleData) -> Optional[SampleData]:
         if sample_files is not None:
             return sample_files.persist(self._features_dir)
         else:
             return None
 
     @abc.abstractmethod
-    def _create_persisted_features_reader(self, sample_files_dict: Dict[str, SampleFiles],
+    def _create_persisted_features_reader(self, sample_files_dict: Dict[str, SampleData],
                                           features_reader: FeaturesReader) -> FeaturesReader:
         pass

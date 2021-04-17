@@ -7,8 +7,8 @@ from typing import List, Dict
 import pandas as pd
 
 from storage.variant.io.SampleFilesProcessor import SampleFilesProcessor
-from storage.variant.io.mutation.NucleotideSampleFiles import NucleotideSampleFiles
-from storage.variant.io.mutation.NucleotideSampleFilesSequenceMask import NucleotideSampleFilesSequenceMask
+from storage.variant.io.mutation.NucleotideSampleData import NucleotideSampleData
+from storage.variant.io.mutation.NucleotideSampleDataSequenceMask import NucleotideSampleDataSequenceMask
 from storage.variant.io.mutation.VcfVariantsReader import VcfVariantsReader
 from storage.variant.io.processor.NullSampleFilesProcessor import NullSampleFilesProcessor
 
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 class SnippyVariantsReader(VcfVariantsReader):
 
-    def __init__(self, sample_files_map: Dict[str, NucleotideSampleFiles],
+    def __init__(self, sample_files_map: Dict[str, NucleotideSampleData],
                  sample_files_processor: SampleFilesProcessor):
         super().__init__(sample_files_map=sample_files_map,
                          sample_files_processor=sample_files_processor)
@@ -38,7 +38,7 @@ class SnippyVariantsReader(VcfVariantsReader):
         sample_files_map = {}
         for d in sample_dirs:
             sample_name = d.name
-            sample_files = NucleotideSampleFilesSequenceMask.create(
+            sample_files = NucleotideSampleDataSequenceMask.create(
                 sample_name=sample_name,
                 vcf_file=Path(d, 'snps.vcf.gz'),
                 sample_mask_sequence=Path(d, 'snps.aligned.fa')

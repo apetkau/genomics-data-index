@@ -3,13 +3,13 @@ from pathlib import Path
 from typing import Optional
 
 from storage.variant.MaskedGenomicRegions import MaskedGenomicRegions
-from storage.variant.io.mutation.NucleotideSampleFiles import NucleotideSampleFiles
+from storage.variant.io.mutation.NucleotideSampleData import NucleotideSampleData
 from storage.variant.util import parse_sequence_file
 
 logger = logging.getLogger(__name__)
 
 
-class NucleotideSampleFilesSequenceMask(NucleotideSampleFiles):
+class NucleotideSampleDataSequenceMask(NucleotideSampleData):
 
     def __init__(self, sample_name: str, vcf_file: Path, vcf_file_index: Optional[Path],
                  sample_mask_sequence: Optional[Path]):
@@ -39,8 +39,8 @@ class NucleotideSampleFilesSequenceMask(NucleotideSampleFiles):
 
     @classmethod
     def create(cls, sample_name: str, vcf_file: Path,
-               sample_mask_sequence: Optional[Path] = None) -> NucleotideSampleFiles:
-        return NucleotideSampleFilesSequenceMask(sample_name=sample_name,
-                                                 vcf_file=vcf_file,
-                                                 vcf_file_index=None,
-                                                 sample_mask_sequence=sample_mask_sequence)
+               sample_mask_sequence: Optional[Path] = None) -> NucleotideSampleData:
+        return NucleotideSampleDataSequenceMask(sample_name=sample_name,
+                                                vcf_file=vcf_file,
+                                                vcf_file_index=None,
+                                                sample_mask_sequence=sample_mask_sequence)

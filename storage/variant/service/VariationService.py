@@ -15,8 +15,8 @@ from storage.variant.service import DatabaseConnection
 from storage.variant.service.FeatureService import FeatureService
 from storage.variant.service.ReferenceService import ReferenceService
 from storage.variant.service.SampleService import SampleService
-from storage.variant.io.SampleFiles import SampleFiles
-from storage.variant.io.mutation.NucleotideSampleFiles import NucleotideSampleFiles
+from storage.variant.io.SampleData import SampleData
+from storage.variant.io.mutation.NucleotideSampleData import NucleotideSampleData
 from storage.variant.io.processor.NullSampleFilesProcessor import NullSampleFilesProcessor
 
 logger = logging.getLogger(__name__)
@@ -75,9 +75,9 @@ class VariationService(FeatureService):
             raise Exception('feature_scope_name must not be None')
 
     def build_sample_feature_object(self, sample: Sample,
-                                    sample_files: SampleFiles,
+                                    sample_files: SampleData,
                                     features_reader: FeaturesReader, feature_scope_name: str) -> Any:
-        nucleotide_sample_files = cast(NucleotideSampleFiles, sample_files)
+        nucleotide_sample_files = cast(NucleotideSampleData, sample_files)
 
         reference = self._reference_service.find_reference_genome(feature_scope_name)
 
@@ -89,7 +89,7 @@ class VariationService(FeatureService):
 
         return sample_nucleotide_variation
 
-    def _create_persisted_features_reader(self, sample_files_dict: Dict[str, SampleFiles],
+    def _create_persisted_features_reader(self, sample_files_dict: Dict[str, SampleData],
                                           features_reader: FeaturesReader) -> FeaturesReader:
         file_processor = NullSampleFilesProcessor()
         for sample in sample_files_dict:

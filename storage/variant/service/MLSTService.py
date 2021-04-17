@@ -11,7 +11,7 @@ from storage.variant.model.db import MLSTScheme, SampleMLSTAlleles, MLSTAllelesS
 from storage.variant.service import DatabaseConnection
 from storage.variant.service.FeatureService import FeatureService, AUTO_SCOPE
 from storage.variant.service.SampleService import SampleService
-from storage.variant.io.SampleFiles import SampleFiles
+from storage.variant.io.SampleData import SampleData
 
 logger = logging.getLogger(__name__)
 
@@ -92,7 +92,7 @@ class MLSTService(FeatureService):
         return features_df
 
     def build_sample_feature_object(self, sample: Sample, features_reader: FeaturesReader,
-                                    sample_files: SampleFiles,
+                                    sample_files: SampleData,
                                     feature_scope_name: str) -> Any:
         self._verify_correct_reader(features_reader=features_reader)
         mlst_reader = cast(MLSTFeaturesReader, features_reader)
@@ -107,6 +107,6 @@ class MLSTService(FeatureService):
 
         return sample_mlst_alleles
 
-    def _create_persisted_features_reader(self, sample_files_dict: Dict[str, SampleFiles],
+    def _create_persisted_features_reader(self, sample_files_dict: Dict[str, SampleData],
                                           features_reader: FeaturesReader) -> FeaturesReader:
         return features_reader

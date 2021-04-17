@@ -1,10 +1,10 @@
 import abc
-from typing import Generator, List
+from typing import List, Generator
 
 from storage.variant.io.SampleData import SampleData
 
 
-class SampleFilesProcessor(abc.ABC):
+class SampleDataPackage(abc.ABC):
 
     def __init__(self):
         self._sample_files_list = []
@@ -16,5 +16,5 @@ class SampleFilesProcessor(abc.ABC):
         return self._sample_files_list
 
     @abc.abstractmethod
-    def preprocess_files(self) -> Generator[SampleData, None, None]:
+    def iter_sample_data(self) -> Generator[SampleData, None, None]:
         pass

@@ -3,7 +3,7 @@ import multiprocessing as mp
 from pathlib import Path
 from typing import Generator
 
-from storage.variant.io.SampleFiles import SampleFiles
+from storage.variant.io.SampleData import SampleData
 from storage.variant.io.SampleFilesProcessor import SampleFilesProcessor
 
 logger = logging.getLogger(__name__)
@@ -17,14 +17,14 @@ class MultipleProcessSampleFilesProcessor(SampleFilesProcessor):
         self._processing_cores = processing_cores
         self._max_chunk_size = max_chunk_size
 
-    def handle_single_file(self, sample_files: SampleFiles) -> SampleFiles:
+    def handle_single_file(self, sample_files: SampleData) -> SampleData:
         return sample_files.persist(self._preprocess_dir)
 
     def _get_chunk_size(self):
         chunk_size = max(1, int(len(self.sample_files_list()) / self._processing_cores))
         return min(self._max_chunk_size, chunk_size)
 
-    def preprocess_files(self) -> Generator[SampleFiles, None, None]:
+    def preprocess_files(self) -> Generator[SampleData, None, None]:
         logger.debug(f'Starting preprocessing {len(self.sample_files_list())} samples '
                      f'with {self._processing_cores} cores')
         chunk_size = self._get_chunk_size()

@@ -4,7 +4,7 @@ from typing import Set, List, Generator
 import pandas as pd
 
 from storage.variant.io.FeaturesReader import FeaturesReader
-from storage.variant.io.SampleFiles import SampleFiles
+from storage.variant.io.SampleData import SampleData
 from storage.variant.model import MLST_UNKNOWN_ALLELE
 
 
@@ -14,10 +14,10 @@ class MLSTFeaturesReader(FeaturesReader):
         super().__init__()
         self._features_table = None
 
-    def get_sample_files(self, sample_name: str) -> SampleFiles:
+    def get_sample_files(self, sample_name: str) -> SampleData:
         return None
 
-    def iter_sample_files(self) -> Generator[SampleFiles, None, None]:
+    def iter_sample_files(self) -> Generator[SampleData, None, None]:
         for sample in []:
             yield sample
 
