@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Dict, Set, Any, Tuple, cast
+from typing import Dict, Set, Any, Tuple, cast, List
 
 import pandas as pd
 
@@ -11,6 +11,7 @@ from storage.variant.model.db import MLSTScheme, SampleMLSTAlleles, MLSTAllelesS
 from storage.variant.service import DatabaseConnection
 from storage.variant.service.FeatureService import FeatureService, AUTO_SCOPE
 from storage.variant.service.SampleService import SampleService
+from storage.variant.io.SampleFiles import SampleFiles
 
 logger = logging.getLogger(__name__)
 
@@ -91,6 +92,7 @@ class MLSTService(FeatureService):
         return features_df
 
     def build_sample_feature_object(self, sample: Sample, features_reader: FeaturesReader,
+                                    sample_files: SampleFiles,
                                     feature_scope_name: str) -> Any:
         self._verify_correct_reader(features_reader=features_reader)
         mlst_reader = cast(MLSTFeaturesReader, features_reader)
@@ -104,3 +106,7 @@ class MLSTService(FeatureService):
         sample_mlst_alleles = SampleMLSTAlleles(sample=sample, scheme=mlst_scheme)
 
         return sample_mlst_alleles
+
+    def _create_persisted_features_reader(self, sample_files_dict: Dict[str, SampleFiles],
+                                          features_reader: FeaturesReader) -> FeaturesReader:
+        return features_reader

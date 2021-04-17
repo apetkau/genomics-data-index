@@ -16,9 +16,5 @@ class NucleotideFeaturesReader(FeaturesReader):
         return {'SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE'}
 
     @abc.abstractmethod
-    def persist_sample_files(self, sample_name: str, persistence_dir: Path) -> NucleotideSampleFiles:
-        pass
-
-    @abc.abstractmethod
     def get_genomic_masked_region(self, sample_name: str) -> MaskedGenomicRegions:
         pass

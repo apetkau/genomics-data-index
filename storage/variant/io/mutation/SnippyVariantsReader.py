@@ -1,3 +1,4 @@
+from __future__ import annotations
 import logging
 import os
 from pathlib import Path
@@ -28,16 +29,20 @@ class SnippyVariantsReader(VcfVariantsReader):
         return out[['CHROM', 'POS', 'REF', 'ALT', 'INFO']]
 
     @classmethod
-    def create(cls, sample_dirs: List[Path]):
+    def create(cls, sample_dirs: List[Path], preprocess_dir: Path = None) -> SnippyVariantsReader:
         sample_files_map = {}
-        tmp_dir = Path(tempfile.mkdtemp())
 
         for d in sample_dirs:
             sample_name = d.name
-            sample_files_map[sample_name] = NucleotideSampleFilesSequenceMask.create(
+            sample_files = NucleotideSampleFilesSequenceMask.create(
                 sample_name=sample_name,
                 vcf_file=Path(d, 'snps.vcf.gz'),
                 sample_mask_sequence=Path(d, 'snps.aligned.fa')
-            ).persist(tmp_dir)
+            )
+
+            if preprocess_dir is not None:
+                sample_files = sample_files.persist(preprocess_dir)
+
+            sample_files_map[sample_name] = sample_files
 
         return SnippyVariantsReader(sample_files_map=sample_files_map)

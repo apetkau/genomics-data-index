@@ -4,6 +4,7 @@ from typing import Set, List, Dict
 
 import pandas as pd
 
+from storage.variant.io.SampleFiles import SampleFiles
 from storage.variant.io.FeaturesReader import FeaturesReader
 from storage.variant.model import MLST_UNKNOWN_ALLELE
 
@@ -13,6 +14,9 @@ class MLSTFeaturesReader(FeaturesReader):
     def __init__(self):
         super().__init__()
         self._features_table = None
+
+    def get_sample_files(self, sample_name: str) -> SampleFiles:
+        return None
 
     def get_features_table(self) -> pd.DataFrame:
         if self._features_table is None:

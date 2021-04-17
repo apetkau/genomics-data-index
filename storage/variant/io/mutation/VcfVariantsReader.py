@@ -1,7 +1,7 @@
 import logging
 import os
 from pathlib import Path
-from typing import List, Dict
+from typing import List, Dict, Optional
 import tempfile
 
 import pandas as pd
@@ -11,6 +11,7 @@ from storage.variant.MaskedGenomicRegions import MaskedGenomicRegions
 from storage.variant.io.mutation.NucleotideFeaturesReader import NucleotideFeaturesReader
 from storage.variant.io.mutation.NucleotideSampleFilesSequenceMask import NucleotideSampleFilesSequenceMask
 from storage.variant.io.mutation.NucleotideSampleFiles import NucleotideSampleFiles
+from storage.variant.io.SampleFiles import SampleFiles
 
 logger = logging.getLogger(__name__)
 
@@ -80,8 +81,8 @@ class VcfVariantsReader(NucleotideFeaturesReader):
         """
         return str(element)
 
-    def persist_sample_files(self, sample_name: str, persistence_dir: Path) -> NucleotideSampleFiles:
-        return self._sample_files_map[sample_name].persist(persistence_dir)
+    def get_sample_files(self, sample_name: str) -> Optional[SampleFiles]:
+        return self._sample_files_map[sample_name]
 
     def get_genomic_masked_region(self, sample_name: str) -> MaskedGenomicRegions:
         return self._sample_files_map[sample_name].get_mask()
@@ -91,11 +92,10 @@ class VcfVariantsReader(NucleotideFeaturesReader):
 
     @classmethod
     def create_from_sequence_masks(cls, sample_vcf_map: Dict[str, Path],
-                                   masked_genomic_files_map: Dict[str, Path] = None):
+                                   masked_genomic_files_map: Dict[str, Path] = None,
+                                   preprocess_dir: Path = None):
         if masked_genomic_files_map is None:
             masked_genomic_files_map = {}
-
-        tmp_dir = Path(tempfile.mkdtemp())
 
         sample_files_map = {}
         for sample_name in sample_vcf_map:
@@ -105,10 +105,15 @@ class VcfVariantsReader(NucleotideFeaturesReader):
             else:
                 mask_file = None
 
-            sample_files_map[sample_name] = NucleotideSampleFilesSequenceMask.create(
+            sample_files = NucleotideSampleFilesSequenceMask.create(
                 sample_name=sample_name,
                 vcf_file=vcf_file,
                 sample_mask_sequence=mask_file
-            ).persist(tmp_dir)
+            )
+
+            if preprocess_dir is not None:
+                sample_files = sample_files.persist(preprocess_dir)
+
+            sample_files_map[sample_name] = sample_files
 
         return VcfVariantsReader(sample_files_map=sample_files_map)

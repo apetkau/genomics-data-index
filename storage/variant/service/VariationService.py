@@ -8,12 +8,15 @@ from storage.variant.MaskedGenomicRegions import MaskedGenomicRegions
 from storage.variant.SampleSet import SampleSet
 from storage.variant.io.FeaturesReader import FeaturesReader
 from storage.variant.io.mutation.NucleotideFeaturesReader import NucleotideFeaturesReader
+from storage.variant.io.mutation.VcfVariantsReader import VcfVariantsReader
 from storage.variant.io.mutation.VariationFile import VariationFile
 from storage.variant.model.db import NucleotideVariantsSamples, SampleNucleotideVariation, Sample
 from storage.variant.service import DatabaseConnection
 from storage.variant.service.FeatureService import FeatureService
 from storage.variant.service.ReferenceService import ReferenceService
 from storage.variant.service.SampleService import SampleService
+from storage.variant.io.SampleFiles import SampleFiles
+from storage.variant.io.mutation.NucleotideSampleFiles import NucleotideSampleFiles
 
 logger = logging.getLogger(__name__)
 
@@ -71,18 +74,20 @@ class VariationService(FeatureService):
             raise Exception('feature_scope_name must not be None')
 
     def build_sample_feature_object(self, sample: Sample,
+                                    sample_files: SampleFiles,
                                     features_reader: FeaturesReader, feature_scope_name: str) -> Any:
-        self._verify_correct_reader(features_reader=features_reader)
-        variants_reader = cast(NucleotideFeaturesReader, features_reader)
+        nucleotide_sample_files = cast(NucleotideSampleFiles, sample_files)
 
         reference = self._reference_service.find_reference_genome(feature_scope_name)
 
-        persisted_sample_files = variants_reader.persist_sample_files(sample.name, self._features_dir)
-
         sample_nucleotide_variation = SampleNucleotideVariation(reference=reference)
-        vcf_file, vcf_index = persisted_sample_files.get_vcf_file()
+        vcf_file, vcf_index = nucleotide_sample_files.get_vcf_file()
         sample_nucleotide_variation.nucleotide_variants_file = vcf_file
         sample_nucleotide_variation.sample = sample
-        sample_nucleotide_variation.masked_regions_file = persisted_sample_files.get_mask_file()
+        sample_nucleotide_variation.masked_regions_file = nucleotide_sample_files.get_mask_file()
 
         return sample_nucleotide_variation
+
+    def _create_persisted_features_reader(self, sample_files_dict: Dict[str, SampleFiles],
+                                          features_reader: FeaturesReader) -> FeaturesReader:
+        return VcfVariantsReader(sample_files_dict)

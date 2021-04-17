@@ -1,5 +1,7 @@
 from os import path, listdir
 from typing import Dict, Any
+import tempfile
+from pathlib import Path
 
 import pytest
 
@@ -12,16 +14,15 @@ sample_dirs_empty = [data_dir_empty / d for d in listdir(data_dir_empty) if path
 
 
 @pytest.fixture
-def setup() -> Dict[str, Any]:
-    return {
-        'reader': SnippyVariantsReader.create(sample_dirs)
-    }
+def variants_reader() -> SnippyVariantsReader:
+    tmp_dir = Path(tempfile.mkdtemp())
+    return SnippyVariantsReader.create(sample_dirs, tmp_dir)
 
 
-def test_read_vcf(setup):
+def test_read_vcf(variants_reader):
     vcf_file = data_dir / 'SampleA' / 'snps.vcf.gz'
 
-    df = setup['reader'].read_vcf(vcf_file, 'SampleA')
+    df = variants_reader.read_vcf(vcf_file, 'SampleA')
 
     assert 46 == len(df), 'Data fram has incorrect length'
 
@@ -45,15 +46,14 @@ def test_read_vcf(setup):
     assert 'C' == v['ALT'].values[0], 'Incorrect alt'
 
 
-def test_get_variants_table(setup):
-    df = setup['reader'].get_features_table()
+def test_get_variants_table(variants_reader):
+    df = variants_reader.get_features_table()
 
     assert 129 == len(df), 'Data has incorrect length'
     assert {'SampleA', 'SampleB', 'SampleC'} == set(df['SAMPLE'].tolist()), 'Incorrect sample names'
 
 
-def test_get_genomic_masks(setup):
-    variants_reader = setup['reader']
+def test_get_genomic_masks(variants_reader):
     mask = variants_reader.get_genomic_masked_region('SampleA')
     assert 437 == len(mask)
     assert {'reference'} == mask.sequence_names()
@@ -67,10 +67,8 @@ def test_get_genomic_masks(setup):
     assert {'reference'} == mask.sequence_names()
 
 
-def test_get_samples_list(setup):
-    reader = setup['reader']
-
-    assert {'SampleA', 'SampleB', 'SampleC'} == set(reader.samples_list())
+def test_get_samples_list(variants_reader):
+    assert {'SampleA', 'SampleB', 'SampleC'} == set(variants_reader.samples_list())
 
 
 def test_get_samples_list_two_files():
@@ -81,7 +79,8 @@ def test_get_samples_list_two_files():
 
 
 def test_read_empty_vcf():
-    reader = SnippyVariantsReader.create(sample_dirs_empty)
+    tmp_dir = Path(tempfile.mkdtemp())
+    reader = SnippyVariantsReader.create(sample_dirs_empty, tmp_dir)
     df = reader.get_features_table()
 
     assert 0 == len(df), 'Data has incorrect length'

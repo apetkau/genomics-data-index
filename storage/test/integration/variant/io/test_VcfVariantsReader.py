@@ -2,6 +2,7 @@ from os import path, listdir
 from pathlib import Path
 from typing import List
 from tempfile import TemporaryDirectory
+import tempfile
 
 import pytest
 
@@ -21,6 +22,7 @@ def sample_dirs_empty() -> List[Path]:
 
 
 def variants_reader_internal(sample_dirs):
+    tmp_dir = Path(tempfile.mkdtemp())
     sample_vcf_map = {}
     sample_genomic_files_mask = {}
     for d in sample_dirs:
@@ -32,7 +34,8 @@ def variants_reader_internal(sample_dirs):
         sample_genomic_files_mask[sample_name] = genomic_file_mask
 
     return VcfVariantsReader.create_from_sequence_masks(sample_vcf_map=sample_vcf_map,
-                             masked_genomic_files_map=sample_genomic_files_mask)
+                                                        masked_genomic_files_map=sample_genomic_files_mask,
+                                                        preprocess_dir=tmp_dir)
 
 
 @pytest.fixture
@@ -47,6 +50,7 @@ def variants_reader_empty(sample_dirs_empty) -> VcfVariantsReader:
 
 @pytest.fixture
 def variants_reader_empty_masks(sample_dirs) -> VcfVariantsReader:
+    tmp_dir = Path(tempfile.mkdtemp())
     sample_vcf_map = {}
     for d in sample_dirs:
         sample_name = path.basename(d)
@@ -54,7 +58,8 @@ def variants_reader_empty_masks(sample_dirs) -> VcfVariantsReader:
 
         sample_vcf_map[sample_name] = vcf_file
 
-    return VcfVariantsReader.create_from_sequence_masks(sample_vcf_map=sample_vcf_map)
+    return VcfVariantsReader.create_from_sequence_masks(sample_vcf_map=sample_vcf_map,
+                                                        preprocess_dir=tmp_dir)
 
 
 def test_get_variants_table(variants_reader):
@@ -70,22 +75,6 @@ def test_get_variants_table(variants_reader):
     assert ['OTHER'] == df.loc[(df['SAMPLE'] == 'SampleA') & (df['POS'] == 461), 'TYPE'].tolist()
     assert ['OTHER'] == df.loc[(df['SAMPLE'] == 'SampleB') & (df['POS'] == 1325), 'TYPE'].tolist()
     assert ['OTHER'] == df.loc[(df['SAMPLE'] == 'SampleC') & (df['POS'] == 1984), 'TYPE'].tolist()
-
-
-def test_persist_sample_files(variants_reader: VcfVariantsReader):
-    with TemporaryDirectory() as tmp_dir_str:
-        tmp_dir = Path(tmp_dir_str)
-        sample_files = variants_reader.persist_sample_files('SampleA', tmp_dir)
-        vcf_file, vcf_index = sample_files.get_vcf_file()
-        mask_file = sample_files.get_mask_file()
-
-        assert vcf_file.exists()
-        assert vcf_index.exists()
-        assert mask_file.exists()
-
-        assert vcf_file.parent == tmp_dir
-        assert vcf_index.parent == tmp_dir
-        assert mask_file.parent == tmp_dir
 
 
 def test_get_genomic_masks(variants_reader):
