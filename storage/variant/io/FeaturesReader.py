@@ -32,10 +32,6 @@ class FeaturesReader(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def iter_sample_files(self) -> Generator[SampleData, None, None]:
-        pass
-
-    @abc.abstractmethod
     def get_or_create_feature_file(self, sample_name: str):
         """
         Gets a file of the features associated with the sample (or creates such a file if it doesn't exist).

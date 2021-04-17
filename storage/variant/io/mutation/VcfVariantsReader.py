@@ -20,11 +20,9 @@ logger = logging.getLogger(__name__)
 
 class VcfVariantsReader(NucleotideFeaturesReader):
 
-    def __init__(self, sample_files_map: Dict[str, NucleotideSampleData],
-                 sample_files_processor: SampleFilesProcessor):
+    def __init__(self, sample_files_map: Dict[str, NucleotideSampleData]):
         super().__init__()
         self._sample_files_map = sample_files_map
-        self._sample_files_processor = sample_files_processor
 
     def _fix_df_columns(self, vcf_df: pd.DataFrame) -> pd.DataFrame:
         # If no data, I still want certain column names so that rest of code still works
@@ -85,9 +83,6 @@ class VcfVariantsReader(NucleotideFeaturesReader):
         """
         return str(element)
 
-    def iter_sample_files(self) -> Generator[SampleData, None, None]:
-        return self._sample_files_processor.preprocess_files()
-
     def get_sample_files(self, sample_name: str) -> Optional[SampleData]:
         return self._sample_files_map[sample_name]
 
@@ -121,5 +116,4 @@ class VcfVariantsReader(NucleotideFeaturesReader):
             sample_files_map[sample_name] = sample_files
             sample_files_processor.add(sample_files)
 
-        return VcfVariantsReader(sample_files_map=sample_files_map,
-                                 sample_files_processor=sample_files_processor)
+        return VcfVariantsReader(sample_files_map=sample_files_map)

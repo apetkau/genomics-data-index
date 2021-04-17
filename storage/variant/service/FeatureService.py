@@ -11,6 +11,7 @@ from storage.variant.service import DatabaseConnection
 from storage.variant.service import EntityExistsError
 from storage.variant.service.SampleService import SampleService
 from storage.variant.io.SampleData import SampleData
+from storage.variant.io.SampleDataPackage import SampleDataPackage
 
 logger = logging.getLogger(__name__)
 
@@ -83,29 +84,30 @@ class FeatureService(abc.ABC):
         if number % print_every == 0:
             logger.info(f'Proccessed {number/total*100:0.0f}% ({number}/{total}) samples')
 
-    def insert(self, features_reader: FeaturesReader, feature_scope_name: str = AUTO_SCOPE) -> None:
-        self._verify_correct_reader(features_reader=features_reader)
+    def insert(self, data_package: SampleDataPackage, feature_scope_name: str = AUTO_SCOPE) -> None:
+        # self._verify_correct_reader(features_reader=features_reader)
         self._verify_correct_feature_scope(feature_scope_name)
 
-        sample_names = features_reader.samples_set()
-        num_samples = len(sample_names)
+        # sample_names = data_package.sample_names()
+        # num_samples = len(sample_names)
+        #
+        # if self.check_samples_have_features(sample_names, feature_scope_name):
+        #     raise EntityExistsError(f'Passed samples already have features for feature scope [{feature_scope_name}], '
+        #                             f'will not insert any new features')
 
-        if self.check_samples_have_features(sample_names, feature_scope_name):
-            raise EntityExistsError(f'Passed samples already have features for feature scope [{feature_scope_name}], '
-                                    f'will not insert any new features')
-
-        interval = max(1, int(num_samples / 50))
+        # interval = max(1, int(num_samples / 50))
+        interval = 1
+        num_samples = 9
         processed_samples = 0
         persisted_sample_files_dict = {}
-        for sample_files in features_reader.iter_sample_files():
+        for sample_data in data_package.iter_sample_data():
             self.progress_hook(processed_samples, print_every=interval, total=num_samples)
-            logger.debug(f'Loading sample {sample_files.sample_name}')
+            logger.debug(f'Loading sample {sample_data.sample_name}')
 
-            sample = self._get_or_create_sample(sample_files.sample_name)
-            persisted_sample_files = self._persist_sample_files(sample_files)
+            sample = self._get_or_create_sample(sample_data.sample_name)
+            persisted_sample_files = self._persist_sample_files(sample_data)
             sample_feature_object = self.build_sample_feature_object(sample=sample,
                                                                      sample_files=persisted_sample_files,
-                                                                     features_reader=features_reader,
                                                                      feature_scope_name=feature_scope_name)
 
             persisted_sample_files_dict[persisted_sample_files.sample_name] = persisted_sample_files
@@ -114,8 +116,7 @@ class FeatureService(abc.ABC):
         self._connection.get_session().commit()
         logger.info(f'Finished processings {num_samples} samples')
 
-        persisted_features_reader = self._create_persisted_features_reader(sample_files_dict=persisted_sample_files_dict,
-                                                                           features_reader=features_reader)
+        persisted_features_reader = self._create_persisted_features_reader(sample_files_dict=persisted_sample_files_dict)
         self.index_features(features_reader=persisted_features_reader, feature_scope_name=feature_scope_name)
 
     def _update_scope(self, features_df: pd.DataFrame, feature_scope_name: str) -> pd.DataFrame:
@@ -133,7 +134,7 @@ class FeatureService(abc.ABC):
     @abc.abstractmethod
     def build_sample_feature_object(self, sample: Sample,
                                     sample_files: SampleData,
-                                    features_reader: FeaturesReader, feature_scope_name: str) -> Any:
+                                    feature_scope_name: str) -> Any:
         pass
 
     def _persist_sample_files(self, sample_files: SampleData) -> Optional[SampleData]:
@@ -143,6 +144,5 @@ class FeatureService(abc.ABC):
             return None
 
     @abc.abstractmethod
-    def _create_persisted_features_reader(self, sample_files_dict: Dict[str, SampleData],
-                                          features_reader: FeaturesReader) -> FeaturesReader:
+    def _create_persisted_features_reader(self, sample_files_dict: Dict[str, SampleData]) -> FeaturesReader:
         pass

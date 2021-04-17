@@ -76,7 +76,7 @@ class VariationService(FeatureService):
 
     def build_sample_feature_object(self, sample: Sample,
                                     sample_files: SampleData,
-                                    features_reader: FeaturesReader, feature_scope_name: str) -> Any:
+                                    feature_scope_name: str) -> Any:
         nucleotide_sample_files = cast(NucleotideSampleData, sample_files)
 
         reference = self._reference_service.find_reference_genome(feature_scope_name)
@@ -89,9 +89,8 @@ class VariationService(FeatureService):
 
         return sample_nucleotide_variation
 
-    def _create_persisted_features_reader(self, sample_files_dict: Dict[str, SampleData],
-                                          features_reader: FeaturesReader) -> FeaturesReader:
+    def _create_persisted_features_reader(self, sample_files_dict: Dict[str, SampleData]) -> FeaturesReader:
         file_processor = NullSampleFilesProcessor()
         for sample in sample_files_dict:
             file_processor.add(sample_files_dict[sample])
-        return VcfVariantsReader(sample_files_dict, sample_files_processor=file_processor)
+        return VcfVariantsReader(sample_files_dict)

@@ -24,6 +24,7 @@ from storage.variant.service.KmerService import KmerService
 from storage.FilesystemStorage import FilesystemStorage
 from storage.variant.service.MLSTService import MLSTService
 from storage.variant.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor
+from storage.variant.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
 
 
 @pytest.fixture
@@ -42,15 +43,20 @@ def reference_service(database, filesystem_storage) -> ReferenceService:
     return reference_service
 
 
+# @pytest.fixture
+# def snippy_variants_reader() -> SnippyVariantsReader:
+#     tmp_dir = Path(tempfile.mkdtemp())
+#     return SnippyVariantsReader.create(sample_dirs,
+#                                        sample_files_processor=SerialSampleFilesProcessor(tmp_dir))
+
 @pytest.fixture
-def snippy_variants_reader() -> SnippyVariantsReader:
+def snippy_nucleotide_data_package() -> NucleotideSampleDataPackage:
     tmp_dir = Path(tempfile.mkdtemp())
-    return SnippyVariantsReader.create(sample_dirs,
+    return NucleotideSampleDataPackage.create_from_snippy(sample_dirs,
                                        sample_files_processor=SerialSampleFilesProcessor(tmp_dir))
 
-
 @pytest.fixture
-def regular_variants_reader() -> VcfVariantsReader:
+def regular_nucleotide_data_package() -> NucleotideSampleDataPackage:
     vcf_files = {
         'SampleA': Path(regular_vcf_dir, 'SampleA.vcf.gz'),
         'SampleB': Path(regular_vcf_dir, 'SampleB.vcf.gz'),
@@ -64,9 +70,29 @@ def regular_variants_reader() -> VcfVariantsReader:
     }
 
     tmp_dir = Path(tempfile.mkdtemp())
-    return VcfVariantsReader.create_from_sequence_masks(sample_vcf_map=vcf_files,
+    return NucleotideSampleDataPackage.create_from_sequence_masks(sample_vcf_map=vcf_files,
                                                         masked_genomic_files_map=mask_files,
                                                         sample_files_processor=SerialSampleFilesProcessor(tmp_dir))
+
+
+# @pytest.fixture
+# def regular_variants_reader() -> VcfVariantsReader:
+#     vcf_files = {
+#         'SampleA': Path(regular_vcf_dir, 'SampleA.vcf.gz'),
+#         'SampleB': Path(regular_vcf_dir, 'SampleB.vcf.gz'),
+#         'SampleC': Path(regular_vcf_dir, 'SampleC.vcf.gz'),
+#     }
+#
+#     mask_files = {
+#         'SampleA': Path(data_dir, 'SampleA', 'snps.aligned.fa'),
+#         'SampleB': Path(data_dir, 'SampleB', 'snps.aligned.fa'),
+#         'SampleC': Path(data_dir, 'SampleC', 'snps.aligned.fa'),
+#     }
+#
+#     tmp_dir = Path(tempfile.mkdtemp())
+#     return VcfVariantsReader.create_from_sequence_masks(sample_vcf_map=vcf_files,
+#                                                         masked_genomic_files_map=mask_files,
+#                                                         sample_files_processor=SerialSampleFilesProcessor(tmp_dir))
 
 
 @pytest.fixture
@@ -82,25 +108,25 @@ def sample_service(database):
 
 @pytest.fixture
 def variation_service(database, reference_service_with_data,
-                      snippy_variants_reader, sample_service, filesystem_storage) -> VariationService:
+                      snippy_nucleotide_data_package, sample_service, filesystem_storage) -> VariationService:
     var_service = VariationService(database_connection=database,
                                    reference_service=reference_service_with_data,
                                    sample_service=sample_service,
                                    variation_dir=filesystem_storage.variation_dir)
     var_service.insert(feature_scope_name='genome',
-                       features_reader=snippy_variants_reader)
+                       data_package=snippy_nucleotide_data_package)
     return var_service
 
 
 @pytest.fixture
 def variation_service_non_snippy_vcfs(database, reference_service_with_data,
-                                      regular_variants_reader, sample_service, filesystem_storage) -> VariationService:
+                                      regular_nucleotide_data_package, sample_service, filesystem_storage) -> VariationService:
     var_service = VariationService(database_connection=database,
                                    reference_service=reference_service_with_data,
                                    sample_service=sample_service,
                                    variation_dir=filesystem_storage.variation_dir)
     var_service.insert(feature_scope_name='genome',
-                       features_reader=regular_variants_reader)
+                       data_package=regular_nucleotide_data_package)
     return var_service
 
 
