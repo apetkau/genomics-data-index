@@ -9,7 +9,6 @@ import pytest
 from storage.test.integration.variant import data_dir
 from storage.test.integration.variant import data_dir_empty
 from storage.variant.io.mutation.VcfVariantsReader import VcfVariantsReader
-from storage.variant.io.processor.MultipleProcessSampleFilesProcessor import MultipleProcessSampleFilesProcessor
 from storage.variant.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor
 
 
@@ -99,60 +98,6 @@ def test_get_genomic_masks(variants_reader):
     mask = variants_reader.get_genomic_masked_region('SampleC')
     assert 329 == len(mask)
     assert {'reference'} == mask.sequence_names()
-
-
-def test_with_serial_sample_files_processor(sample_dirs):
-    with TemporaryDirectory() as tmp_file_str:
-        tmp_file = Path(tmp_file_str)
-        vcf_masks = vcf_and_mask_files(sample_dirs)
-        variants_reader = VcfVariantsReader.create_from_sequence_masks(sample_vcf_map=vcf_masks['vcfs'],
-                                                                       masked_genomic_files_map=vcf_masks['masks'],
-                                                                       sample_files_processor=SerialSampleFilesProcessor(
-                                                                           tmp_file))
-
-        mask = variants_reader.get_genomic_masked_region('SampleA')
-        assert 437 == len(mask)
-        assert {'reference'} == mask.sequence_names()
-
-        mask = variants_reader.get_genomic_masked_region('SampleB')
-        assert 276 == len(mask)
-        assert {'reference'} == mask.sequence_names()
-
-        mask = variants_reader.get_genomic_masked_region('SampleC')
-        assert 329 == len(mask)
-        assert {'reference'} == mask.sequence_names()
-
-
-def test_with_multiprocess_sample_files_processor(sample_dirs):
-    with TemporaryDirectory() as tmp_file_str:
-        tmp_file = Path(tmp_file_str)
-        vcf_masks = vcf_and_mask_files(sample_dirs)
-        file_processor = MultipleProcessSampleFilesProcessor(tmp_file, processing_cores=2)
-        variants_reader = VcfVariantsReader.create_from_sequence_masks(sample_vcf_map=vcf_masks['vcfs'],
-                                                                       masked_genomic_files_map=vcf_masks['masks'],
-                                                                       sample_files_processor=file_processor)
-
-        mask = variants_reader.get_genomic_masked_region('SampleA')
-        assert 437 == len(mask)
-        assert {'reference'} == mask.sequence_names()
-
-        mask = variants_reader.get_genomic_masked_region('SampleB')
-        assert 276 == len(mask)
-        assert {'reference'} == mask.sequence_names()
-
-        mask = variants_reader.get_genomic_masked_region('SampleC')
-        assert 329 == len(mask)
-        assert {'reference'} == mask.sequence_names()
-
-
-def test_with_null_sample_files_processor(sample_dirs):
-    vcf_masks = vcf_and_mask_files(sample_dirs)
-    variants_reader = VcfVariantsReader.create_from_sequence_masks(sample_vcf_map=vcf_masks['vcfs'],
-                                                                   masked_genomic_files_map=vcf_masks['masks'])
-
-    with pytest.raises(Exception) as execinfo:
-        variants_reader.get_genomic_masked_region('SampleA')
-    assert 'Sample mask file is not preprocessed for sample' in str(execinfo.value)
 
 
 def test_get_genomic_masks_empty(variants_reader_empty_masks):
