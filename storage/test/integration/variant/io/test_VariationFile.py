@@ -1,21 +1,11 @@
 import tempfile
 from pathlib import Path
 
-import pandas as pd
-import vcf
-
 from storage.test.integration.variant import data_dir, regular_vcf_dir, variation_dir, reference_file, consensus_dir
+from storage.test.integration.variant.io import read_vcf_df
 from storage.variant.MaskedGenomicRegions import MaskedGenomicRegions
 from storage.variant.io.mutation.VariationFile import VariationFile
 from storage.variant.util import parse_sequence_file
-
-
-def read_vcf_df(file: Path) -> pd.DataFrame:
-    reader = vcf.Reader(filename=str(file))
-    df = pd.DataFrame([vars(r) for r in reader])
-    df['TYPE'] = df['INFO'].apply(lambda x: x['TYPE'][0])
-
-    return df
 
 
 def test_write():
@@ -24,8 +14,11 @@ def test_write():
         out_file = Path(out_dir) / 'out.vcf.gz'
 
         assert not out_file.exists()
-        VariationFile(sample_vcf).write(out_file)
+        file, index = VariationFile(sample_vcf).write(out_file)
         assert out_file.exists()
+        assert file == out_file
+        assert index.exists()
+        assert str(file) + '.csi' == str(index)
 
         df = read_vcf_df(out_file)
         assert 'SNP' == df[df['POS'] == 293]['TYPE'].tolist()[0]
@@ -42,8 +35,11 @@ def test_write_2():
         out_file = Path(out_dir) / 'out.vcf.gz'
 
         assert not out_file.exists()
-        VariationFile(sample_vcf).write(out_file)
+        file, index = VariationFile(sample_vcf).write(out_file)
         assert out_file.exists()
+        assert file == out_file
+        assert index.exists()
+        assert str(file) + '.csi' == str(index)
 
         df = read_vcf_df(out_file)
         assert 'INDEL' == df[df['POS'] == 347]['TYPE'].tolist()[0]

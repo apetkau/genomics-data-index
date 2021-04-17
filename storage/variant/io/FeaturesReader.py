@@ -1,13 +1,14 @@
 import abc
-from pathlib import Path
-from typing import Dict, List, Set
+from typing import List, Set, Optional
 
 import pandas as pd
+
+from storage.variant.io.SampleFiles import SampleFiles
 
 
 class FeaturesReader(abc.ABC):
 
-    def __init(self):
+    def __init__(self):
         pass
 
     def _check_features_table_columns(self, features_df: pd.DataFrame) -> None:
@@ -27,11 +28,7 @@ class FeaturesReader(abc.ABC):
         return features_df
 
     @abc.abstractmethod
-    def sample_feature_files(self) -> Dict[str, Path]:
-        """
-        Gets a dictionary of sample names to feature files to be read by this reader.
-        :return: A dictionary of sample names to feature files ('name' => 'file')
-        """
+    def get_sample_files(self, sample_name: str) -> Optional[SampleFiles]:
         pass
 
     @abc.abstractmethod

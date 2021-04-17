@@ -1,6 +1,6 @@
 import tempfile
 from pathlib import Path
-from typing import List
+from typing import List, Tuple
 
 import pandas as pd
 from Bio import SeqIO
@@ -14,7 +14,7 @@ class VariationFile:
     def __init__(self, file: Path):
         self._file = file
 
-    def write(self, output: Path) -> Path:
+    def write(self, output: Path) -> Tuple[Path, Path]:
         if output.suffix == '.bcf':
             output_type = 'b'
         elif str(output).endswith('.vcf.gz'):
@@ -23,12 +23,14 @@ class VariationFile:
             raise Exception((f'Invalid file type [{output.suffix}] for output=[{output}]. '
                              'Must be one of [".bcf", ".vcf.bz"]'))
 
+        output_index = Path(str(output) + '.csi')
+
         execute_commands([
             ['bcftools', 'plugin', 'fill-tags', str(self._file), '-O', output_type, '-o', str(output),
              '--', '-t', 'TYPE'],
             ['bcftools', 'index', str(output)]
         ])
-        return output
+        return output, output_index
 
     def consensus(self, reference_file: Path, mask_file: Path = None, include_expression='TYPE="SNP"',
                   mask_with: str = 'N') -> List[SeqRecord]:

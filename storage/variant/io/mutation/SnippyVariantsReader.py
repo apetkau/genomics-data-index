@@ -1,31 +1,24 @@
+from __future__ import annotations
+
 import logging
-import os
 from pathlib import Path
-from typing import List
+from typing import List, Dict
 
 import pandas as pd
 
+from storage.variant.io.SampleFilesProcessor import SampleFilesProcessor
+from storage.variant.io.mutation.NucleotideSampleFiles import NucleotideSampleFiles
+from storage.variant.io.mutation.NucleotideSampleFilesSequenceMask import NucleotideSampleFilesSequenceMask
 from storage.variant.io.mutation.VcfVariantsReader import VcfVariantsReader
+from storage.variant.io.processor.NullSampleFilesProcessor import NullSampleFilesProcessor
 
 logger = logging.getLogger(__name__)
 
 
 class SnippyVariantsReader(VcfVariantsReader):
 
-    def __init__(self, sample_dirs: List[Path]):
-        self._sample_dirs = sample_dirs
-
-        vcf_map = {}
-        masked_genomic_files_map = {}
-        for d in self._sample_dirs:
-            sample_name = os.path.basename(d)
-            vcf_map[sample_name] = Path(d, 'snps.vcf.gz')
-            masked_genomic_files_map[sample_name] = Path(d, 'snps.aligned.fa')
-
-        super().__init__(sample_vcf_map=vcf_map, masked_genomic_files_map=masked_genomic_files_map)
-
-    def _get_type(self, vcf_df: pd.DataFrame) -> pd.Series:
-        return vcf_df['INFO'].map(lambda x: x['TYPE'][0])
+    def __init__(self, sample_files_map: Dict[str, NucleotideSampleFiles]):
+        super().__init__(sample_files_map=sample_files_map)
 
     def _fix_df_columns(self, vcf_df: pd.DataFrame) -> pd.DataFrame:
         # If no data, I still want certain column names so that rest of code still works
@@ -36,5 +29,19 @@ class SnippyVariantsReader(VcfVariantsReader):
                            left_index=True, right_index=True)
         return out[['CHROM', 'POS', 'REF', 'ALT', 'INFO']]
 
-    def _drop_extra_columns(self, vcf_df: pd.DataFrame) -> pd.DataFrame:
-        return vcf_df.drop('INFO', axis='columns')
+    @classmethod
+    def create(cls, sample_dirs: List[Path],
+               sample_files_processor: SampleFilesProcessor = NullSampleFilesProcessor()) -> SnippyVariantsReader:
+
+        for d in sample_dirs:
+            sample_name = d.name
+            sample_files = NucleotideSampleFilesSequenceMask.create(
+                sample_name=sample_name,
+                vcf_file=Path(d, 'snps.vcf.gz'),
+                sample_mask_sequence=Path(d, 'snps.aligned.fa')
+            )
+
+            sample_files_processor.add(sample_files)
+
+        sample_files_map = sample_files_processor.preprocess_files()
+        return SnippyVariantsReader(sample_files_map=sample_files_map)

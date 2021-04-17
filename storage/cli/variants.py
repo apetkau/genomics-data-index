@@ -1,8 +1,10 @@
 import logging
 import multiprocessing
 import sys
+from functools import partial
 from os import path, listdir
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import List
 
 import click
@@ -20,6 +22,8 @@ from storage.variant.io.mlst.MLSTSistrReader import MLSTSistrReader
 from storage.variant.io.mlst.MLSTTSeemannFeaturesReader import MLSTTSeemannFeaturesReader
 from storage.variant.io.mutation.SnippyVariantsReader import SnippyVariantsReader
 from storage.variant.io.mutation.VcfVariantsReader import VcfVariantsReader
+from storage.variant.io.processor.MultipleProcessSampleFilesProcessor import MultipleProcessSampleFilesProcessor
+from storage.variant.io.processor.NullSampleFilesProcessor import NullSampleFilesProcessor
 from storage.variant.model.QueryFeatureMLST import QueryFeatureMLST
 from storage.variant.model.QueryFeatureMutation import QueryFeatureMutation
 from storage.variant.service import DatabaseConnection, EntityExistsError
@@ -36,9 +40,11 @@ from storage.variant.service.VariationService import VariationService
 from storage.variant.util import get_genome_name
 
 logger = logging.getLogger('storage')
-num_cores = multiprocessing.cpu_count()
+max_cores = multiprocessing.cpu_count()
 
 LOG_LEVELS = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
+
+click.option = partial(click.option, show_default=True)
 
 
 @click.group()
@@ -46,11 +52,13 @@ LOG_LEVELS = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
 @click.option('--database-connection', help='A connection string for the database.')
 @click.option('--database-dir', help='The root directory for the database files.',
               type=click.Path())
+@click.option('--ncores', help='Number of cores for any parallel processing', default=max_cores,
+              type=click.IntRange(min=1, max=max_cores))
 @click.option('--log-level', default='WARNING', help='Sets the log level', type=click.Choice(LOG_LEVELS))
 @click_config_file.configuration_option(provider=yaml_config_provider,
                                         config_file_name='config.yaml',
                                         implicit=True)
-def main(ctx, database_connection, database_dir, log_level):
+def main(ctx, database_connection, database_dir, ncores, log_level):
     ctx.ensure_object(dict)
 
     if log_level == 'INFO' or log_level == 'DEBUG':
@@ -103,6 +111,7 @@ def main(ctx, database_connection, database_dir, log_level):
     ctx.obj['mlst_service'] = mlst_service
     ctx.obj['mlst_query_service'] = mlst_query_service
     ctx.obj['kmer_query_service'] = kmer_query_service
+    ctx.obj['ncores'] = ncores
 
 
 @main.group()
@@ -111,12 +120,13 @@ def load(ctx):
     pass
 
 
-def load_variants_common(ctx, variants_reader, reference_file, input, build_tree, align_type, threads,
+def load_variants_common(ctx, variants_reader, reference_file, input, build_tree, align_type,
                          extra_tree_params: str):
     reference_service = ctx.obj['reference_service']
     variation_service = ctx.obj['variation_service']
     sample_service = ctx.obj['sample_service']
     tree_service = ctx.obj['tree_service']
+    ncores = ctx.obj['ncores']
 
     try:
         reference_service.add_reference_genome(reference_file)
@@ -136,7 +146,7 @@ def load_variants_common(ctx, variants_reader, reference_file, input, build_tree
         if build_tree:
             tree_service.rebuild_tree(reference_name=reference_name,
                                       align_type=align_type,
-                                      num_cores=threads,
+                                      num_cores=ncores,
                                       extra_params=extra_tree_params)
             click.echo('Finished building tree of all samples')
 
@@ -148,21 +158,28 @@ def load_variants_common(ctx, variants_reader, reference_file, input, build_tree
 @click.option('--build-tree/--no-build-tree', default=False, help='Builds tree of all samples after loading')
 @click.option('--align-type', help=f'The type of alignment to generate', default='core',
               type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
-@click.option('--threads', help='Threads for building tree', default=1,
-              type=click.IntRange(min=1, max=num_cores))
 @click.option('--extra-tree-params', help='Extra parameters to tree-building software',
               default=None)
-def load_snippy(ctx, snippy_dir: Path, reference_file: Path, build_tree: bool, align_type: str, threads: int,
-                extra_tree_params: str):
+def load_snippy(ctx, snippy_dir: Path, reference_file: Path, build_tree: bool, align_type: str, extra_tree_params: str):
+    ncores = ctx.obj['ncores']
+
     snippy_dir = Path(snippy_dir)
     reference_file = Path(reference_file)
     click.echo(f'Loading {snippy_dir}')
     sample_dirs = [snippy_dir / d for d in listdir(snippy_dir) if path.isdir(snippy_dir / d)]
-    variants_reader = SnippyVariantsReader(sample_dirs)
 
-    load_variants_common(ctx=ctx, variants_reader=variants_reader, reference_file=reference_file,
-                         input=snippy_dir, build_tree=build_tree, align_type=align_type, threads=threads,
-                         extra_tree_params=extra_tree_params)
+    with TemporaryDirectory() as preprocess_dir:
+        if ncores > 1:
+            file_processor = MultipleProcessSampleFilesProcessor(preprocess_dir=Path(preprocess_dir),
+                                                                 processing_cores=ncores)
+        else:
+            file_processor = NullSampleFilesProcessor()
+
+        variants_reader = SnippyVariantsReader.create(sample_dirs, sample_files_processor=file_processor)
+
+        load_variants_common(ctx=ctx, variants_reader=variants_reader, reference_file=reference_file,
+                             input=snippy_dir, build_tree=build_tree, align_type=align_type,
+                             extra_tree_params=extra_tree_params)
 
 
 @load.command(name='vcf')
@@ -172,13 +189,11 @@ def load_snippy(ctx, snippy_dir: Path, reference_file: Path, build_tree: bool, a
 @click.option('--build-tree/--no-build-tree', default=False, help='Builds tree of all samples after loading')
 @click.option('--align-type', help=f'The type of alignment to generate', default='core',
               type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
-@click.option('--threads', help='Threads for building tree', default=1,
-              type=click.IntRange(min=1, max=num_cores))
 @click.option('--extra-tree-params', help='Extra parameters to tree-building software',
               default=None)
-def load_vcf(ctx, vcf_fofns: Path, reference_file: Path, build_tree: bool, align_type: str, threads: int,
-             extra_tree_params: str):
+def load_vcf(ctx, vcf_fofns: Path, reference_file: Path, build_tree: bool, align_type: str, extra_tree_params: str):
     reference_file = Path(reference_file)
+    ncores = ctx.obj['ncores']
 
     click.echo(f'Loading files listed in {vcf_fofns}')
     sample_vcf_map = {}
@@ -192,12 +207,20 @@ def load_vcf(ctx, vcf_fofns: Path, reference_file: Path, build_tree: bool, align
         if not pd.isna(row['Mask File']):
             mask_files_map[row['Sample']] = row['Mask File']
 
-    variants_reader = VcfVariantsReader(sample_vcf_map=sample_vcf_map,
-                                        masked_genomic_files_map=mask_files_map)
+    with TemporaryDirectory() as preprocess_dir:
+        if ncores > 1:
+            file_processor = MultipleProcessSampleFilesProcessor(preprocess_dir=Path(preprocess_dir),
+                                                                 processing_cores=ncores)
+        else:
+            file_processor = NullSampleFilesProcessor()
 
-    load_variants_common(ctx=ctx, variants_reader=variants_reader, reference_file=reference_file,
-                         input=Path(vcf_fofns), build_tree=build_tree, align_type=align_type, threads=threads,
-                         extra_tree_params=extra_tree_params)
+        variants_reader = VcfVariantsReader.create_from_sequence_masks(sample_vcf_map=sample_vcf_map,
+                                                                       masked_genomic_files_map=mask_files_map,
+                                                                       sample_files_processor=file_processor)
+
+        load_variants_common(ctx=ctx, variants_reader=variants_reader, reference_file=reference_file,
+                             input=Path(vcf_fofns), build_tree=build_tree, align_type=align_type,
+                             extra_tree_params=extra_tree_params)
 
 
 @load.command(name='kmer')
@@ -370,16 +393,15 @@ def alignment(ctx, output_file: Path, reference_name: str, align_type: str, samp
               type=click.Choice(TreeService.TREE_BUILD_TYPES))
 @click.option('--sample', help='Sample to include in tree (can list more than one).',
               multiple=True, type=str)
-@click.option('--threads', help='Threads for building tree', default=1,
-              type=click.IntRange(min=1, max=num_cores))
 @click.option('--extra-params', help='Extra parameters to tree-building software',
               default=None)
 def tree(ctx, output_file: Path, reference_name: str, align_type: str,
-         tree_build_type: str, sample: List[str], threads: int, extra_params: str):
+         tree_build_type: str, sample: List[str], extra_params: str):
     alignment_service = ctx.obj['alignment_service']
     tree_service = ctx.obj['tree_service']
     reference_service = ctx.obj['reference_service']
     sample_service = ctx.obj['sample_service']
+    ncores = ctx.obj['ncores']
 
     if not reference_service.exists_reference_genome(reference_name):
         logger.error(f'Reference genome [{reference_name}] does not exist')
@@ -403,7 +425,7 @@ def tree(ctx, output_file: Path, reference_name: str, align_type: str,
     log_file = f'{output_file}.log'
 
     tree_data, out = tree_service.build_tree(alignment_data, tree_build_type=tree_build_type,
-                                             num_cores=threads, align_type=align_type, extra_params=extra_params)
+                                             num_cores=ncores, align_type=align_type, extra_params=extra_params)
     tree_data.write(outfile=output_file)
     click.echo(f'Wrote tree to [{output_file}]')
     with open(log_file, 'w') as log:
@@ -422,13 +444,12 @@ def rebuild(ctx):
 @click.argument('reference', type=str, nargs=-1)
 @click.option('--align-type', help=f'The type of alignment to use for generating the tree', default='core',
               type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
-@click.option('--threads', help='Threads for building tree', default=1,
-              type=click.IntRange(min=1, max=num_cores))
 @click.option('--extra-params', help='Extra parameters to tree-building software',
               default=None)
-def rebuild_tree(ctx, reference: List[str], align_type: str, threads: int, extra_params: str):
+def rebuild_tree(ctx, reference: List[str], align_type: str, extra_params: str):
     tree_service = ctx.obj['tree_service']
     reference_service = ctx.obj['reference_service']
+    ncores = ctx.obj['ncores']
 
     if len(reference) == 0:
         logger.error('Must define name of reference genome to use. '
@@ -444,7 +465,7 @@ def rebuild_tree(ctx, reference: List[str], align_type: str, threads: int, extra
         logger.info(f'Started rebuilding tree for reference genome [{reference_name}]')
         tree_service.rebuild_tree(reference_name=reference_name,
                                   align_type=align_type,
-                                  num_cores=threads,
+                                  num_cores=ncores,
                                   extra_params=extra_params)
         logger.info(f'Finished rebuilding tree')
 

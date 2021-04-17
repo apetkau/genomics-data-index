@@ -1,10 +1,10 @@
 import abc
-from pathlib import Path
-from typing import Set, List, Dict
+from typing import Set, List
 
 import pandas as pd
 
 from storage.variant.io.FeaturesReader import FeaturesReader
+from storage.variant.io.SampleFiles import SampleFiles
 from storage.variant.model import MLST_UNKNOWN_ALLELE
 
 
@@ -13,6 +13,9 @@ class MLSTFeaturesReader(FeaturesReader):
     def __init__(self):
         super().__init__()
         self._features_table = None
+
+    def get_sample_files(self, sample_name: str) -> SampleFiles:
+        return None
 
     def get_features_table(self) -> pd.DataFrame:
         if self._features_table is None:
@@ -35,9 +38,6 @@ class MLSTFeaturesReader(FeaturesReader):
     def samples_list(self) -> List[str]:
         mlst_df = self.get_features_table()
         return list(set(mlst_df['Sample'].tolist()))
-
-    def sample_feature_files(self) -> Dict[str, Path]:
-        raise Exception('Not implemented')
 
     def get_or_create_feature_file(self, sample_name: str):
         raise Exception('Not implemented')

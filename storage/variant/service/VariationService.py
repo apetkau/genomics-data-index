@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import List, Set, Any, Dict
+from typing import List, Set, Any, Dict, cast
 
 import pandas as pd
 
@@ -8,12 +8,15 @@ from storage.variant.MaskedGenomicRegions import MaskedGenomicRegions
 from storage.variant.SampleSet import SampleSet
 from storage.variant.io.FeaturesReader import FeaturesReader
 from storage.variant.io.mutation.NucleotideFeaturesReader import NucleotideFeaturesReader
+from storage.variant.io.mutation.VcfVariantsReader import VcfVariantsReader
 from storage.variant.io.mutation.VariationFile import VariationFile
 from storage.variant.model.db import NucleotideVariantsSamples, SampleNucleotideVariation, Sample
 from storage.variant.service import DatabaseConnection
 from storage.variant.service.FeatureService import FeatureService
 from storage.variant.service.ReferenceService import ReferenceService
 from storage.variant.service.SampleService import SampleService
+from storage.variant.io.SampleFiles import SampleFiles
+from storage.variant.io.mutation.NucleotideSampleFiles import NucleotideSampleFiles
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +30,7 @@ class VariationService(FeatureService):
                          sample_service=sample_service)
         self._reference_service = reference_service
 
-    def get_variants_ordered(self, sequence_name: str, type: str = 'snp') -> List[NucleotideVariantsSamples]:
+    def get_variants_ordered(self, sequence_name: str, type: str = 'SNP') -> List[NucleotideVariantsSamples]:
         return self._connection.get_session().query(NucleotideVariantsSamples) \
             .filter(NucleotideVariantsSamples.sequence == sequence_name) \
             .filter(NucleotideVariantsSamples.var_type == type) \
@@ -71,39 +74,20 @@ class VariationService(FeatureService):
             raise Exception('feature_scope_name must not be None')
 
     def build_sample_feature_object(self, sample: Sample,
+                                    sample_files: SampleFiles,
                                     features_reader: FeaturesReader, feature_scope_name: str) -> Any:
-        self._verify_correct_reader(features_reader=features_reader)
-        variants_reader: NucleotideFeaturesReader = features_reader
+        nucleotide_sample_files = cast(NucleotideSampleFiles, sample_files)
 
         reference = self._reference_service.find_reference_genome(feature_scope_name)
 
-        feature_file = variants_reader.get_or_create_feature_file(sample.name)
         sample_nucleotide_variation = SampleNucleotideVariation(reference=reference)
-        sample_nucleotide_variation.nucleotide_variants_file = self._save_variation_file(feature_file, sample)
+        vcf_file, vcf_index = nucleotide_sample_files.get_vcf_file()
+        sample_nucleotide_variation.nucleotide_variants_file = vcf_file
         sample_nucleotide_variation.sample = sample
-
-        genomic_masked_regions = variants_reader.get_genomic_masked_regions()
-
-        if sample.name in genomic_masked_regions:
-            masked_regions = genomic_masked_regions[sample.name]
-        else:
-            masked_regions = MaskedGenomicRegions.empty_mask()
-
-        sample_nucleotide_variation.masked_regions_file = self._save_masked_regions_file(masked_regions, sample)
+        sample_nucleotide_variation.masked_regions_file = nucleotide_sample_files.get_mask_file()
 
         return sample_nucleotide_variation
 
-    def _save_variation_file(self, original_file: Path, sample: Sample) -> Path:
-        new_file = self._features_dir / f'{sample.name}.vcf.gz'
-        if new_file.exists():
-            raise Exception(f'File {new_file} already exists')
-
-        return VariationFile(original_file).write(new_file)
-
-    def _save_masked_regions_file(self, masked_regions, sample: Sample):
-        new_file = self._features_dir / f'{sample.name}.bed.gz'
-        if new_file.exists():
-            raise Exception(f'File {new_file} already exists')
-
-        masked_regions.write(new_file)
-        return new_file
+    def _create_persisted_features_reader(self, sample_files_dict: Dict[str, SampleFiles],
+                                          features_reader: FeaturesReader) -> FeaturesReader:
+        return VcfVariantsReader(sample_files_dict)
