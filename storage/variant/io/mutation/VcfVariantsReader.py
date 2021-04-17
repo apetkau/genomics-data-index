@@ -24,12 +24,12 @@ class VcfVariantsReader(NucleotideFeaturesReader):
     def _fix_df_columns(self, vcf_df: pd.DataFrame) -> pd.DataFrame:
         # If no data, I still want certain column names so that rest of code still works
         if len(vcf_df) == 0:
-            vcf_df = pd.DataFrame(columns=['CHROM', 'POS', 'REF', 'ALT'])
+            vcf_df = pd.DataFrame(columns=['CHROM', 'POS', 'REF', 'ALT', 'INFO'])
 
-        return vcf_df.loc[:, ['CHROM', 'POS', 'REF', 'ALT']]
+        return vcf_df.loc[:, ['CHROM', 'POS', 'REF', 'ALT', 'INFO']]
 
     def _drop_extra_columns(self, vcf_df: pd.DataFrame) -> pd.DataFrame:
-        return vcf_df
+        return vcf_df.drop('INFO', axis='columns')
 
     def get_or_create_feature_file(self, sample_name: str):
         vcf_file, index_file = self._sample_files_map[sample_name].get_vcf_file()
@@ -53,25 +53,7 @@ class VcfVariantsReader(NucleotideFeaturesReader):
         return out
 
     def _get_type(self, vcf_df: pd.DataFrame) -> pd.Series:
-        def select_type(ref: str, alt: str):
-            ref = ref.upper()
-            alt = alt.upper()
-
-            if len(ref) == len(alt) and len(ref) == 1:
-                return 'snp'
-            elif len(ref) > len(alt) and ref.startswith(alt) or ref.endswith(alt):
-                return 'del'
-            elif len(alt) > len(ref) and alt.startswith(ref) or alt.endswith(ref):
-                return 'ins'
-            elif len(ref) > 0 and len(alt) > 0:
-                return 'complex'
-            else:
-                raise Exception(f'Should not hit this case when defining type. ref=[{ref}], alt=[{alt}]')
-
-        if len(vcf_df) > 0:
-            return vcf_df.apply(lambda x: select_type(x['REF'], x['ALT']), axis='columns')
-        else:
-            return pd.Series(dtype='object')
+        return vcf_df['INFO'].map(lambda x: x['TYPE'][0])
 
     def _read_features_table(self) -> pd.DataFrame:
         frames = []
