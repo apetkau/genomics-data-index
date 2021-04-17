@@ -95,7 +95,7 @@ class FeatureService(abc.ABC):
         #     raise EntityExistsError(f'Passed samples already have features for feature scope [{feature_scope_name}], '
         #                             f'will not insert any new features')
 
-        # interval = max(1, int(num_samples / 50))
+        # interval = min(1000, max(1, int(num_samples / 50)))
         interval = 1
         num_samples = 9
         processed_samples = 0

@@ -4,8 +4,6 @@ import logging
 from pathlib import Path
 from typing import List, Dict
 
-import pandas as pd
-
 from storage.variant.io.SampleFilesProcessor import SampleFilesProcessor
 from storage.variant.io.mutation.NucleotideSampleData import NucleotideSampleData
 from storage.variant.io.mutation.NucleotideSampleDataSequenceMask import NucleotideSampleDataSequenceMask
@@ -21,15 +19,6 @@ class SnippyVariantsReader(VcfVariantsReader):
                  sample_files_processor: SampleFilesProcessor):
         super().__init__(sample_files_map=sample_files_map,
                          sample_files_processor=sample_files_processor)
-
-    def _fix_df_columns(self, vcf_df: pd.DataFrame) -> pd.DataFrame:
-        # If no data, I still want certain column names so that rest of code still works
-        if len(vcf_df) == 0:
-            vcf_df = pd.DataFrame(columns=['CHROM', 'POS', 'REF', 'ALT', 'INFO'])
-
-        out = vcf_df.merge(pd.DataFrame(vcf_df.INFO.tolist()),
-                           left_index=True, right_index=True)
-        return out[['CHROM', 'POS', 'REF', 'ALT', 'INFO']]
 
     @classmethod
     def create(cls, sample_dirs: List[Path],
