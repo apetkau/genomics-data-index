@@ -1,7 +1,7 @@
 import logging
 import multiprocessing as mp
 from pathlib import Path
-from typing import Dict
+from typing import Generator
 
 from storage.variant.io.SampleFiles import SampleFiles
 from storage.variant.io.SampleFilesProcessor import SampleFilesProcessor
@@ -24,20 +24,16 @@ class MultipleProcessSampleFilesProcessor(SampleFilesProcessor):
         chunk_size = max(1, int(len(self.sample_files_list()) / self._processing_cores))
         return min(self._max_chunk_size, chunk_size)
 
-    def preprocess_files(self) -> Dict[str, SampleFiles]:
-        processed_files = {}
-
+    def preprocess_files(self) -> Generator[SampleFiles, None, None]:
         logger.debug(f'Starting preprocessing {len(self.sample_files_list())} samples '
                      f'with {self._processing_cores} cores')
         chunk_size = self._get_chunk_size()
         with mp.Pool(self._processing_cores) as pool:
-            output_files = pool.imap_unordered(self.handle_single_file,
+            processed_sample_filed = pool.imap_unordered(self.handle_single_file,
                                                self.sample_files_list(),
                                                chunk_size)
-            for entry in output_files:
-                logger.debug(f'Finished {entry.sample_name}')
-                processed_files[entry.sample_name] = entry
+            for processed_file in processed_sample_filed:
+                logger.debug(f'Finished {processed_file.sample_name}')
+                yield processed_file
 
         logger.debug(f'Finished preprocessing {len(self.sample_files_list())} samples')
-
-        return processed_files

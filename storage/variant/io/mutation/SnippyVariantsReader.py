@@ -17,8 +17,10 @@ logger = logging.getLogger(__name__)
 
 class SnippyVariantsReader(VcfVariantsReader):
 
-    def __init__(self, sample_files_map: Dict[str, NucleotideSampleFiles]):
-        super().__init__(sample_files_map=sample_files_map)
+    def __init__(self, sample_files_map: Dict[str, NucleotideSampleFiles],
+                 sample_files_processor: SampleFilesProcessor):
+        super().__init__(sample_files_map=sample_files_map,
+                         sample_files_processor=sample_files_processor)
 
     def _fix_df_columns(self, vcf_df: pd.DataFrame) -> pd.DataFrame:
         # If no data, I still want certain column names so that rest of code still works
@@ -33,6 +35,7 @@ class SnippyVariantsReader(VcfVariantsReader):
     def create(cls, sample_dirs: List[Path],
                sample_files_processor: SampleFilesProcessor = NullSampleFilesProcessor()) -> SnippyVariantsReader:
 
+        sample_files_map = {}
         for d in sample_dirs:
             sample_name = d.name
             sample_files = NucleotideSampleFilesSequenceMask.create(
@@ -40,8 +43,8 @@ class SnippyVariantsReader(VcfVariantsReader):
                 vcf_file=Path(d, 'snps.vcf.gz'),
                 sample_mask_sequence=Path(d, 'snps.aligned.fa')
             )
-
+            sample_files_map[sample_name] = sample_files
             sample_files_processor.add(sample_files)
 
-        sample_files_map = sample_files_processor.preprocess_files()
-        return SnippyVariantsReader(sample_files_map=sample_files_map)
+        return SnippyVariantsReader(sample_files_map=sample_files_map,
+                                    sample_files_processor=sample_files_processor)

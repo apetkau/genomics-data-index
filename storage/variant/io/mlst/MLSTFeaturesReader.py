@@ -1,5 +1,5 @@
 import abc
-from typing import Set, List
+from typing import Set, List, Generator
 
 import pandas as pd
 
@@ -16,6 +16,10 @@ class MLSTFeaturesReader(FeaturesReader):
 
     def get_sample_files(self, sample_name: str) -> SampleFiles:
         return None
+
+    def iter_sample_files(self) -> Generator[SampleFiles, None, None]:
+        for sample in []:
+            yield sample
 
     def get_features_table(self) -> pd.DataFrame:
         if self._features_table is None:

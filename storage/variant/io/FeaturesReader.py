@@ -1,5 +1,5 @@
 import abc
-from typing import List, Set, Optional
+from typing import List, Set, Generator, Optional
 
 import pandas as pd
 
@@ -29,6 +29,10 @@ class FeaturesReader(abc.ABC):
 
     @abc.abstractmethod
     def get_sample_files(self, sample_name: str) -> Optional[SampleFiles]:
+        pass
+
+    @abc.abstractmethod
+    def iter_sample_files(self) -> Generator[SampleFiles, None, None]:
         pass
 
     @abc.abstractmethod

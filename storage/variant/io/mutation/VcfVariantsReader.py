@@ -1,7 +1,7 @@
 import logging
 import os
 from pathlib import Path
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Generator
 
 import pandas as pd
 import vcf
@@ -13,15 +13,18 @@ from storage.variant.io.mutation.NucleotideFeaturesReader import NucleotideFeatu
 from storage.variant.io.mutation.NucleotideSampleFiles import NucleotideSampleFiles
 from storage.variant.io.mutation.NucleotideSampleFilesSequenceMask import NucleotideSampleFilesSequenceMask
 from storage.variant.io.processor.NullSampleFilesProcessor import NullSampleFilesProcessor
+from storage.variant.io.SampleFilesProcessor import SampleFilesProcessor
 
 logger = logging.getLogger(__name__)
 
 
 class VcfVariantsReader(NucleotideFeaturesReader):
 
-    def __init__(self, sample_files_map: Dict[str, NucleotideSampleFiles]):
+    def __init__(self, sample_files_map: Dict[str, NucleotideSampleFiles],
+                 sample_files_processor: SampleFilesProcessor):
         super().__init__()
         self._sample_files_map = sample_files_map
+        self._sample_files_processor = sample_files_processor
 
     def _fix_df_columns(self, vcf_df: pd.DataFrame) -> pd.DataFrame:
         # If no data, I still want certain column names so that rest of code still works
@@ -82,6 +85,9 @@ class VcfVariantsReader(NucleotideFeaturesReader):
         """
         return str(element)
 
+    def iter_sample_files(self) -> Generator[SampleFiles, None, None]:
+        return self._sample_files_processor.preprocess_files()
+
     def get_sample_files(self, sample_name: str) -> Optional[SampleFiles]:
         return self._sample_files_map[sample_name]
 
@@ -98,6 +104,7 @@ class VcfVariantsReader(NucleotideFeaturesReader):
         if masked_genomic_files_map is None:
             masked_genomic_files_map = {}
 
+        sample_files_map = {}
         for sample_name in sample_vcf_map:
             vcf_file = sample_vcf_map[sample_name]
             if sample_name in masked_genomic_files_map:
@@ -111,7 +118,8 @@ class VcfVariantsReader(NucleotideFeaturesReader):
                 sample_mask_sequence=mask_file
             )
 
+            sample_files_map[sample_name] = sample_files
             sample_files_processor.add(sample_files)
 
-        sample_files_map = sample_files_processor.preprocess_files()
-        return VcfVariantsReader(sample_files_map=sample_files_map)
+        return VcfVariantsReader(sample_files_map=sample_files_map,
+                                 sample_files_processor=sample_files_processor)

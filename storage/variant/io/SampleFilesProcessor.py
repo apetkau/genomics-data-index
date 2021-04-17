@@ -1,5 +1,5 @@
 import abc
-from typing import Dict, List
+from typing import Generator, List
 
 from storage.variant.io.SampleFiles import SampleFiles
 
@@ -16,5 +16,5 @@ class SampleFilesProcessor(abc.ABC):
         return self._sample_files_list
 
     @abc.abstractmethod
-    def preprocess_files(self) -> Dict[str, SampleFiles]:
+    def preprocess_files(self) -> Generator[SampleFiles, None, None]:
         pass

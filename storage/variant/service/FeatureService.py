@@ -94,27 +94,21 @@ class FeatureService(abc.ABC):
             raise EntityExistsError(f'Passed samples already have features for feature scope [{feature_scope_name}], '
                                     f'will not insert any new features')
 
-        # TODO: keep track of saved feature files to index these ones
-        saved_variation_files = {}
-        saved_masked_regions = {}
-
         interval = max(1, int(num_samples / 50))
         processed_samples = 0
         persisted_sample_files_dict = {}
-        for sample_name in sample_names:
+        for sample_files in features_reader.iter_sample_files():
             self.progress_hook(processed_samples, print_every=interval, total=num_samples)
-            logger.debug(f'Loading sample {sample_name}')
+            logger.debug(f'Loading sample {sample_files.sample_name}')
 
-            sample_files = features_reader.get_sample_files(sample_name)
-
-            sample = self._get_or_create_sample(sample_name)
+            sample = self._get_or_create_sample(sample_files.sample_name)
             persisted_sample_files = self._persist_sample_files(sample_files)
             sample_feature_object = self.build_sample_feature_object(sample=sample,
                                                                      sample_files=persisted_sample_files,
                                                                      features_reader=features_reader,
                                                                      feature_scope_name=feature_scope_name)
 
-            persisted_sample_files_dict[sample_name] = persisted_sample_files
+            persisted_sample_files_dict[persisted_sample_files.sample_name] = persisted_sample_files
             self._connection.get_session().add(sample_feature_object)
             processed_samples += 1
         self._connection.get_session().commit()

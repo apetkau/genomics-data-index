@@ -17,6 +17,7 @@ from storage.variant.service.ReferenceService import ReferenceService
 from storage.variant.service.SampleService import SampleService
 from storage.variant.io.SampleFiles import SampleFiles
 from storage.variant.io.mutation.NucleotideSampleFiles import NucleotideSampleFiles
+from storage.variant.io.processor.NullSampleFilesProcessor import NullSampleFilesProcessor
 
 logger = logging.getLogger(__name__)
 
@@ -90,4 +91,7 @@ class VariationService(FeatureService):
 
     def _create_persisted_features_reader(self, sample_files_dict: Dict[str, SampleFiles],
                                           features_reader: FeaturesReader) -> FeaturesReader:
-        return VcfVariantsReader(sample_files_dict)
+        file_processor = NullSampleFilesProcessor()
+        for sample in sample_files_dict:
+            file_processor.add(sample_files_dict[sample])
+        return VcfVariantsReader(sample_files_dict, sample_files_processor=file_processor)

@@ -23,6 +23,7 @@ from storage.variant.service.KmerQueryService import KmerQueryService
 from storage.variant.service.KmerService import KmerService
 from storage.FilesystemStorage import FilesystemStorage
 from storage.variant.service.MLSTService import MLSTService
+from storage.variant.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor
 
 
 @pytest.fixture
@@ -43,7 +44,9 @@ def reference_service(database, filesystem_storage) -> ReferenceService:
 
 @pytest.fixture
 def snippy_variants_reader() -> SnippyVariantsReader:
-    return SnippyVariantsReader.create(sample_dirs)
+    tmp_dir = Path(tempfile.mkdtemp())
+    return SnippyVariantsReader.create(sample_dirs,
+                                       sample_files_processor=SerialSampleFilesProcessor(tmp_dir))
 
 
 @pytest.fixture
@@ -60,7 +63,10 @@ def regular_variants_reader() -> VcfVariantsReader:
         'SampleC': Path(data_dir, 'SampleC', 'snps.aligned.fa'),
     }
 
-    return VcfVariantsReader.create_from_sequence_masks(sample_vcf_map=vcf_files, masked_genomic_files_map=mask_files)
+    tmp_dir = Path(tempfile.mkdtemp())
+    return VcfVariantsReader.create_from_sequence_masks(sample_vcf_map=vcf_files,
+                                                        masked_genomic_files_map=mask_files,
+                                                        sample_files_processor=SerialSampleFilesProcessor(tmp_dir))
 
 
 @pytest.fixture
