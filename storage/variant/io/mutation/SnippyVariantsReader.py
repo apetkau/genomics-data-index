@@ -10,6 +10,8 @@ import pandas as pd
 from storage.variant.io.mutation.VcfVariantsReader import VcfVariantsReader
 from storage.variant.io.mutation.NucleotideSampleFilesSequenceMask import NucleotideSampleFilesSequenceMask
 from storage.variant.io.mutation.NucleotideSampleFiles import NucleotideSampleFiles
+from storage.variant.io.processor.NullSampleFilesProcessor import NullSampleFilesProcessor
+from storage.variant.io.SampleFilesProcessor import SampleFilesProcessor
 
 logger = logging.getLogger(__name__)
 
@@ -29,8 +31,8 @@ class SnippyVariantsReader(VcfVariantsReader):
         return out[['CHROM', 'POS', 'REF', 'ALT', 'INFO']]
 
     @classmethod
-    def create(cls, sample_dirs: List[Path], preprocess_dir: Path = None) -> SnippyVariantsReader:
-        sample_files_map = {}
+    def create(cls, sample_dirs: List[Path],
+               sample_files_processor: SampleFilesProcessor = NullSampleFilesProcessor()) -> SnippyVariantsReader:
 
         for d in sample_dirs:
             sample_name = d.name
@@ -40,9 +42,7 @@ class SnippyVariantsReader(VcfVariantsReader):
                 sample_mask_sequence=Path(d, 'snps.aligned.fa')
             )
 
-            if preprocess_dir is not None:
-                sample_files = sample_files.persist(preprocess_dir)
+            sample_files_processor.add(sample_files)
 
-            sample_files_map[sample_name] = sample_files
-
+        sample_files_map = sample_files_processor.preprocess_files()
         return SnippyVariantsReader(sample_files_map=sample_files_map)

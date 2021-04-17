@@ -8,6 +8,8 @@ import pytest
 from storage.test.integration.variant import data_dir
 from storage.test.integration.variant import data_dir_empty
 from storage.variant.io.mutation.SnippyVariantsReader import SnippyVariantsReader
+from storage.variant.io.mutation.VcfVariantsReader import VcfVariantsReader
+from storage.variant.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor
 
 sample_dirs = [data_dir / d for d in listdir(data_dir) if path.isdir(data_dir / d)]
 sample_dirs_empty = [data_dir_empty / d for d in listdir(data_dir_empty) if path.isdir(data_dir_empty / d)]
@@ -16,7 +18,8 @@ sample_dirs_empty = [data_dir_empty / d for d in listdir(data_dir_empty) if path
 @pytest.fixture
 def variants_reader() -> SnippyVariantsReader:
     tmp_dir = Path(tempfile.mkdtemp())
-    return SnippyVariantsReader.create(sample_dirs, tmp_dir)
+    return SnippyVariantsReader.create(sample_dirs,
+                                       sample_files_processor=SerialSampleFilesProcessor(tmp_dir))
 
 
 def test_read_vcf(variants_reader):
@@ -80,7 +83,8 @@ def test_get_samples_list_two_files():
 
 def test_read_empty_vcf():
     tmp_dir = Path(tempfile.mkdtemp())
-    reader = SnippyVariantsReader.create(sample_dirs_empty, tmp_dir)
+    reader = SnippyVariantsReader.create(sample_dirs_empty,
+                                         sample_files_processor=SerialSampleFilesProcessor(tmp_dir))
     df = reader.get_features_table()
 
     assert 0 == len(df), 'Data has incorrect length'

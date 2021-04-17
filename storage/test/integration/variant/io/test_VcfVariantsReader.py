@@ -9,6 +9,7 @@ import pytest
 from storage.test.integration.variant import data_dir
 from storage.test.integration.variant import data_dir_empty
 from storage.variant.io.mutation.VcfVariantsReader import VcfVariantsReader
+from storage.variant.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor
 
 
 @pytest.fixture
@@ -35,7 +36,7 @@ def variants_reader_internal(sample_dirs):
 
     return VcfVariantsReader.create_from_sequence_masks(sample_vcf_map=sample_vcf_map,
                                                         masked_genomic_files_map=sample_genomic_files_mask,
-                                                        preprocess_dir=tmp_dir)
+                                                        sample_files_processor=SerialSampleFilesProcessor(tmp_dir))
 
 
 @pytest.fixture
@@ -59,7 +60,7 @@ def variants_reader_empty_masks(sample_dirs) -> VcfVariantsReader:
         sample_vcf_map[sample_name] = vcf_file
 
     return VcfVariantsReader.create_from_sequence_masks(sample_vcf_map=sample_vcf_map,
-                                                        preprocess_dir=tmp_dir)
+                                                        sample_files_processor=SerialSampleFilesProcessor(tmp_dir))
 
 
 def test_get_variants_table(variants_reader):

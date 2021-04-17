@@ -2,7 +2,6 @@ import logging
 import os
 from pathlib import Path
 from typing import List, Dict, Optional
-import tempfile
 
 import pandas as pd
 import vcf
@@ -12,6 +11,8 @@ from storage.variant.io.mutation.NucleotideFeaturesReader import NucleotideFeatu
 from storage.variant.io.mutation.NucleotideSampleFilesSequenceMask import NucleotideSampleFilesSequenceMask
 from storage.variant.io.mutation.NucleotideSampleFiles import NucleotideSampleFiles
 from storage.variant.io.SampleFiles import SampleFiles
+from storage.variant.io.processor.NullSampleFilesProcessor import NullSampleFilesProcessor
+from storage.variant.io.SampleFilesProcessor import SampleFilesProcessor
 
 logger = logging.getLogger(__name__)
 
@@ -93,11 +94,10 @@ class VcfVariantsReader(NucleotideFeaturesReader):
     @classmethod
     def create_from_sequence_masks(cls, sample_vcf_map: Dict[str, Path],
                                    masked_genomic_files_map: Dict[str, Path] = None,
-                                   preprocess_dir: Path = None):
+                                   sample_files_processor: SampleFilesProcessor = NullSampleFilesProcessor()):
         if masked_genomic_files_map is None:
             masked_genomic_files_map = {}
 
-        sample_files_map = {}
         for sample_name in sample_vcf_map:
             vcf_file = sample_vcf_map[sample_name]
             if sample_name in masked_genomic_files_map:
@@ -111,9 +111,7 @@ class VcfVariantsReader(NucleotideFeaturesReader):
                 sample_mask_sequence=mask_file
             )
 
-            if preprocess_dir is not None:
-                sample_files = sample_files.persist(preprocess_dir)
+            sample_files_processor.add(sample_files)
 
-            sample_files_map[sample_name] = sample_files
-
+        sample_files_map = sample_files_processor.preprocess_files()
         return VcfVariantsReader(sample_files_map=sample_files_map)

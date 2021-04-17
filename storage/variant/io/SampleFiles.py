@@ -19,6 +19,9 @@ class SampleFiles(abc.ABC):
     def is_preprocessed(self) -> bool:
         pass
 
+    def preprocess(self, output_dir: Path) -> SampleFiles:
+        return self.persist(output_dir)
+
     def persist(self, output_dir: Path) -> SampleFiles:
         if not self.is_preprocessed():
             logger.debug(f'Processing sample [{self.sample_name}] and saving to [{output_dir}]')
