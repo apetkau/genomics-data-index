@@ -30,7 +30,7 @@ def variants_reader_internal(sample_dirs):
         sample_vcf_map[sample_name] = vcf_file
         sample_genomic_files_mask[sample_name] = genomic_file_mask
 
-    return VcfVariantsReader(sample_vcf_map=sample_vcf_map,
+    return VcfVariantsReader.create_from_sequence_masks(sample_vcf_map=sample_vcf_map,
                              masked_genomic_files_map=sample_genomic_files_mask)
 
 
@@ -53,7 +53,7 @@ def variants_reader_empty_masks(sample_dirs) -> VcfVariantsReader:
 
         sample_vcf_map[sample_name] = vcf_file
 
-    return VcfVariantsReader(sample_vcf_map=sample_vcf_map)
+    return VcfVariantsReader.create_from_sequence_masks(sample_vcf_map=sample_vcf_map)
 
 
 def test_get_variants_table(variants_reader):

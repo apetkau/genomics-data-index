@@ -27,7 +27,7 @@ class VariationService(FeatureService):
                          sample_service=sample_service)
         self._reference_service = reference_service
 
-    def get_variants_ordered(self, sequence_name: str, type: str = 'snp') -> List[NucleotideVariantsSamples]:
+    def get_variants_ordered(self, sequence_name: str, type: str = 'SNP') -> List[NucleotideVariantsSamples]:
         return self._connection.get_session().query(NucleotideVariantsSamples) \
             .filter(NucleotideVariantsSamples.sequence == sequence_name) \
             .filter(NucleotideVariantsSamples.var_type == type) \

@@ -2,28 +2,24 @@ import logging
 import os
 from pathlib import Path
 from typing import List, Dict
+import tempfile
 
 import pandas as pd
 import vcf
 
 from storage.variant.MaskedGenomicRegions import MaskedGenomicRegions
 from storage.variant.io.mutation.NucleotideFeaturesReader import NucleotideFeaturesReader
-from storage.variant.util import parse_sequence_file
+from storage.variant.io.mutation.NucleotideSampleFilesSequenceMask import NucleotideSampleFilesSequenceMask
+from storage.variant.io.mutation.NucleotideSampleFiles import NucleotideSampleFiles
 
 logger = logging.getLogger(__name__)
 
 
 class VcfVariantsReader(NucleotideFeaturesReader):
 
-    def __init__(self, sample_vcf_map: Dict[str, Path],
-                 masked_genomic_files_map: Dict[str, Path] = None):
+    def __init__(self, sample_files_map: Dict[str, NucleotideSampleFiles]):
         super().__init__()
-
-        if masked_genomic_files_map is None:
-            masked_genomic_files_map: Dict[str, Path] = {}
-
-        self._sample_vcf_map = sample_vcf_map
-        self._genomic_mask_files_map = masked_genomic_files_map
+        self._sample_files_map = sample_files_map
 
     def _fix_df_columns(self, vcf_df: pd.DataFrame) -> pd.DataFrame:
         # If no data, I still want certain column names so that rest of code still works
@@ -36,7 +32,8 @@ class VcfVariantsReader(NucleotideFeaturesReader):
         return vcf_df
 
     def get_or_create_feature_file(self, sample_name: str):
-        return self._sample_vcf_map[sample_name]
+        vcf_file, index_file = self._sample_files_map[sample_name].get_vcf_file()
+        return vcf_file
 
     def read_vcf(self, file: Path, sample_name: str) -> pd.DataFrame:
         reader = vcf.Reader(filename=str(file))
@@ -78,8 +75,8 @@ class VcfVariantsReader(NucleotideFeaturesReader):
 
     def _read_features_table(self) -> pd.DataFrame:
         frames = []
-        for sample in self._sample_vcf_map:
-            vcf_file = self._sample_vcf_map[sample]
+        for sample in self._sample_files_map:
+            vcf_file, index_file = self._sample_files_map[sample].get_vcf_file()
             frame = self.read_vcf(vcf_file, sample)
             frames.append(frame)
 
@@ -102,15 +99,31 @@ class VcfVariantsReader(NucleotideFeaturesReader):
         return str(element)
 
     def get_genomic_masked_region(self, sample_name: str) -> MaskedGenomicRegions:
-        if sample_name in self._genomic_mask_files_map:
-            return self.read_genomic_masks_from_file(self._genomic_mask_files_map[sample_name])
-        else:
-            return MaskedGenomicRegions.empty_mask()
-
-    def read_genomic_masks_from_file(self, file: Path) -> MaskedGenomicRegions:
-        name, records = parse_sequence_file(file)
-        logger.debug(f'Getting genomic masks from {file}')
-        return MaskedGenomicRegions.from_sequences(sequences=records)
+        return self._sample_files_map[sample_name].get_mask()
 
     def samples_list(self) -> List[str]:
-        return list(self._sample_vcf_map.keys())
+        return list(self._sample_files_map.keys())
+
+    @classmethod
+    def create_from_sequence_masks(cls, sample_vcf_map: Dict[str, Path],
+                                   masked_genomic_files_map: Dict[str, Path] = None):
+        if masked_genomic_files_map is None:
+            masked_genomic_files_map = {}
+
+        tmp_dir = Path(tempfile.mkdtemp())
+
+        sample_files_map = {}
+        for sample_name in sample_vcf_map:
+            vcf_file = sample_vcf_map[sample_name]
+            if sample_name in masked_genomic_files_map:
+                mask_file = masked_genomic_files_map[sample_name]
+            else:
+                mask_file = None
+
+            sample_files_map[sample_name] = NucleotideSampleFilesSequenceMask.create(
+                sample_name=sample_name,
+                vcf_file=vcf_file,
+                sample_mask_sequence=mask_file
+            ).persist(tmp_dir)
+
+        return VcfVariantsReader(sample_files_map=sample_files_map)

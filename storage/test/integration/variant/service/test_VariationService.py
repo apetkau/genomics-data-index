@@ -75,7 +75,7 @@ def test_insert_variants_examine_variation(database, snippy_variants_reader, ref
         'insertion': 'G'
     })
     assert v is not None, 'Particular variant does not exist'
-    assert 'snp' == v.var_type, 'Type is incorrect'
+    assert 'SNP' == v.var_type, 'Type is incorrect'
     assert {sample_name_ids['SampleA']} == set(v.sample_ids)
 
     v = session.query(NucleotideVariantsSamples).get({
@@ -84,7 +84,7 @@ def test_insert_variants_examine_variation(database, snippy_variants_reader, ref
         'deletion': len('CCT'),
         'insertion': 'C'
     })
-    assert 'del' == v.var_type, 'Type is incorrect'
+    assert 'INDEL' == v.var_type, 'Type is incorrect'
     assert {sample_name_ids['SampleB'], sample_name_ids['SampleC']} == set(v.sample_ids)
 
     v = session.query(NucleotideVariantsSamples).get({
@@ -93,7 +93,7 @@ def test_insert_variants_examine_variation(database, snippy_variants_reader, ref
         'deletion': len('CACATG'),
         'insertion': 'C'
     })
-    assert 'del' == v.var_type, 'Type is incorrect'
+    assert 'INDEL' == v.var_type, 'Type is incorrect'
     assert {sample_name_ids['SampleB']} == set(v.sample_ids)
 
     v = session.query(NucleotideVariantsSamples).get({
@@ -102,7 +102,64 @@ def test_insert_variants_examine_variation(database, snippy_variants_reader, ref
         'deletion': len('GTGATTG'),
         'insertion': 'TTGA'
     })
-    assert 'complex' == v.var_type, 'Type is incorrect'
+    assert 'OTHER' == v.var_type, 'Type is incorrect'
+    assert {sample_name_ids['SampleC']} == set(v.sample_ids)
+
+
+@pytest.mark.skip
+def test_insert_variants_regular_vcf_reader_examine_variation(database, regular_variants_reader, reference_service_with_data,
+                                           sample_service, filesystem_storage):
+    variation_service = VariationService(database_connection=database,
+                                         reference_service=reference_service_with_data,
+                                         sample_service=sample_service,
+                                         variation_dir=filesystem_storage.variation_dir)
+    session = database.get_session()
+
+    variation_service.insert(feature_scope_name='genome', features_reader=regular_variants_reader)
+
+    sample_name_ids = sample_service.find_sample_name_ids({'SampleA', 'SampleB', 'SampleC'})
+    assert 3 == len(sample_name_ids.values())
+
+    assert 3 == session.query(SampleNucleotideVariation).count(), 'Incorrect number of SampleSequences'
+
+    assert 112 == session.query(NucleotideVariantsSamples).count(), 'Incorrect number of variant entries'
+
+    # Check to make sure some variants are stored
+    v = session.query(NucleotideVariantsSamples).get({
+        'sequence': 'reference',
+        'position': 1048,
+        'deletion': len('C'),
+        'insertion': 'G'
+    })
+    assert v is not None, 'Particular variant does not exist'
+    assert 'SNP' == v.var_type, 'Type is incorrect'
+    assert {sample_name_ids['SampleA']} == set(v.sample_ids)
+
+    v = session.query(NucleotideVariantsSamples).get({
+        'sequence': 'reference',
+        'position': 1135,
+        'deletion': len('CCT'),
+        'insertion': 'C'
+    })
+    assert 'INDEL' == v.var_type, 'Type is incorrect'
+    assert {sample_name_ids['SampleB'], sample_name_ids['SampleC']} == set(v.sample_ids)
+
+    v = session.query(NucleotideVariantsSamples).get({
+        'sequence': 'reference',
+        'position': 883,
+        'deletion': len('CACATG'),
+        'insertion': 'C'
+    })
+    assert 'INDEL' == v.var_type, 'Type is incorrect'
+    assert {sample_name_ids['SampleB']} == set(v.sample_ids)
+
+    v = session.query(NucleotideVariantsSamples).get({
+        'sequence': 'reference',
+        'position': 1984,
+        'deletion': len('GTGATTG'),
+        'insertion': 'TTGA'
+    })
+    assert 'OTHER' == v.var_type, 'Type is incorrect'
     assert {sample_name_ids['SampleC']} == set(v.sample_ids)
 
 
@@ -153,7 +210,7 @@ def test_insert_variants_duplicates_subset(database, snippy_variants_reader, ref
 
     # Select a subset of samples
     sample_dirs_subset = [data_dir / 'SampleA']
-    snippy_variants_reader_subset = SnippyVariantsReader(sample_dirs_subset)
+    snippy_variants_reader_subset = SnippyVariantsReader.create(sample_dirs_subset)
 
     with pytest.raises(EntityExistsError) as execinfo:
         variation_service.insert(feature_scope_name='genome', features_reader=snippy_variants_reader_subset)

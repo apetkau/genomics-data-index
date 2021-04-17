@@ -43,7 +43,7 @@ def reference_service(database, filesystem_storage) -> ReferenceService:
 
 @pytest.fixture
 def snippy_variants_reader() -> SnippyVariantsReader:
-    return SnippyVariantsReader(sample_dirs)
+    return SnippyVariantsReader.create(sample_dirs)
 
 
 @pytest.fixture
@@ -60,7 +60,7 @@ def regular_variants_reader() -> VcfVariantsReader:
         'SampleC': Path(data_dir, 'SampleC', 'snps.aligned.fa'),
     }
 
-    return VcfVariantsReader(sample_vcf_map=vcf_files, masked_genomic_files_map=mask_files)
+    return VcfVariantsReader.create_from_sequence_masks(sample_vcf_map=vcf_files, masked_genomic_files_map=mask_files)
 
 
 @pytest.fixture

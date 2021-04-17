@@ -158,7 +158,7 @@ def load_snippy(ctx, snippy_dir: Path, reference_file: Path, build_tree: bool, a
     reference_file = Path(reference_file)
     click.echo(f'Loading {snippy_dir}')
     sample_dirs = [snippy_dir / d for d in listdir(snippy_dir) if path.isdir(snippy_dir / d)]
-    variants_reader = SnippyVariantsReader(sample_dirs)
+    variants_reader = SnippyVariantsReader.create(sample_dirs)
 
     load_variants_common(ctx=ctx, variants_reader=variants_reader, reference_file=reference_file,
                          input=snippy_dir, build_tree=build_tree, align_type=align_type, threads=threads,
@@ -192,7 +192,7 @@ def load_vcf(ctx, vcf_fofns: Path, reference_file: Path, build_tree: bool, align
         if not pd.isna(row['Mask File']):
             mask_files_map[row['Sample']] = row['Mask File']
 
-    variants_reader = VcfVariantsReader(sample_vcf_map=sample_vcf_map,
+    variants_reader = VcfVariantsReader.create_from_sequence_masks(sample_vcf_map=sample_vcf_map,
                                         masked_genomic_files_map=mask_files_map)
 
     load_variants_common(ctx=ctx, variants_reader=variants_reader, reference_file=reference_file,

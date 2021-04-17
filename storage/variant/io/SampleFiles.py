@@ -1,6 +1,9 @@
 from __future__ import annotations
 import abc
 from pathlib import Path
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class SampleFiles(abc.ABC):
@@ -18,6 +21,7 @@ class SampleFiles(abc.ABC):
 
     def persist(self, output_dir: Path) -> SampleFiles:
         if not self.is_preprocessed():
+            logger.debug(f'Processing sample [{self.sample_name}] and saving to [{output_dir}]')
             return self._do_preprocess_and_persist(output_dir)
         else:
             return self._do_persist(output_dir)

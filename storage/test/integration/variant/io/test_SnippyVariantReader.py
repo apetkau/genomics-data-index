@@ -14,7 +14,7 @@ sample_dirs_empty = [data_dir_empty / d for d in listdir(data_dir_empty) if path
 @pytest.fixture
 def setup() -> Dict[str, Any]:
     return {
-        'reader': SnippyVariantsReader(sample_dirs)
+        'reader': SnippyVariantsReader.create(sample_dirs)
     }
 
 
@@ -27,6 +27,10 @@ def test_read_vcf(setup):
 
     assert {'snps.vcf.gz'} == set(df['FILE'].tolist()), 'Incorrect filename'
     assert {'SampleA'} == set(df['SAMPLE'].tolist()), 'Incorrect sample name'
+
+    v = df[df['POS'] == 461]
+    assert 'AAAT' == v['REF'].values[0], 'Incorrect reference'
+    assert 'G' == v['ALT'].values[0], 'Incorrect alt'
 
     v = df[df['POS'] == 1048]
     assert 'C' == v['REF'].values[0], 'Incorrect reference'
@@ -46,14 +50,6 @@ def test_get_variants_table(setup):
 
     assert 129 == len(df), 'Data has incorrect length'
     assert {'SampleA', 'SampleB', 'SampleC'} == set(df['SAMPLE'].tolist()), 'Incorrect sample names'
-
-
-def test_read_genomic_masks_from_file(setup):
-    sequence_file = data_dir / 'SampleA' / 'snps.aligned.fa'
-
-    genomic_mask = setup['reader'].read_genomic_masks_from_file(sequence_file)
-
-    assert 437 == len(genomic_mask)
 
 
 def test_get_genomic_masks(setup):
@@ -79,13 +75,13 @@ def test_get_samples_list(setup):
 
 def test_get_samples_list_two_files():
     sample_dirs = [data_dir / 'SampleA', data_dir / 'SampleB']
-    reader = SnippyVariantsReader(sample_dirs)
+    reader = SnippyVariantsReader.create(sample_dirs)
 
     assert {'SampleA', 'SampleB'} == set(reader.samples_list())
 
 
 def test_read_empty_vcf():
-    reader = SnippyVariantsReader(sample_dirs_empty)
+    reader = SnippyVariantsReader.create(sample_dirs_empty)
     df = reader.get_features_table()
 
     assert 0 == len(df), 'Data has incorrect length'
