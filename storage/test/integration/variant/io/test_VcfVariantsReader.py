@@ -2,7 +2,7 @@ import tempfile
 from os import path, listdir
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import List, Dict
+from typing import List, Dict, cast
 
 import pytest
 
@@ -10,6 +10,8 @@ from storage.test.integration.variant import data_dir
 from storage.test.integration.variant import data_dir_empty
 from storage.variant.io.mutation.VcfVariantsReader import VcfVariantsReader
 from storage.variant.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor
+from storage.variant.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
+from storage.variant.io.mutation.NucleotideSampleData import NucleotideSampleData
 
 
 @pytest.fixture
@@ -42,9 +44,13 @@ def vcf_and_mask_files(sample_dirs) -> Dict[str, Dict[str, Path]]:
 def variants_reader_internal(sample_dirs) -> VcfVariantsReader:
     tmp_dir = Path(tempfile.mkdtemp())
     vcf_masks = vcf_and_mask_files(sample_dirs)
-    return VcfVariantsReader.create_from_sequence_masks(sample_vcf_map=vcf_masks['vcfs'],
-                                                        masked_genomic_files_map=vcf_masks['masks'],
-                                                        sample_files_processor=SerialSampleFilesProcessor(tmp_dir))
+    file_processor = SerialSampleFilesProcessor(tmp_dir)
+    data_package = NucleotideSampleDataPackage.create_from_sequence_masks(sample_vcf_map=vcf_masks['vcfs'],
+                                                                          masked_genomic_files_map=vcf_masks[
+                                                                              'masks'],
+                                                                          sample_files_processor=file_processor)
+    processed_files = cast(Dict[str, NucleotideSampleData], data_package.process_all_data())
+    return VcfVariantsReader.create(processed_files)
 
 
 @pytest.fixture
@@ -59,7 +65,6 @@ def variants_reader_empty(sample_dirs_empty) -> VcfVariantsReader:
 
 @pytest.fixture
 def variants_reader_empty_masks(sample_dirs) -> VcfVariantsReader:
-    tmp_dir = Path(tempfile.mkdtemp())
     sample_vcf_map = {}
     for d in sample_dirs:
         sample_name = path.basename(d)
@@ -67,8 +72,12 @@ def variants_reader_empty_masks(sample_dirs) -> VcfVariantsReader:
 
         sample_vcf_map[sample_name] = vcf_file
 
-    return VcfVariantsReader.create_from_sequence_masks(sample_vcf_map=sample_vcf_map,
-                                                        sample_files_processor=SerialSampleFilesProcessor(tmp_dir))
+    tmp_dir = Path(tempfile.mkdtemp())
+    file_processor = SerialSampleFilesProcessor(tmp_dir)
+    data_package = NucleotideSampleDataPackage.create_from_sequence_masks(sample_vcf_map=sample_vcf_map,
+                                                                          sample_files_processor=file_processor)
+    processed_files = cast(Dict[str, NucleotideSampleData], data_package.process_all_data())
+    return VcfVariantsReader.create(processed_files)
 
 
 def test_get_variants_table(variants_reader):

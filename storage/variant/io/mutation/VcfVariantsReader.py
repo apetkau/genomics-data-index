@@ -1,19 +1,15 @@
 import logging
 import os
 from pathlib import Path
-from typing import List, Dict, Optional, Generator
+from typing import List, Dict, Optional
 
 import pandas as pd
 import vcf
 
 from storage.variant.MaskedGenomicRegions import MaskedGenomicRegions
 from storage.variant.io.SampleData import SampleData
-from storage.variant.io.SampleFilesProcessor import SampleFilesProcessor
 from storage.variant.io.mutation.NucleotideFeaturesReader import NucleotideFeaturesReader
 from storage.variant.io.mutation.NucleotideSampleData import NucleotideSampleData
-from storage.variant.io.mutation.NucleotideSampleDataSequenceMask import NucleotideSampleDataSequenceMask
-from storage.variant.io.processor.NullSampleFilesProcessor import NullSampleFilesProcessor
-from storage.variant.io.SampleFilesProcessor import SampleFilesProcessor
 
 logger = logging.getLogger(__name__)
 
@@ -93,27 +89,5 @@ class VcfVariantsReader(NucleotideFeaturesReader):
         return list(self._sample_files_map.keys())
 
     @classmethod
-    def create_from_sequence_masks(cls, sample_vcf_map: Dict[str, Path],
-                                   masked_genomic_files_map: Dict[str, Path] = None,
-                                   sample_files_processor: SampleFilesProcessor = NullSampleFilesProcessor()):
-        if masked_genomic_files_map is None:
-            masked_genomic_files_map = {}
-
-        sample_files_map = {}
-        for sample_name in sample_vcf_map:
-            vcf_file = sample_vcf_map[sample_name]
-            if sample_name in masked_genomic_files_map:
-                mask_file = masked_genomic_files_map[sample_name]
-            else:
-                mask_file = None
-
-            sample_files = NucleotideSampleDataSequenceMask.create(
-                sample_name=sample_name,
-                vcf_file=vcf_file,
-                sample_mask_sequence=mask_file
-            )
-
-            sample_files_map[sample_name] = sample_files
-            sample_files_processor.add(sample_files)
-
-        return VcfVariantsReader(sample_files_map=sample_files_map)
+    def create(cls, sample_files_map: Dict[str, NucleotideSampleData]):
+        return cls(sample_files_map=sample_files_map)
