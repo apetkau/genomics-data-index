@@ -59,7 +59,7 @@ class NucleotideSampleDataPackage(SampleDataPackage):
 
     @classmethod
     def create_from_snippy(cls, sample_dirs: List[Path],
-               sample_files_processor: SampleFilesProcessor = NullSampleFilesProcessor()) -> NucleotideSampleDataPackage:
+                           sample_files_processor: SampleFilesProcessor = NullSampleFilesProcessor()) -> NucleotideSampleDataPackage:
 
         sample_files_map = {}
         for d in sample_dirs:
