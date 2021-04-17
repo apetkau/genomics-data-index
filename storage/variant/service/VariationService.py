@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import List, Set, Any, Dict
+from typing import List, Set, Any, Dict, cast
 
 import pandas as pd
 
@@ -73,32 +73,16 @@ class VariationService(FeatureService):
     def build_sample_feature_object(self, sample: Sample,
                                     features_reader: FeaturesReader, feature_scope_name: str) -> Any:
         self._verify_correct_reader(features_reader=features_reader)
-        variants_reader: NucleotideFeaturesReader = features_reader
+        variants_reader = cast(NucleotideFeaturesReader, features_reader)
 
         reference = self._reference_service.find_reference_genome(feature_scope_name)
 
-        feature_file = variants_reader.get_or_create_feature_file(sample.name)
-        sample_nucleotide_variation = SampleNucleotideVariation(reference=reference)
-        sample_nucleotide_variation.nucleotide_variants_file = self._save_variation_file(feature_file, sample)
-        sample_nucleotide_variation.sample = sample
+        persisted_sample_files = variants_reader.persist_sample_files(sample.name, self._features_dir)
 
-        masked_regions = variants_reader.get_genomic_masked_region(sample.name)
-        sample_nucleotide_variation.masked_regions_file = self._save_masked_regions_file(masked_regions, sample)
+        sample_nucleotide_variation = SampleNucleotideVariation(reference=reference)
+        vcf_file, vcf_index = persisted_sample_files.get_vcf_file()
+        sample_nucleotide_variation.nucleotide_variants_file = vcf_file
+        sample_nucleotide_variation.sample = sample
+        sample_nucleotide_variation.masked_regions_file = persisted_sample_files.get_mask_file()
 
         return sample_nucleotide_variation
-
-    def _save_variation_file(self, original_file: Path, sample: Sample) -> Path:
-        new_file = self._features_dir / f'{sample.name}.vcf.gz'
-        if new_file.exists():
-            raise Exception(f'File {new_file} already exists')
-
-        saved_file, index_file = VariationFile(original_file).write(new_file)
-        return saved_file
-
-    def _save_masked_regions_file(self, masked_regions, sample: Sample):
-        new_file = self._features_dir / f'{sample.name}.bed.gz'
-        if new_file.exists():
-            raise Exception(f'File {new_file} already exists')
-
-        masked_regions.write(new_file)
-        return new_file

@@ -98,6 +98,9 @@ class VcfVariantsReader(NucleotideFeaturesReader):
         """
         return str(element)
 
+    def persist_sample_files(self, sample_name: str, persistence_dir: Path) -> NucleotideSampleFiles:
+        return self._sample_files_map[sample_name].persist(persistence_dir)
+
     def get_genomic_masked_region(self, sample_name: str) -> MaskedGenomicRegions:
         return self._sample_files_map[sample_name].get_mask()
 

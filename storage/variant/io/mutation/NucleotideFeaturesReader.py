@@ -1,8 +1,10 @@
 import abc
-from typing import Dict, Set, Optional
+from typing import Set
+from pathlib import Path
 
 from storage.variant.MaskedGenomicRegions import MaskedGenomicRegions
 from storage.variant.io.FeaturesReader import FeaturesReader
+from storage.variant.io.mutation.NucleotideSampleFiles import NucleotideSampleFiles
 
 
 class NucleotideFeaturesReader(FeaturesReader):
@@ -12,6 +14,10 @@ class NucleotideFeaturesReader(FeaturesReader):
 
     def _minimal_expected_columns(self) -> Set[str]:
         return {'SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE'}
+
+    @abc.abstractmethod
+    def persist_sample_files(self, sample_name: str, persistence_dir: Path) -> NucleotideSampleFiles:
+        pass
 
     @abc.abstractmethod
     def get_genomic_masked_region(self, sample_name: str) -> MaskedGenomicRegions:

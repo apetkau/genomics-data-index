@@ -1,6 +1,7 @@
 from os import path, listdir
 from pathlib import Path
 from typing import List
+from tempfile import TemporaryDirectory
 
 import pytest
 
@@ -69,6 +70,22 @@ def test_get_variants_table(variants_reader):
     assert ['complex'] == df.loc[(df['SAMPLE'] == 'SampleA') & (df['POS'] == 461), 'TYPE'].tolist()
     assert ['complex'] == df.loc[(df['SAMPLE'] == 'SampleB') & (df['POS'] == 1325), 'TYPE'].tolist()
     assert ['complex'] == df.loc[(df['SAMPLE'] == 'SampleC') & (df['POS'] == 1984), 'TYPE'].tolist()
+
+
+def test_persist_sample_files(variants_reader: VcfVariantsReader):
+    with TemporaryDirectory() as tmp_dir_str:
+        tmp_dir = Path(tmp_dir_str)
+        sample_files = variants_reader.persist_sample_files('SampleA', tmp_dir)
+        vcf_file, vcf_index = sample_files.get_vcf_file()
+        mask_file = sample_files.get_mask_file()
+
+        assert vcf_file.exists()
+        assert vcf_index.exists()
+        assert mask_file.exists()
+
+        assert vcf_file.parent == tmp_dir
+        assert vcf_index.parent == tmp_dir
+        assert mask_file.parent == tmp_dir
 
 
 def test_get_genomic_masks(variants_reader):
