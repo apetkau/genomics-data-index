@@ -7,12 +7,12 @@ import pandas as pd
 import vcf
 
 from storage.variant.MaskedGenomicRegions import MaskedGenomicRegions
-from storage.variant.io.mutation.NucleotideFeaturesReader import NucleotideFeaturesReader
-from storage.variant.io.mutation.NucleotideSampleFilesSequenceMask import NucleotideSampleFilesSequenceMask
-from storage.variant.io.mutation.NucleotideSampleFiles import NucleotideSampleFiles
 from storage.variant.io.SampleFiles import SampleFiles
-from storage.variant.io.processor.NullSampleFilesProcessor import NullSampleFilesProcessor
 from storage.variant.io.SampleFilesProcessor import SampleFilesProcessor
+from storage.variant.io.mutation.NucleotideFeaturesReader import NucleotideFeaturesReader
+from storage.variant.io.mutation.NucleotideSampleFiles import NucleotideSampleFiles
+from storage.variant.io.mutation.NucleotideSampleFilesSequenceMask import NucleotideSampleFilesSequenceMask
+from storage.variant.io.processor.NullSampleFilesProcessor import NullSampleFilesProcessor
 
 logger = logging.getLogger(__name__)
 

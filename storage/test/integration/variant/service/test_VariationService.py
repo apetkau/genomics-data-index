@@ -106,8 +106,9 @@ def test_insert_variants_examine_variation(database, snippy_variants_reader, ref
     assert {sample_name_ids['SampleC']} == set(v.sample_ids)
 
 
-def test_insert_variants_regular_vcf_reader_examine_variation(database, regular_variants_reader, reference_service_with_data,
-                                           sample_service, filesystem_storage):
+def test_insert_variants_regular_vcf_reader_examine_variation(database, regular_variants_reader,
+                                                              reference_service_with_data,
+                                                              sample_service, filesystem_storage):
     variation_service = VariationService(database_connection=database,
                                          reference_service=reference_service_with_data,
                                          sample_service=sample_service,

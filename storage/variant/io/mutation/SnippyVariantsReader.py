@@ -1,17 +1,16 @@
 from __future__ import annotations
+
 import logging
-import os
 from pathlib import Path
 from typing import List, Dict
-import tempfile
 
 import pandas as pd
 
-from storage.variant.io.mutation.VcfVariantsReader import VcfVariantsReader
-from storage.variant.io.mutation.NucleotideSampleFilesSequenceMask import NucleotideSampleFilesSequenceMask
-from storage.variant.io.mutation.NucleotideSampleFiles import NucleotideSampleFiles
-from storage.variant.io.processor.NullSampleFilesProcessor import NullSampleFilesProcessor
 from storage.variant.io.SampleFilesProcessor import SampleFilesProcessor
+from storage.variant.io.mutation.NucleotideSampleFiles import NucleotideSampleFiles
+from storage.variant.io.mutation.NucleotideSampleFilesSequenceMask import NucleotideSampleFilesSequenceMask
+from storage.variant.io.mutation.VcfVariantsReader import VcfVariantsReader
+from storage.variant.io.processor.NullSampleFilesProcessor import NullSampleFilesProcessor
 
 logger = logging.getLogger(__name__)
 

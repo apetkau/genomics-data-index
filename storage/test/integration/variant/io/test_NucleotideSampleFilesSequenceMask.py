@@ -1,10 +1,11 @@
-import pytest
-from typing import Dict
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from typing import Dict
 
-from storage.test.integration.variant.io import read_vcf_df
+import pytest
+
 from storage.test.integration.variant import regular_vcf_dir, data_dir
+from storage.test.integration.variant.io import read_vcf_df
 from storage.variant.io.mutation.NucleotideSampleFilesSequenceMask import NucleotideSampleFilesSequenceMask
 
 

@@ -1,6 +1,7 @@
+from pathlib import Path
+
 import pandas as pd
 import vcf
-from pathlib import Path
 
 
 def read_vcf_df(file: Path) -> pd.DataFrame:

@@ -1,11 +1,10 @@
 import abc
-from pathlib import Path
-from typing import Set, List, Dict
+from typing import Set, List
 
 import pandas as pd
 
-from storage.variant.io.SampleFiles import SampleFiles
 from storage.variant.io.FeaturesReader import FeaturesReader
+from storage.variant.io.SampleFiles import SampleFiles
 from storage.variant.model import MLST_UNKNOWN_ALLELE
 
 

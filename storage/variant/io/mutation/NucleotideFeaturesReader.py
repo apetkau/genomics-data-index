@@ -1,10 +1,8 @@
 import abc
 from typing import Set
-from pathlib import Path
 
 from storage.variant.MaskedGenomicRegions import MaskedGenomicRegions
 from storage.variant.io.FeaturesReader import FeaturesReader
-from storage.variant.io.mutation.NucleotideSampleFiles import NucleotideSampleFiles
 
 
 class NucleotideFeaturesReader(FeaturesReader):

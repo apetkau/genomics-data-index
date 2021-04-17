@@ -1,11 +1,11 @@
 import logging
 import multiprocessing
 import sys
+from functools import partial
 from os import path, listdir
 from pathlib import Path
-from typing import List
-from functools import partial
 from tempfile import TemporaryDirectory
+from typing import List
 
 import click
 import click_config_file
@@ -22,6 +22,8 @@ from storage.variant.io.mlst.MLSTSistrReader import MLSTSistrReader
 from storage.variant.io.mlst.MLSTTSeemannFeaturesReader import MLSTTSeemannFeaturesReader
 from storage.variant.io.mutation.SnippyVariantsReader import SnippyVariantsReader
 from storage.variant.io.mutation.VcfVariantsReader import VcfVariantsReader
+from storage.variant.io.processor.MultipleProcessSampleFilesProcessor import MultipleProcessSampleFilesProcessor
+from storage.variant.io.processor.NullSampleFilesProcessor import NullSampleFilesProcessor
 from storage.variant.model.QueryFeatureMLST import QueryFeatureMLST
 from storage.variant.model.QueryFeatureMutation import QueryFeatureMutation
 from storage.variant.service import DatabaseConnection, EntityExistsError
@@ -35,8 +37,6 @@ from storage.variant.service.ReferenceService import ReferenceService
 from storage.variant.service.SampleService import SampleService
 from storage.variant.service.TreeService import TreeService
 from storage.variant.service.VariationService import VariationService
-from storage.variant.io.processor.MultipleProcessSampleFilesProcessor import MultipleProcessSampleFilesProcessor
-from storage.variant.io.processor.NullSampleFilesProcessor import NullSampleFilesProcessor
 from storage.variant.util import get_genome_name
 
 logger = logging.getLogger('storage')

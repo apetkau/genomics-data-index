@@ -1,9 +1,9 @@
+import logging
 from pathlib import Path
 from typing import Optional
-import logging
 
-from storage.variant.io.mutation.NucleotideSampleFiles import NucleotideSampleFiles
 from storage.variant.MaskedGenomicRegions import MaskedGenomicRegions
+from storage.variant.io.mutation.NucleotideSampleFiles import NucleotideSampleFiles
 from storage.variant.util import parse_sequence_file
 
 logger = logging.getLogger(__name__)

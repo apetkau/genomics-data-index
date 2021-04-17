@@ -1,6 +1,5 @@
-from os import path, listdir
-from typing import Dict, Any
 import tempfile
+from os import path, listdir
 from pathlib import Path
 
 import pytest
@@ -8,7 +7,6 @@ import pytest
 from storage.test.integration.variant import data_dir
 from storage.test.integration.variant import data_dir_empty
 from storage.variant.io.mutation.SnippyVariantsReader import SnippyVariantsReader
-from storage.variant.io.mutation.VcfVariantsReader import VcfVariantsReader
 from storage.variant.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor
 
 sample_dirs = [data_dir / d for d in listdir(data_dir) if path.isdir(data_dir / d)]

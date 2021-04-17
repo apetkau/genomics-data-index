@@ -1,10 +1,10 @@
-from typing import Tuple, Optional
-from pathlib import Path
-import shutil
 import logging
+import shutil
+from pathlib import Path
+from typing import Tuple, Optional
 
-from storage.variant.io.SampleFiles import SampleFiles
 from storage.variant.MaskedGenomicRegions import MaskedGenomicRegions
+from storage.variant.io.SampleFiles import SampleFiles
 from storage.variant.io.mutation.VariationFile import VariationFile
 
 logger = logging.getLogger(__name__)

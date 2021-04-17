@@ -1,7 +1,7 @@
-from typing import Dict
-from pathlib import Path
 import logging
 import multiprocessing as mp
+from pathlib import Path
+from typing import Dict
 
 from storage.variant.io.SampleFiles import SampleFiles
 from storage.variant.io.SampleFilesProcessor import SampleFilesProcessor
