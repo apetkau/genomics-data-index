@@ -26,7 +26,7 @@ class FeatureService(abc.ABC):
         self._features_dir = features_dir
 
     @abc.abstractmethod
-    def get_correct_reader(self) -> Any:
+    def get_correct_data_package(self) -> Any:
         pass
 
     @abc.abstractmethod
@@ -65,10 +65,10 @@ class FeatureService(abc.ABC):
         """
         pass
 
-    def _verify_correct_reader(self, features_reader: FeaturesReader) -> None:
-        if not isinstance(features_reader, self.get_correct_reader()):
-            raise Exception(f'features_reader=[{features_reader}] is not of type'
-                            f' {self.get_correct_reader().__name__}')
+    def _verify_correct_data_package(self, data_package: SampleDataPackage) -> None:
+        if not isinstance(data_package, self.get_correct_data_package()):
+            raise Exception(f'data_package=[{data_package}] is not of type'
+                            f' {self.get_correct_data_package().__name__}')
 
     def _get_or_create_sample(self, sample_name: str) -> Sample:
         if self._sample_service.exists(sample_name):
@@ -85,7 +85,7 @@ class FeatureService(abc.ABC):
             logger.info(f'Proccessed {number/total*100:0.0f}% ({number}/{total}) samples')
 
     def insert(self, data_package: SampleDataPackage, feature_scope_name: str = AUTO_SCOPE) -> None:
-        # self._verify_correct_reader(features_reader=features_reader)
+        self._verify_correct_data_package(data_package=data_package)
         self._verify_correct_feature_scope(feature_scope_name)
 
         # sample_names = data_package.sample_names()

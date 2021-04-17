@@ -83,7 +83,7 @@ class MLSTService(FeatureService):
                              self._sample_service.get_samples_with_mlst_alleles(feature_scope_name)}
         return len(samples_with_mlst.intersection(sample_names)) != 0
 
-    def get_correct_reader(self) -> Any:
+    def get_correct_data_package(self) -> Any:
         return MLSTFeaturesReader
 
     def _update_scope(self, features_df: pd.DataFrame, feature_scope_name: str) -> pd.DataFrame:
@@ -91,10 +91,10 @@ class MLSTService(FeatureService):
             features_df['Scheme'] = feature_scope_name
         return features_df
 
-    def build_sample_feature_object(self, sample: Sample, features_reader: FeaturesReader,
+    def build_sample_feature_object(self, sample: Sample,
                                     sample_files: SampleData,
                                     feature_scope_name: str) -> Any:
-        self._verify_correct_reader(features_reader=features_reader)
+        # self._verify_correct_reader(features_reader=features_reader)
         mlst_reader = cast(MLSTFeaturesReader, features_reader)
 
         if feature_scope_name == AUTO_SCOPE:
@@ -107,6 +107,5 @@ class MLSTService(FeatureService):
 
         return sample_mlst_alleles
 
-    def _create_persisted_features_reader(self, sample_files_dict: Dict[str, SampleData],
-                                          features_reader: FeaturesReader) -> FeaturesReader:
+    def _create_persisted_features_reader(self, sample_files_dict: Dict[str, SampleData]) -> FeaturesReader:
         return features_reader

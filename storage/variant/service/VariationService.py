@@ -8,6 +8,7 @@ from storage.variant.MaskedGenomicRegions import MaskedGenomicRegions
 from storage.variant.SampleSet import SampleSet
 from storage.variant.io.FeaturesReader import FeaturesReader
 from storage.variant.io.mutation.NucleotideFeaturesReader import NucleotideFeaturesReader
+from storage.variant.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
 from storage.variant.io.mutation.VcfVariantsReader import VcfVariantsReader
 from storage.variant.io.mutation.VariationFile import VariationFile
 from storage.variant.model.db import NucleotideVariantsSamples, SampleNucleotideVariation, Sample
@@ -59,8 +60,8 @@ class VariationService(FeatureService):
         return NucleotideVariantsSamples(spdi=features_df['_FEATURE_ID'], var_type=features_df['TYPE'],
                                          sample_ids=features_df['_SAMPLE_ID'])
 
-    def get_correct_reader(self) -> Any:
-        return NucleotideFeaturesReader
+    def get_correct_data_package(self) -> Any:
+        return NucleotideSampleDataPackage
 
     def aggregate_feature_column(self) -> Dict[str, Any]:
         return {'TYPE': 'first', '_SAMPLE_ID': SampleSet}
