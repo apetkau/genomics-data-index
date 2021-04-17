@@ -23,9 +23,11 @@ class NucleotideSampleFiles(SampleFiles):
 
     def _preprocess_mask(self, output_dir: Path) -> Path:
         if self._mask_bed_file is None:
-            raise Exception('mask_bed_file does not exist')
-        else:
-            return self._mask_bed_file
+            mask_file = output_dir / f'{self.sample_name}.bed.gz'
+            mask = MaskedGenomicRegions.empty_mask()
+            mask.write(mask_file)
+            self._mask_bed_file = mask_file
+        return self._mask_bed_file
 
     def _do_preprocess_and_persist(self, output_dir: Path) -> SampleFiles:
         processed_vcf, processed_vcf_index = self._preprocess_vcf(output_dir)
@@ -38,6 +40,9 @@ class NucleotideSampleFiles(SampleFiles):
                                      preprocessed=True)
 
     def _do_persist(self, output_dir: Path) -> SampleFiles:
+        if self._mask_bed_file is None:
+            raise Exception('mask_bed_file is None')
+
         new_vcf_file = output_dir / self._vcf_file.name
         new_vcf_index = output_dir / self._vcf_file_index.name
         new_mask_bed_file = output_dir / self._mask_bed_file.name
