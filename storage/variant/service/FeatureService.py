@@ -98,7 +98,7 @@ class FeatureService(abc.ABC):
         saved_variation_files = {}
         saved_masked_regions = {}
 
-        interval = max(1, int(num_samples / 50))
+        interval = min(1000, max(1, int(num_samples / 50)))
         processed_samples = 0
         persisted_sample_files_dict = {}
         for sample_name in sample_names:
