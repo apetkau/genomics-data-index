@@ -19,6 +19,7 @@ from storage.variant.service.SampleService import SampleService
 from storage.variant.io.SampleData import SampleData
 from storage.variant.io.mutation.NucleotideSampleData import NucleotideSampleData
 from storage.variant.io.processor.NullSampleFilesProcessor import NullSampleFilesProcessor
+from storage.variant.io.SampleDataPackage import SampleDataPackage
 
 logger = logging.getLogger(__name__)
 
@@ -63,6 +64,9 @@ class VariationService(FeatureService):
     def get_correct_data_package(self) -> Any:
         return NucleotideSampleDataPackage
 
+    def get_correct_sample_data(self) -> Any:
+        return NucleotideSampleData
+
     def aggregate_feature_column(self) -> Dict[str, Any]:
         return {'TYPE': 'first', '_SAMPLE_ID': SampleSet}
 
@@ -90,8 +94,7 @@ class VariationService(FeatureService):
 
         return sample_nucleotide_variation
 
-    def _create_persisted_features_reader(self, sample_files_dict: Dict[str, SampleData]) -> FeaturesReader:
-        file_processor = NullSampleFilesProcessor()
-        for sample in sample_files_dict:
-            file_processor.add(sample_files_dict[sample])
+    def _create_persisted_features_reader(self, sample_files_dict: Dict[str, SampleData],
+                                          data_package: SampleDataPackage) -> FeaturesReader:
+        sample_files_dict = cast(Dict[str, NucleotideSampleData], sample_files_dict)
         return VcfVariantsReader(sample_files_dict)

@@ -13,9 +13,12 @@ class SampleDataPackage(abc.ABC):
     def sample_names(self) -> Set[str]:
         pass
 
-    @abc.abstractmethod
     def process_all_data(self) -> Dict[str, SampleData]:
-        pass
+        processed_data = {}
+        for sample_data in self.iter_sample_data():
+            processed_data[sample_data.sample_name] = sample_data
+
+        return processed_data
 
     @abc.abstractmethod
     def iter_sample_data(self) -> Generator[SampleData, None, None]:

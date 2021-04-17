@@ -30,6 +30,10 @@ class FeatureService(abc.ABC):
         pass
 
     @abc.abstractmethod
+    def get_correct_sample_data(self) -> Any:
+        pass
+
+    @abc.abstractmethod
     def _create_feature_identifier(self, features_df: pd.DataFrame) -> str:
         pass
 
@@ -69,6 +73,11 @@ class FeatureService(abc.ABC):
         if not isinstance(data_package, self.get_correct_data_package()):
             raise Exception(f'data_package=[{data_package}] is not of type'
                             f' {self.get_correct_data_package().__name__}')
+
+    def _verify_correct_sample_data(self, sample_data: SampleData) -> None:
+        if not isinstance(sample_data, self.get_correct_sample_data()):
+            raise Exception(f'sample_data=[{sample_data}] is not of type'
+                            f' {self.get_correct_sample_data().__name__}')
 
     def _get_or_create_sample(self, sample_name: str) -> Sample:
         if self._sample_service.exists(sample_name):
@@ -116,7 +125,8 @@ class FeatureService(abc.ABC):
         self._connection.get_session().commit()
         logger.info(f'Finished processings {num_samples} samples')
 
-        persisted_features_reader = self._create_persisted_features_reader(sample_files_dict=persisted_sample_files_dict)
+        persisted_features_reader = self._create_persisted_features_reader(sample_files_dict=persisted_sample_files_dict,
+                                                                           data_package=data_package)
         self.index_features(features_reader=persisted_features_reader, feature_scope_name=feature_scope_name)
 
     def _update_scope(self, features_df: pd.DataFrame, feature_scope_name: str) -> pd.DataFrame:
@@ -144,5 +154,6 @@ class FeatureService(abc.ABC):
             return None
 
     @abc.abstractmethod
-    def _create_persisted_features_reader(self, sample_files_dict: Dict[str, SampleData]) -> FeaturesReader:
+    def _create_persisted_features_reader(self, sample_files_dict: Dict[str, SampleData],
+                                          data_package: SampleDataPackage) -> FeaturesReader:
         pass

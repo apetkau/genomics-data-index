@@ -12,6 +12,9 @@ from storage.variant.service import DatabaseConnection
 from storage.variant.service.FeatureService import FeatureService, AUTO_SCOPE
 from storage.variant.service.SampleService import SampleService
 from storage.variant.io.SampleData import SampleData
+from storage.variant.io.mlst.MLSTSampleData import MLSTSampleData
+from storage.variant.io.mlst.MLSTSampleDataPackage import MLSTSampleDataPackage
+from storage.variant.io.SampleDataPackage import SampleDataPackage
 
 logger = logging.getLogger(__name__)
 
@@ -84,7 +87,10 @@ class MLSTService(FeatureService):
         return len(samples_with_mlst.intersection(sample_names)) != 0
 
     def get_correct_data_package(self) -> Any:
-        return MLSTFeaturesReader
+        return MLSTSampleDataPackage
+
+    def get_correct_sample_data(self) -> Any:
+        return MLSTSampleData
 
     def _update_scope(self, features_df: pd.DataFrame, feature_scope_name: str) -> pd.DataFrame:
         if feature_scope_name != AUTO_SCOPE:
@@ -94,11 +100,11 @@ class MLSTService(FeatureService):
     def build_sample_feature_object(self, sample: Sample,
                                     sample_files: SampleData,
                                     feature_scope_name: str) -> Any:
-        # self._verify_correct_reader(features_reader=features_reader)
-        mlst_reader = cast(MLSTFeaturesReader, features_reader)
+        self._verify_correct_sample_data(sample_data=sample_files)
+        mlst_sample_data = cast(MLSTSampleData, sample_files)
 
         if feature_scope_name == AUTO_SCOPE:
-            scheme_name = mlst_reader.get_scheme_for_sample(sample.name)
+            scheme_name = mlst_sample_data.get_scheme()
         else:
             scheme_name = feature_scope_name
 
@@ -107,5 +113,8 @@ class MLSTService(FeatureService):
 
         return sample_mlst_alleles
 
-    def _create_persisted_features_reader(self, sample_files_dict: Dict[str, SampleData]) -> FeaturesReader:
-        return features_reader
+    def _create_persisted_features_reader(self, sample_files_dict: Dict[str, SampleData],
+                                          data_package: SampleDataPackage) -> FeaturesReader:
+        self._verify_correct_data_package(data_package=data_package)
+        mlst_data_package = cast(MLSTSampleDataPackage, data_package)
+        return mlst_data_package.get_features_reader()
