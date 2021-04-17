@@ -22,9 +22,13 @@ class MultipleProcessSampleFilesProcessor(SampleFilesProcessor):
     def preprocess_files(self) -> Dict[str, SampleFiles]:
         processed_files = {}
 
+        logger.debug(f'Starting preprocessing {len(self.sample_files_list())} samples '
+                     f'with {self._processing_cores} cores')
         with mp.Pool(self._processing_cores) as pool:
             output_files = pool.map(self.handle_single_file, self.sample_files_list())
             for entry in output_files:
                 processed_files[entry.sample_name] = entry
+
+        logger.debug(f'Finished preprocessing {len(self.sample_files_list())} samples')
 
         return processed_files
