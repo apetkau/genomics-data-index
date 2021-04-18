@@ -123,7 +123,6 @@ class FeatureService(abc.ABC):
         if len(sample_data_batch) > 0:
             yield sample_data_batch
 
-
     def insert(self, data_package: SampleDataPackage, feature_scope_name: str = AUTO_SCOPE) -> None:
         self._verify_correct_data_package(data_package=data_package)
         self._verify_correct_feature_scope(feature_scope_name)
@@ -146,7 +145,7 @@ class FeatureService(abc.ABC):
             self.log_progress(processed_samples, total=num_samples)
 
         self._connection.get_session().commit()
-        logger.info(f'Finished processings {num_samples} samples')
+        logger.info(f'Finished processing {num_samples} samples')
 
         persisted_features_reader = self._create_persisted_features_reader(sample_data_dict=persisted_sample_data_dict,
                                                                            data_package=data_package)
