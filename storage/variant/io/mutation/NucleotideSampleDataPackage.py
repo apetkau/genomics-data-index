@@ -12,29 +12,29 @@ from storage.variant.io.processor.NullSampleFilesProcessor import NullSampleFile
 
 class NucleotideSampleDataPackage(SampleDataPackage):
 
-    def __init__(self, sample_files_processor: SampleFilesProcessor,
-                 sample_names: Set[str]):
+    def __init__(self, sample_data: List[SampleData],
+                 sample_names: Set[str],
+                 sample_files_processor: SampleFilesProcessor):
         super().__init__()
+        self._sample_data = sample_data
         self._sample_files_processor = sample_files_processor
         self._sample_names = sample_names
 
-    # def add(self, sample_files: SampleData) -> None:
-    #     self._sample_files_list.append(sample_files)
-    #
     def sample_names(self) -> Set[str]:
         return self._sample_names
 
     def iter_sample_data(self) -> Generator[SampleData, None, None]:
-        return self._sample_files_processor.preprocess_files()
+        return self._sample_files_processor.process(self._sample_data)
 
     @classmethod
     def create_from_sequence_masks(cls, sample_vcf_map: Dict[str, Path],
                                    masked_genomic_files_map: Dict[str, Path] = None,
-                                   sample_files_processor: SampleFilesProcessor = NullSampleFilesProcessor()) -> NucleotideSampleDataPackage:
+                                   sample_files_processor: SampleFilesProcessor = NullSampleFilesProcessor.instance()) -> NucleotideSampleDataPackage:
         if masked_genomic_files_map is None:
             masked_genomic_files_map = {}
 
-        sample_files_map = {}
+        sample_names_set = set()
+        sample_data_list = []
         for sample_name in sample_vcf_map:
             vcf_file = sample_vcf_map[sample_name]
             if sample_name in masked_genomic_files_map:
@@ -42,32 +42,37 @@ class NucleotideSampleDataPackage(SampleDataPackage):
             else:
                 mask_file = None
 
-            sample_files = NucleotideSampleDataSequenceMask.create(
+            sample_data = NucleotideSampleDataSequenceMask.create(
                 sample_name=sample_name,
                 vcf_file=vcf_file,
                 sample_mask_sequence=mask_file
             )
 
-            sample_files_map[sample_name] = sample_files
-            sample_files_processor.add(sample_files)
+            sample_data_list.append(sample_data)
+            sample_names_set.add(sample_name)
 
-        return NucleotideSampleDataPackage(sample_files_processor=sample_files_processor,
-                                           sample_names=set(sample_files_map.keys()))
+        return NucleotideSampleDataPackage(sample_data=sample_data_list,
+                                           sample_names=sample_names_set,
+                                           sample_files_processor=sample_files_processor
+                                           )
 
     @classmethod
     def create_from_snippy(cls, sample_dirs: List[Path],
-                           sample_files_processor: SampleFilesProcessor = NullSampleFilesProcessor()) -> NucleotideSampleDataPackage:
+                           sample_files_processor: SampleFilesProcessor = NullSampleFilesProcessor.instance()) -> NucleotideSampleDataPackage:
 
-        sample_files_map = {}
+        sample_names_set = set()
+        sample_data_list = []
         for d in sample_dirs:
             sample_name = d.name
-            sample_files = NucleotideSampleDataSequenceMask.create(
+            sample_data = NucleotideSampleDataSequenceMask.create(
                 sample_name=sample_name,
                 vcf_file=Path(d, 'snps.vcf.gz'),
                 sample_mask_sequence=Path(d, 'snps.aligned.fa')
             )
-            sample_files_map[sample_name] = sample_files
-            sample_files_processor.add(sample_files)
+            sample_data_list.append(sample_data)
+            sample_names_set.add(sample_name)
 
-        return NucleotideSampleDataPackage(sample_files_processor=sample_files_processor,
-                                           sample_names=set(sample_files_map.keys()))
+        return NucleotideSampleDataPackage(sample_data=sample_data_list,
+                                           sample_names=sample_names_set,
+                                           sample_files_processor=sample_files_processor
+                                           )

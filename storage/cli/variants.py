@@ -173,7 +173,7 @@ def load_snippy(ctx, snippy_dir: Path, reference_file: Path, build_tree: bool, a
             file_processor = MultipleProcessSampleFilesProcessor(preprocess_dir=Path(preprocess_dir),
                                                                  processing_cores=ncores)
         else:
-            file_processor = NullSampleFilesProcessor()
+            file_processor = NullSampleFilesProcessor.instance()
 
         data_package = NucleotideSampleDataPackage.create_from_snippy(sample_dirs,
                                                                       sample_files_processor=file_processor)
@@ -213,7 +213,7 @@ def load_vcf(ctx, vcf_fofns: Path, reference_file: Path, build_tree: bool, align
             file_processor = MultipleProcessSampleFilesProcessor(preprocess_dir=Path(preprocess_dir),
                                                                  processing_cores=ncores)
         else:
-            file_processor = NullSampleFilesProcessor()
+            file_processor = NullSampleFilesProcessor.instance()
 
         data_package = NucleotideSampleDataPackage.create_from_sequence_masks(sample_vcf_map=sample_vcf_map,
                                                                               masked_genomic_files_map=mask_files_map,

@@ -1,7 +1,7 @@
 import logging
 import multiprocessing as mp
 from pathlib import Path
-from typing import Generator
+from typing import Generator, List
 
 from storage.variant.io.SampleData import SampleData
 from storage.variant.io.SampleFilesProcessor import SampleFilesProcessor
@@ -20,20 +20,21 @@ class MultipleProcessSampleFilesProcessor(SampleFilesProcessor):
     def handle_single_file(self, sample_files: SampleData) -> SampleData:
         return sample_files.persist(self._preprocess_dir)
 
-    def _get_chunk_size(self):
-        chunk_size = max(1, int(len(self.sample_files_list()) / self._processing_cores))
+    def _get_chunk_size(self, number_samples: int):
+        chunk_size = max(1, int(number_samples / self._processing_cores))
         return min(self._max_chunk_size, chunk_size)
 
-    def preprocess_files(self) -> Generator[SampleData, None, None]:
-        logger.debug(f'Starting preprocessing {len(self.sample_files_list())} samples '
+    def process(self, sample_data: List[SampleData]) -> Generator[SampleData, None, None]:
+        number_samples = len(sample_data)
+        logger.debug(f'Starting preprocessing {number_samples} samples '
                      f'with {self._processing_cores} cores')
-        chunk_size = self._get_chunk_size()
+        chunk_size = self._get_chunk_size(number_samples)
         with mp.Pool(self._processing_cores) as pool:
             processed_sample_filed = pool.imap_unordered(self.handle_single_file,
-                                                         self.sample_files_list(),
+                                                         sample_data,
                                                          chunk_size)
             for processed_file in processed_sample_filed:
                 logger.debug(f'Finished {processed_file.sample_name}')
                 yield processed_file
 
-        logger.debug(f'Finished preprocessing {len(self.sample_files_list())} samples')
+        logger.debug(f'Finished preprocessing {number_samples} samples')
