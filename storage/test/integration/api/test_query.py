@@ -3,6 +3,7 @@ from pathlib import Path
 
 from storage.connector.DataIndexConnection import DataIndexConnection
 from storage.variant.model.QueryFeatureMutation import QueryFeatureMutation
+from storage.variant.model.QueryFeatureMLST import QueryFeatureMLST
 from storage.api.query import query, connect
 from storage.variant.model.db import Sample
 from storage.variant.SampleSet import AllSampleSet
@@ -59,3 +60,46 @@ def test_query_chained_mutation(loaded_database_connection: DataIndexConnection)
         QueryFeatureMutation('reference:5061:G:A'))
     assert 1 == len(query_result)
     assert {sampleB.id} == set(query_result.sample_set)
+
+
+def test_query_chained_mutation_has_mutation(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+
+    query_result = query(loaded_database_connection).has_mutation(
+        'reference:839:C:G').has_mutation(
+        'reference:5061:G:A')
+    assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+
+
+def test_query_mlst_allele(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sample1 = db.get_session().query(Sample).filter(Sample.name == 'CFSAN002349').one()
+    sample2 = db.get_session().query(Sample).filter(Sample.name == 'CFSAN023463').one()
+
+    query_result = query(loaded_database_connection).has(QueryFeatureMLST('lmonocytogenes:abcZ:1'))
+    assert 2 == len(query_result)
+    assert {sample1.id, sample2.id} == set(query_result.sample_set)
+
+
+def test_query_chained_mlst_alleles(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sample1 = db.get_session().query(Sample).filter(Sample.name == 'CFSAN002349').one()
+
+    query_result = query(loaded_database_connection).has(
+        QueryFeatureMLST('lmonocytogenes:abcZ:1')).has(
+        QueryFeatureMLST('lmonocytogenes:lhkA:4'))
+    assert 1 == len(query_result)
+    assert {sample1.id} == set(query_result.sample_set)
+
+
+def test_query_chained_mlst_alleles_hash_allele(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sample1 = db.get_session().query(Sample).filter(Sample.name == 'CFSAN002349').one()
+
+    query_result = query(loaded_database_connection) \
+        .has_allele('lmonocytogenes:abcZ:1') \
+        .has_allele('lmonocytogenes:lhkA:4')
+    assert 1 == len(query_result)
+    assert {sample1.id} == set(query_result.sample_set)
