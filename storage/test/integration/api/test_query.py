@@ -4,6 +4,7 @@ from pathlib import Path
 from storage.connector.DataIndexConnection import DataIndexConnection
 from storage.variant.model.QueryFeatureMutation import QueryFeatureMutation
 from storage.api.query import query, connect
+from storage.variant.model.db import Sample
 
 
 def test_connect():
@@ -21,5 +22,25 @@ def test_initialized_query(loaded_database_connection: DataIndexConnection):
 
 
 def test_query_single_mutation(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+
     query_result = query(loaded_database_connection).has(QueryFeatureMutation('reference:5061:G:A'))
     assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+
+
+def test_query_single_mutation_two_samples(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+
+    query_result = query(loaded_database_connection).has(QueryFeatureMutation('reference:839:C:G'))
+    assert 2 == len(query_result)
+    assert {sampleB.id, sampleC.id} == set(query_result.sample_set)
+
+
+def test_query_single_mutation_no_results(loaded_database_connection: DataIndexConnection):
+    query_result = query(loaded_database_connection).has(QueryFeatureMutation('reference:1:1:A'))
+    assert 0 == len(query_result)
+    assert query_result.is_empty()

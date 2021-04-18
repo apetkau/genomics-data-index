@@ -42,6 +42,10 @@ class DataIndexConnection:
         self._database_connection = database_connection
 
     @property
+    def database(self):
+        return self._database_connection
+
+    @property
     def reference_service(self):
         return self._reference_service
 

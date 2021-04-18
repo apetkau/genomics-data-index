@@ -39,6 +39,9 @@ class SamplesQueryIndex(SamplesQuery):
         else:
             raise Exception(f'Cannot perform an "and" on object {other}')
 
+    def is_empty(self) -> bool:
+        return self.sample_set.is_empty()
+
     def __and__(self, other):
         return self.and_(other)
 
@@ -49,8 +52,13 @@ class SamplesQueryIndex(SamplesQuery):
             return len(self.sample_set)
 
     def has(self, feature: QueryFeature) -> SamplesQuery:
-        found_set = self._query_connection.sample_service.find_sample_sets_by_features([feature])
-        intersect_found = self._intersect_sample_set(found_set)
+        found_set_dict = self._query_connection.sample_service.find_sample_sets_by_features([feature])
+
+        if feature.id in found_set_dict:
+            found_set = found_set_dict[feature.id]
+            intersect_found = self._intersect_sample_set(found_set)
+        else:
+            intersect_found = SampleSet.create_empty()
 
         return self._create_from(self._query_connection, intersect_found)
 

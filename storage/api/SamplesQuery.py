@@ -28,7 +28,7 @@ class SamplesQuery(abc.ABC):
 
     @abc.abstractmethod
     def has(self, feature: QueryFeature) -> SamplesQuery:
-        return self._has(feature)
+        pass
 
     @abc.abstractmethod
     def has_mutation(self, mutation_feature: str) -> SamplesQuery:
@@ -48,6 +48,10 @@ class SamplesQuery(abc.ABC):
 
     @abc.abstractmethod
     def is_type(self, sample_type) -> SamplesQuery:
+        pass
+
+    @abc.abstractmethod
+    def is_empty(self):
         pass
 
     @abc.abstractmethod

@@ -27,13 +27,16 @@ class SampleSet:
         else:
             raise Exception(f'Cannot intersect other of type [{type(other)}]')
 
+    def is_empty(self) -> bool:
+        return len(self._bitmap) == 0
+
     @staticmethod
     def from_bytes(data: bytes) -> SampleSet:
         bitmap = BitMap.deserialize(data)
         return SampleSet(existing_bitmap=bitmap)
 
     @classmethod
-    def empty(cls):
+    def create_empty(cls):
         return SampleSet(existing_bitmap=BitMap())
 
     def get_bytes(self) -> bytes:
