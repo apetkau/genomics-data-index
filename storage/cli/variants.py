@@ -5,7 +5,7 @@ from functools import partial
 from os import path, listdir
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import List
+from typing import List, cast
 
 import click
 import click_config_file
@@ -20,7 +20,6 @@ from storage.variant.index.KmerIndexer import KmerIndexerSourmash, KmerIndexMana
 from storage.variant.io.mlst.MLSTChewbbacaReader import MLSTChewbbacaReader
 from storage.variant.io.mlst.MLSTSistrReader import MLSTSistrReader
 from storage.variant.io.mlst.MLSTTSeemannFeaturesReader import MLSTTSeemannFeaturesReader
-from storage.variant.io.mutation.SnippyVariantsReader import SnippyVariantsReader
 from storage.variant.io.mutation.VcfVariantsReader import VcfVariantsReader
 from storage.variant.io.processor.MultipleProcessSampleFilesProcessor import MultipleProcessSampleFilesProcessor
 from storage.variant.io.processor.NullSampleFilesProcessor import NullSampleFilesProcessor
@@ -37,6 +36,8 @@ from storage.variant.service.ReferenceService import ReferenceService
 from storage.variant.service.SampleService import SampleService
 from storage.variant.service.TreeService import TreeService
 from storage.variant.service.VariationService import VariationService
+from storage.variant.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
+from storage.variant.io.mlst.MLSTSampleDataPackage import MLSTSampleDataPackage
 from storage.variant.util import get_genome_name
 
 logger = logging.getLogger('storage')
@@ -120,11 +121,11 @@ def load(ctx):
     pass
 
 
-def load_variants_common(ctx, variants_reader, reference_file, input, build_tree, align_type,
+def load_variants_common(ctx, data_package: NucleotideSampleDataPackage, reference_file, input, build_tree, align_type,
                          extra_tree_params: str):
     reference_service = ctx.obj['reference_service']
-    variation_service = ctx.obj['variation_service']
-    sample_service = ctx.obj['sample_service']
+    variation_service = cast(VariationService, ctx.obj['variation_service'])
+    sample_service = cast(SampleService, ctx.obj['sample_service'])
     tree_service = ctx.obj['tree_service']
     ncores = ctx.obj['ncores']
 
@@ -133,14 +134,14 @@ def load_variants_common(ctx, variants_reader, reference_file, input, build_tree
     except EntityExistsError as e:
         logger.warning(f'Reference genome [{reference_file}] already exists, will not load')
 
-    samples_exist = sample_service.which_exists(variants_reader.samples_list())
+    samples_exist = sample_service.which_exists(list(data_package.sample_names()))
     if len(samples_exist) > 0:
         logger.error(f'Samples {samples_exist} already exist, will not load any variants')
     else:
         reference_name = get_genome_name(reference_file)
 
         variation_service.insert(feature_scope_name=reference_name,
-                                 features_reader=variants_reader)
+                                 data_package=data_package)
         click.echo(f'Loaded variants from [{input}] into database')
 
         if build_tree:
@@ -175,9 +176,10 @@ def load_snippy(ctx, snippy_dir: Path, reference_file: Path, build_tree: bool, a
         else:
             file_processor = NullSampleFilesProcessor()
 
-        variants_reader = SnippyVariantsReader.create(sample_dirs, sample_files_processor=file_processor)
+        data_package = NucleotideSampleDataPackage.create_from_snippy(sample_dirs,
+                                                                         sample_files_processor=file_processor)
 
-        load_variants_common(ctx=ctx, variants_reader=variants_reader, reference_file=reference_file,
+        load_variants_common(ctx=ctx, data_package=data_package, reference_file=reference_file,
                              input=snippy_dir, build_tree=build_tree, align_type=align_type,
                              extra_tree_params=extra_tree_params)
 
@@ -214,11 +216,11 @@ def load_vcf(ctx, vcf_fofns: Path, reference_file: Path, build_tree: bool, align
         else:
             file_processor = NullSampleFilesProcessor()
 
-        variants_reader = VcfVariantsReader.create_from_sequence_masks(sample_vcf_map=sample_vcf_map,
+        data_package = NucleotideSampleDataPackage.create_from_sequence_masks(sample_vcf_map=sample_vcf_map,
                                                                        masked_genomic_files_map=mask_files_map,
                                                                        sample_files_processor=file_processor)
 
-        load_variants_common(ctx=ctx, variants_reader=variants_reader, reference_file=reference_file,
+        load_variants_common(ctx=ctx, data_package=data_package, reference_file=reference_file,
                              input=Path(vcf_fofns), build_tree=build_tree, align_type=align_type,
                              extra_tree_params=extra_tree_params)
 
@@ -272,10 +274,11 @@ def load_kmer(ctx, kmer_fofns, kmer_size):
 @click.option('--scheme-name', help='Override scheme name found in MLST file',
               default=FeatureService.AUTO_SCOPE, type=str)
 def load_mlst_tseemann(ctx, mlst_file: List[Path], scheme_name: str):
+    mlst_service = cast(MLSTService, ctx.obj['mlst_service'])
     for file in mlst_file:
         click.echo(f'Loading MLST results from {str(file)}')
-        reader = MLSTTSeemannFeaturesReader(mlst_file=file)
-        ctx.obj['mlst_service'].insert(features_reader=reader, feature_scope_name=scheme_name)
+        data_package = MLSTSampleDataPackage(MLSTTSeemannFeaturesReader(mlst_file=file))
+        mlst_service.insert(data_package=data_package, feature_scope_name=scheme_name)
 
 
 @load.command(name='mlst-sistr')
@@ -284,10 +287,11 @@ def load_mlst_tseemann(ctx, mlst_file: List[Path], scheme_name: str):
 @click.option('--scheme-name', help='Override scheme name found in SISTR MLST file',
               default=FeatureService.AUTO_SCOPE, type=str)
 def load_mlst_sistr(ctx, mlst_file: List[Path], scheme_name: str):
+    mlst_service = cast(MLSTService, ctx.obj['mlst_service'])
     for file in mlst_file:
         click.echo(f'Loading cgMLST results from {str(file)}')
-        reader = MLSTSistrReader(mlst_file=file)
-        ctx.obj['mlst_service'].insert(features_reader=reader, feature_scope_name=scheme_name)
+        data_package = MLSTSampleDataPackage(MLSTSistrReader(mlst_file=file))
+        mlst_service.insert(data_package=data_package, feature_scope_name=scheme_name)
 
 
 @load.command(name='mlst-chewbbaca')
@@ -296,10 +300,11 @@ def load_mlst_sistr(ctx, mlst_file: List[Path], scheme_name: str):
 @click.option('--scheme-name', help='Set scheme name',
               required=True, type=str)
 def load_mlst_sistr(ctx, mlst_file: List[Path], scheme_name: str):
+    mlst_service = cast(MLSTService, ctx.obj['mlst_service'])
     for file in mlst_file:
         click.echo(f'Loading MLST results from [{str(file)}] under scheme [{scheme_name}]')
-        reader = MLSTChewbbacaReader(mlst_file=file, scheme=scheme_name)
-        ctx.obj['mlst_service'].insert(features_reader=reader, feature_scope_name=FeatureService.AUTO_SCOPE)
+        data_package = MLSTSampleDataPackage(MLSTChewbbacaReader(mlst_file=file, scheme=scheme_name))
+        mlst_service.insert(data_package=data_package, feature_scope_name=FeatureService.AUTO_SCOPE)
 
 
 @main.group(name='list')
