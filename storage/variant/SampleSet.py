@@ -17,7 +17,7 @@ class SampleSet:
         else:
             self._bitmap = existing_bitmap
 
-    def intersection(self, other: Union[Set[int]]) -> SampleSet:
+    def intersection(self, other: Union[Set[int], SampleSet]) -> SampleSet:
         if other is None:
             raise Exception('Cannot intersect [other = None]')
         elif isinstance(other, SampleSet):
@@ -31,6 +31,10 @@ class SampleSet:
     def from_bytes(data: bytes) -> SampleSet:
         bitmap = BitMap.deserialize(data)
         return SampleSet(existing_bitmap=bitmap)
+
+    @classmethod
+    def empty(cls):
+        return SampleSet(existing_bitmap=BitMap())
 
     def get_bytes(self) -> bytes:
         return self._bitmap.serialize()
