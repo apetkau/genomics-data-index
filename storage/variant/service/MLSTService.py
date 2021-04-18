@@ -96,11 +96,9 @@ class MLSTService(FeatureService):
             features_df['Scheme'] = feature_scope_name
         return features_df
 
-    def build_sample_feature_object(self, sample: Sample,
-                                    sample_files: SampleData,
-                                    feature_scope_name: str) -> Any:
-        self._verify_correct_sample_data(sample_data=sample_files)
-        mlst_sample_data = cast(MLSTSampleData, sample_files)
+    def build_sample_feature_object(self, sample: Sample, sample_data: SampleData, feature_scope_name: str) -> Any:
+        self._verify_correct_sample_data(sample_data=sample_data)
+        mlst_sample_data = cast(MLSTSampleData, sample_data)
 
         if feature_scope_name == AUTO_SCOPE:
             scheme_name = mlst_sample_data.get_scheme()
@@ -112,7 +110,7 @@ class MLSTService(FeatureService):
 
         return sample_mlst_alleles
 
-    def _create_persisted_features_reader(self, sample_files_dict: Dict[str, SampleData],
+    def _create_persisted_features_reader(self, sample_data_dict: Dict[str, SampleData],
                                           data_package: SampleDataPackage) -> FeaturesReader:
         self._verify_correct_data_package(data_package=data_package)
         mlst_data_package = cast(MLSTSampleDataPackage, data_package)

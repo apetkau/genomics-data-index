@@ -75,10 +75,8 @@ class VariationService(FeatureService):
         if feature_scope_name is None:
             raise Exception('feature_scope_name must not be None')
 
-    def build_sample_feature_object(self, sample: Sample,
-                                    sample_files: SampleData,
-                                    feature_scope_name: str) -> Any:
-        nucleotide_sample_files = cast(NucleotideSampleData, sample_files)
+    def build_sample_feature_object(self, sample: Sample, sample_data: SampleData, feature_scope_name: str) -> Any:
+        nucleotide_sample_files = cast(NucleotideSampleData, sample_data)
 
         reference = self._reference_service.find_reference_genome(feature_scope_name)
 
@@ -90,7 +88,7 @@ class VariationService(FeatureService):
 
         return sample_nucleotide_variation
 
-    def _create_persisted_features_reader(self, sample_files_dict: Dict[str, SampleData],
+    def _create_persisted_features_reader(self, sample_data_dict: Dict[str, SampleData],
                                           data_package: SampleDataPackage) -> FeaturesReader:
-        sample_files_dict = cast(Dict[str, NucleotideSampleData], sample_files_dict)
-        return VcfVariantsReader(sample_files_dict)
+        sample_data_dict = cast(Dict[str, NucleotideSampleData], sample_data_dict)
+        return VcfVariantsReader(sample_data_dict)

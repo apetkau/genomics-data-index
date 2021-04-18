@@ -106,26 +106,24 @@ class FeatureService(abc.ABC):
 
         interval = min(1000, max(1, int(num_samples / 50)))
         processed_samples = 0
-        persisted_sample_files_dict = {}
+        persisted_sample_data_dict = {}
         for sample_data in data_package.iter_sample_data():
             self.progress_hook(processed_samples, print_every=interval, total=num_samples)
             logger.debug(f'Loading sample {sample_data.sample_name}')
 
             sample = self._get_or_create_sample(sample_data.sample_name)
-            persisted_sample_files = self._persist_sample_files(sample_data)
-            sample_feature_object = self.build_sample_feature_object(sample=sample,
-                                                                     sample_files=persisted_sample_files,
+            persisted_sample_data = self._persist_sample_data(sample_data)
+            sample_feature_object = self.build_sample_feature_object(sample=sample, sample_data=persisted_sample_data,
                                                                      feature_scope_name=feature_scope_name)
 
-            persisted_sample_files_dict[persisted_sample_files.sample_name] = persisted_sample_files
+            persisted_sample_data_dict[persisted_sample_data.sample_name] = persisted_sample_data
             self._connection.get_session().add(sample_feature_object)
             processed_samples += 1
         self._connection.get_session().commit()
         logger.info(f'Finished processings {num_samples} samples')
 
-        persisted_features_reader = self._create_persisted_features_reader(
-            sample_files_dict=persisted_sample_files_dict,
-            data_package=data_package)
+        persisted_features_reader = self._create_persisted_features_reader(sample_data_dict=persisted_sample_data_dict,
+                                                                           data_package=data_package)
         self.index_features(features_reader=persisted_features_reader, feature_scope_name=feature_scope_name)
 
     def _update_scope(self, features_df: pd.DataFrame, feature_scope_name: str) -> pd.DataFrame:
@@ -141,18 +139,16 @@ class FeatureService(abc.ABC):
         logger.info('Finished indexing features from all samples')
 
     @abc.abstractmethod
-    def build_sample_feature_object(self, sample: Sample,
-                                    sample_files: SampleData,
-                                    feature_scope_name: str) -> Any:
+    def build_sample_feature_object(self, sample: Sample, sample_data: SampleData, feature_scope_name: str) -> Any:
         pass
 
-    def _persist_sample_files(self, sample_files: SampleData) -> Optional[SampleData]:
-        if sample_files is not None:
-            return sample_files.persist(self._features_dir)
+    def _persist_sample_data(self, sample_data: SampleData) -> Optional[SampleData]:
+        if sample_data is not None:
+            return sample_data.persist(self._features_dir)
         else:
             return None
 
     @abc.abstractmethod
-    def _create_persisted_features_reader(self, sample_files_dict: Dict[str, SampleData],
+    def _create_persisted_features_reader(self, sample_data_dict: Dict[str, SampleData],
                                           data_package: SampleDataPackage) -> FeaturesReader:
         pass
