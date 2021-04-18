@@ -17,6 +17,7 @@ mlst_file_unknown = mlst_dir / 'mlst-unknown.tsv'
 sistr_mlst_file = mlst_dir / 'mlst-sistr.csv'
 chewbbaca_mlst_file = mlst_dir / 'mlst-chewbbaca-small.tsv'
 mlst_file_single_scheme = mlst_dir / 'mlst-single-scheme.tsv'
+mlst_snippy_file = mlst_dir / 'mlst-snippy-data.csv'
 
 data_dir_empty = root_data_dir / 'empty_vcfs'
 

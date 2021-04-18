@@ -9,7 +9,7 @@ from storage.variant.io.mlst.MLSTSampleDataPackage import MLSTSampleDataPackage
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-from storage.test.integration import sample_dirs, reference_file, basic_mlst_file
+from storage.test.integration import sample_dirs, reference_file, basic_mlst_file, mlst_snippy_file
 from storage.connector.DataIndexConnection import DataIndexConnection
 from storage.variant.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
 from storage.variant.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor
@@ -31,5 +31,9 @@ def loaded_database_connection() -> DataIndexConnection:
     # Load MLST
     mlst_package = MLSTSampleDataPackage(MLSTTSeemannFeaturesReader(mlst_file=basic_mlst_file))
     database_connection.mlst_service.insert(mlst_package)
+
+    # Load MLST results with overlapping samples with Nucleotide variation
+    # mlst_package_snippy = MLSTSampleDataPackage(MLSTTSeemannFeaturesReader(mlst_file=mlst_snippy_file))
+    # database_connection.mlst_service.insert(mlst_package_snippy)
 
     return database_connection

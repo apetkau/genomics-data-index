@@ -1,3 +1,4 @@
+import pytest
 from tempfile import TemporaryDirectory
 from pathlib import Path
 
@@ -94,12 +95,24 @@ def test_query_chained_mlst_alleles(loaded_database_connection: DataIndexConnect
     assert {sample1.id} == set(query_result.sample_set)
 
 
-def test_query_chained_mlst_alleles_hash_allele(loaded_database_connection: DataIndexConnection):
+def test_query_chained_mlst_alleles_has_allele(loaded_database_connection: DataIndexConnection):
     db = loaded_database_connection.database
     sample1 = db.get_session().query(Sample).filter(Sample.name == 'CFSAN002349').one()
 
     query_result = query(loaded_database_connection) \
         .has_allele('lmonocytogenes:abcZ:1') \
         .has_allele('lmonocytogenes:lhkA:4')
+    assert 1 == len(query_result)
+    assert {sample1.id} == set(query_result.sample_set)
+
+
+@pytest.mark.skip
+def test_query_chained_mlst_nucleotide(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sample1 = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+
+    query_result = query(loaded_database_connection) \
+        .has_mutation('reference:839:C:G') \
+        .has_allele('lmonocytogenes:cat:12')
     assert 1 == len(query_result)
     assert {sample1.id} == set(query_result.sample_set)
