@@ -22,7 +22,7 @@ class MLSTSampleData(SampleData):
         return True
 
     def _do_preprocess_and_persist(self, output_dir: Path) -> SampleData:
-        pass
+        return self
 
     def _do_persist(self, output_dir: Path) -> SampleData:
-        pass
+        return self

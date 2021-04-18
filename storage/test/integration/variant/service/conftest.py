@@ -23,6 +23,7 @@ from storage.FilesystemStorage import FilesystemStorage
 from storage.variant.service.MLSTService import MLSTService
 from storage.variant.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor
 from storage.variant.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
+from storage.variant.io.mlst.MLSTSampleDataPackage import MLSTSampleDataPackage
 
 
 @pytest.fixture
@@ -160,8 +161,18 @@ def mlst_reader_single_scheme() -> MLSTFeaturesReader:
 
 
 @pytest.fixture
+def mlst_data_package_single_scheme(mlst_reader_single_scheme) -> MLSTSampleDataPackage:
+    return MLSTSampleDataPackage(mlst_reader_single_scheme)
+
+
+@pytest.fixture
 def mlst_reader_basic() -> MLSTFeaturesReader:
     return MLSTTSeemannFeaturesReader(mlst_file=basic_mlst_file)
+
+
+@pytest.fixture
+def mlst_data_package_basic(mlst_reader_basic) -> MLSTSampleDataPackage:
+    return MLSTSampleDataPackage(mlst_reader_basic)
 
 
 @pytest.fixture
@@ -170,20 +181,25 @@ def mlst_reader_unknown() -> MLSTFeaturesReader:
 
 
 @pytest.fixture
-def mlst_service_loaded(mlst_reader_basic, database, sample_service, filesystem_storage) -> MLSTService:
+def mlst_data_package_unknown(mlst_reader_unknown) -> MLSTSampleDataPackage:
+    return MLSTSampleDataPackage(mlst_reader_unknown)
+
+
+@pytest.fixture
+def mlst_service_loaded(mlst_data_package_basic, database, sample_service, filesystem_storage) -> MLSTService:
     mlst_service = MLSTService(database_connection=database,
                                sample_service=sample_service,
                                mlst_dir=filesystem_storage.mlst_dir)
-    mlst_service.insert(features_reader=mlst_reader_basic)
+    mlst_service.insert(data_package=mlst_data_package_basic)
 
     return mlst_service
 
 
 @pytest.fixture
-def mlst_service_loaded_unknown(mlst_reader_unknown, database, sample_service, filesystem_storage) -> MLSTService:
+def mlst_service_loaded_unknown(mlst_data_package_unknown, database, sample_service, filesystem_storage) -> MLSTService:
     mlst_service = MLSTService(database_connection=database,
                                sample_service=sample_service,
                                mlst_dir=filesystem_storage.mlst_dir)
-    mlst_service.insert(features_reader=mlst_reader_unknown)
+    mlst_service.insert(data_package=mlst_data_package_unknown)
 
     return mlst_service
