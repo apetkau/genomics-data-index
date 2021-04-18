@@ -19,7 +19,7 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def dataframe(self) -> pd.DataFrame:
+    def toframe(self) -> pd.DataFrame:
         pass
 
     @abc.abstractmethod

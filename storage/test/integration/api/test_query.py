@@ -116,3 +116,40 @@ def test_query_chained_mlst_nucleotide(loaded_database_connection: DataIndexConn
         .has_allele('lmonocytogenes:cat:12')
     assert 1 == len(query_result)
     assert {sample1.id} == set(query_result.sample_set)
+
+
+def test_query_single_mutation_dataframe(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+
+    df = query(loaded_database_connection).has_mutation('reference:839:C:G').toframe()
+
+    assert 2 == len(df)
+    assert ['Feature', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+
+    df = df.sort_values(['Sample Name'])
+    assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert [sampleB.id, sampleC.id] == df['Sample ID'].tolist()
+
+
+def test_query_chained_allele_dataframe(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sample1 = db.get_session().query(Sample).filter(Sample.name == 'CFSAN002349').one()
+
+    df = query(loaded_database_connection) \
+        .has_allele('lmonocytogenes:abcZ:1') \
+        .has_allele('lmonocytogenes:lhkA:4').toframe()
+
+    assert 1 == len(df)
+    assert ['Feature', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+
+    df = df.sort_values(['Sample Name'])
+    assert ['CFSAN002349'] == df['Sample Name'].tolist()
+    assert [sample1.id] == df['Sample ID'].tolist()
+
+
+def test_query_single_mutation_no_results_toframe(loaded_database_connection: DataIndexConnection):
+    df = query(loaded_database_connection).has_mutation('reference:1:1:A').toframe()
+    assert 0 == len(df)
+    assert ['Feature', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()

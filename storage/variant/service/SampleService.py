@@ -1,5 +1,7 @@
 from typing import List, Dict, Set, Union, cast
 
+import pandas as pd
+
 from storage.variant.SampleSet import SampleSet
 from storage.variant.model.NucleotideMutationTranslater import NucleotideMutationTranslater
 from storage.variant.model.QueryFeature import QueryFeature
@@ -67,6 +69,15 @@ class SampleService:
             .filter(Reference.name == reference_name) \
             .all()
         return samples
+
+    def create_dataframe_from_sample_set(self, sample_set: SampleSet) -> pd.DataFrame:
+        samples = self.find_samples_by_ids(sample_set)
+        data = []
+        for sample in samples:
+            data.append([pd.NA, sample.name, sample.id, 'Present'])
+
+        results_df = pd.DataFrame(data=data, columns=['Feature', 'Sample Name', 'Sample ID', 'Status'])
+        return results_df
 
     def count_samples_associated_with_reference(self, reference_name: str) -> int:
         return len(self.get_samples_associated_with_reference(reference_name))

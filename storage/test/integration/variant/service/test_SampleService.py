@@ -286,3 +286,42 @@ def test_count_samples_by_mlst_features_multiple_features(sample_service, mlst_s
     assert 2 == len(mlst_counts)
     assert 2 == mlst_counts['lmonocytogenes:abcZ:1']
     assert 2 == mlst_counts['ecoli:adk:100']
+
+
+def test_create_dataframe_from_sample_set(database, sample_service, variation_service):
+    sampleA = database.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = database.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+
+    sample_set = SampleSet([sampleA.id, sampleB.id, sampleC.id])
+
+    df = sample_service.create_dataframe_from_sample_set(sample_set)
+    assert len(df) == 3
+    assert ['Feature', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+
+    df = df.sort_values(['Sample Name'])
+    assert ['SampleA', 'SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert [sampleA.id, sampleB.id, sampleC.id] == df['Sample ID'].tolist()
+
+
+def test_create_dataframe_from_sample_set_subset_samples(database, sample_service, variation_service):
+    sampleA = database.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleC = database.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+
+    sample_set = SampleSet([sampleA.id, sampleC.id])
+
+    df = sample_service.create_dataframe_from_sample_set(sample_set)
+    assert len(df) == 2
+    assert ['Feature', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+
+    df = df.sort_values(['Sample Name'])
+    assert ['SampleA', 'SampleC'] == df['Sample Name'].tolist()
+    assert [sampleA.id, sampleC.id] == df['Sample ID'].tolist()
+
+
+def test_create_dataframe_from_sample_set_empty(sample_service, variation_service):
+    sample_set = SampleSet.create_empty()
+
+    df = sample_service.create_dataframe_from_sample_set(sample_set)
+    assert len(df) == 0
+    assert ['Feature', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
