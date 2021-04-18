@@ -20,10 +20,13 @@ AUTO_SCOPE = '__AUTO_SCOPE__'
 
 class FeatureService(abc.ABC):
 
-    def __init__(self, database_connection: DatabaseConnection, features_dir: Path, sample_service: SampleService):
+    def __init__(self, database_connection: DatabaseConnection, features_dir: Path, sample_service: SampleService,
+                 max_insert_batch_size: int = 500):
         self._connection = database_connection
         self._sample_service = sample_service
         self._features_dir = features_dir
+        self._max_insert_batch_size = max_insert_batch_size
+        self._min_insert_batch_size = 5
 
     @abc.abstractmethod
     def get_correct_data_package(self) -> Any:
@@ -99,9 +102,13 @@ class FeatureService(abc.ABC):
         if feature_scope_name is None:
             raise Exception('feature_scope_name cannot be None')
 
-    def progress_hook(self, number: int, print_every: int, total: int) -> None:
-        if number % print_every == 0:
-            logger.info(f'Proccessed {number / total * 100:0.0f}% ({number}/{total}) samples')
+    def log_progress(self, number: int, total: int) -> None:
+        logger.info(f'Proccessed {number / total * 100:0.0f}% ({number}/{total}) samples')
+
+    def _set_batch_size(self, num_samples: int) -> int:
+        batch_size = max(self._min_insert_batch_size, int(num_samples / 50))
+        batch_size = min(self._max_insert_batch_size, batch_size)
+        return batch_size
 
     def insert(self, data_package: SampleDataPackage, feature_scope_name: str = AUTO_SCOPE) -> None:
         self._verify_correct_data_package(data_package=data_package)
@@ -114,10 +121,10 @@ class FeatureService(abc.ABC):
             raise EntityExistsError(f'Passed samples already have features for feature scope [{feature_scope_name}], '
                                     f'will not insert any new features')
 
-        batch_size = min(200, max(1, int(num_samples / 50)))
+        batch_size = self._set_batch_size(num_samples)
         processed_samples = 0
         persisted_sample_data_dict = {}
-        self.progress_hook(processed_samples, print_every=batch_size, total=num_samples)
+        self.log_progress(processed_samples, total=num_samples)
         sample_data_batch = {}
         for sample_data in data_package.iter_sample_data():
             sample_data_batch[sample_data.sample_name] = sample_data
@@ -126,7 +133,7 @@ class FeatureService(abc.ABC):
                 persisted_sample_data = self._handle_batch(sample_data_batch, feature_scope_name)
                 persisted_sample_data_dict.update(persisted_sample_data)
                 processed_samples += len(sample_data_batch)
-                self.progress_hook(processed_samples, print_every=batch_size, total=num_samples)
+                self.log_progress(processed_samples, total=num_samples)
 
                 sample_data_batch = {}
 
@@ -134,7 +141,7 @@ class FeatureService(abc.ABC):
             persisted_sample_data = self._handle_batch(sample_data_batch, feature_scope_name)
             persisted_sample_data_dict.update(persisted_sample_data)
             processed_samples += len(sample_data_batch)
-            self.progress_hook(processed_samples, print_every=batch_size, total=num_samples)
+            self.log_progress(processed_samples, total=num_samples)
 
         self._connection.get_session().commit()
         logger.info(f'Finished processings {num_samples} samples')
