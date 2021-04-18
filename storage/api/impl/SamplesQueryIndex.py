@@ -22,11 +22,6 @@ class SamplesQueryIndex(SamplesQuery):
         return self._sample_set
 
     def _intersect_sample_set(self, other: SampleSet) -> SampleSet:
-        if self.sample_set == self.ALL_SAMPLES:
-            return other
-        elif other == self.ALL_SAMPLES:
-            return self.sample_set
-        else:
             return self.sample_set.intersection(other)
 
     def dataframe(self) -> pd.DataFrame:
@@ -46,10 +41,7 @@ class SamplesQueryIndex(SamplesQuery):
         return self.and_(other)
 
     def __len__(self):
-        if self.sample_set == self.ALL_SAMPLES:
-            raise Exception('Getting length of all samples is currently unsupported')
-        else:
-            return len(self.sample_set)
+        return len(self.sample_set)
 
     def has(self, feature: QueryFeature) -> SamplesQuery:
         found_set_dict = self._query_connection.sample_service.find_sample_sets_by_features([feature])

@@ -8,7 +8,7 @@ from storage.variant.SampleSet import SampleSet
 
 
 class SamplesQuery(abc.ABC):
-    ALL_SAMPLES = None
+    ALL_SAMPLES = SampleSet.create_all()
 
     def __init__(self):
         pass

@@ -61,3 +61,17 @@ def test_create_empty_sample_set():
     assert len(empty_set) == 0
     assert set() == set(empty_set)
     assert empty_set.is_empty()
+
+
+def test_create_all_sample_set():
+    all_set = SampleSet.create_all()
+    assert len(all_set) == 2**32
+    assert 0 in all_set
+    assert 1 in all_set
+    assert 2**32 - 1 in all_set
+    assert 2**32 not in all_set
+
+    other_set = SampleSet(sample_ids=[1, 3, 10])
+
+    assert all_set.intersection(other_set) == other_set
+    assert other_set.intersection(all_set) == other_set
