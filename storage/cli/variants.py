@@ -37,6 +37,7 @@ from storage.variant.service.ReferenceService import ReferenceService
 from storage.variant.service.SampleService import SampleService
 from storage.variant.service.TreeService import TreeService
 from storage.variant.service.VariationService import VariationService
+from storage.connector.DataIndexConnection import DataIndexConnection
 from storage.variant.util import get_genome_name
 
 logger = logging.getLogger('storage')
@@ -68,49 +69,10 @@ def main(ctx, database_connection, database_dir, ncores, log_level):
 
     coloredlogs.install(level=log_level, fmt=log_format, logger=logger)
 
-    logger.info(f'Connecting to database {database_connection}')
-    database = DatabaseConnection(database_connection)
-    filesystem_storage = FilesystemStorage(Path(database_dir))
+    data_index_connection = DataIndexConnection.connect(database_connection=database_connection,
+                                                        database_dir=database_dir)
 
-    logger.info(f'Use database directory {database_dir}')
-    reference_service = ReferenceService(database, filesystem_storage.reference_dir)
-
-    sample_service = SampleService(database)
-    variation_service = VariationService(database_connection=database,
-                                         variation_dir=filesystem_storage.variation_dir,
-                                         reference_service=reference_service,
-                                         sample_service=sample_service)
-    alignment_service = CoreAlignmentService(database=database,
-                                             reference_service=reference_service,
-                                             sample_service=sample_service,
-                                             variation_service=variation_service)
-    tree_service = TreeService(database, reference_service, alignment_service)
-    mutation_query_service = MutationQueryService(reference_service=reference_service,
-                                                  sample_service=sample_service,
-                                                  tree_service=tree_service)
-
-    kmer_service = KmerService(database_connection=database,
-                               sample_service=sample_service)
-
-    kmer_query_service = KmerQueryService(sample_service=sample_service)
-
-    mlst_service = MLSTService(database_connection=database, sample_service=sample_service,
-                               mlst_dir=filesystem_storage.mlst_dir)
-    mlst_query_service = MLSTQueryService(sample_service=sample_service,
-                                          mlst_service=mlst_service)
-
-    ctx.obj['database'] = database
-    ctx.obj['filesystem_storage'] = filesystem_storage
-    ctx.obj['kmer_service'] = kmer_service
-    ctx.obj['reference_service'] = reference_service
-    ctx.obj['variation_service'] = variation_service
-    ctx.obj['alignment_service'] = alignment_service
-    ctx.obj['tree_service'] = tree_service
-    ctx.obj['sample_service'] = sample_service
-    ctx.obj['mutation_query_service'] = mutation_query_service
-    ctx.obj['mlst_service'] = mlst_service
-    ctx.obj['mlst_query_service'] = mlst_query_service
-    ctx.obj['kmer_query_service'] = kmer_query_service
+    ctx.obj['data_index_connection'] = data_index_connection
     ctx.obj['ncores'] = ncores
 
 
@@ -122,10 +84,10 @@ def load(ctx):
 
 def load_variants_common(ctx, data_package: NucleotideSampleDataPackage, reference_file, input, build_tree, align_type,
                          extra_tree_params: str):
-    reference_service = ctx.obj['reference_service']
-    variation_service = cast(VariationService, ctx.obj['variation_service'])
-    sample_service = cast(SampleService, ctx.obj['sample_service'])
-    tree_service = ctx.obj['tree_service']
+    reference_service = ctx.obj['data_index_connection'].reference_service
+    variation_service = cast(VariationService, ctx.obj['data_index_connection'].variation_service)
+    sample_service = cast(SampleService, ctx.obj['data_index_connection'].sample_service)
+    tree_service = ctx.obj['data_index_connection'].tree_service
     ncores = ctx.obj['ncores']
 
     try:
@@ -230,8 +192,8 @@ def load_vcf(ctx, vcf_fofns: Path, reference_file: Path, build_tree: bool, align
 @click.option('--kmer-size', help='Kmer size for indexing. List multiple for multiple kmer sizes in an index',
               default=[31], multiple=True, type=click.IntRange(min=1, max=201))
 def load_kmer(ctx, kmer_fofns, kmer_size):
-    filesystem_storage = ctx.obj['filesystem_storage']
-    kmer_service = ctx.obj['kmer_service']
+    filesystem_storage = ctx.obj['data_index_connection'].filesystem_storage
+    kmer_service = ctx.obj['data_index_connection'].kmer_service
 
     if not isinstance(kmer_size, list):
         kmer_size = list(kmer_size)
@@ -273,7 +235,7 @@ def load_kmer(ctx, kmer_fofns, kmer_size):
 @click.option('--scheme-name', help='Override scheme name found in MLST file',
               default=FeatureService.AUTO_SCOPE, type=str)
 def load_mlst_tseemann(ctx, mlst_file: List[Path], scheme_name: str):
-    mlst_service = cast(MLSTService, ctx.obj['mlst_service'])
+    mlst_service = cast(MLSTService, ctx.obj['data_index_connection'].mlst_service)
     for file in mlst_file:
         click.echo(f'Loading MLST results from {str(file)}')
         data_package = MLSTSampleDataPackage(MLSTTSeemannFeaturesReader(mlst_file=file))
@@ -286,7 +248,7 @@ def load_mlst_tseemann(ctx, mlst_file: List[Path], scheme_name: str):
 @click.option('--scheme-name', help='Override scheme name found in SISTR MLST file',
               default=FeatureService.AUTO_SCOPE, type=str)
 def load_mlst_sistr(ctx, mlst_file: List[Path], scheme_name: str):
-    mlst_service = cast(MLSTService, ctx.obj['mlst_service'])
+    mlst_service = cast(MLSTService, ctx.obj['data_index_connection'].mlst_service)
     for file in mlst_file:
         click.echo(f'Loading cgMLST results from {str(file)}')
         data_package = MLSTSampleDataPackage(MLSTSistrReader(mlst_file=file))
@@ -299,7 +261,7 @@ def load_mlst_sistr(ctx, mlst_file: List[Path], scheme_name: str):
 @click.option('--scheme-name', help='Set scheme name',
               required=True, type=str)
 def load_mlst_sistr(ctx, mlst_file: List[Path], scheme_name: str):
-    mlst_service = cast(MLSTService, ctx.obj['mlst_service'])
+    mlst_service = cast(MLSTService, ctx.obj['data_index_connection'].mlst_service)
     for file in mlst_file:
         click.echo(f'Loading MLST results from [{str(file)}] under scheme [{scheme_name}]')
         data_package = MLSTSampleDataPackage(MLSTChewbbacaReader(mlst_file=file, scheme=scheme_name))
@@ -315,14 +277,14 @@ def list_data(ctx):
 @list_data.command(name='genomes')
 @click.pass_context
 def list_genomes(ctx):
-    items = [genome.name for genome in ctx.obj['reference_service'].get_reference_genomes()]
+    items = [genome.name for genome in ctx.obj['data_index_connection'].reference_service.get_reference_genomes()]
     click.echo('\n'.join(items))
 
 
 @list_data.command(name='samples')
 @click.pass_context
 def list_samples(ctx):
-    items = [sample.name for sample in ctx.obj['sample_service'].get_samples()]
+    items = [sample.name for sample in ctx.obj['data_index_connection'].sample_service.get_samples()]
     click.echo('\n'.join(items))
 
 
@@ -341,7 +303,7 @@ def export_tree(ctx, name: List[str], ascii: bool):
         logger.warning('No reference genome names passed, will not export tree')
 
     for ref_name in name:
-        reference = ctx.obj['reference_service'].find_reference_genome(ref_name)
+        reference = ctx.obj['data_index_connection'].reference_service.find_reference_genome(ref_name)
         if ascii:
             click.echo(str(reference.tree))
         else:
@@ -363,9 +325,9 @@ def build(ctx):
 @click.option('--sample', help='Sample to include in alignment (can list more than one).',
               multiple=True, type=str)
 def alignment(ctx, output_file: Path, reference_name: str, align_type: str, sample: List[str]):
-    alignment_service = ctx.obj['alignment_service']
-    reference_service = ctx.obj['reference_service']
-    sample_service = ctx.obj['sample_service']
+    alignment_service = ctx.obj['data_index_connection'].alignment_service
+    reference_service = ctx.obj['data_index_connection'].reference_service
+    sample_service = ctx.obj['data_index_connection'].sample_service
 
     if not reference_service.exists_reference_genome(reference_name):
         logger.error(f'Reference genome [{reference_name}] does not exist')
@@ -401,10 +363,10 @@ def alignment(ctx, output_file: Path, reference_name: str, align_type: str, samp
               default=None)
 def tree(ctx, output_file: Path, reference_name: str, align_type: str,
          tree_build_type: str, sample: List[str], extra_params: str):
-    alignment_service = ctx.obj['alignment_service']
-    tree_service = ctx.obj['tree_service']
-    reference_service = ctx.obj['reference_service']
-    sample_service = ctx.obj['sample_service']
+    alignment_service = ctx.obj['data_index_connection'].alignment_service
+    tree_service = ctx.obj['data_index_connection'].tree_service
+    reference_service = ctx.obj['data_index_connection'].reference_service
+    sample_service = ctx.obj['data_index_connection'].sample_service
     ncores = ctx.obj['ncores']
 
     if not reference_service.exists_reference_genome(reference_name):
@@ -451,8 +413,8 @@ def rebuild(ctx):
 @click.option('--extra-params', help='Extra parameters to tree-building software',
               default=None)
 def rebuild_tree(ctx, reference: List[str], align_type: str, extra_params: str):
-    tree_service = ctx.obj['tree_service']
-    reference_service = ctx.obj['reference_service']
+    tree_service = ctx.obj['data_index_connection'].tree_service
+    reference_service = ctx.obj['data_index_connection'].reference_service
     ncores = ctx.obj['ncores']
 
     if len(reference) == 0:
@@ -484,7 +446,7 @@ def query(ctx):
 @click.pass_context
 @click.argument('name', nargs=-1)
 def query_sample_mutation(ctx, name: List[str]):
-    mutation_query_service = ctx.obj['mutation_query_service']
+    mutation_query_service = ctx.obj['data_index_connection'].mutation_query_service
     match_df = mutation_query_service.find_matches(samples=name)
     match_df.to_csv(sys.stdout, sep='\t', index=False, float_format='%0.4g', na_rep='-')
 
@@ -493,7 +455,7 @@ def query_sample_mutation(ctx, name: List[str]):
 @click.pass_context
 @click.argument('name', nargs=-1)
 def query_sample_kmer(ctx, name: List[str]):
-    kmer_query_service = ctx.obj['kmer_query_service']
+    kmer_query_service = ctx.obj['data_index_connection'].kmer_query_service
     match_df = kmer_query_service.find_matches(samples=name)
     match_df.to_csv(sys.stdout, sep='\t', index=False, float_format='%0.4g', na_rep='-')
 
@@ -506,7 +468,7 @@ def query_sample_kmer(ctx, name: List[str]):
               required=False)
 @click.option('--summarize/--no-summarize', help='Print summary information on query')
 def query_mutation(ctx, name: List[str], include_unknown: bool, summarize: bool):
-    mutation_query_service = ctx.obj['mutation_query_service']
+    mutation_query_service = ctx.obj['data_index_connection'].mutation_query_service
 
     features = [QueryFeatureMutation(n) for n in name]
     if not summarize:
@@ -525,7 +487,7 @@ def query_mutation(ctx, name: List[str], include_unknown: bool, summarize: bool)
               required=False)
 @click.option('--summarize/--no-summarize', help='Print summary information on query')
 def query_mlst(ctx, name: List[str], include_unknown: bool, summarize: bool):
-    mlst_query_service = ctx.obj['mlst_query_service']
+    mlst_query_service = ctx.obj['data_index_connection'].mlst_query_service
 
     features = [QueryFeatureMLST(n) for n in name]
     if not summarize:
@@ -548,38 +510,5 @@ def db(ctx):
 @click.option('--mb', help='Print in MB', is_flag=True)
 @click.option('--gb', help='Print in GB', is_flag=True)
 def db_size(ctx, kb, mb, gb):
-    database = ctx.obj['database']
-    filesystem_storage = ctx.obj['filesystem_storage']
-
-    factor = 1
-    unit = 'B'
-    if kb:
-        factor = 1024
-        unit = 'KB'
-    elif mb:
-        factor = 1024 ** 2
-        unit = 'MB'
-    elif gb:
-        factor = 1024 ** 3
-        unit = 'GB'
-
-    filesystem_df = filesystem_storage.get_storage_size()
-    database_df = database.get_database_size()
-
-    size_df = pd.concat([filesystem_df, database_df])
-    total_data_size = size_df['Data Size'].sum()
-    total_index_size = size_df['Index Size'].sum()
-    total_items = size_df['Number of Items'].sum()
-    total_row = pd.DataFrame([['Total', pd.NA, pd.NA, total_data_size, total_index_size, total_items]],
-                             columns=['Type', 'Name', 'Division', 'Data Size', 'Index Size', 'Number of Items'])
-    size_df = pd.concat([size_df, total_row])
-
-    # Reorder columns
-    size_df = size_df[['Type', 'Name', 'Division', 'Data Size', 'Index Size', 'Number of Items']]
-
-    size_df['Data Size'] = size_df['Data Size'] / factor
-    size_df['Index Size'] = size_df['Index Size'] / factor
-    size_df = size_df.rename({'Data Size': f'Data Size ({unit})',
-                              'Index Size': f'Index Size ({unit})'}, axis='columns')
-
+    size_df = ctx.obj['data_index_connection'].db_size()
     size_df.to_csv(sys.stdout, sep='\t', index=False, float_format='%0.2f', na_rep='-')

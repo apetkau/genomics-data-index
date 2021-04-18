@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
+import pandas as pd
 
 from storage.FilesystemStorage import FilesystemStorage
 from storage.variant.service import DatabaseConnection
@@ -25,7 +26,8 @@ class DataIndexConnection:
                  variation_service: VariationService, alignment_service: CoreAlignmentService,
                  tree_service: TreeService, mutation_query_service: MutationQueryService,
                  kmer_service: KmerService, kmer_query_service: KmerQueryService,
-                 mlst_service: MLSTService, mlst_query_service: MLSTQueryService):
+                 mlst_service: MLSTService, mlst_query_service: MLSTQueryService,
+                 filesystem_storage: FilesystemStorage, database_connection: DatabaseConnection):
         self._reference_service = reference_service
         self._sample_service = sample_service
         self._variation_service = variation_service
@@ -36,6 +38,8 @@ class DataIndexConnection:
         self._kmer_query_service = kmer_query_service
         self._mlst_service = mlst_service
         self._mlst_query_service = mlst_query_service
+        self._filesystem_storage = filesystem_storage
+        self._database_connection = database_connection
 
     @property
     def reference_service(self):
@@ -77,9 +81,45 @@ class DataIndexConnection:
     def mlst_query_service(self):
         return self._mlst_query_service
 
+    @property
+    def filesystem_storage(self):
+        return self._filesystem_storage
+
+    def db_size(self, unit: str = 'B') -> pd.DataFrame:
+        if unit == 'B':
+            factor = 1
+        elif unit == 'KB':
+            factor = 1024
+        elif unit == 'MB':
+            factor = 1024 ** 2
+        elif unit == 'GB':
+            factor = 1024 ** 3
+        else:
+            raise Exception(f'Unknown unit=[{unit}]')
+
+        filesystem_df = self.filesystem_storage.get_storage_size()
+        database_df = self._database_connection.get_database_size()
+
+        size_df = pd.concat([filesystem_df, database_df])
+        total_data_size = size_df['Data Size'].sum()
+        total_index_size = size_df['Index Size'].sum()
+        total_items = size_df['Number of Items'].sum()
+        total_row = pd.DataFrame([['Total', pd.NA, pd.NA, total_data_size, total_index_size, total_items]],
+                                 columns=['Type', 'Name', 'Division', 'Data Size', 'Index Size', 'Number of Items'])
+        size_df = pd.concat([size_df, total_row])
+
+        # Reorder columns
+        size_df = size_df[['Type', 'Name', 'Division', 'Data Size', 'Index Size', 'Number of Items']]
+
+        size_df['Data Size'] = size_df['Data Size'] / factor
+        size_df['Index Size'] = size_df['Index Size'] / factor
+        size_df = size_df.rename({'Data Size': f'Data Size ({unit})',
+                                  'Index Size': f'Index Size ({unit})'}, axis='columns')
+        return size_df
+
     @classmethod
     def connect(cls, database_connection: str, database_dir: Path) -> DataIndexConnection:
-        logger.debug(f'Connecting to database {database_connection}')
+        logger.info(f'Connecting to database {database_connection}')
         database = DatabaseConnection(database_connection)
         filesystem_storage = FilesystemStorage(Path(database_dir))
 
@@ -116,4 +156,5 @@ class DataIndexConnection:
                                    variation_service=variation_service, alignment_service=alignment_service,
                                    tree_service=tree_service, mutation_query_service=mutation_query_service,
                                    kmer_service=kmer_service, kmer_query_service=kmer_query_service,
-                                   mlst_service=mlst_service, mlst_query_service=mlst_query_service)
+                                   mlst_service=mlst_service, mlst_query_service=mlst_query_service,
+                                   filesystem_storage=filesystem_storage, database_connection=database)
