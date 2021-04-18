@@ -1,8 +1,8 @@
+import re
 from os import path, listdir
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import List, Dict, cast
-import re
 
 import pytest
 

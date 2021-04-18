@@ -1,4 +1,4 @@
-from typing import List, Dict, Set, Union
+from typing import List, Dict, Set, Union, cast
 
 from storage.variant.SampleSet import SampleSet
 from storage.variant.model.NucleotideMutationTranslater import NucleotideMutationTranslater
@@ -77,6 +77,11 @@ class SampleService:
     def get_samples(self) -> List[Sample]:
         return self._connection.get_session().query(Sample).all()
 
+    def get_existing_samples_by_names(self, sample_names: List[str]) -> List[Sample]:
+        return self._connection.get_session().query(Sample) \
+            .filter(Sample.name.in_(sample_names)) \
+            .all()
+
     def which_exists(self, sample_names: List[str]) -> List[str]:
         """
         Returns which of the given samples exist in the database.
@@ -141,10 +146,12 @@ class SampleService:
         feature_type = self._get_feature_type(features)
 
         if feature_type == 'QueryFeatureMutation':
+            features = cast(List[QueryFeatureMutation], features)
             variants_dict = self._get_variants_samples_by_variation_features(features)
 
             return {id: self.find_samples_by_ids(variants_dict[id].sample_ids) for id in variants_dict}
         elif feature_type == 'QueryFeatureMLST':
+            features = cast(List[QueryFeatureMLST], features)
             mlst_alleles = self._get_mlst_samples_by_mlst_features(features)
 
             return {a.sla: self.find_samples_by_ids(a.sample_ids) for a in mlst_alleles}

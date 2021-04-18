@@ -72,6 +72,42 @@ def test_get_samples_empty(sample_service):
     assert [] == sample_service.get_samples()
 
 
+def test_get_existing_samples_by_names_all(sample_service, variation_service):
+    samples = sample_service.get_existing_samples_by_names(['SampleA', 'SampleB', 'SampleC'])
+    assert 3 == len(samples)
+    assert {'SampleA', 'SampleB', 'SampleC'} == {s.name for s in samples}
+
+
+def test_get_existing_samples_by_names_two(sample_service, variation_service):
+    samples = sample_service.get_existing_samples_by_names(['SampleA', 'SampleC'])
+    assert 2 == len(samples)
+    assert {'SampleA', 'SampleC'} == {s.name for s in samples}
+
+
+def test_get_existing_samples_by_names_one(sample_service, variation_service):
+    samples = sample_service.get_existing_samples_by_names(['SampleC'])
+    assert 1 == len(samples)
+    assert {'SampleC'} == {s.name for s in samples}
+
+
+def test_get_existing_samples_by_names_none(sample_service, variation_service):
+    samples = sample_service.get_existing_samples_by_names([])
+    assert 0 == len(samples)
+    assert set() == {s.name for s in samples}
+
+
+def test_get_existing_samples_by_names_sample_not_exist(sample_service, variation_service):
+    samples = sample_service.get_existing_samples_by_names(['SampleA', 'NotFound', 'SampleC'])
+    assert 2 == len(samples)
+    assert {'SampleA', 'SampleC'} == {s.name for s in samples}
+
+
+def test_get_existing_samples_by_names_sample_not_exis2t(sample_service, variation_service):
+    samples = sample_service.get_existing_samples_by_names(['SampleA', 'NotFound', 'SampleC', 'NotFound2'])
+    assert 2 == len(samples)
+    assert {'SampleA', 'SampleC'} == {s.name for s in samples}
+
+
 def test_find_samples_by_ids(sample_service, variation_service):
     sample_name_ids = sample_service.find_sample_name_ids(['SampleA', 'SampleB', 'SampleC'])
     sample_set = SampleSet(sample_ids=[sample_name_ids['SampleA']])
