@@ -85,6 +85,16 @@ class FeatureService(abc.ABC):
         else:
             return Sample(name=sample_name)
 
+    def _get_or_create_samples(self, sample_names: List[str]) -> Dict[str, Sample]:
+        existing_samples = self._sample_service.get_existing_samples_by_names(sample_names)
+        samples_dict = {sample.name: sample for sample in existing_samples}
+
+        for name in sample_names:
+            if name not in samples_dict:
+                samples_dict[name] = Sample(name=name)
+
+        return samples_dict
+
     def _verify_correct_feature_scope(self, feature_scope_name: str) -> None:
         if feature_scope_name is None:
             raise Exception('feature_scope_name cannot be None')
@@ -104,29 +114,50 @@ class FeatureService(abc.ABC):
             raise EntityExistsError(f'Passed samples already have features for feature scope [{feature_scope_name}], '
                                     f'will not insert any new features')
 
-        interval = min(200, max(1, int(num_samples / 50)))
+        batch_size = min(200, max(1, int(num_samples / 50)))
         processed_samples = 0
         persisted_sample_data_dict = {}
-        self.progress_hook(processed_samples, print_every=interval, total=num_samples)
+        self.progress_hook(processed_samples, print_every=batch_size, total=num_samples)
+        sample_data_batch = {}
         for sample_data in data_package.iter_sample_data():
-            logger.debug(f'Loading sample {sample_data.sample_name}')
+            sample_data_batch[sample_data.sample_name] = sample_data
 
-            sample = self._get_or_create_sample(sample_data.sample_name)
-            persisted_sample_data = self._persist_sample_data(sample_data)
-            sample_feature_object = self.build_sample_feature_object(sample=sample, sample_data=persisted_sample_data,
-                                                                     feature_scope_name=feature_scope_name)
+            if len(sample_data_batch) >= batch_size:
+                persisted_sample_data = self._handle_batch(sample_data_batch, feature_scope_name)
+                persisted_sample_data_dict.update(persisted_sample_data)
+                processed_samples += len(sample_data_batch)
+                self.progress_hook(processed_samples, print_every=batch_size, total=num_samples)
 
-            persisted_sample_data_dict[persisted_sample_data.sample_name] = persisted_sample_data
-            self._connection.get_session().add(sample_feature_object)
+                sample_data_batch = {}
 
-            processed_samples += 1
-            self.progress_hook(processed_samples, print_every=interval, total=num_samples)
+        if len(sample_data_batch) > 0:
+            persisted_sample_data = self._handle_batch(sample_data_batch, feature_scope_name)
+            persisted_sample_data_dict.update(persisted_sample_data)
+            processed_samples += len(sample_data_batch)
+            self.progress_hook(processed_samples, print_every=batch_size, total=num_samples)
+
         self._connection.get_session().commit()
         logger.info(f'Finished processings {num_samples} samples')
 
         persisted_features_reader = self._create_persisted_features_reader(sample_data_dict=persisted_sample_data_dict,
                                                                            data_package=data_package)
         self.index_features(features_reader=persisted_features_reader, feature_scope_name=feature_scope_name)
+
+    def _handle_batch(self, sample_data_batch: Dict[str, SampleData], feature_scope_name: str) -> Dict[str, SampleData]:
+        samples_dict = self._get_or_create_samples(list(sample_data_batch.keys()))
+        persisted_sample_data_dict = {}
+        for sample_name in samples_dict:
+            logger.debug(f'Persisting sample {sample_name}')
+
+            sample = samples_dict[sample_name]
+            persisted_sample_data = self._persist_sample_data(sample_data_batch[sample.name])
+            sample_feature_object = self.build_sample_feature_object(sample=sample, sample_data=persisted_sample_data,
+                                                                     feature_scope_name=feature_scope_name)
+
+            persisted_sample_data_dict[persisted_sample_data.sample_name] = persisted_sample_data
+            self._connection.get_session().add(sample_feature_object)
+
+        return persisted_sample_data_dict
 
     def _update_scope(self, features_df: pd.DataFrame, feature_scope_name: str) -> pd.DataFrame:
         return features_df
