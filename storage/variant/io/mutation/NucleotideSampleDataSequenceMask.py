@@ -22,12 +22,12 @@ class NucleotideSampleDataSequenceMask(NucleotideSampleData):
 
     def _preprocess_mask(self, output_dir: Path) -> Path:
         if self._sample_mask_sequence is None:
-            mask_file = output_dir / f'{self.sample_name}.bed.gz'
+            mask_file = output_dir / f'{self.sample_name_persistence}.bed.gz'
             mask = MaskedGenomicRegions.empty_mask()
             mask.write(mask_file)
             return mask_file
         else:
-            new_file = output_dir / f'{self.sample_name}.bed.gz'
+            new_file = output_dir / f'{self.sample_name_persistence}.bed.gz'
             if new_file.exists():
                 raise Exception(f'File {new_file} already exists')
 

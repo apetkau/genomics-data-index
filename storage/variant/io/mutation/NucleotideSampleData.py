@@ -23,7 +23,7 @@ class NucleotideSampleData(SampleData):
 
     def _preprocess_mask(self, output_dir: Path) -> Path:
         if self._mask_bed_file is None:
-            mask_file = output_dir / f'{self.sample_name}.bed.gz'
+            mask_file = output_dir / f'{self.sample_name_persistence}.bed.gz'
             self._assert_file_not_exists(mask_file, 'Cannot preprocess data')
             mask = MaskedGenomicRegions.empty_mask()
             mask.write(mask_file)
@@ -31,7 +31,7 @@ class NucleotideSampleData(SampleData):
         return self._mask_bed_file
 
     def _preprocess_vcf(self, output_dir: Path) -> Tuple[Path, Path]:
-        new_file = output_dir / f'{self.sample_name}.vcf.gz'
+        new_file = output_dir / f'{self.sample_name_persistence}.vcf.gz'
         self._assert_file_not_exists(new_file, 'Cannot preprocess data')
         return VariationFile(self._vcf_file).write(new_file)
 

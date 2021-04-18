@@ -1,4 +1,5 @@
 from __future__ import annotations
+import uuid
 
 import abc
 import logging
@@ -6,15 +7,26 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
+persistence_namespace = uuid.UUID('260bb0a7-6573-4282-bcdb-f4008aa42af8')
+
+
+def generate_sample_persistence_name(sample_name: str) -> str:
+    return uuid.uuid3(namespace=persistence_namespace, name=sample_name).hex
+
 
 class SampleData(abc.ABC):
 
     def __init__(self, sample_name: str):
         self._name = sample_name
+        self._sample_name_persistence = generate_sample_persistence_name(sample_name)
 
     @property
     def sample_name(self) -> str:
         return self._name
+
+    @property
+    def sample_name_persistence(self) -> str:
+        return self._sample_name_persistence
 
     @abc.abstractmethod
     def is_preprocessed(self) -> bool:

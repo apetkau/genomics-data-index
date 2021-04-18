@@ -146,7 +146,6 @@ def test_get_variants_table_empty(variants_reader_empty):
 def test_get_or_create_feature_file(variants_reader):
     file = variants_reader.get_or_create_feature_file('SampleA')
     assert file.exists()
-    assert 'SampleA' in str(file)
 
 
 def test_snippy_read_vcf(variants_reader_from_snippy):

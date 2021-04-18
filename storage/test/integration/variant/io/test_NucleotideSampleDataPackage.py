@@ -2,6 +2,7 @@ from os import path, listdir
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import List, Dict, cast
+import re
 
 import pytest
 
@@ -62,12 +63,38 @@ def test_iter_sample_data(sample_dirs):
         mask = sample_data.get_mask()
         assert 437 == len(mask)
         assert {'reference'} == mask.sequence_names()
-        assert sample_data.get_mask_file().parent == tmp_file
+        mask_file = sample_data.get_mask_file()
+        assert mask_file.parent == tmp_file
         vcf_file, vcf_index = sample_data.get_vcf_file()
         assert vcf_file.exists()
         assert vcf_index.exists()
         assert vcf_file.parent == tmp_file
         assert vcf_index.parent == tmp_file
+
+
+def test_persisted_sample_data_file_names(sample_dirs):
+    def split_all_ext(file: Path) -> str:
+        return file.name.split('.')[0]
+
+    with TemporaryDirectory() as tmp_file_str:
+        tmp_file = Path(tmp_file_str)
+        vcf_masks = vcf_and_mask_files(sample_dirs)
+        file_processor = SerialSampleFilesProcessor(tmp_file)
+        data_package = NucleotideSampleDataPackage.create_from_sequence_masks(sample_vcf_map=vcf_masks['vcfs'],
+                                                                              masked_genomic_files_map=vcf_masks[
+                                                                                  'masks'],
+                                                                              sample_files_processor=file_processor)
+
+        processed_files_dict = data_package.process_all_data()
+        sample_data = cast(NucleotideSampleData, processed_files_dict['SampleA'])
+        mask_file = sample_data.get_mask_file()
+        vcf_file, vcf_index = sample_data.get_vcf_file()
+
+        assert sample_data.sample_name_persistence == split_all_ext(mask_file)
+        assert sample_data.sample_name_persistence == split_all_ext(vcf_file)
+        assert sample_data.sample_name_persistence == split_all_ext(vcf_index)
+        assert 32 == len(sample_data.sample_name_persistence)
+        assert bool(re.match(r'^[0-9a-f]*$', sample_data.sample_name_persistence))
 
 
 def test_with_serial_sample_files_processor(sample_dirs):
