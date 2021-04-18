@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from typing import Generator, List
 
 from storage.variant.io.SampleData import SampleData
