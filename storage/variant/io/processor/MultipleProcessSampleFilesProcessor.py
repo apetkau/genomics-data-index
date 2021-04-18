@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 class MultipleProcessSampleFilesProcessor(SampleFilesProcessor):
 
-    def __init__(self, preprocess_dir: Path, processing_cores: int, max_chunk_size=1000):
+    def __init__(self, preprocess_dir: Path, processing_cores: int, max_chunk_size=25):
         super().__init__()
         self._preprocess_dir = preprocess_dir
         self._processing_cores = processing_cores
@@ -26,9 +26,9 @@ class MultipleProcessSampleFilesProcessor(SampleFilesProcessor):
 
     def process(self, sample_data: List[SampleData]) -> Generator[SampleData, None, None]:
         number_samples = len(sample_data)
-        logger.debug(f'Starting preprocessing {number_samples} samples '
-                     f'with {self._processing_cores} cores')
         chunk_size = self._get_chunk_size(number_samples)
+        logger.debug(f'Starting preprocessing {number_samples} samples '
+                     f'with {self._processing_cores} cores and chunk size {chunk_size}')
         with mp.Pool(self._processing_cores) as pool:
             processed_sample_filed = pool.imap_unordered(self.handle_single_file,
                                                          sample_data,

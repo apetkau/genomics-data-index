@@ -104,11 +104,11 @@ class FeatureService(abc.ABC):
             raise EntityExistsError(f'Passed samples already have features for feature scope [{feature_scope_name}], '
                                     f'will not insert any new features')
 
-        interval = min(1000, max(1, int(num_samples / 50)))
+        interval = min(200, max(1, int(num_samples / 50)))
         processed_samples = 0
         persisted_sample_data_dict = {}
+        self.progress_hook(processed_samples, print_every=interval, total=num_samples)
         for sample_data in data_package.iter_sample_data():
-            self.progress_hook(processed_samples, print_every=interval, total=num_samples)
             logger.debug(f'Loading sample {sample_data.sample_name}')
 
             sample = self._get_or_create_sample(sample_data.sample_name)
@@ -118,7 +118,9 @@ class FeatureService(abc.ABC):
 
             persisted_sample_data_dict[persisted_sample_data.sample_name] = persisted_sample_data
             self._connection.get_session().add(sample_feature_object)
+
             processed_samples += 1
+            self.progress_hook(processed_samples, print_every=interval, total=num_samples)
         self._connection.get_session().commit()
         logger.info(f'Finished processings {num_samples} samples')
 
