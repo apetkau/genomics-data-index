@@ -5,7 +5,7 @@ from storage.variant.service import EntityExistsError
 from storage.variant.service.MLSTService import MLSTService
 
 
-def test_insert_mlst_results(database, mlst_reader_single_scheme, sample_service, filesystem_storage):
+def test_insert_mlst_results(database, mlst_data_package_single_scheme, sample_service, filesystem_storage):
     num_loci = 7
 
     mlst_service = MLSTService(database_connection=database,
@@ -14,7 +14,7 @@ def test_insert_mlst_results(database, mlst_reader_single_scheme, sample_service
 
     session = database.get_session()
 
-    mlst_service.insert(feature_scope_name='lmonocytogenes', features_reader=mlst_reader_single_scheme)
+    mlst_service.insert(feature_scope_name='lmonocytogenes', data_package=mlst_data_package_single_scheme)
 
     samples = session.query(Sample).all()
 
@@ -35,7 +35,7 @@ def test_insert_mlst_results(database, mlst_reader_single_scheme, sample_service
     assert 2 == len(mlst_alleles_samples_id_allele['lmonocytogenes:abcZ:1'].sample_ids)
 
 
-def test_insert_mlst_results_multiple_schemes(database, mlst_reader_basic, sample_service, filesystem_storage):
+def test_insert_mlst_results_multiple_schemes(database, mlst_data_package_basic, sample_service, filesystem_storage):
     num_loci = 7
     num_schemes = 3
 
@@ -45,7 +45,7 @@ def test_insert_mlst_results_multiple_schemes(database, mlst_reader_basic, sampl
 
     session = database.get_session()
 
-    mlst_service.insert(features_reader=mlst_reader_basic)
+    mlst_service.insert(data_package=mlst_data_package_basic)
 
     samples = session.query(Sample).all()
 
@@ -73,7 +73,7 @@ def test_insert_mlst_results_multiple_schemes(database, mlst_reader_basic, sampl
             'lmonocytogenes:lhkA:4', 'lmonocytogenes:lhkA:5'} == mlst_alleles_id_lmono
 
 
-def test_insert_mlst_results_multiple_schemes_override_scheme(database, mlst_reader_basic,
+def test_insert_mlst_results_multiple_schemes_override_scheme(database, mlst_data_package_basic,
                                                               sample_service, filesystem_storage):
     num_loci = 7
     num_alt_schemes = 3
@@ -84,7 +84,7 @@ def test_insert_mlst_results_multiple_schemes_override_scheme(database, mlst_rea
 
     session = database.get_session()
 
-    mlst_service.insert(feature_scope_name='lmonocytogenes', features_reader=mlst_reader_basic)
+    mlst_service.insert(feature_scope_name='lmonocytogenes', data_package=mlst_data_package_basic)
 
     sample_mlst_alleles = session.query(SampleMLSTAlleles).all()
     assert 6 == len(sample_mlst_alleles)
@@ -97,14 +97,14 @@ def test_insert_mlst_results_multiple_schemes_override_scheme(database, mlst_rea
     assert 2 == len(mlst_alleles_samples_id_allele['lmonocytogenes:fumC:23'].sample_ids)
 
 
-def test_double_insert_mlst(database, mlst_reader_single_scheme, sample_service, filesystem_storage):
+def test_double_insert_mlst(database, mlst_data_package_single_scheme, sample_service, filesystem_storage):
     mlst_service = MLSTService(database_connection=database,
                                sample_service=sample_service,
                                mlst_dir=filesystem_storage.mlst_dir)
 
     session = database.get_session()
 
-    mlst_service.insert(feature_scope_name='lmonocytogenes', features_reader=mlst_reader_single_scheme)
+    mlst_service.insert(feature_scope_name='lmonocytogenes', data_package=mlst_data_package_single_scheme)
 
     samples = session.query(Sample).all()
 
@@ -115,7 +115,7 @@ def test_double_insert_mlst(database, mlst_reader_single_scheme, sample_service,
     assert 2 == len(sample_mlst_alleles)
 
     with pytest.raises(EntityExistsError) as execinfo:
-        mlst_service.insert(feature_scope_name='lmonocytogenes', features_reader=mlst_reader_single_scheme)
+        mlst_service.insert(feature_scope_name='lmonocytogenes', data_package=mlst_data_package_single_scheme)
 
     assert 'Passed samples already have features for feature scope [lmonocytogenes]' in str(execinfo.value)
 

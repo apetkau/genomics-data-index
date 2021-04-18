@@ -7,7 +7,7 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 
-class SampleFiles(abc.ABC):
+class SampleData(abc.ABC):
 
     def __init__(self, sample_name: str):
         self._name = sample_name
@@ -20,10 +20,10 @@ class SampleFiles(abc.ABC):
     def is_preprocessed(self) -> bool:
         pass
 
-    def preprocess(self, output_dir: Path) -> SampleFiles:
+    def preprocess(self, output_dir: Path) -> SampleData:
         return self.persist(output_dir)
 
-    def persist(self, output_dir: Path) -> SampleFiles:
+    def persist(self, output_dir: Path) -> SampleData:
         if not self.is_preprocessed():
             logger.debug(f'Processing sample [{self.sample_name}] and saving to [{output_dir}]')
             return self._do_preprocess_and_persist(output_dir)
@@ -31,9 +31,9 @@ class SampleFiles(abc.ABC):
             return self._do_persist(output_dir)
 
     @abc.abstractmethod
-    def _do_preprocess_and_persist(self, output_dir: Path) -> SampleFiles:
+    def _do_preprocess_and_persist(self, output_dir: Path) -> SampleData:
         pass
 
     @abc.abstractmethod
-    def _do_persist(self, output_dir: Path) -> SampleFiles:
+    def _do_persist(self, output_dir: Path) -> SampleData:
         pass

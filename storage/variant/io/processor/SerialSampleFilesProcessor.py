@@ -1,8 +1,8 @@
 import logging
 from pathlib import Path
-from typing import Dict
+from typing import Generator, List
 
-from storage.variant.io.SampleFiles import SampleFiles
+from storage.variant.io.SampleData import SampleData
 from storage.variant.io.SampleFilesProcessor import SampleFilesProcessor
 
 logger = logging.getLogger(__name__)
@@ -14,10 +14,7 @@ class SerialSampleFilesProcessor(SampleFilesProcessor):
         super().__init__()
         self._preprocess_dir = preprocess_dir
 
-    def preprocess_files(self) -> Dict[str, SampleFiles]:
-        processed_files = {}
-        for sample_files in self.sample_files_list():
+    def process(self, sample_data: List[SampleData]) -> Generator[SampleData, None, None]:
+        for sample_files in sample_data:
             logger.debug(f'Pre-processing files for sample [{sample_files.sample_name}]')
-            processed_files[sample_files.sample_name] = sample_files.persist(self._preprocess_dir)
-
-        return processed_files
+            yield sample_files.persist(self._preprocess_dir)

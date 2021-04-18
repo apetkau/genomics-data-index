@@ -3,7 +3,7 @@ from typing import List, Set, Optional
 
 import pandas as pd
 
-from storage.variant.io.SampleFiles import SampleFiles
+from storage.variant.io.SampleData import SampleData
 
 
 class FeaturesReader(abc.ABC):
@@ -28,7 +28,7 @@ class FeaturesReader(abc.ABC):
         return features_df
 
     @abc.abstractmethod
-    def get_sample_files(self, sample_name: str) -> Optional[SampleFiles]:
+    def get_sample_files(self, sample_name: str) -> Optional[SampleData]:
         pass
 
     @abc.abstractmethod

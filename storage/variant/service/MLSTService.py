@@ -1,17 +1,19 @@
 import logging
 from pathlib import Path
-from typing import Dict, Set, Any, Tuple, cast, List
+from typing import Dict, Set, Any, Tuple, cast
 
 import pandas as pd
 
 from storage.variant.SampleSet import SampleSet
 from storage.variant.io.FeaturesReader import FeaturesReader
-from storage.variant.io.mlst.MLSTFeaturesReader import MLSTFeaturesReader
+from storage.variant.io.SampleData import SampleData
+from storage.variant.io.SampleDataPackage import SampleDataPackage
+from storage.variant.io.mlst.MLSTSampleData import MLSTSampleData
+from storage.variant.io.mlst.MLSTSampleDataPackage import MLSTSampleDataPackage
 from storage.variant.model.db import MLSTScheme, SampleMLSTAlleles, MLSTAllelesSamples, Sample
 from storage.variant.service import DatabaseConnection
 from storage.variant.service.FeatureService import FeatureService, AUTO_SCOPE
 from storage.variant.service.SampleService import SampleService
-from storage.variant.io.SampleFiles import SampleFiles
 
 logger = logging.getLogger(__name__)
 
@@ -83,22 +85,23 @@ class MLSTService(FeatureService):
                              self._sample_service.get_samples_with_mlst_alleles(feature_scope_name)}
         return len(samples_with_mlst.intersection(sample_names)) != 0
 
-    def get_correct_reader(self) -> Any:
-        return MLSTFeaturesReader
+    def get_correct_data_package(self) -> Any:
+        return MLSTSampleDataPackage
+
+    def get_correct_sample_data(self) -> Any:
+        return MLSTSampleData
 
     def _update_scope(self, features_df: pd.DataFrame, feature_scope_name: str) -> pd.DataFrame:
         if feature_scope_name != AUTO_SCOPE:
             features_df['Scheme'] = feature_scope_name
         return features_df
 
-    def build_sample_feature_object(self, sample: Sample, features_reader: FeaturesReader,
-                                    sample_files: SampleFiles,
-                                    feature_scope_name: str) -> Any:
-        self._verify_correct_reader(features_reader=features_reader)
-        mlst_reader = cast(MLSTFeaturesReader, features_reader)
+    def build_sample_feature_object(self, sample: Sample, sample_data: SampleData, feature_scope_name: str) -> Any:
+        self._verify_correct_sample_data(sample_data=sample_data)
+        mlst_sample_data = cast(MLSTSampleData, sample_data)
 
         if feature_scope_name == AUTO_SCOPE:
-            scheme_name = mlst_reader.get_scheme_for_sample(sample.name)
+            scheme_name = mlst_sample_data.get_scheme()
         else:
             scheme_name = feature_scope_name
 
@@ -107,6 +110,8 @@ class MLSTService(FeatureService):
 
         return sample_mlst_alleles
 
-    def _create_persisted_features_reader(self, sample_files_dict: Dict[str, SampleFiles],
-                                          features_reader: FeaturesReader) -> FeaturesReader:
-        return features_reader
+    def _create_persisted_features_reader(self, sample_data_dict: Dict[str, SampleData],
+                                          data_package: SampleDataPackage) -> FeaturesReader:
+        self._verify_correct_data_package(data_package=data_package)
+        mlst_data_package = cast(MLSTSampleDataPackage, data_package)
+        return mlst_data_package.get_features_reader()

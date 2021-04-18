@@ -1,9 +1,9 @@
 import logging
 import multiprocessing as mp
 from pathlib import Path
-from typing import Dict
+from typing import Generator, List
 
-from storage.variant.io.SampleFiles import SampleFiles
+from storage.variant.io.SampleData import SampleData
 from storage.variant.io.SampleFilesProcessor import SampleFilesProcessor
 
 logger = logging.getLogger(__name__)
@@ -11,24 +11,30 @@ logger = logging.getLogger(__name__)
 
 class MultipleProcessSampleFilesProcessor(SampleFilesProcessor):
 
-    def __init__(self, preprocess_dir: Path, processing_cores: int):
+    def __init__(self, preprocess_dir: Path, processing_cores: int, max_chunk_size=1000):
         super().__init__()
         self._preprocess_dir = preprocess_dir
         self._processing_cores = processing_cores
+        self._max_chunk_size = max_chunk_size
 
-    def handle_single_file(self, sample_files: SampleFiles) -> SampleFiles:
+    def handle_single_file(self, sample_files: SampleData) -> SampleData:
         return sample_files.persist(self._preprocess_dir)
 
-    def preprocess_files(self) -> Dict[str, SampleFiles]:
-        processed_files = {}
+    def _get_chunk_size(self, number_samples: int):
+        chunk_size = max(1, int(number_samples / self._processing_cores))
+        return min(self._max_chunk_size, chunk_size)
 
-        logger.debug(f'Starting preprocessing {len(self.sample_files_list())} samples '
+    def process(self, sample_data: List[SampleData]) -> Generator[SampleData, None, None]:
+        number_samples = len(sample_data)
+        logger.debug(f'Starting preprocessing {number_samples} samples '
                      f'with {self._processing_cores} cores')
+        chunk_size = self._get_chunk_size(number_samples)
         with mp.Pool(self._processing_cores) as pool:
-            output_files = pool.map(self.handle_single_file, self.sample_files_list())
-            for entry in output_files:
-                processed_files[entry.sample_name] = entry
+            processed_sample_filed = pool.imap_unordered(self.handle_single_file,
+                                                         sample_data,
+                                                         chunk_size)
+            for processed_file in processed_sample_filed:
+                logger.debug(f'Finished {processed_file.sample_name}')
+                yield processed_file
 
-        logger.debug(f'Finished preprocessing {len(self.sample_files_list())} samples')
-
-        return processed_files
+        logger.debug(f'Finished preprocessing {number_samples} samples')

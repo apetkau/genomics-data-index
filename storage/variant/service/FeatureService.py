@@ -1,16 +1,17 @@
 import abc
 import logging
 from pathlib import Path
-from typing import List, Set, Any, Dict, Tuple, Optional
+from typing import List, Set, Any, Dict, Optional
 
 import pandas as pd
 
 from storage.variant.io.FeaturesReader import FeaturesReader
+from storage.variant.io.SampleData import SampleData
+from storage.variant.io.SampleDataPackage import SampleDataPackage
 from storage.variant.model.db import Sample
 from storage.variant.service import DatabaseConnection
 from storage.variant.service import EntityExistsError
 from storage.variant.service.SampleService import SampleService
-from storage.variant.io.SampleFiles import SampleFiles
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +26,11 @@ class FeatureService(abc.ABC):
         self._features_dir = features_dir
 
     @abc.abstractmethod
-    def get_correct_reader(self) -> Any:
+    def get_correct_data_package(self) -> Any:
+        pass
+
+    @abc.abstractmethod
+    def get_correct_sample_data(self) -> Any:
         pass
 
     @abc.abstractmethod
@@ -64,10 +69,15 @@ class FeatureService(abc.ABC):
         """
         pass
 
-    def _verify_correct_reader(self, features_reader: FeaturesReader) -> None:
-        if not isinstance(features_reader, self.get_correct_reader()):
-            raise Exception(f'features_reader=[{features_reader}] is not of type'
-                            f' {self.get_correct_reader().__name__}')
+    def _verify_correct_data_package(self, data_package: SampleDataPackage) -> None:
+        if not isinstance(data_package, self.get_correct_data_package()):
+            raise Exception(f'data_package=[{data_package}] is not of type'
+                            f' {self.get_correct_data_package().__name__}')
+
+    def _verify_correct_sample_data(self, sample_data: SampleData) -> None:
+        if not isinstance(sample_data, self.get_correct_sample_data()):
+            raise Exception(f'sample_data=[{sample_data}] is not of type'
+                            f' {self.get_correct_sample_data().__name__}')
 
     def _get_or_create_sample(self, sample_name: str) -> Sample:
         if self._sample_service.exists(sample_name):
@@ -81,47 +91,39 @@ class FeatureService(abc.ABC):
 
     def progress_hook(self, number: int, print_every: int, total: int) -> None:
         if number % print_every == 0:
-            logger.info(f'Proccessed {number/total*100:0.0f}% ({number}/{total}) samples')
+            logger.info(f'Proccessed {number / total * 100:0.0f}% ({number}/{total}) samples')
 
-    def insert(self, features_reader: FeaturesReader, feature_scope_name: str = AUTO_SCOPE) -> None:
-        self._verify_correct_reader(features_reader=features_reader)
+    def insert(self, data_package: SampleDataPackage, feature_scope_name: str = AUTO_SCOPE) -> None:
+        self._verify_correct_data_package(data_package=data_package)
         self._verify_correct_feature_scope(feature_scope_name)
 
-        sample_names = features_reader.samples_set()
+        sample_names = data_package.sample_names()
         num_samples = len(sample_names)
 
         if self.check_samples_have_features(sample_names, feature_scope_name):
             raise EntityExistsError(f'Passed samples already have features for feature scope [{feature_scope_name}], '
                                     f'will not insert any new features')
 
-        # TODO: keep track of saved feature files to index these ones
-        saved_variation_files = {}
-        saved_masked_regions = {}
-
         interval = min(1000, max(1, int(num_samples / 50)))
         processed_samples = 0
-        persisted_sample_files_dict = {}
-        for sample_name in sample_names:
+        persisted_sample_data_dict = {}
+        for sample_data in data_package.iter_sample_data():
             self.progress_hook(processed_samples, print_every=interval, total=num_samples)
-            logger.debug(f'Loading sample {sample_name}')
+            logger.debug(f'Loading sample {sample_data.sample_name}')
 
-            sample_files = features_reader.get_sample_files(sample_name)
-
-            sample = self._get_or_create_sample(sample_name)
-            persisted_sample_files = self._persist_sample_files(sample_files)
-            sample_feature_object = self.build_sample_feature_object(sample=sample,
-                                                                     sample_files=persisted_sample_files,
-                                                                     features_reader=features_reader,
+            sample = self._get_or_create_sample(sample_data.sample_name)
+            persisted_sample_data = self._persist_sample_data(sample_data)
+            sample_feature_object = self.build_sample_feature_object(sample=sample, sample_data=persisted_sample_data,
                                                                      feature_scope_name=feature_scope_name)
 
-            persisted_sample_files_dict[sample_name] = persisted_sample_files
+            persisted_sample_data_dict[persisted_sample_data.sample_name] = persisted_sample_data
             self._connection.get_session().add(sample_feature_object)
             processed_samples += 1
         self._connection.get_session().commit()
         logger.info(f'Finished processings {num_samples} samples')
 
-        persisted_features_reader = self._create_persisted_features_reader(sample_files_dict=persisted_sample_files_dict,
-                                                                           features_reader=features_reader)
+        persisted_features_reader = self._create_persisted_features_reader(sample_data_dict=persisted_sample_data_dict,
+                                                                           data_package=data_package)
         self.index_features(features_reader=persisted_features_reader, feature_scope_name=feature_scope_name)
 
     def _update_scope(self, features_df: pd.DataFrame, feature_scope_name: str) -> pd.DataFrame:
@@ -137,18 +139,16 @@ class FeatureService(abc.ABC):
         logger.info('Finished indexing features from all samples')
 
     @abc.abstractmethod
-    def build_sample_feature_object(self, sample: Sample,
-                                    sample_files: SampleFiles,
-                                    features_reader: FeaturesReader, feature_scope_name: str) -> Any:
+    def build_sample_feature_object(self, sample: Sample, sample_data: SampleData, feature_scope_name: str) -> Any:
         pass
 
-    def _persist_sample_files(self, sample_files: SampleFiles) -> Optional[SampleFiles]:
-        if sample_files is not None:
-            return sample_files.persist(self._features_dir)
+    def _persist_sample_data(self, sample_data: SampleData) -> Optional[SampleData]:
+        if sample_data is not None:
+            return sample_data.persist(self._features_dir)
         else:
             return None
 
     @abc.abstractmethod
-    def _create_persisted_features_reader(self, sample_files_dict: Dict[str, SampleFiles],
-                                          features_reader: FeaturesReader) -> FeaturesReader:
+    def _create_persisted_features_reader(self, sample_data_dict: Dict[str, SampleData],
+                                          data_package: SampleDataPackage) -> FeaturesReader:
         pass

@@ -13,8 +13,6 @@ from storage.variant.service import DatabaseConnection
 from storage.variant.service.ReferenceService import ReferenceService
 from storage.variant.service.VariationService import VariationService
 from storage.variant.service.CoreAlignmentService import CoreAlignmentService
-from storage.variant.io.mutation.SnippyVariantsReader import SnippyVariantsReader
-from storage.variant.io.mutation.VcfVariantsReader import VcfVariantsReader
 from storage.variant.io.mlst.MLSTFeaturesReader import MLSTFeaturesReader
 from storage.variant.io.mlst.MLSTTSeemannFeaturesReader import MLSTTSeemannFeaturesReader
 from storage.variant.service.SampleService import SampleService
@@ -23,6 +21,9 @@ from storage.variant.service.KmerQueryService import KmerQueryService
 from storage.variant.service.KmerService import KmerService
 from storage.FilesystemStorage import FilesystemStorage
 from storage.variant.service.MLSTService import MLSTService
+from storage.variant.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor
+from storage.variant.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
+from storage.variant.io.mlst.MLSTSampleDataPackage import MLSTSampleDataPackage
 
 
 @pytest.fixture
@@ -42,12 +43,14 @@ def reference_service(database, filesystem_storage) -> ReferenceService:
 
 
 @pytest.fixture
-def snippy_variants_reader() -> SnippyVariantsReader:
-    return SnippyVariantsReader.create(sample_dirs)
+def snippy_nucleotide_data_package() -> NucleotideSampleDataPackage:
+    tmp_dir = Path(tempfile.mkdtemp())
+    return NucleotideSampleDataPackage.create_from_snippy(sample_dirs,
+                                                          sample_files_processor=SerialSampleFilesProcessor(tmp_dir))
 
 
 @pytest.fixture
-def regular_variants_reader() -> VcfVariantsReader:
+def regular_nucleotide_data_package() -> NucleotideSampleDataPackage:
     vcf_files = {
         'SampleA': Path(regular_vcf_dir, 'SampleA.vcf.gz'),
         'SampleB': Path(regular_vcf_dir, 'SampleB.vcf.gz'),
@@ -60,7 +63,11 @@ def regular_variants_reader() -> VcfVariantsReader:
         'SampleC': Path(data_dir, 'SampleC', 'snps.aligned.fa'),
     }
 
-    return VcfVariantsReader.create_from_sequence_masks(sample_vcf_map=vcf_files, masked_genomic_files_map=mask_files)
+    tmp_dir = Path(tempfile.mkdtemp())
+    return NucleotideSampleDataPackage.create_from_sequence_masks(sample_vcf_map=vcf_files,
+                                                                  masked_genomic_files_map=mask_files,
+                                                                  sample_files_processor=SerialSampleFilesProcessor(
+                                                                      tmp_dir))
 
 
 @pytest.fixture
@@ -76,25 +83,26 @@ def sample_service(database):
 
 @pytest.fixture
 def variation_service(database, reference_service_with_data,
-                      snippy_variants_reader, sample_service, filesystem_storage) -> VariationService:
+                      snippy_nucleotide_data_package, sample_service, filesystem_storage) -> VariationService:
     var_service = VariationService(database_connection=database,
                                    reference_service=reference_service_with_data,
                                    sample_service=sample_service,
                                    variation_dir=filesystem_storage.variation_dir)
     var_service.insert(feature_scope_name='genome',
-                       features_reader=snippy_variants_reader)
+                       data_package=snippy_nucleotide_data_package)
     return var_service
 
 
 @pytest.fixture
 def variation_service_non_snippy_vcfs(database, reference_service_with_data,
-                                      regular_variants_reader, sample_service, filesystem_storage) -> VariationService:
+                                      regular_nucleotide_data_package, sample_service,
+                                      filesystem_storage) -> VariationService:
     var_service = VariationService(database_connection=database,
                                    reference_service=reference_service_with_data,
                                    sample_service=sample_service,
                                    variation_dir=filesystem_storage.variation_dir)
     var_service.insert(feature_scope_name='genome',
-                       features_reader=regular_variants_reader)
+                       data_package=regular_nucleotide_data_package)
     return var_service
 
 
@@ -156,8 +164,18 @@ def mlst_reader_single_scheme() -> MLSTFeaturesReader:
 
 
 @pytest.fixture
+def mlst_data_package_single_scheme(mlst_reader_single_scheme) -> MLSTSampleDataPackage:
+    return MLSTSampleDataPackage(mlst_reader_single_scheme)
+
+
+@pytest.fixture
 def mlst_reader_basic() -> MLSTFeaturesReader:
     return MLSTTSeemannFeaturesReader(mlst_file=basic_mlst_file)
+
+
+@pytest.fixture
+def mlst_data_package_basic(mlst_reader_basic) -> MLSTSampleDataPackage:
+    return MLSTSampleDataPackage(mlst_reader_basic)
 
 
 @pytest.fixture
@@ -166,20 +184,25 @@ def mlst_reader_unknown() -> MLSTFeaturesReader:
 
 
 @pytest.fixture
-def mlst_service_loaded(mlst_reader_basic, database, sample_service, filesystem_storage) -> MLSTService:
+def mlst_data_package_unknown(mlst_reader_unknown) -> MLSTSampleDataPackage:
+    return MLSTSampleDataPackage(mlst_reader_unknown)
+
+
+@pytest.fixture
+def mlst_service_loaded(mlst_data_package_basic, database, sample_service, filesystem_storage) -> MLSTService:
     mlst_service = MLSTService(database_connection=database,
                                sample_service=sample_service,
                                mlst_dir=filesystem_storage.mlst_dir)
-    mlst_service.insert(features_reader=mlst_reader_basic)
+    mlst_service.insert(data_package=mlst_data_package_basic)
 
     return mlst_service
 
 
 @pytest.fixture
-def mlst_service_loaded_unknown(mlst_reader_unknown, database, sample_service, filesystem_storage) -> MLSTService:
+def mlst_service_loaded_unknown(mlst_data_package_unknown, database, sample_service, filesystem_storage) -> MLSTService:
     mlst_service = MLSTService(database_connection=database,
                                sample_service=sample_service,
                                mlst_dir=filesystem_storage.mlst_dir)
-    mlst_service.insert(features_reader=mlst_reader_unknown)
+    mlst_service.insert(data_package=mlst_data_package_unknown)
 
     return mlst_service

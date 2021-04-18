@@ -1,17 +1,22 @@
-from typing import Dict
+from __future__ import annotations
 
-from storage.variant.io.SampleFiles import SampleFiles
+from typing import Generator, List
+
+from storage.variant.io.SampleData import SampleData
 from storage.variant.io.SampleFilesProcessor import SampleFilesProcessor
 
 
 class NullSampleFilesProcessor(SampleFilesProcessor):
+    files_processor_instance = None
 
     def __init__(self):
         super().__init__()
 
-    def preprocess_files(self) -> Dict[str, SampleFiles]:
-        processed_files = {}
-        for sample_files in self.sample_files_list():
-            processed_files[sample_files.sample_name] = sample_files
+    def process(self, sample_data: List[SampleData]) -> Generator[SampleData, None, None]:
+        yield from sample_data
 
-        return processed_files
+    @classmethod
+    def instance(cls) -> NullSampleFilesProcessor:
+        if cls.files_processor_instance is None:
+            cls.files_processor_instance = NullSampleFilesProcessor()
+        return cls.files_processor_instance

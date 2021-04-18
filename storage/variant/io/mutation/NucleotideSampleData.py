@@ -4,13 +4,13 @@ from pathlib import Path
 from typing import Tuple, Optional
 
 from storage.variant.MaskedGenomicRegions import MaskedGenomicRegions
-from storage.variant.io.SampleFiles import SampleFiles
+from storage.variant.io.SampleData import SampleData
 from storage.variant.io.mutation.VariationFile import VariationFile
 
 logger = logging.getLogger(__name__)
 
 
-class NucleotideSampleFiles(SampleFiles):
+class NucleotideSampleData(SampleData):
 
     def __init__(self, sample_name: str, vcf_file: Path, vcf_file_index: Path,
                  mask_bed_file: Optional[Path],
@@ -35,17 +35,17 @@ class NucleotideSampleFiles(SampleFiles):
         self._assert_file_not_exists(new_file, 'Cannot preprocess data')
         return VariationFile(self._vcf_file).write(new_file)
 
-    def _do_preprocess_and_persist(self, output_dir: Path) -> SampleFiles:
+    def _do_preprocess_and_persist(self, output_dir: Path) -> SampleData:
         processed_vcf, processed_vcf_index = self._preprocess_vcf(output_dir)
         processed_mask = self._preprocess_mask(output_dir)
 
-        return NucleotideSampleFiles(sample_name=self.sample_name,
-                                     vcf_file=processed_vcf,
-                                     vcf_file_index=processed_vcf_index,
-                                     mask_bed_file=processed_mask,
-                                     preprocessed=True)
+        return NucleotideSampleData(sample_name=self.sample_name,
+                                    vcf_file=processed_vcf,
+                                    vcf_file_index=processed_vcf_index,
+                                    mask_bed_file=processed_mask,
+                                    preprocessed=True)
 
-    def _do_persist(self, output_dir: Path) -> SampleFiles:
+    def _do_persist(self, output_dir: Path) -> SampleData:
         if self._mask_bed_file is None:
             raise Exception('mask_bed_file is None')
 
@@ -63,11 +63,11 @@ class NucleotideSampleFiles(SampleFiles):
         shutil.copy(self._vcf_file_index, new_vcf_index)
         shutil.copy(self._mask_bed_file, new_mask_bed_file)
 
-        return NucleotideSampleFiles(sample_name=self.sample_name,
-                                     vcf_file=new_vcf_file,
-                                     vcf_file_index=new_vcf_index,
-                                     mask_bed_file=new_mask_bed_file,
-                                     preprocessed=True)
+        return NucleotideSampleData(sample_name=self.sample_name,
+                                    vcf_file=new_vcf_file,
+                                    vcf_file_index=new_vcf_index,
+                                    mask_bed_file=new_mask_bed_file,
+                                    preprocessed=True)
 
     def is_preprocessed(self) -> bool:
         return self._preprocessed
