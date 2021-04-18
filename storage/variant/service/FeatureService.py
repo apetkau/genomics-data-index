@@ -97,16 +97,14 @@ class FeatureService(abc.ABC):
         self._verify_correct_data_package(data_package=data_package)
         self._verify_correct_feature_scope(feature_scope_name)
 
-        # sample_names = data_package.sample_names()
-        # num_samples = len(sample_names)
-        #
-        # if self.check_samples_have_features(sample_names, feature_scope_name):
-        #     raise EntityExistsError(f'Passed samples already have features for feature scope [{feature_scope_name}], '
-        #                             f'will not insert any new features')
+        sample_names = data_package.sample_names()
+        num_samples = len(sample_names)
 
-        # interval = min(1000, max(1, int(num_samples / 50)))
-        interval = 1
-        num_samples = 9
+        if self.check_samples_have_features(sample_names, feature_scope_name):
+            raise EntityExistsError(f'Passed samples already have features for feature scope [{feature_scope_name}], '
+                                    f'will not insert any new features')
+
+        interval = min(1000, max(1, int(num_samples / 50)))
         processed_samples = 0
         persisted_sample_files_dict = {}
         for sample_data in data_package.iter_sample_data():

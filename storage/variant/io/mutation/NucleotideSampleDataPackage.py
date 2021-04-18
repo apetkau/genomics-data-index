@@ -11,15 +11,17 @@ from storage.variant.io.mutation.NucleotideSampleDataSequenceMask import Nucleot
 
 class NucleotideSampleDataPackage(SampleDataPackage):
 
-    def __init__(self, sample_files_processor: SampleFilesProcessor):
+    def __init__(self, sample_files_processor: SampleFilesProcessor,
+                 sample_names: Set[str]):
         super().__init__()
         self._sample_files_processor = sample_files_processor
+        self._sample_names = sample_names
 
     # def add(self, sample_files: SampleData) -> None:
     #     self._sample_files_list.append(sample_files)
     #
     def sample_names(self) -> Set[str]:
-        return {}
+        return self._sample_names
 
     def iter_sample_data(self) -> Generator[SampleData, None, None]:
         return self._sample_files_processor.preprocess_files()
@@ -48,7 +50,8 @@ class NucleotideSampleDataPackage(SampleDataPackage):
             sample_files_map[sample_name] = sample_files
             sample_files_processor.add(sample_files)
 
-        return NucleotideSampleDataPackage(sample_files_processor=sample_files_processor)
+        return NucleotideSampleDataPackage(sample_files_processor=sample_files_processor,
+                                           sample_names=set(sample_files_map.keys()))
 
     @classmethod
     def create_from_snippy(cls, sample_dirs: List[Path],
@@ -65,4 +68,5 @@ class NucleotideSampleDataPackage(SampleDataPackage):
             sample_files_map[sample_name] = sample_files
             sample_files_processor.add(sample_files)
 
-        return NucleotideSampleDataPackage(sample_files_processor=sample_files_processor)
+        return NucleotideSampleDataPackage(sample_files_processor=sample_files_processor,
+                                           sample_names=set(sample_files_map.keys()))
