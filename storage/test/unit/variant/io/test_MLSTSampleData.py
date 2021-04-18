@@ -1,6 +1,5 @@
-import pytest
-
 import pandas as pd
+import pytest
 
 from storage.variant.io.mlst.MLSTSampleData import MLSTSampleData
 

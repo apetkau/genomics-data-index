@@ -1,15 +1,15 @@
-from typing import List
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from typing import List
 
 import pytest
 
 from storage.test.integration.variant import data_dir
+from storage.variant.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
+from storage.variant.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor
 from storage.variant.model.db import NucleotideVariantsSamples, SampleNucleotideVariation, Sample
 from storage.variant.service import EntityExistsError
 from storage.variant.service.VariationService import VariationService
-from storage.variant.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor
-from storage.variant.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
 
 
 def test_insert_variants_saved_files(database, snippy_nucleotide_data_package, reference_service_with_data,

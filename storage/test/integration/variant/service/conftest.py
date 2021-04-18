@@ -46,7 +46,8 @@ def reference_service(database, filesystem_storage) -> ReferenceService:
 def snippy_nucleotide_data_package() -> NucleotideSampleDataPackage:
     tmp_dir = Path(tempfile.mkdtemp())
     return NucleotideSampleDataPackage.create_from_snippy(sample_dirs,
-                                       sample_files_processor=SerialSampleFilesProcessor(tmp_dir))
+                                                          sample_files_processor=SerialSampleFilesProcessor(tmp_dir))
+
 
 @pytest.fixture
 def regular_nucleotide_data_package() -> NucleotideSampleDataPackage:
@@ -64,8 +65,9 @@ def regular_nucleotide_data_package() -> NucleotideSampleDataPackage:
 
     tmp_dir = Path(tempfile.mkdtemp())
     return NucleotideSampleDataPackage.create_from_sequence_masks(sample_vcf_map=vcf_files,
-                                                        masked_genomic_files_map=mask_files,
-                                                        sample_files_processor=SerialSampleFilesProcessor(tmp_dir))
+                                                                  masked_genomic_files_map=mask_files,
+                                                                  sample_files_processor=SerialSampleFilesProcessor(
+                                                                      tmp_dir))
 
 
 @pytest.fixture
@@ -93,7 +95,8 @@ def variation_service(database, reference_service_with_data,
 
 @pytest.fixture
 def variation_service_non_snippy_vcfs(database, reference_service_with_data,
-                                      regular_nucleotide_data_package, sample_service, filesystem_storage) -> VariationService:
+                                      regular_nucleotide_data_package, sample_service,
+                                      filesystem_storage) -> VariationService:
     var_service = VariationService(database_connection=database,
                                    reference_service=reference_service_with_data,
                                    sample_service=sample_service,

@@ -7,10 +7,10 @@ import pytest
 
 from storage.test.integration.variant import data_dir
 from storage.test.integration.variant import data_dir_empty
+from storage.variant.io.mutation.NucleotideSampleData import NucleotideSampleData
+from storage.variant.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
 from storage.variant.io.processor.MultipleProcessSampleFilesProcessor import MultipleProcessSampleFilesProcessor
 from storage.variant.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor
-from storage.variant.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
-from storage.variant.io.mutation.NucleotideSampleData import NucleotideSampleData
 
 
 @pytest.fixture

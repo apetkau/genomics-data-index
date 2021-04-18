@@ -1,20 +1,19 @@
 import logging
 from pathlib import Path
-from typing import Dict, Set, Any, Tuple, cast, List
+from typing import Dict, Set, Any, Tuple, cast
 
 import pandas as pd
 
 from storage.variant.SampleSet import SampleSet
 from storage.variant.io.FeaturesReader import FeaturesReader
-from storage.variant.io.mlst.MLSTFeaturesReader import MLSTFeaturesReader
+from storage.variant.io.SampleData import SampleData
+from storage.variant.io.SampleDataPackage import SampleDataPackage
+from storage.variant.io.mlst.MLSTSampleData import MLSTSampleData
+from storage.variant.io.mlst.MLSTSampleDataPackage import MLSTSampleDataPackage
 from storage.variant.model.db import MLSTScheme, SampleMLSTAlleles, MLSTAllelesSamples, Sample
 from storage.variant.service import DatabaseConnection
 from storage.variant.service.FeatureService import FeatureService, AUTO_SCOPE
 from storage.variant.service.SampleService import SampleService
-from storage.variant.io.SampleData import SampleData
-from storage.variant.io.mlst.MLSTSampleData import MLSTSampleData
-from storage.variant.io.mlst.MLSTSampleDataPackage import MLSTSampleDataPackage
-from storage.variant.io.SampleDataPackage import SampleDataPackage
 
 logger = logging.getLogger(__name__)
 

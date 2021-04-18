@@ -1,17 +1,17 @@
 import abc
 import logging
 from pathlib import Path
-from typing import List, Set, Any, Dict, Tuple, Optional
+from typing import List, Set, Any, Dict, Optional
 
 import pandas as pd
 
 from storage.variant.io.FeaturesReader import FeaturesReader
+from storage.variant.io.SampleData import SampleData
+from storage.variant.io.SampleDataPackage import SampleDataPackage
 from storage.variant.model.db import Sample
 from storage.variant.service import DatabaseConnection
 from storage.variant.service import EntityExistsError
 from storage.variant.service.SampleService import SampleService
-from storage.variant.io.SampleData import SampleData
-from storage.variant.io.SampleDataPackage import SampleDataPackage
 
 logger = logging.getLogger(__name__)
 
@@ -91,7 +91,7 @@ class FeatureService(abc.ABC):
 
     def progress_hook(self, number: int, print_every: int, total: int) -> None:
         if number % print_every == 0:
-            logger.info(f'Proccessed {number/total*100:0.0f}% ({number}/{total}) samples')
+            logger.info(f'Proccessed {number / total * 100:0.0f}% ({number}/{total}) samples')
 
     def insert(self, data_package: SampleDataPackage, feature_scope_name: str = AUTO_SCOPE) -> None:
         self._verify_correct_data_package(data_package=data_package)
@@ -123,8 +123,9 @@ class FeatureService(abc.ABC):
         self._connection.get_session().commit()
         logger.info(f'Finished processings {num_samples} samples')
 
-        persisted_features_reader = self._create_persisted_features_reader(sample_files_dict=persisted_sample_files_dict,
-                                                                           data_package=data_package)
+        persisted_features_reader = self._create_persisted_features_reader(
+            sample_files_dict=persisted_sample_files_dict,
+            data_package=data_package)
         self.index_features(features_reader=persisted_features_reader, feature_scope_name=feature_scope_name)
 
     def _update_scope(self, features_df: pd.DataFrame, feature_scope_name: str) -> pd.DataFrame:

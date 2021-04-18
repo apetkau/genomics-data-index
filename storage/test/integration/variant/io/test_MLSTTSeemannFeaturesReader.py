@@ -1,6 +1,5 @@
-import pytest
-
 import pandas as pd
+import pytest
 
 from storage.test.integration.variant import basic_mlst_file, mlst_file_unknown, expand_list_by
 from storage.variant.io.mlst.MLSTTSeemannFeaturesReader import MLSTTSeemannFeaturesReader

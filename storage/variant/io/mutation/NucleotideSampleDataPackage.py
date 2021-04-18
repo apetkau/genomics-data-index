@@ -1,12 +1,13 @@
 from __future__ import annotations
-from typing import List, Generator, Dict, Set
-from pathlib import Path
 
-from storage.variant.io.SampleDataPackage import SampleDataPackage
+from pathlib import Path
+from typing import List, Generator, Dict, Set
+
 from storage.variant.io.SampleData import SampleData
+from storage.variant.io.SampleDataPackage import SampleDataPackage
 from storage.variant.io.SampleFilesProcessor import SampleFilesProcessor
-from storage.variant.io.processor.NullSampleFilesProcessor import NullSampleFilesProcessor
 from storage.variant.io.mutation.NucleotideSampleDataSequenceMask import NucleotideSampleDataSequenceMask
+from storage.variant.io.processor.NullSampleFilesProcessor import NullSampleFilesProcessor
 
 
 class NucleotideSampleDataPackage(SampleDataPackage):

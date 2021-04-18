@@ -18,9 +18,10 @@ from storage.FilesystemStorage import FilesystemStorage
 from storage.cli import yaml_config_provider
 from storage.variant.index.KmerIndexer import KmerIndexerSourmash, KmerIndexManager
 from storage.variant.io.mlst.MLSTChewbbacaReader import MLSTChewbbacaReader
+from storage.variant.io.mlst.MLSTSampleDataPackage import MLSTSampleDataPackage
 from storage.variant.io.mlst.MLSTSistrReader import MLSTSistrReader
 from storage.variant.io.mlst.MLSTTSeemannFeaturesReader import MLSTTSeemannFeaturesReader
-from storage.variant.io.mutation.VcfVariantsReader import VcfVariantsReader
+from storage.variant.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
 from storage.variant.io.processor.MultipleProcessSampleFilesProcessor import MultipleProcessSampleFilesProcessor
 from storage.variant.io.processor.NullSampleFilesProcessor import NullSampleFilesProcessor
 from storage.variant.model.QueryFeatureMLST import QueryFeatureMLST
@@ -36,8 +37,6 @@ from storage.variant.service.ReferenceService import ReferenceService
 from storage.variant.service.SampleService import SampleService
 from storage.variant.service.TreeService import TreeService
 from storage.variant.service.VariationService import VariationService
-from storage.variant.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
-from storage.variant.io.mlst.MLSTSampleDataPackage import MLSTSampleDataPackage
 from storage.variant.util import get_genome_name
 
 logger = logging.getLogger('storage')
@@ -177,7 +176,7 @@ def load_snippy(ctx, snippy_dir: Path, reference_file: Path, build_tree: bool, a
             file_processor = NullSampleFilesProcessor()
 
         data_package = NucleotideSampleDataPackage.create_from_snippy(sample_dirs,
-                                                                         sample_files_processor=file_processor)
+                                                                      sample_files_processor=file_processor)
 
         load_variants_common(ctx=ctx, data_package=data_package, reference_file=reference_file,
                              input=snippy_dir, build_tree=build_tree, align_type=align_type,
@@ -217,8 +216,8 @@ def load_vcf(ctx, vcf_fofns: Path, reference_file: Path, build_tree: bool, align
             file_processor = NullSampleFilesProcessor()
 
         data_package = NucleotideSampleDataPackage.create_from_sequence_masks(sample_vcf_map=sample_vcf_map,
-                                                                       masked_genomic_files_map=mask_files_map,
-                                                                       sample_files_processor=file_processor)
+                                                                              masked_genomic_files_map=mask_files_map,
+                                                                              sample_files_processor=file_processor)
 
         load_variants_common(ctx=ctx, data_package=data_package, reference_file=reference_file,
                              input=Path(vcf_fofns), build_tree=build_tree, align_type=align_type,

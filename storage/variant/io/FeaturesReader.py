@@ -1,5 +1,5 @@
 import abc
-from typing import List, Set, Generator, Optional
+from typing import List, Set, Optional
 
 import pandas as pd
 

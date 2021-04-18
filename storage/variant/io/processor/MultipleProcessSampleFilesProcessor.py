@@ -30,8 +30,8 @@ class MultipleProcessSampleFilesProcessor(SampleFilesProcessor):
         chunk_size = self._get_chunk_size()
         with mp.Pool(self._processing_cores) as pool:
             processed_sample_filed = pool.imap_unordered(self.handle_single_file,
-                                               self.sample_files_list(),
-                                               chunk_size)
+                                                         self.sample_files_list(),
+                                                         chunk_size)
             for processed_file in processed_sample_filed:
                 logger.debug(f'Finished {processed_file.sample_name}')
                 yield processed_file
