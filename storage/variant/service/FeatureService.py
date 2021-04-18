@@ -1,7 +1,7 @@
 import abc
 import logging
 from pathlib import Path
-from typing import List, Set, Any, Dict, Optional
+from typing import List, Set, Any, Dict, Optional, Generator
 
 import pandas as pd
 
@@ -110,6 +110,20 @@ class FeatureService(abc.ABC):
         batch_size = min(self._max_insert_batch_size, batch_size)
         return batch_size
 
+    def _sample_data_iter_batch(self, data_package: SampleDataPackage,
+                                batch_size: int) -> Generator[Dict[str, SampleData], None, None]:
+        sample_data_batch = {}
+        for sample_data in data_package.iter_sample_data():
+            sample_data_batch[sample_data.sample_name] = sample_data
+
+            if len(sample_data_batch) >= batch_size:
+                yield sample_data_batch
+                sample_data_batch = {}
+
+        if len(sample_data_batch) > 0:
+            yield sample_data_batch
+
+
     def insert(self, data_package: SampleDataPackage, feature_scope_name: str = AUTO_SCOPE) -> None:
         self._verify_correct_data_package(data_package=data_package)
         self._verify_correct_feature_scope(feature_scope_name)
@@ -125,19 +139,7 @@ class FeatureService(abc.ABC):
         processed_samples = 0
         persisted_sample_data_dict = {}
         self.log_progress(processed_samples, total=num_samples)
-        sample_data_batch = {}
-        for sample_data in data_package.iter_sample_data():
-            sample_data_batch[sample_data.sample_name] = sample_data
-
-            if len(sample_data_batch) >= batch_size:
-                persisted_sample_data = self._handle_batch(sample_data_batch, feature_scope_name)
-                persisted_sample_data_dict.update(persisted_sample_data)
-                processed_samples += len(sample_data_batch)
-                self.log_progress(processed_samples, total=num_samples)
-
-                sample_data_batch = {}
-
-        if len(sample_data_batch) > 0:
+        for sample_data_batch in self._sample_data_iter_batch(data_package, batch_size=batch_size):
             persisted_sample_data = self._handle_batch(sample_data_batch, feature_scope_name)
             persisted_sample_data_dict.update(persisted_sample_data)
             processed_samples += len(sample_data_batch)
