@@ -135,6 +135,7 @@ class FeatureService(abc.ABC):
                                     f'will not insert any new features')
 
         batch_size = self._set_batch_size(num_samples)
+        logger.debug(f'Batch size {batch_size}')
         processed_samples = 0
         persisted_sample_data_dict = {}
         self.log_progress(processed_samples, total=num_samples)
