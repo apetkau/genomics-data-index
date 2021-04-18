@@ -2,6 +2,7 @@ from storage.variant.SampleSet import SampleSet
 from storage.variant.model.QueryFeatureMLST import QueryFeatureMLST
 from storage.variant.model.QueryFeatureMutation import QueryFeatureMutation
 from storage.variant.model.db import Sample
+from storage.variant.service.SampleService import SampleService
 
 
 def test_samples_with_variants(sample_service, variation_service):
@@ -143,6 +144,26 @@ def test_find_samples_by_features_variations(database, sample_service, variation
     assert {sampleB.id} == {s.id for s in variant_samples[f'reference:5061:G:A']}
 
 
+def test_find_sample_sets_by_features_variations(database, sample_service, variation_service):
+    sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+
+    sample_sets = sample_service.find_sample_sets_by_features([QueryFeatureMutation('reference:5061:G:A')])
+
+    assert f'reference:5061:G:A' in sample_sets
+    assert {sampleB.id} == set(sample_sets[f'reference:5061:G:A'])
+
+
+def test_find_sample_sets_by_features_variations_two_samples(database, sample_service, variation_service):
+    sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = database.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+
+    variant_samples = sample_service.find_sample_sets_by_features([QueryFeatureMutation('reference:4975:T:C')])
+
+    assert {'reference:4975:T:C'} == set(variant_samples.keys())
+    assert {sampleC.id, sampleB.id} == set(variant_samples[f'reference:4975:T:C'])
+    assert 2 == len(variant_samples[f'reference:4975:T:C'])
+
+
 def test_find_samples_by_features_variations_numeric_deletion(database, sample_service, variation_service):
     sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
 
@@ -205,6 +226,16 @@ def test_find_samples_by_features_mlst(database, sample_service, mlst_service_lo
     assert {sample1.id, sample2.id} == {s.id for s in mlst_samples['lmonocytogenes:abcZ:1']}
 
 
+def test_find_sample_sets_by_features_mlst(database, sample_service: SampleService, mlst_service_loaded):
+    sample1 = database.get_session().query(Sample).filter(Sample.name == 'CFSAN002349').one()
+    sample2 = database.get_session().query(Sample).filter(Sample.name == 'CFSAN023463').one()
+
+    mlst_sample_sets = sample_service.find_sample_sets_by_features([QueryFeatureMLST('lmonocytogenes:abcZ:1')])
+
+    assert {'lmonocytogenes:abcZ:1'} == set(mlst_sample_sets.keys())
+    assert {sample1.id, sample2.id} == set(mlst_sample_sets['lmonocytogenes:abcZ:1'])
+
+
 def test_find_samples_by_features_mlst_two(database, sample_service, mlst_service_loaded):
     sample1 = database.get_session().query(Sample).filter(Sample.name == 'CFSAN002349').one()
     sample2 = database.get_session().query(Sample).filter(Sample.name == 'CFSAN023463').one()
@@ -221,6 +252,21 @@ def test_find_samples_by_features_mlst_two(database, sample_service, mlst_servic
 
     assert {'2014C-3599', '2014C-3598'} == {s.name for s in mlst_samples['ecoli:adk:100']}
     assert {sample3.id, sample4.id} == {s.id for s in mlst_samples['ecoli:adk:100']}
+
+
+def test_find_sample_sets_by_features_mlst_two(database, sample_service, mlst_service_loaded):
+    sample1 = database.get_session().query(Sample).filter(Sample.name == 'CFSAN002349').one()
+    sample2 = database.get_session().query(Sample).filter(Sample.name == 'CFSAN023463').one()
+    sample3 = database.get_session().query(Sample).filter(Sample.name == '2014C-3599').one()
+    sample4 = database.get_session().query(Sample).filter(Sample.name == '2014C-3598').one()
+
+    mlst_sample_sets = sample_service.find_sample_sets_by_features([QueryFeatureMLST('lmonocytogenes:abcZ:1'),
+                                                            QueryFeatureMLST('ecoli:adk:100')])
+
+    assert {'lmonocytogenes:abcZ:1', 'ecoli:adk:100'} == set(mlst_sample_sets.keys())
+
+    assert {sample1.id, sample2.id} == set(mlst_sample_sets['lmonocytogenes:abcZ:1'])
+    assert {sample3.id, sample4.id} == set(mlst_sample_sets['ecoli:adk:100'])
 
 
 def test_count_samples_by_mlst_features_single_feature(sample_service, mlst_service_loaded):
