@@ -1,7 +1,7 @@
 import tempfile
 from pathlib import Path
 
-from storage.test.integration.variant import data_dir, regular_vcf_dir, variation_dir, reference_file, consensus_dir
+from storage.test.integration import data_dir, regular_vcf_dir, variation_dir, reference_file, consensus_dir
 from storage.test.integration.variant.io import read_vcf_df
 from storage.variant.MaskedGenomicRegions import MaskedGenomicRegions
 from storage.variant.io.mutation.VariationFile import VariationFile

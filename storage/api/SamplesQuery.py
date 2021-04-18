@@ -23,7 +23,7 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def _and(self, other: SamplesQuery) -> SamplesQuery:
+    def and_(self, other: SamplesQuery) -> SamplesQuery:
         pass
 
     @abc.abstractmethod
@@ -48,10 +48,6 @@ class SamplesQuery(abc.ABC):
 
     @abc.abstractmethod
     def is_type(self, sample_type) -> SamplesQuery:
-        pass
-
-    @abc.abstractmethod
-    def _has(self, feature: QueryFeature) -> SamplesQuery:
         pass
 
     @abc.abstractmethod

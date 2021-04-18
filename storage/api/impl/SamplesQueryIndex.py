@@ -7,12 +7,12 @@ from storage.variant.model.QueryFeatureMutation import QueryFeatureMutation
 from storage.variant.model.QueryFeatureMLST import QueryFeatureMLST
 from storage.variant.SampleSet import SampleSet
 from storage.api.SamplesQuery import SamplesQuery
-from storage.api.QueryConnection import QueryConnection
+from storage.connector.DataIndexConnection import DataIndexConnection
 
 
 class SamplesQueryIndex(SamplesQuery):
 
-    def __init__(self, connection: QueryConnection, sample_set: SampleSet = SamplesQuery.ALL_SAMPLES):
+    def __init__(self, connection: DataIndexConnection, sample_set: SampleSet = SamplesQuery.ALL_SAMPLES):
         super().__init__()
         self._query_connection = connection
         self._sample_set = sample_set
@@ -32,7 +32,7 @@ class SamplesQueryIndex(SamplesQuery):
     def dataframe(self) -> pd.DataFrame:
         pass
 
-    def _and(self, other):
+    def and_(self, other):
         if isinstance(other, SamplesQuery):
             intersect_set = self._intersect_sample_set(other.sample_set)
             return self._create_from(self._query_connection, intersect_set)
@@ -40,7 +40,7 @@ class SamplesQueryIndex(SamplesQuery):
             raise Exception(f'Cannot perform an "and" on object {other}')
 
     def __and__(self, other):
-        return self._and(other)
+        return self.and_(other)
 
     def __len__(self):
         if self.sample_set == self.ALL_SAMPLES:
@@ -49,13 +49,16 @@ class SamplesQueryIndex(SamplesQuery):
             return len(self.sample_set)
 
     def has(self, feature: QueryFeature) -> SamplesQuery:
-        return self._has(feature)
+        found_set = self._query_connection.sample_service.find_sample_sets_by_features([feature])
+        intersect_found = self._intersect_sample_set(found_set)
+
+        return self._create_from(self._query_connection, intersect_found)
 
     def has_mutation(self, mutation_feature: str) -> SamplesQuery:
-        return self._has(QueryFeatureMutation(mutation_feature))
+        return self.has(QueryFeatureMutation(mutation_feature))
 
     def has_allele(self, allele_feature: str) -> SamplesQuery:
-        return self._has(QueryFeatureMLST(allele_feature))
+        return self.has(QueryFeatureMLST(allele_feature))
 
     def within(self, distance: float, sample_name: str, within_type: str) -> SamplesQuery:
         raise Exception('Not implemented')
@@ -66,13 +69,6 @@ class SamplesQueryIndex(SamplesQuery):
     def is_type(self, sample_type) -> SamplesQuery:
         raise Exception('Not implemented')
 
-    def _has(self, feature: QueryFeature) -> SamplesQuery:
-        query_service = self._query_connection.get_feature_service(feature)
-        found_set = query_service.find_sample_set_by_feature(feature)
-        intersect_found = self._intersect_sample_set(found_set)
-
-        return self._create_from(self._query_connection, intersect_found)
-
-    def _create_from(self, connection: QueryConnection, sample_set: SampleSet) -> SamplesQuery:
+    def _create_from(self, connection: DataIndexConnection, sample_set: SampleSet) -> SamplesQuery:
         return SamplesQueryIndex(connection=self._query_connection,
                                  sample_set=sample_set)

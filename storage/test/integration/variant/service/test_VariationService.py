@@ -4,7 +4,7 @@ from typing import List
 
 import pytest
 
-from storage.test.integration.variant import data_dir
+from storage.test.integration import data_dir
 from storage.variant.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
 from storage.variant.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor
 from storage.variant.model.db import NucleotideVariantsSamples, SampleNucleotideVariation, Sample

@@ -3,7 +3,7 @@ from typing import cast
 import pandas as pd
 import pytest
 
-from storage.test.integration.variant import basic_mlst_file
+from storage.test.integration import basic_mlst_file
 from storage.variant.io.mlst.MLSTFeaturesReader import MLSTFeaturesReader
 from storage.variant.io.mlst.MLSTSampleData import MLSTSampleData
 from storage.variant.io.mlst.MLSTSampleDataPackage import MLSTSampleDataPackage

@@ -5,7 +5,7 @@ import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 from storage.connector.DataIndexConnection import DataIndexConnection
-from storage.test.integration.variant import sample_dirs, reference_file
+from storage.test.integration import sample_dirs, reference_file
 from storage.variant.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
 from storage.variant.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor
 
