@@ -1,6 +1,6 @@
 import math
 
-from storage.test.integration.variant import sourmash_dir
+from storage.test.integration import sourmash_dir
 from storage.variant.index.KmerSearchManager import KmerSearchManagerSourmash
 
 sigs = {

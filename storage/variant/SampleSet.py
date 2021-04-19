@@ -17,9 +17,11 @@ class SampleSet:
         else:
             self._bitmap = existing_bitmap
 
-    def intersection(self, other: Union[Set[int]]) -> SampleSet:
+    def intersection(self, other: Union[Set[int], SampleSet]) -> SampleSet:
         if other is None:
             raise Exception('Cannot intersect [other = None]')
+        elif isinstance(other, AllSampleSet):
+            return self
         elif isinstance(other, SampleSet):
             return self._bitmap.intersection(other._bitmap)
         elif isinstance(other, set):
@@ -27,10 +29,21 @@ class SampleSet:
         else:
             raise Exception(f'Cannot intersect other of type [{type(other)}]')
 
+    def is_empty(self) -> bool:
+        return len(self._bitmap) == 0
+
     @staticmethod
     def from_bytes(data: bytes) -> SampleSet:
         bitmap = BitMap.deserialize(data)
         return SampleSet(existing_bitmap=bitmap)
+
+    @classmethod
+    def create_empty(cls):
+        return SampleSet(existing_bitmap=BitMap())
+
+    @classmethod
+    def create_all(cls):
+        return AllSampleSet()
 
     def get_bytes(self) -> bytes:
         return self._bitmap.serialize()
@@ -45,4 +58,33 @@ class SampleSet:
         return len(self._bitmap)
 
     def __repr__(self):
-        return (f'<SampleSet(size={len(self._bitmap)}>')
+        return (f'<SampleSet(size={len(self._bitmap)})>')
+
+
+class AllSampleSet(SampleSet):
+    # Roaring bitmaps store 32-bit integers, so max size is all 32-bit ints
+    MAX_VALUE = 2 ** 32
+
+    def __init__(self):
+        super().__init__(sample_ids=[])
+
+    def intersection(self, other: Union[Set[int], SampleSet]) -> SampleSet:
+        return other
+
+    def is_empty(self) -> bool:
+        return False
+
+    def get_bytes(self) -> bytes:
+        raise Exception('Cannot serialize AllSampleSet')
+
+    def __iter__(self) -> Generator[int, None, None]:
+        yield from range(self.MAX_VALUE)
+
+    def __contains__(self, value: int) -> bool:
+        return value < self.MAX_VALUE
+
+    def __len__(self) -> int:
+        return self.MAX_VALUE
+
+    def __repr__(self):
+        return (f'<AllSampleSet(size={len(self._bitmap)})>')

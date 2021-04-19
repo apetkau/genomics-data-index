@@ -1,6 +1,6 @@
 import pytest
 
-from storage.test.integration.variant import chewbbaca_mlst_file, expand_list_by
+from storage.test.integration import chewbbaca_mlst_file, expand_list_by
 from storage.variant.io.mlst.MLSTChewbbacaReader import MLSTChewbbacaReader
 
 

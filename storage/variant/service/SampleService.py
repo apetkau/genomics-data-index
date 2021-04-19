@@ -1,5 +1,8 @@
 from typing import List, Dict, Set, Union, cast
 
+import pandas as pd
+
+from storage.api.impl.QueriesCollection import QueriesCollection
 from storage.variant.SampleSet import SampleSet
 from storage.variant.model.NucleotideMutationTranslater import NucleotideMutationTranslater
 from storage.variant.model.QueryFeature import QueryFeature
@@ -67,6 +70,17 @@ class SampleService:
             .filter(Reference.name == reference_name) \
             .all()
         return samples
+
+    def create_dataframe_from_sample_set(self, sample_set: SampleSet,
+                                         queries_collection: QueriesCollection) -> pd.DataFrame:
+        samples = self.find_samples_by_ids(sample_set)
+        query_expression = queries_collection.query_expression()
+        data = []
+        for sample in samples:
+            data.append([query_expression, sample.name, sample.id, 'Present'])
+
+        results_df = pd.DataFrame(data=data, columns=['Query', 'Sample Name', 'Sample ID', 'Status'])
+        return results_df
 
     def count_samples_associated_with_reference(self, reference_name: str) -> int:
         return len(self.get_samples_associated_with_reference(reference_name))
@@ -141,6 +155,22 @@ class SampleService:
             raise Exception(f'Should only be one feature type but instead got: {feature_types}.')
         else:
             return feature_types.pop()
+
+    def find_sample_sets_by_features(self, features: List[QueryFeature]) -> Dict[str, SampleSet]:
+        feature_type = self._get_feature_type(features)
+
+        if feature_type == 'QueryFeatureMutation':
+            features = cast(List[QueryFeatureMutation], features)
+            variants_dict = self._get_variants_samples_by_variation_features(features)
+
+            return {id: variants_dict[id].sample_ids for id in variants_dict}
+        elif feature_type == 'QueryFeatureMLST':
+            features = cast(List[QueryFeatureMLST], features)
+            mlst_alleles = self._get_mlst_samples_by_mlst_features(features)
+
+            return {a.sla: a.sample_ids for a in mlst_alleles}
+        else:
+            raise Exception(f'Invalid feature type {feature_type}')
 
     def find_samples_by_features(self, features: List[QueryFeature]) -> Dict[str, List[Sample]]:
         feature_type = self._get_feature_type(features)

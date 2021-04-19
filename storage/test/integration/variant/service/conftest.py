@@ -6,9 +6,9 @@ import pytest
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-from storage.test.integration.variant import sample_dirs, reference_file, regular_vcf_dir, data_dir
-from storage.test.integration.variant import mlst_file_single_scheme, basic_mlst_file, mlst_file_unknown
-from storage.test.integration.variant import sourmash_signatures
+from storage.test.integration import sample_dirs, reference_file, regular_vcf_dir, data_dir
+from storage.test.integration import mlst_file_single_scheme, basic_mlst_file, mlst_file_unknown
+from storage.test.integration import sourmash_signatures
 from storage.variant.service import DatabaseConnection
 from storage.variant.service.ReferenceService import ReferenceService
 from storage.variant.service.VariationService import VariationService

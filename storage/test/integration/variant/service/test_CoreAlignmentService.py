@@ -7,7 +7,7 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 from Bio import AlignIO
 from Bio.Align import MultipleSeqAlignment
 
-from storage.test.integration.variant import data_dir
+from storage.test.integration import data_dir
 
 
 def remove_column(alignment: MultipleSeqAlignment, position: int) -> MultipleSeqAlignment:

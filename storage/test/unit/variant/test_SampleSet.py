@@ -8,6 +8,7 @@ def test_create_sample_set_from_list():
     assert 2 not in sample_set
     assert 1 == len(sample_set)
     assert {1} == set(sample_set)
+    assert not sample_set.is_empty()
 
 
 def test_create_sample_set_from_list_multiple():
@@ -27,6 +28,7 @@ def test_create_sample_set_from_list_empty():
     assert 1 not in sample_set
     assert 0 == len(sample_set)
     assert set() == set(sample_set)
+    assert sample_set.is_empty()
 
 
 def test_serialize_deserialize():
@@ -52,3 +54,24 @@ def test_intersect_python_set():
     sample_set1 = SampleSet(sample_ids=[1, 3, 10])
 
     assert {3, 10} == set(sample_set1.intersection({3, 10, 20}))
+
+
+def test_create_empty_sample_set():
+    empty_set = SampleSet.create_empty()
+    assert len(empty_set) == 0
+    assert set() == set(empty_set)
+    assert empty_set.is_empty()
+
+
+def test_create_all_sample_set():
+    all_set = SampleSet.create_all()
+    assert len(all_set) == 2 ** 32
+    assert 0 in all_set
+    assert 1 in all_set
+    assert 2 ** 32 - 1 in all_set
+    assert 2 ** 32 not in all_set
+
+    other_set = SampleSet(sample_ids=[1, 3, 10])
+
+    assert all_set.intersection(other_set) == other_set
+    assert other_set.intersection(all_set) == other_set

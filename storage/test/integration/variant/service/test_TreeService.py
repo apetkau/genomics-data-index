@@ -1,7 +1,7 @@
 import pytest
 from ete3 import Tree
 
-from storage.test.integration.variant import tree_file
+from storage.test.integration import tree_file
 
 
 @pytest.fixture
