@@ -498,11 +498,11 @@ def db(ctx):
     pass
 
 
+UNITS = ['B', 'KB', 'MB', 'GB']
+
 @db.command(name='size')
 @click.pass_context
-@click.option('--kb', help='Print in KB', is_flag=True)
-@click.option('--mb', help='Print in MB', is_flag=True)
-@click.option('--gb', help='Print in GB', is_flag=True)
-def db_size(ctx, kb, mb, gb):
-    size_df = ctx.obj['data_index_connection'].db_size()
+@click.option('--unit', default='B', help='The unit to display data sizes as.', type=click.Choice(UNITS))
+def db_size(ctx, unit):
+    size_df = ctx.obj['data_index_connection'].db_size(unit)
     size_df.to_csv(sys.stdout, sep='\t', index=False, float_format='%0.2f', na_rep='-')
