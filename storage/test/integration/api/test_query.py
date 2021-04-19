@@ -2,6 +2,8 @@ import pytest
 from tempfile import TemporaryDirectory
 from pathlib import Path
 
+import pandas as pd
+
 from storage.connector.DataIndexConnection import DataIndexConnection
 from storage.variant.model.QueryFeatureMutation import QueryFeatureMutation
 from storage.variant.model.QueryFeatureMLST import QueryFeatureMLST
@@ -155,3 +157,49 @@ def test_query_single_mutation_no_results_toframe(loaded_database_connection: Da
     df = query(loaded_database_connection).has_mutation('reference:1:1:A').toframe()
     assert 0 == len(df)
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+
+
+def test_join_custom_dataframe_no_query(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+
+    df = pd.DataFrame([
+        [1, 'red'],
+        [2, 'green'],
+        [3, 'blue']
+    ], columns=['Sample ID', 'Color'])
+
+    query_result = query(loaded_database_connection, data_frame=df, sample_ids_column='Sample ID')
+    assert 3 == len(query_result)
+    assert {1, 2, 3} == set(query_result.sample_set)
+
+
+def test_join_custom_dataframe_single_query(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+
+    df = pd.DataFrame([
+        [sampleA.id, 'red'],
+        [sampleB.id, 'green'],
+        [sampleC.id, 'blue']
+    ], columns=['Sample ID', 'Color'])
+
+    query_result = query(loaded_database_connection,
+                         data_frame=df,
+                         sample_ids_column='Sample ID')
+    query_result = query_result.has_mutation('reference:839:C:G')
+    assert 2 == len(query_result)
+    assert {sampleB.id, sampleC.id} == set(query_result.sample_set)
+
+    df = query_result.toframe()
+
+    assert 2 == len(df)
+    assert {'Query', 'Sample Name', 'Sample ID', 'Status', 'Color'} == set(df.columns.tolist())
+
+    df = df.sort_values(['Sample Name'])
+    assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert [sampleB.id, sampleC.id] == df['Sample ID'].tolist()
+    assert ['green', 'blue'] == df['Color'].tolist()
+    assert {'reference:839:C:G'} == set(df['Query'].tolist())

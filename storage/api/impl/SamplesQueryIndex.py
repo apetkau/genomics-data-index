@@ -1,5 +1,4 @@
 from __future__ import annotations
-from typing import cast
 
 import pandas as pd
 
@@ -27,7 +26,7 @@ class SamplesQueryIndex(SamplesQuery):
         return self._sample_set
 
     def _intersect_sample_set(self, other: SampleSet) -> SampleSet:
-            return self.sample_set.intersection(other)
+        return self.sample_set.intersection(other)
 
     def toframe(self) -> pd.DataFrame:
         sample_service = self._query_connection.sample_service

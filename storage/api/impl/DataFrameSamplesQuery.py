@@ -14,8 +14,8 @@ class DataFrameSamplesQuery(SamplesQueryIndex):
     def __init__(self, data_frame: pd.DataFrame,
                  sample_ids_col: str,
                  connection: DataIndexConnection,
-                 sample_set: SampleSet = SamplesQuery.ALL_SAMPLES,
-                 queries_collection: QueriesCollection = QueriesCollection.create_empty()):
+                 queries_collection: QueriesCollection = QueriesCollection.create_empty(),
+                 sample_set: SampleSet = SamplesQuery.ALL_SAMPLES):
         super().__init__(connection=connection, sample_set=sample_set,
                          queries_collection=queries_collection)
         self._sample_ids_col = sample_ids_col
@@ -24,7 +24,7 @@ class DataFrameSamplesQuery(SamplesQueryIndex):
     def toframe(self) -> pd.DataFrame:
         samples_dataframe = super().toframe()
         merged_df = self._data_frame.merge(samples_dataframe, how='inner', left_on=self._sample_ids_col,
-                               right_on='Sample ID')
+                                           right_on='Sample ID')
         return merged_df
 
     def _create_from(self, connection: DataIndexConnection, sample_set: SampleSet,
@@ -48,12 +48,11 @@ class DataFrameSamplesQuery(SamplesQueryIndex):
 
     @classmethod
     def create_with_sample_names_column(self, sample_names_column: str, data_frame: pd.DataFrame,
-                                      connection: DataIndexConnection) -> DataFrameSamplesQuery:
+                                        connection: DataIndexConnection) -> DataFrameSamplesQuery:
         sample_names = data_frame[sample_names_column].tolist()
         sample_ids_col = 'Sample ID'
 
-        sample_name_ids = {} # do lookup based on sample names
-        raise Exception('Not implemented')
+        sample_name_ids = {}  # do lookup based on sample names
         sample_set = SampleSet(sample_ids=sample_name_ids.values())
 
         if sample_ids_col in data_frame:
