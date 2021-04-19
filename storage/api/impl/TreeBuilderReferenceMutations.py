@@ -21,7 +21,8 @@ class TreeBuilderReferenceMutations(TreeBuilder):
         if not database_connection.reference_service.exists_reference_genome(reference_name):
             raise Exception(f'Reference genome [{reference_name}] does not exist.')
 
-    def build(self, samples_set: Union[SampleSet, Iterable[str]], method: str, **kwargs) -> Tuple[Tree, SampleSet]:
+    def build(self, samples_set: Union[SampleSet, Iterable[str]],
+              method: str = 'iqtree', **kwargs) -> Tuple[Tree, SampleSet]:
         if method == 'iqtree':
             return self._build_iqtree(samples_set=samples_set, **kwargs)
         else:

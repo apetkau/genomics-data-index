@@ -10,6 +10,7 @@ from storage.variant.SampleSet import AllSampleSet
 from storage.variant.model.QueryFeatureMLST import QueryFeatureMLST
 from storage.variant.model.QueryFeatureMutation import QueryFeatureMutation
 from storage.variant.model.db import Sample
+from storage.api.impl.TreeSamplesQuery import TreeSamplesQuery
 
 
 def test_connect():
@@ -284,3 +285,13 @@ def test_join_custom_dataframe_missing_sample_names(loaded_database_connection: 
     assert [sampleC.id] == df['Sample ID'].tolist()
     assert ['blue'] == df['Color'].tolist()
     assert {'reference:839:C:G'} == set(df['Query'].tolist())
+
+
+def test_query_and_build_mutation_tree(loaded_database_connection: DataIndexConnection):
+    query_result = query(loaded_database_connection).has(
+        'reference:839:C:G', kind='mutation').build_tree(
+        kind='mutation', scope='genome', include_reference=True)
+    assert isinstance(query_result, TreeSamplesQuery)
+    assert query_result.tree is not None
+
+    assert {'SampleB', 'SampleC', 'genome'} == set(query_result.tree.get_leaf_names())
