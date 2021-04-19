@@ -288,10 +288,45 @@ def test_join_custom_dataframe_missing_sample_names(loaded_database_connection: 
 
 
 def test_query_and_build_mutation_tree(loaded_database_connection: DataIndexConnection):
-    query_result = query(loaded_database_connection).has(
-        'reference:839:C:G', kind='mutation').build_tree(
-        kind='mutation', scope='genome', include_reference=True)
+    query_result = query(loaded_database_connection).has('reference:839:C:G', kind='mutation')
+    assert 2 == len(query_result)
+
+    query_result = query_result.build_tree(kind='mutation', scope='genome', include_reference=True)
+    assert 2 == len(query_result)
+
     assert isinstance(query_result, TreeSamplesQuery)
     assert query_result.tree is not None
 
     assert {'SampleB', 'SampleC', 'genome'} == set(query_result.tree.get_leaf_names())
+
+
+def test_query_build_tree_and_query(loaded_database_connection: DataIndexConnection):
+    query_result = query(loaded_database_connection).has('reference:839:C:G', kind='mutation')
+    assert 2 == len(query_result)
+
+    query_result = query_result.build_tree(kind='mutation', scope='genome', include_reference=True)
+    assert 2 == len(query_result)
+
+    query_result = query_result.has('reference:5061:G:A', kind='mutation')
+    assert 1 == len(query_result)
+
+    # Tree should still be complete
+    assert {'SampleB', 'SampleC', 'genome'} == set(query_result.tree.get_leaf_names())
+
+
+def test_query_build_tree_dataframe(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+
+    df = query(loaded_database_connection).has(
+        'reference:839:C:G', kind='mutation').build_tree(
+        kind='mutation', scope='genome', include_reference=True).has(
+        'reference:5061:G:A', kind='mutation').toframe()
+
+    assert 1 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+
+    assert ['SampleB'] == df['Sample Name'].tolist()
+    assert ['Present'] == df['Status'].tolist()
+    assert [sampleB.id] == df['Sample ID'].tolist()
+    assert ['reference:839:C:G AND mutation_tree(genome) AND reference:5061:G:A'] == df['Query'].tolist()

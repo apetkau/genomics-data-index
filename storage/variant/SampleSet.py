@@ -23,9 +23,9 @@ class SampleSet:
         elif isinstance(other, AllSampleSet):
             return self
         elif isinstance(other, SampleSet):
-            return self._bitmap.intersection(other._bitmap)
+            return SampleSet(existing_bitmap=self._bitmap.intersection(other._bitmap))
         elif isinstance(other, set):
-            return self._bitmap.intersection(BitMap(other))
+            return SampleSet(self._bitmap.intersection(BitMap(other)))
         else:
             raise Exception(f'Cannot intersect other of type [{type(other)}]')
 
