@@ -207,7 +207,6 @@ def test_join_custom_dataframe_single_query(loaded_database_connection: DataInde
 
 def test_join_custom_dataframe_single_query_sample_names(loaded_database_connection: DataIndexConnection):
     db = loaded_database_connection.database
-    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
     sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
 
@@ -233,4 +232,55 @@ def test_join_custom_dataframe_single_query_sample_names(loaded_database_connect
     assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
     assert [sampleB.id, sampleC.id] == df['Sample ID'].tolist()
     assert ['green', 'blue'] == df['Color'].tolist()
+    assert {'reference:839:C:G'} == set(df['Query'].tolist())
+
+
+def test_join_custom_dataframe_extra_sample_names(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+
+    df = pd.DataFrame([
+        ['SampleA', 'red'],
+        ['SampleB', 'green'],
+        ['SampleC', 'blue'],
+        ['Extra', 'purple']
+    ], columns=['Samples', 'Color'])
+
+    query_result = query(loaded_database_connection,
+                         data_frame=df,
+                         sample_names_column='Samples')
+    df = query_result.has_mutation('reference:839:C:G').toframe()
+
+    assert 2 == len(df)
+    assert {'Query', 'Sample Name', 'Sample ID', 'Status', 'Color', 'Samples'} == set(df.columns.tolist())
+
+    df = df.sort_values(['Sample Name'])
+    assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert [sampleB.id, sampleC.id] == df['Sample ID'].tolist()
+    assert ['green', 'blue'] == df['Color'].tolist()
+    assert {'reference:839:C:G'} == set(df['Query'].tolist())
+
+
+def test_join_custom_dataframe_missing_sample_names(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+
+    df = pd.DataFrame([
+        ['SampleA', 'red'],
+        ['SampleC', 'blue'],
+    ], columns=['Samples', 'Color'])
+
+    query_result = query(loaded_database_connection,
+                         data_frame=df,
+                         sample_names_column='Samples')
+    df = query_result.has_mutation('reference:839:C:G').toframe()
+
+    assert 1 == len(df)
+    assert {'Query', 'Sample Name', 'Sample ID', 'Status', 'Color', 'Samples'} == set(df.columns.tolist())
+
+    df = df.sort_values(['Sample Name'])
+    assert ['SampleC'] == df['Sample Name'].tolist()
+    assert [sampleC.id] == df['Sample ID'].tolist()
+    assert ['blue'] == df['Color'].tolist()
     assert {'reference:839:C:G'} == set(df['Query'].tolist())
