@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import abc
+from typing import Union
 
 import pandas as pd
 
@@ -28,23 +29,11 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def has(self, feature: QueryFeature) -> SamplesQuery:
+    def has(self, feature: Union[QueryFeature, str], kind = None) -> SamplesQuery:
         pass
 
     @abc.abstractmethod
-    def has_mutation(self, mutation_feature: str) -> SamplesQuery:
-        pass
-
-    @abc.abstractmethod
-    def has_allele(self, allele_feature: str) -> SamplesQuery:
-        pass
-
-    @abc.abstractmethod
-    def within(self, distance: float, sample_name: str, within_type: str) -> SamplesQuery:
-        pass
-
-    @abc.abstractmethod
-    def within_kmer(self, distance: float, sample_name: str) -> SamplesQuery:
+    def within(self, distance: float, sample_name: str, kind: str) -> SamplesQuery:
         pass
 
     @abc.abstractmethod

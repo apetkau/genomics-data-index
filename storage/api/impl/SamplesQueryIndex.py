@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Union
+
 import pandas as pd
 
 from storage.api.SamplesQuery import SamplesQuery
@@ -12,6 +14,8 @@ from storage.variant.model.QueryFeatureMutation import QueryFeatureMutation
 
 
 class SamplesQueryIndex(SamplesQuery):
+
+    HAS_KINDS = ['mutation', 'mlst']
 
     def __init__(self, connection: DataIndexConnection,
                  sample_set: SampleSet = SamplesQuery.ALL_SAMPLES,
@@ -57,26 +61,31 @@ class SamplesQueryIndex(SamplesQuery):
     def __repr__(self) -> str:
         return f'<SamplesQueryIndex(len={len(self)})>'
 
-    def has(self, feature: QueryFeature) -> SamplesQuery:
-        found_set_dict = self._query_connection.sample_service.find_sample_sets_by_features([feature])
+    def has(self, feature: Union[QueryFeature, str], kind = None) -> SamplesQuery:
+        if isinstance(feature, QueryFeature):
+            query_feature = feature
+        elif kind is None:
+            raise Exception(f'feature=[{feature}] is not of type QueryFeature so must set "kind" parameter')
+        elif kind == 'mutation':
+            query_feature = QueryFeatureMutation(feature)
+        elif kind == 'mlst':
+            query_feature = QueryFeatureMLST(feature)
+        else:
+            raise Exception(f'kind={kind} is not recognized. Must be one of {self.HAS_KINDS}')
 
-        if feature.id in found_set_dict:
-            found_set = found_set_dict[feature.id]
+        found_set_dict = self._query_connection.sample_service.find_sample_sets_by_features([query_feature])
+
+        if query_feature.id in found_set_dict:
+            found_set = found_set_dict[query_feature.id]
             intersect_found = self._intersect_sample_set(found_set)
         else:
             intersect_found = SampleSet.create_empty()
 
-        queries_collection = self._queries_collection.append(feature)
+        queries_collection = self._queries_collection.append(query_feature)
         return self._create_from(self._query_connection, intersect_found,
                                  queries_collection=queries_collection)
 
-    def has_mutation(self, mutation_feature: str) -> SamplesQuery:
-        return self.has(QueryFeatureMutation(mutation_feature))
-
-    def has_allele(self, allele_feature: str) -> SamplesQuery:
-        return self.has(QueryFeatureMLST(allele_feature))
-
-    def within(self, distance: float, sample_name: str, within_type: str) -> SamplesQuery:
+    def within(self, distance: float, sample_name: str, kind: str) -> SamplesQuery:
         raise Exception('Not implemented')
 
     def within_kmer(self, distance: float, sample_name: str) -> SamplesQuery:
