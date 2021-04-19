@@ -16,6 +16,7 @@ from storage.variant.model.QueryFeatureMutation import QueryFeatureMutation
 class SamplesQueryIndex(SamplesQuery):
 
     HAS_KINDS = ['mutation', 'mlst']
+    BUILD_TREE_KINDS = ['mutation']
 
     def __init__(self, connection: DataIndexConnection,
                  sample_set: SampleSet = SamplesQuery.ALL_SAMPLES,
@@ -31,6 +32,13 @@ class SamplesQueryIndex(SamplesQuery):
 
     def _intersect_sample_set(self, other: SampleSet) -> SampleSet:
         return self.sample_set.intersection(other)
+
+    def tree(self, kind: str, scope: str, **kwargs):
+        if kind == 'mutation':
+            db = self._query_connection
+            db.tree_service.build_tree()
+        else:
+            raise Exception(f'Got kind=[{kind}], only the following kinds are supported: {self.BUILD_TREE_KINDS}')
 
     def toframe(self) -> pd.DataFrame:
         sample_service = self._query_connection.sample_service

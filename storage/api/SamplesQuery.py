@@ -29,6 +29,10 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
+    def tree(self, kind: str, scope: str, **kwargs):
+        pass
+
+    @abc.abstractmethod
     def has(self, feature: Union[QueryFeature, str], kind = None) -> SamplesQuery:
         pass
 
