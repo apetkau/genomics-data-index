@@ -49,18 +49,22 @@ class DataFrameSamplesQuery(SamplesQueryIndex):
     @classmethod
     def create_with_sample_names_column(self, sample_names_column: str, data_frame: pd.DataFrame,
                                         connection: DataIndexConnection) -> DataFrameSamplesQuery:
-        sample_names = data_frame[sample_names_column].tolist()
-        sample_ids_col = 'Sample ID'
+        sample_names = set(data_frame[sample_names_column].tolist())
+        sample_ids_column = 'Sample ID'
 
-        sample_name_ids = {}  # do lookup based on sample names
+        sample_name_ids = connection.sample_service.find_sample_name_ids(sample_names)
         sample_set = SampleSet(sample_ids=sample_name_ids.values())
 
-        if sample_ids_col in data_frame:
-            raise Exception(f'Column to be used for sample_ids [{sample_ids_col}] already in data frame')
+        # Only attempt once to rename sample IDs column if it already exists
+        if sample_ids_column in data_frame:
+            sample_ids_column = sample_ids_column + '_database'
+            if sample_ids_column in data_frame:
+                raise Exception(f'Column to be used for sample_ids [{sample_ids_column}] already in data frame')
 
-        data_frame = data_frame.merge()
+        sample_name_series = pd.Series(sample_name_ids, name=sample_ids_column)
+        data_frame = data_frame.merge(sample_name_series, left_on=sample_names_column, right_index=True)
 
         return DataFrameSamplesQuery(data_frame=data_frame,
-                                     sample_ids_col=sample_ids_col,
+                                     sample_ids_col=sample_ids_column,
                                      connection=connection,
                                      sample_set=sample_set)

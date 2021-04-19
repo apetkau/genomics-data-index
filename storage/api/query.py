@@ -26,6 +26,8 @@ def query(connection: DataIndexConnection,
                                                                        data_frame=data_frame,
                                                                        connection=connection)
         else:
-            raise Exception('Lookup of sample names not yet supported')
+            return DataFrameSamplesQuery.create_with_sample_names_column(sample_names_column,
+                                                                         data_frame=data_frame,
+                                                                         connection=connection)
     else:
         return SamplesQueryIndex(connection=connection)
