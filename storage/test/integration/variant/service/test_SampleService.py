@@ -300,7 +300,7 @@ def test_create_dataframe_from_sample_set(database, sample_service, variation_se
     df = sample_service.create_dataframe_from_sample_set(sample_set,
                                                          queries_collection=queries_collection)
     assert len(df) == 3
-    assert ['Feature', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
 
     df = df.sort_values(['Sample Name'])
     assert ['SampleA', 'SampleB', 'SampleC'] == df['Sample Name'].tolist()
@@ -317,7 +317,7 @@ def test_create_dataframe_from_sample_set_subset_samples(database, sample_servic
     df = sample_service.create_dataframe_from_sample_set(sample_set,
                                                          queries_collection=queries_collection)
     assert len(df) == 2
-    assert ['Feature', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
 
     df = df.sort_values(['Sample Name'])
     assert ['SampleA', 'SampleC'] == df['Sample Name'].tolist()
@@ -331,7 +331,7 @@ def test_create_dataframe_from_sample_set_empty(sample_service, variation_servic
     df = sample_service.create_dataframe_from_sample_set(sample_set,
                                                          queries_collection=queries_collection)
     assert len(df) == 0
-    assert ['Feature', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
 
 
 def test_create_dataframe_from_sample_set_single_query(database, sample_service, variation_service):
@@ -343,7 +343,7 @@ def test_create_dataframe_from_sample_set_single_query(database, sample_service,
 
     df = sample_service.create_dataframe_from_sample_set(sample_set,
                                                          queries_collection=queries_collection)
-    assert {'lmonocytogenes:abc:1'} == set(df['Feature'].tolist())
+    assert {'lmonocytogenes:abc:1'} == set(df['Query'].tolist())
 
 
 def test_create_dataframe_from_sample_set_multiple_query(database, sample_service, variation_service):
@@ -357,7 +357,7 @@ def test_create_dataframe_from_sample_set_multiple_query(database, sample_servic
 
     df = sample_service.create_dataframe_from_sample_set(sample_set,
                                                          queries_collection=queries_collection)
-    assert {'lmonocytogenes:abc:1 AND reference:1024:A:T'} == set(df['Feature'].tolist())
+    assert {'lmonocytogenes:abc:1 AND reference:1024:A:T'} == set(df['Query'].tolist())
 
 
 def test_create_dataframe_from_sample_set_multiple_type_query(database, sample_service, variation_service):
@@ -370,4 +370,4 @@ def test_create_dataframe_from_sample_set_multiple_type_query(database, sample_s
 
     df = sample_service.create_dataframe_from_sample_set(sample_set,
                                                          queries_collection=queries_collection)
-    assert {'lmonocytogenes:abc:1 AND testquery'} == set(df['Feature'].tolist())
+    assert {'lmonocytogenes:abc:1 AND testquery'} == set(df['Query'].tolist())

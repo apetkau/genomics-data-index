@@ -79,7 +79,7 @@ class SampleService:
         for sample in samples:
             data.append([query_expression, sample.name, sample.id, 'Present'])
 
-        results_df = pd.DataFrame(data=data, columns=['Feature', 'Sample Name', 'Sample ID', 'Status'])
+        results_df = pd.DataFrame(data=data, columns=['Query', 'Sample Name', 'Sample ID', 'Status'])
         return results_df
 
     def count_samples_associated_with_reference(self, reference_name: str) -> int:

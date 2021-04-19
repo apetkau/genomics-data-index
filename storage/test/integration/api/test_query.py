@@ -126,7 +126,7 @@ def test_query_single_mutation_dataframe(loaded_database_connection: DataIndexCo
     df = query(loaded_database_connection).has_mutation('reference:839:C:G').toframe()
 
     assert 2 == len(df)
-    assert ['Feature', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
 
     df = df.sort_values(['Sample Name'])
     assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
@@ -142,7 +142,7 @@ def test_query_chained_allele_dataframe(loaded_database_connection: DataIndexCon
         .has_allele('lmonocytogenes:lhkA:4').toframe()
 
     assert 1 == len(df)
-    assert ['Feature', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
 
     df = df.sort_values(['Sample Name'])
     assert ['CFSAN002349'] == df['Sample Name'].tolist()
@@ -152,4 +152,4 @@ def test_query_chained_allele_dataframe(loaded_database_connection: DataIndexCon
 def test_query_single_mutation_no_results_toframe(loaded_database_connection: DataIndexConnection):
     df = query(loaded_database_connection).has_mutation('reference:1:1:A').toframe()
     assert 0 == len(df)
-    assert ['Feature', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
