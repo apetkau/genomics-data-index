@@ -262,7 +262,7 @@ def test_find_sample_sets_by_features_mlst_two(database, sample_service, mlst_se
     sample4 = database.get_session().query(Sample).filter(Sample.name == '2014C-3598').one()
 
     mlst_sample_sets = sample_service.find_sample_sets_by_features([QueryFeatureMLST('lmonocytogenes:abcZ:1'),
-                                                            QueryFeatureMLST('ecoli:adk:100')])
+                                                                    QueryFeatureMLST('ecoli:adk:100')])
 
     assert {'lmonocytogenes:abcZ:1', 'ecoli:adk:100'} == set(mlst_sample_sets.keys())
 

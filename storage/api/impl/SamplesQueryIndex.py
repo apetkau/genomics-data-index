@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import pandas as pd
 
-from storage.variant.model.QueryFeature import QueryFeature
-from storage.variant.model.QueryFeatureMutation import QueryFeatureMutation
-from storage.variant.model.QueryFeatureMLST import QueryFeatureMLST
-from storage.variant.SampleSet import SampleSet
 from storage.api.SamplesQuery import SamplesQuery
-from storage.connector.DataIndexConnection import DataIndexConnection
 from storage.api.impl.QueriesCollection import QueriesCollection
+from storage.connector.DataIndexConnection import DataIndexConnection
+from storage.variant.SampleSet import SampleSet
+from storage.variant.model.QueryFeature import QueryFeature
+from storage.variant.model.QueryFeatureMLST import QueryFeatureMLST
+from storage.variant.model.QueryFeatureMutation import QueryFeatureMutation
 
 
 class SamplesQueryIndex(SamplesQuery):

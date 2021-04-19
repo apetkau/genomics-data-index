@@ -1,6 +1,6 @@
+import warnings
 from pathlib import Path
 from tempfile import TemporaryDirectory
-import warnings
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 

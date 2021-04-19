@@ -1,10 +1,11 @@
 from __future__ import annotations
+
 import abc
 
 import pandas as pd
 
-from storage.variant.model.QueryFeature import QueryFeature
 from storage.variant.SampleSet import SampleSet
+from storage.variant.model.QueryFeature import QueryFeature
 
 
 class SamplesQuery(abc.ABC):

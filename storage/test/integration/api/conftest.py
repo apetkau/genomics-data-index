@@ -1,15 +1,15 @@
 import tempfile
-from pathlib import Path
 import warnings
+from pathlib import Path
 
 import pytest
-from storage.variant.io.mlst.MLSTTSeemannFeaturesReader import MLSTTSeemannFeaturesReader
 
 from storage.variant.io.mlst.MLSTSampleDataPackage import MLSTSampleDataPackage
+from storage.variant.io.mlst.MLSTTSeemannFeaturesReader import MLSTTSeemannFeaturesReader
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-from storage.test.integration import sample_dirs, reference_file, basic_mlst_file, mlst_snippy_file
+from storage.test.integration import sample_dirs, reference_file, basic_mlst_file
 from storage.connector.DataIndexConnection import DataIndexConnection
 from storage.variant.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
 from storage.variant.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor

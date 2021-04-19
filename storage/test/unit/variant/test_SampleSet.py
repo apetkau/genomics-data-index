@@ -65,11 +65,11 @@ def test_create_empty_sample_set():
 
 def test_create_all_sample_set():
     all_set = SampleSet.create_all()
-    assert len(all_set) == 2**32
+    assert len(all_set) == 2 ** 32
     assert 0 in all_set
     assert 1 in all_set
-    assert 2**32 - 1 in all_set
-    assert 2**32 not in all_set
+    assert 2 ** 32 - 1 in all_set
+    assert 2 ** 32 not in all_set
 
     other_set = SampleSet(sample_ids=[1, 3, 10])
 

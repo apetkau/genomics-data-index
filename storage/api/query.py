@@ -1,12 +1,13 @@
 from __future__ import annotations
+
 from pathlib import Path
 
 import pandas as pd
 
-from storage.connector.DataIndexConnection import DataIndexConnection
 from storage.api.SamplesQuery import SamplesQuery
 from storage.api.impl.DataFrameSamplesQuery import DataFrameSamplesQuery
 from storage.api.impl.SamplesQueryIndex import SamplesQueryIndex
+from storage.connector.DataIndexConnection import DataIndexConnection
 
 
 def connect(database_connection: str, database_dir: Path) -> DataIndexConnection:

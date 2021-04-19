@@ -14,8 +14,8 @@ import pandas as pd
 from Bio import AlignIO
 
 import storage.variant.service.FeatureService as FeatureService
-from storage.FilesystemStorage import FilesystemStorage
 from storage.cli import yaml_config_provider
+from storage.connector.DataIndexConnection import DataIndexConnection
 from storage.variant.index.KmerIndexer import KmerIndexerSourmash, KmerIndexManager
 from storage.variant.io.mlst.MLSTChewbbacaReader import MLSTChewbbacaReader
 from storage.variant.io.mlst.MLSTSampleDataPackage import MLSTSampleDataPackage
@@ -26,18 +26,12 @@ from storage.variant.io.processor.MultipleProcessSampleFilesProcessor import Mul
 from storage.variant.io.processor.NullSampleFilesProcessor import NullSampleFilesProcessor
 from storage.variant.model.QueryFeatureMLST import QueryFeatureMLST
 from storage.variant.model.QueryFeatureMutation import QueryFeatureMutation
-from storage.variant.service import DatabaseConnection, EntityExistsError
+from storage.variant.service import EntityExistsError
 from storage.variant.service.CoreAlignmentService import CoreAlignmentService
-from storage.variant.service.KmerQueryService import KmerQueryService
-from storage.variant.service.KmerService import KmerService
-from storage.variant.service.MLSTQueryService import MLSTQueryService
 from storage.variant.service.MLSTService import MLSTService
-from storage.variant.service.MutationQueryService import MutationQueryService
-from storage.variant.service.ReferenceService import ReferenceService
 from storage.variant.service.SampleService import SampleService
 from storage.variant.service.TreeService import TreeService
 from storage.variant.service.VariationService import VariationService
-from storage.connector.DataIndexConnection import DataIndexConnection
 from storage.variant.util import get_genome_name
 
 logger = logging.getLogger('storage')

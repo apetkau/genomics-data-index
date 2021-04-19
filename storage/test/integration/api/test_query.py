@@ -1,15 +1,15 @@
-import pytest
-from tempfile import TemporaryDirectory
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 import pandas as pd
+import pytest
 
-from storage.connector.DataIndexConnection import DataIndexConnection
-from storage.variant.model.QueryFeatureMutation import QueryFeatureMutation
-from storage.variant.model.QueryFeatureMLST import QueryFeatureMLST
 from storage.api.query import query, connect
-from storage.variant.model.db import Sample
+from storage.connector.DataIndexConnection import DataIndexConnection
 from storage.variant.SampleSet import AllSampleSet
+from storage.variant.model.QueryFeatureMLST import QueryFeatureMLST
+from storage.variant.model.QueryFeatureMutation import QueryFeatureMutation
+from storage.variant.model.db import Sample
 
 
 def test_connect():
@@ -25,7 +25,7 @@ def test_connect():
 def test_initialized_query(loaded_database_connection: DataIndexConnection):
     initial_query = query(loaded_database_connection)
 
-    assert len(initial_query) == 2**32
+    assert len(initial_query) == 2 ** 32
     assert isinstance(initial_query.sample_set, AllSampleSet)
 
 
