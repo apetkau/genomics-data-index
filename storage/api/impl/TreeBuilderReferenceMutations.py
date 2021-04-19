@@ -1,4 +1,4 @@
-from typing import Union, Iterable
+from typing import Union, Iterable, Tuple
 
 from ete3 import Tree
 import logging
@@ -21,7 +21,7 @@ class TreeBuilderReferenceMutations(TreeBuilder):
         if not database_connection.reference_service.exists_reference_genome(reference_name):
             raise Exception(f'Reference genome [{reference_name}] does not exist.')
 
-    def build(self, samples_set: Union[SampleSet, Iterable[str]], method: str, **kwargs):
+    def build(self, samples_set: Union[SampleSet, Iterable[str]], method: str, **kwargs) -> Tuple[Tree, SampleSet]:
         if method == 'iqtree':
             return self._build_iqtree(samples_set=samples_set, **kwargs)
         else:
@@ -30,8 +30,8 @@ class TreeBuilderReferenceMutations(TreeBuilder):
     def _build_iqtree(self, samples_set: Union[SampleSet, Iterable[str]],
                       maxcores: int = 1,
                       align_type: str = 'full',
-                      include_reference: bool = True,
-                      extra_params: str = None) -> Tree:
+                      include_reference: bool = False,
+                      extra_params: str = None) -> Tuple[Tree, SampleSet]:
         sample_service = self._database_connection.sample_service
         alignment_service = self._database_connection.alignment_service
         tree_service = self._database_connection.tree_service
@@ -43,12 +43,14 @@ class TreeBuilderReferenceMutations(TreeBuilder):
 
         reference_samples = {s.name for s in sample_service.get_samples_associated_with_reference(self._reference_name)}
 
-        tree_samples = samples_names - reference_samples
+        tree_samples = samples_names.intersection(reference_samples)
+        tree_samples_set = SampleSet(sample_service.find_sample_name_ids(tree_samples).values())
 
         if len(tree_samples) < len(samples_names):
-            logger.warning(f'Building tree with only ({len(tree_samples)}/{len(reference_samples)} samples '
+            logger.warning(f'Building build_tree with only ({len(tree_samples)}/{len(reference_samples)}) samples '
                            f'that are found on reference [{self._reference_name}]')
 
+        logger.info('Building build_tree using "iqtree" for {len(tree_samples_set)}) samples')
         alignment_data = alignment_service.construct_alignment(reference_name=self._reference_name,
                                                                samples=samples_names,
                                                                align_type=align_type,
@@ -57,4 +59,4 @@ class TreeBuilderReferenceMutations(TreeBuilder):
                                                  num_cores=maxcores, align_type=align_type,
                                                  extra_params=extra_params)
 
-        return tree_data
+        return tree_data, tree_samples_set

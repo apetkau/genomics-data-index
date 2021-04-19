@@ -25,11 +25,15 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
+    def intersect(self, sample_set: SampleSet, query_message: str = None) -> SamplesQuery:
+        pass
+
+    @abc.abstractmethod
     def and_(self, other: SamplesQuery) -> SamplesQuery:
         pass
 
     @abc.abstractmethod
-    def tree(self, kind: str, scope: str, **kwargs):
+    def build_tree(self, kind: str, scope: str, **kwargs):
         pass
 
     @abc.abstractmethod
@@ -46,6 +50,11 @@ class SamplesQuery(abc.ABC):
 
     @abc.abstractmethod
     def is_empty(self):
+        pass
+
+    @property
+    @abc.abstractmethod
+    def tree(self):
         pass
 
     @abc.abstractmethod

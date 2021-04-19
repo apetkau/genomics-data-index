@@ -11,12 +11,12 @@ from storage.variant.SampleSet import SampleSet
 from storage.variant.model.QueryFeature import QueryFeature
 from storage.variant.model.QueryFeatureMLST import QueryFeatureMLST
 from storage.variant.model.QueryFeatureMutation import QueryFeatureMutation
+from storage.api.impl.TreeSamplesQuery import TreeSamplesQuery
 
 
 class SamplesQueryIndex(SamplesQuery):
 
     HAS_KINDS = ['mutation', 'mlst']
-    BUILD_TREE_KINDS = ['mutation']
 
     def __init__(self, connection: DataIndexConnection,
                  sample_set: SampleSet = SamplesQuery.ALL_SAMPLES,
@@ -30,15 +30,22 @@ class SamplesQueryIndex(SamplesQuery):
     def sample_set(self) -> SampleSet:
         return self._sample_set
 
+    def intersect(self, sample_set: SampleSet, query_message: str = None) -> SamplesQuery:
+        intersected_set = self._intersect_sample_set(sample_set)
+
+        if query_message is None:
+            query_message = f'intersect(samples={len(sample_set)}'
+
+        queries_collection = self._queries_collection.append(query_message)
+        return self._create_from(connection=self._query_connection, sample_set=intersected_set,
+                                 queries_collection=queries_collection)
+
     def _intersect_sample_set(self, other: SampleSet) -> SampleSet:
         return self.sample_set.intersection(other)
 
-    def tree(self, kind: str, scope: str, **kwargs):
-        if kind == 'mutation':
-            db = self._query_connection
-            db.tree_service.build_tree()
-        else:
-            raise Exception(f'Got kind=[{kind}], only the following kinds are supported: {self.BUILD_TREE_KINDS}')
+    def build_tree(self, kind: str, scope: str, **kwargs):
+        return TreeSamplesQuery.create(kind=kind, scope=scope, database_connection=self._query_connection,
+                                       wrapped_query=self, **kwargs)
 
     def toframe(self) -> pd.DataFrame:
         sample_service = self._query_connection.sample_service
@@ -57,6 +64,11 @@ class SamplesQueryIndex(SamplesQuery):
     def is_empty(self) -> bool:
         return self.sample_set.is_empty()
 
+    @property
+    def tree(self):
+        raise Exception(f'No tree exists for {self.__class__}.'
+                        f' Perhaps you should try to run build_tree() first to build a tree.')
+
     def __and__(self, other):
         return self.and_(other)
 
@@ -64,10 +76,10 @@ class SamplesQueryIndex(SamplesQuery):
         return len(self.sample_set)
 
     def __str__(self) -> str:
-        return f'<SamplesQueryIndex(len={len(self)})>'
+        return f'<SamplesQueryIndex(samples={len(self)})>'
 
     def __repr__(self) -> str:
-        return f'<SamplesQueryIndex(len={len(self)})>'
+        return str(self)
 
     def has(self, feature: Union[QueryFeature, str], kind = None) -> SamplesQuery:
         if isinstance(feature, QueryFeature):
