@@ -3,6 +3,7 @@ from __future__ import annotations
 import pandas as pd
 
 from storage.api.SamplesQuery import SamplesQuery
+from storage.api.impl.QueriesCollection import QueriesCollection
 from storage.api.impl.SamplesQueryIndex import SamplesQueryIndex
 from storage.variant.SampleSet import SampleSet
 from storage.connector.DataIndexConnection import DataIndexConnection
@@ -13,8 +14,10 @@ class DataFrameSamplesQuery(SamplesQueryIndex):
     def __init__(self, data_frame: pd.DataFrame,
                  sample_ids_col: str,
                  connection: DataIndexConnection,
-                 sample_set: SampleSet = SamplesQuery.ALL_SAMPLES):
-        super().__init__(connection=connection, sample_set=sample_set)
+                 sample_set: SampleSet = SamplesQuery.ALL_SAMPLES,
+                 queries_collection: QueriesCollection = QueriesCollection.create_empty()):
+        super().__init__(connection=connection, sample_set=sample_set,
+                         queries_collection=queries_collection)
         self._sample_ids_col = sample_ids_col
         self._data_frame = data_frame
 
@@ -24,11 +27,13 @@ class DataFrameSamplesQuery(SamplesQueryIndex):
                                right_on='Sample ID')
         return merged_df
 
-    def _create_from(self, connection: DataIndexConnection, sample_set: SampleSet) -> SamplesQuery:
+    def _create_from(self, connection: DataIndexConnection, sample_set: SampleSet,
+                     queries_collection: QueriesCollection) -> SamplesQuery:
         return DataFrameSamplesQuery(data_frame=self._data_frame,
                                      sample_ids_col=self._sample_ids_col,
                                      connection=connection,
-                                     sample_set=sample_set)
+                                     sample_set=sample_set,
+                                     queries_collection=queries_collection)
 
     @classmethod
     def create_with_sample_ids_column(self, sample_ids_column: str, data_frame: pd.DataFrame,

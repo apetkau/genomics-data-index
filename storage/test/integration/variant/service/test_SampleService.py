@@ -1,3 +1,4 @@
+from storage.api.impl.QueriesCollection import QueriesCollection
 from storage.variant.SampleSet import SampleSet
 from storage.variant.model.QueryFeatureMLST import QueryFeatureMLST
 from storage.variant.model.QueryFeatureMutation import QueryFeatureMutation
@@ -294,8 +295,10 @@ def test_create_dataframe_from_sample_set(database, sample_service, variation_se
     sampleC = database.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
 
     sample_set = SampleSet([sampleA.id, sampleB.id, sampleC.id])
+    queries_collection = QueriesCollection.create_empty()
 
-    df = sample_service.create_dataframe_from_sample_set(sample_set)
+    df = sample_service.create_dataframe_from_sample_set(sample_set,
+                                                         queries_collection=queries_collection)
     assert len(df) == 3
     assert ['Feature', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
 
@@ -309,8 +312,10 @@ def test_create_dataframe_from_sample_set_subset_samples(database, sample_servic
     sampleC = database.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
 
     sample_set = SampleSet([sampleA.id, sampleC.id])
+    queries_collection = QueriesCollection.create_empty()
 
-    df = sample_service.create_dataframe_from_sample_set(sample_set)
+    df = sample_service.create_dataframe_from_sample_set(sample_set,
+                                                         queries_collection=queries_collection)
     assert len(df) == 2
     assert ['Feature', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
 
@@ -321,7 +326,48 @@ def test_create_dataframe_from_sample_set_subset_samples(database, sample_servic
 
 def test_create_dataframe_from_sample_set_empty(sample_service, variation_service):
     sample_set = SampleSet.create_empty()
+    queries_collection = QueriesCollection.create_empty()
 
-    df = sample_service.create_dataframe_from_sample_set(sample_set)
+    df = sample_service.create_dataframe_from_sample_set(sample_set,
+                                                         queries_collection=queries_collection)
     assert len(df) == 0
     assert ['Feature', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+
+
+def test_create_dataframe_from_sample_set_single_query(database, sample_service, variation_service):
+    sampleA = database.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+
+    sample_set = SampleSet([sampleA.id, sampleB.id])
+    queries_collection = QueriesCollection.create_empty().append(QueryFeatureMLST('lmonocytogenes:abc:1'))
+
+    df = sample_service.create_dataframe_from_sample_set(sample_set,
+                                                         queries_collection=queries_collection)
+    assert {'lmonocytogenes:abc:1'} == set(df['Feature'].tolist())
+
+
+def test_create_dataframe_from_sample_set_multiple_query(database, sample_service, variation_service):
+    sampleA = database.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+
+    sample_set = SampleSet([sampleA.id, sampleB.id])
+    queries_collection = QueriesCollection.create_empty().append(
+        QueryFeatureMLST('lmonocytogenes:abc:1')).append(
+        QueryFeatureMutation('reference:1024:A:T'))
+
+    df = sample_service.create_dataframe_from_sample_set(sample_set,
+                                                         queries_collection=queries_collection)
+    assert {'lmonocytogenes:abc:1 AND reference:1024:A:T'} == set(df['Feature'].tolist())
+
+
+def test_create_dataframe_from_sample_set_multiple_type_query(database, sample_service, variation_service):
+    sampleA = database.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+
+    sample_set = SampleSet([sampleA.id, sampleB.id])
+    queries_collection = QueriesCollection.create_empty().append(
+        QueryFeatureMLST('lmonocytogenes:abc:1')).append('testquery')
+
+    df = sample_service.create_dataframe_from_sample_set(sample_set,
+                                                         queries_collection=queries_collection)
+    assert {'lmonocytogenes:abc:1 AND testquery'} == set(df['Feature'].tolist())

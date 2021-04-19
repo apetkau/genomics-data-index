@@ -2,6 +2,7 @@ from typing import List, Dict, Set, Union, cast
 
 import pandas as pd
 
+from storage.api.impl.QueriesCollection import QueriesCollection
 from storage.variant.SampleSet import SampleSet
 from storage.variant.model.NucleotideMutationTranslater import NucleotideMutationTranslater
 from storage.variant.model.QueryFeature import QueryFeature
@@ -70,11 +71,13 @@ class SampleService:
             .all()
         return samples
 
-    def create_dataframe_from_sample_set(self, sample_set: SampleSet) -> pd.DataFrame:
+    def create_dataframe_from_sample_set(self, sample_set: SampleSet,
+                                         queries_collection: QueriesCollection) -> pd.DataFrame:
         samples = self.find_samples_by_ids(sample_set)
+        query_expression = queries_collection.query_expression()
         data = []
         for sample in samples:
-            data.append([pd.NA, sample.name, sample.id, 'Present'])
+            data.append([query_expression, sample.name, sample.id, 'Present'])
 
         results_df = pd.DataFrame(data=data, columns=['Feature', 'Sample Name', 'Sample ID', 'Status'])
         return results_df

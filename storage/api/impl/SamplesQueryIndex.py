@@ -9,14 +9,18 @@ from storage.variant.model.QueryFeatureMLST import QueryFeatureMLST
 from storage.variant.SampleSet import SampleSet
 from storage.api.SamplesQuery import SamplesQuery
 from storage.connector.DataIndexConnection import DataIndexConnection
+from storage.api.impl.QueriesCollection import QueriesCollection
 
 
 class SamplesQueryIndex(SamplesQuery):
 
-    def __init__(self, connection: DataIndexConnection, sample_set: SampleSet = SamplesQuery.ALL_SAMPLES):
+    def __init__(self, connection: DataIndexConnection,
+                 sample_set: SampleSet = SamplesQuery.ALL_SAMPLES,
+                 queries_collection: QueriesCollection = QueriesCollection.create_empty()):
         super().__init__()
         self._query_connection = connection
         self._sample_set = sample_set
+        self._queries_collection = queries_collection
 
     @property
     def sample_set(self) -> SampleSet:
@@ -27,12 +31,15 @@ class SamplesQueryIndex(SamplesQuery):
 
     def toframe(self) -> pd.DataFrame:
         sample_service = self._query_connection.sample_service
-        return sample_service.create_dataframe_from_sample_set(self.sample_set)
+        return sample_service.create_dataframe_from_sample_set(self.sample_set,
+                                                               self._queries_collection)
 
     def and_(self, other):
         if isinstance(other, SamplesQuery):
             intersect_set = self._intersect_sample_set(other.sample_set)
-            return self._create_from(self._query_connection, intersect_set)
+            queries_collection = self._queries_collection.append(str(other))
+            return self._create_from(self._query_connection, intersect_set,
+                                     queries_collection=queries_collection)
         else:
             raise Exception(f'Cannot perform an "and" on object {other}')
 
@@ -45,6 +52,12 @@ class SamplesQueryIndex(SamplesQuery):
     def __len__(self):
         return len(self.sample_set)
 
+    def __str__(self) -> str:
+        return f'<SamplesQueryIndex(len={len(self)})>'
+
+    def __repr__(self) -> str:
+        return f'<SamplesQueryIndex(len={len(self)})>'
+
     def has(self, feature: QueryFeature) -> SamplesQuery:
         found_set_dict = self._query_connection.sample_service.find_sample_sets_by_features([feature])
 
@@ -54,7 +67,9 @@ class SamplesQueryIndex(SamplesQuery):
         else:
             intersect_found = SampleSet.create_empty()
 
-        return self._create_from(self._query_connection, intersect_found)
+        queries_collection = self._queries_collection.append(feature)
+        return self._create_from(self._query_connection, intersect_found,
+                                 queries_collection=queries_collection)
 
     def has_mutation(self, mutation_feature: str) -> SamplesQuery:
         return self.has(QueryFeatureMutation(mutation_feature))
@@ -71,6 +86,8 @@ class SamplesQueryIndex(SamplesQuery):
     def is_type(self, sample_type) -> SamplesQuery:
         raise Exception('Not implemented')
 
-    def _create_from(self, connection: DataIndexConnection, sample_set: SampleSet) -> SamplesQuery:
+    def _create_from(self, connection: DataIndexConnection, sample_set: SampleSet,
+                     queries_collection: QueriesCollection) -> SamplesQuery:
         return SamplesQueryIndex(connection=self._query_connection,
-                                 sample_set=sample_set)
+                                 sample_set=sample_set,
+                                 queries_collection=queries_collection)

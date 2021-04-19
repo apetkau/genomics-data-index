@@ -34,3 +34,6 @@ class QueryFeature(abc.ABC):
         :return: The equivalent of this feature but representing an unknown.
         """
         pass
+
+    def __str__(self) -> str:
+        return self.id
