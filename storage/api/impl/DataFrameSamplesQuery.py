@@ -22,7 +22,7 @@ class DataFrameSamplesQuery(SamplesQueryIndex):
         self._sample_ids_col = sample_ids_col
         self._data_frame = data_frame
 
-    def toframe(self) -> pd.DataFrame:
+    def toframe(self, exclude_absent: bool = True) -> pd.DataFrame:
         samples_dataframe = super().toframe()
         merged_df = self._data_frame.merge(samples_dataframe, how='inner', left_on=self._sample_ids_col,
                                            right_on='Sample ID')
