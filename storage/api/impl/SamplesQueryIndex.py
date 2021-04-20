@@ -151,7 +151,7 @@ class SamplesQueryIndex(SamplesQuery):
         return self._create_from(self._query_connection, intersect_found,
                                  queries_collection=queries_collection)
 
-    def within(self, sample_names: Union[str, List[str]], kind: str, **kwargs) -> SamplesQuery:
+    def within(self, sample_names: Union[str, List[str]], kind: str = 'distance', **kwargs) -> SamplesQuery:
         raise Exception(f'Cannot query within a distance without a tree.'
                         f' Perhaps you want to run build_tree() first to build a tree.')
 
