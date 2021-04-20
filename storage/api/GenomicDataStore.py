@@ -18,6 +18,7 @@ class GenomicDataStore:
 
     def __init__(self, connection: DataIndexConnection):
         self._connection = connection
+        self._samples_count = self.count_samples()
 
     @property
     def connection(self) -> DataIndexConnection:
@@ -110,3 +111,10 @@ class GenomicDataStore:
         dconnection = DataIndexConnection.connect(database_connection=database_connection,
                                            database_dir=database_dir)
         return GenomicDataStore(connection=dconnection)
+
+    def __str__(self) -> str:
+        samples_count = self._samples_count
+        return f'<GenomicDataStore(samples={samples_count})>'
+
+    def __repr__(self) -> str:
+        return str(self)
