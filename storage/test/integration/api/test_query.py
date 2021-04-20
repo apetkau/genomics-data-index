@@ -26,8 +26,7 @@ def test_connect():
 def test_initialized_query(loaded_database_connection: DataIndexConnection):
     initial_query = query(loaded_database_connection)
 
-    assert len(initial_query) == 2 ** 32
-    assert isinstance(initial_query.sample_set, AllSampleSet)
+    assert len(initial_query) == 9
 
 
 def test_query_single_mutation(loaded_database_connection: DataIndexConnection):
@@ -161,9 +160,6 @@ def test_query_single_mutation_no_results_toframe(loaded_database_connection: Da
 
 
 def test_join_custom_dataframe_no_query(loaded_database_connection: DataIndexConnection):
-    db = loaded_database_connection.database
-    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
-
     df = pd.DataFrame([
         [1, 'red'],
         [2, 'green'],

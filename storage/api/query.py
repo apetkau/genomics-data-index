@@ -31,4 +31,5 @@ def query(connection: DataIndexConnection,
                                                                          data_frame=data_frame,
                                                                          connection=connection)
     else:
-        return SamplesQueryIndex(connection=connection)
+        all_samples = connection.sample_service.get_all_sample_ids()
+        return SamplesQueryIndex(connection=connection, sample_set=all_samples)
