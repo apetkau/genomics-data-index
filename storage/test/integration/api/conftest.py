@@ -4,10 +4,11 @@ from pathlib import Path
 
 import pytest
 
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+
 from storage.variant.io.mlst.MLSTSampleDataPackage import MLSTSampleDataPackage
 from storage.variant.io.mlst.MLSTTSeemannFeaturesReader import MLSTTSeemannFeaturesReader
-
-warnings.filterwarnings("ignore", category=DeprecationWarning)
+from storage.api.GenomicDataStore import GenomicDataStore
 
 from storage.test.integration import sample_dirs, reference_file, basic_mlst_file
 from storage.connector.DataIndexConnection import DataIndexConnection
@@ -37,6 +38,11 @@ def loaded_database_connection() -> DataIndexConnection:
     # database_connection.mlst_service.insert(mlst_package_snippy)
 
     return database_connection
+
+
+@pytest.fixture
+def loaded_database_genomic_data_store(loaded_database_connection):
+    return GenomicDataStore(connection=loaded_database_connection)
 
 
 @pytest.fixture

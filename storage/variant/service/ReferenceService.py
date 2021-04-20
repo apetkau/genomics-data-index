@@ -82,6 +82,9 @@ class ReferenceService:
     def get_reference_genomes(self) -> List[Reference]:
         return self._connection.get_session().query(Reference).all()
 
+    def count_reference_genomes(self) -> int:
+        return self._connection.get_session().query(Reference).count()
+
     def find_references_for_sample(self, sample_name: str) -> List[Reference]:
         return self._connection.get_session().query(Reference) \
             .join(Reference.sample_nucleotide_variation) \

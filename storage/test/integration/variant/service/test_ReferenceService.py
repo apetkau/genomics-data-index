@@ -17,6 +17,14 @@ def example_tree() -> Tree:
     return Tree(str(tree_file))
 
 
+def test_count_references(reference_service):
+    assert 0 == reference_service.count_reference_genomes()
+
+
+def count_references_with_data(reference_service_with_data):
+    assert 1 == reference_service_with_data.count_reference_genomes()
+
+
 def test_insert_reference_genome(database, reference_service):
     assert 0 == database.get_session().query(Reference).count(), 'Database should be empty initially'
     reference_service.add_reference_genome(reference_file)
