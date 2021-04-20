@@ -3,6 +3,7 @@ from tempfile import TemporaryDirectory
 from typing import List
 
 import pytest
+from sqlalchemy.orm.exc import NoResultFound
 
 from storage.test.integration import data_dir
 from storage.variant.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
@@ -51,6 +52,28 @@ def test_insert_variants_masked_regions(database, snippy_nucleotide_data_package
     assert 437 == len(genomic_masks['SampleA'])
     assert 276 == len(genomic_masks['SampleB'])
     assert 329 == len(genomic_masks['SampleC'])
+
+
+def test_summarize_variants(database, snippy_nucleotide_data_package, reference_service_with_data,
+                                           sample_service, filesystem_storage):
+    variation_service = VariationService(database_connection=database,
+                                         reference_service=reference_service_with_data,
+                                         sample_service=sample_service,
+                                         variation_dir=filesystem_storage.variation_dir)
+    variation_service.insert(feature_scope_name='genome', data_package=snippy_nucleotide_data_package)
+
+    assert 112 == variation_service.count_on_reference('genome', include_unknown=False)
+
+    with pytest.raises(NoResultFound) as execinfo:
+        variation_service.count_on_reference('no_exists', include_unknown=False)
+    assert 'No row was found' in str(execinfo.value)
+
+    mutation_counts = variation_service.mutation_counts_on_reference('genome', include_unknown=False)
+    assert 112 == len(mutation_counts)
+    assert 2 == mutation_counts['reference:839:1:G']
+    assert 1 == mutation_counts['reference:866:9:G']
+    assert 1 == mutation_counts['reference:1048:1:G']
+    assert 2 == mutation_counts['reference:3897:5:G']
 
 
 def test_insert_variants_examine_variation(database, snippy_nucleotide_data_package, reference_service_with_data,

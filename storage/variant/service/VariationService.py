@@ -29,6 +29,23 @@ class VariationService(FeatureService):
                          sample_service=sample_service)
         self._reference_service = reference_service
 
+    def _reference_sequence_names(self, reference_name: str) -> List[str]:
+        return list(self._reference_service.get_reference_sequences(reference_name).keys())
+
+    def count_on_reference(self, reference_name: str, include_unknown: bool) -> int:
+        reference_sequence_names = self._reference_sequence_names(reference_name)
+        return self._connection.get_session().query(NucleotideVariantsSamples) \
+            .filter(NucleotideVariantsSamples.sequence.in_(reference_sequence_names)) \
+            .count()
+
+    def mutation_counts_on_reference(self, reference_name: str, include_unknown: bool) -> Dict[str, int]:
+        reference_sequence_names = self._reference_sequence_names(reference_name)
+        mutations = self._connection.get_session().query(NucleotideVariantsSamples) \
+            .filter(NucleotideVariantsSamples.sequence.in_(reference_sequence_names)) \
+            .all()
+
+        return {m.spdi: len(m.sample_ids) for m in mutations}
+
     def get_variants_ordered(self, sequence_name: str, type: str = 'SNP') -> List[NucleotideVariantsSamples]:
         return self._connection.get_session().query(NucleotideVariantsSamples) \
             .filter(NucleotideVariantsSamples.sequence == sequence_name) \

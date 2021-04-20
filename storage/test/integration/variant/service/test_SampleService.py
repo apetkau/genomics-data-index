@@ -6,6 +6,10 @@ from storage.variant.model.db import Sample
 from storage.variant.service.SampleService import SampleService
 
 
+def count_samples(sample_service, variation_service):
+    assert 3 == sample_service.count_samples()
+
+
 def test_samples_with_variants(sample_service, variation_service):
     samples_with_variants = sample_service.get_samples_with_variants('genome')
     assert {'SampleA', 'SampleB', 'SampleC'} == {sample.name for sample in samples_with_variants}

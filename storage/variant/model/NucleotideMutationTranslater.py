@@ -25,7 +25,7 @@ class NucleotideMutationTranslater:
         return deletion
 
     @classmethod
-    def from_spdi(cls, spdi: str) -> Tuple[str, int, int, str]:
+    def from_spdi(cls, spdi: str, convert_deletion = True) -> Tuple[str, int, Union[int, str], str]:
         if spdi is None:
             raise Exception('Cannot parse value spdi=None')
 
@@ -34,7 +34,11 @@ class NucleotideMutationTranslater:
             raise Exception(f'Incorrect number of items for spdi=[{spdi}]')
         else:
             position = int(values[1])
-            deletion = cls.convert_deletion(values[2])
+
+            if convert_deletion:
+                deletion = cls.convert_deletion(values[2])
+            else:
+                deletion = values[2]
 
             if position < 0:
                 raise Exception(f'Position must be non-negative: {position}')

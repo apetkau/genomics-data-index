@@ -98,6 +98,9 @@ class SampleService:
     def get_samples(self) -> List[Sample]:
         return self._connection.get_session().query(Sample).all()
 
+    def count_samples(self) -> int:
+        return self._connection.get_session().query(Sample).count()
+
     def get_all_sample_ids(self) -> SampleSet:
         ids_list = [id for id, in self._connection.get_session().query(Sample.id).all()]
         return SampleSet(ids_list)
