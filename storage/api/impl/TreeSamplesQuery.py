@@ -1,10 +1,10 @@
 from __future__ import annotations
-import copy
 
-from typing import Union, List, Dict, Optional
+import copy
+from typing import Union, List, Dict
 
 import pandas as pd
-from ete3 import Tree, TreeStyle, TreeNode
+from ete3 import Tree, TreeStyle
 
 from storage.api.SamplesQuery import SamplesQuery
 from storage.api.impl.TreeBuilderReferenceMutations import TreeBuilderReferenceMutations
@@ -69,7 +69,8 @@ class TreeSamplesQuery(SamplesQuery):
     def tolist(self, names=True):
         return self._wrapped_query.tolist(names=names)
 
-    def _within_distance(self, sample_names: Union[str, List[str]], kind: str, distance: float, units: str) -> SamplesQuery:
+    def _within_distance(self, sample_names: Union[str, List[str]], kind: str, distance: float,
+                         units: str) -> SamplesQuery:
         if units == 'substitutions':
             distance_multiplier = self._alignment_length
         elif units == 'substitutions/site':
