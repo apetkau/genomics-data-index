@@ -26,7 +26,7 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def toframe(self) -> pd.DataFrame:
+    def toframe(self, exclude_absent: bool = True) -> pd.DataFrame:
         pass
 
     @abc.abstractmethod

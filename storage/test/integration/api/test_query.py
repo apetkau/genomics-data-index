@@ -74,6 +74,9 @@ def test_query_single_mutation_complement(loaded_database_connection: DataIndexC
 
     df = query_result.toframe()
     assert {'reference:5061:G:A AND complement'} == set(df['Query'].tolist())
+    assert {'SampleA', 'SampleC', 'CFSAN002349', 'CFSAN023463',
+            '2014C-3598', '2014C-3599', '2014D-0067', '2014D-0068'} == set(df['Sample Name'].tolist())
+    assert {'Present'} == set(df['Status'].tolist())
 
 
 def test_query_single_mutation_summary(loaded_database_connection: DataIndexConnection):
@@ -212,6 +215,23 @@ def test_query_single_mutation_dataframe(loaded_database_connection: DataIndexCo
     df = df.sort_values(['Sample Name'])
     assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
     assert [sampleB.id, sampleC.id] == df['Sample ID'].tolist()
+    assert {'reference:839:C:G'} == set(df['Query'].tolist())
+
+
+def test_query_single_mutation_dataframe_include_all(loaded_database_connection: DataIndexConnection):
+    df = query(loaded_database_connection).has(
+        'reference:839:C:G', kind='mutation').toframe(exclude_absent=False)
+
+    assert 9 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+
+    df = df.sort_values(['Sample Name'])
+    assert ['2014C-3598', '2014C-3599', '2014D-0067', '2014D-0068',
+            'CFSAN002349', 'CFSAN023463',
+            'SampleA', 'SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert ['Absent', 'Absent', 'Absent', 'Absent',
+            'Absent', 'Absent',
+            'Absent', 'Present', 'Present'] == df['Status'].tolist()
     assert {'reference:839:C:G'} == set(df['Query'].tolist())
 
 

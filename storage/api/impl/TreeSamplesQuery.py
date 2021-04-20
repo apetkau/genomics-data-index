@@ -42,8 +42,8 @@ class TreeSamplesQuery(SamplesQuery):
                                 tree=self._tree,
                                 alignment_length=self._alignment_length)
 
-    def toframe(self) -> pd.DataFrame:
-        return self._wrapped_query.toframe()
+    def toframe(self, exclude_absent: bool = True) -> pd.DataFrame:
+        return self._wrapped_query.toframe(exclude_absent=exclude_absent)
 
     def summary(self) -> pd.DataFrame:
         return self._wrapped_query.summary()

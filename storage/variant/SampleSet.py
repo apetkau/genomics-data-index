@@ -40,7 +40,7 @@ class SampleSet:
         elif isinstance(other, set):
             other_set = BitMap(other)
             complement_bitmap = self._bitmap - other_set
-            return SampleSet(complement_bitmap)
+            return SampleSet(existing_bitmap=complement_bitmap)
         else:
             raise Exception(f'Cannot intersect other of type [{type(other)}]')
 

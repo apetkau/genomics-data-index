@@ -53,10 +53,12 @@ class SamplesQueryIndex(SamplesQuery):
         return TreeSamplesQuery.create(kind=kind, scope=scope, database_connection=self._query_connection,
                                        wrapped_query=self, **kwargs)
 
-    def toframe(self) -> pd.DataFrame:
+    def toframe(self, exclude_absent: bool = True) -> pd.DataFrame:
         sample_service = self._query_connection.sample_service
         return sample_service.create_dataframe_from_sample_set(self.sample_set,
-                                                               self._queries_collection)
+                                                               universe_set=self._universe_set,
+                                                               exclude_absent=exclude_absent,
+                                                               queries_collection=self._queries_collection)
 
     def summary(self) -> pd.DataFrame:
         present = len(self)
