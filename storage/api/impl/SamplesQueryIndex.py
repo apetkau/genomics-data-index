@@ -90,6 +90,13 @@ class SamplesQueryIndex(SamplesQuery):
     def is_empty(self) -> bool:
         return self.sample_set.is_empty()
 
+    def complement(self):
+        complement_set = self.universe_set.minus(self.sample_set)
+        query_collection = self._queries_collection.append('complement')
+        return self._create_from(connection=self._query_connection,
+                                 sample_set=complement_set,
+                                 queries_collection=query_collection)
+
     @property
     def tree(self):
         raise Exception(f'No tree exists for {self.__class__}.'

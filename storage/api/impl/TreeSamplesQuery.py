@@ -57,6 +57,9 @@ class TreeSamplesQuery(SamplesQuery):
     def has(self, feature: Union[QueryFeature, str], kind=None) -> SamplesQuery:
         return self._wrap_create(self._wrapped_query.has(feature=feature, kind=kind))
 
+    def complement(self):
+        return self._wrap_create(self._wrapped_query.complement())
+
     def within(self, distance: float, sample_name: str, units: str) -> SamplesQuery:
         if units == 'substitutions':
             distance_multiplier = self._alignment_length

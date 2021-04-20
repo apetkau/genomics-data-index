@@ -50,6 +50,10 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
+    def complement(self):
+        pass
+
+    @abc.abstractmethod
     def within(self, distance: float, sample_name: str, units: str) -> SamplesQuery:
         pass
 

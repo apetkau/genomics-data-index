@@ -29,6 +29,21 @@ class SampleSet:
         else:
             raise Exception(f'Cannot intersect other of type [{type(other)}]')
 
+    def minus(self, other):
+        if other is None:
+            return self
+        elif isinstance(other, AllSampleSet):
+            return self.create_empty()
+        elif isinstance(other, SampleSet):
+            complement_bitmap = self._bitmap - other._bitmap
+            return SampleSet(existing_bitmap=complement_bitmap)
+        elif isinstance(other, set):
+            other_set = BitMap(other)
+            complement_bitmap = self._bitmap - other_set
+            return SampleSet(complement_bitmap)
+        else:
+            raise Exception(f'Cannot intersect other of type [{type(other)}]')
+
     def is_empty(self) -> bool:
         return len(self._bitmap) == 0
 
