@@ -30,7 +30,11 @@ setup(name='thesis-index',
           'sqlalchemy',
           'pymysql',
           'requests',
+
+          # ete3 requires PyQt5 for some functionality <https://github.com/etetoolkit/ete/issues/354>
           'ete3',
+          'PyQt5',
+
           'ga4gh.vrs[extras]==0.6.2',
           'biocommons.seqrepo',
           'click',
