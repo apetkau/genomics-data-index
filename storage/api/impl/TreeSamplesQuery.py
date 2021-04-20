@@ -109,7 +109,34 @@ class TreeSamplesQuery(SamplesQuery):
         return {s.name: s.id for s in sample_service.find_samples_by_ids(self._wrapped_query.sample_set)}
 
     def _within_mrca(self, sample_names: Union[str, List[str]]) -> SamplesQuery:
-        pass
+        if isinstance(sample_names, str):
+            sample_names = [sample_names]
+
+        sample_name_ids = self._get_sample_name_ids()
+        sample_leaves_list = []
+        for name in sample_names:
+            sample_leaves = self._tree.get_leaves_by_name(name)
+            if len(sample_leaves) != 1:
+                raise Exception(
+                    f'Invalid number of matching leaves for sample [{name}], leaves {sample_leaves}')
+            else:
+                sample_leaves_list.append(sample_leaves[0])
+
+        if len(sample_leaves_list) == 0:
+            raise Exception(f'Should at least have some leaves in the tree matching sample_names={sample_names}')
+        elif len(sample_leaves_list) == 1:
+            found_sample_names = sample_names
+        else:
+            first_sample_leaf = sample_leaves_list.pop()
+            ancestor_node = first_sample_leaf.get_common_ancestor(sample_leaves_list)
+            found_sample_names = ancestor_node.get_leaf_names()
+
+        found_samples_list = []
+        for name in found_sample_names:
+            if name in sample_name_ids:
+                found_samples_list.append(sample_name_ids[name])
+        found_samples = SampleSet(found_samples_list)
+        return self.intersect(found_samples, f'within(mrca of {sample_names})')
 
     def within(self, sample_names: Union[str, List[str]], kind: str = 'distance', **kwargs) -> SamplesQuery:
         if kind == 'distance':

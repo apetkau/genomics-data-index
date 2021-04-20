@@ -54,7 +54,7 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def within(self, kind: str, sample_names: Union[str, List[str]], **kwargs) -> SamplesQuery:
+    def within(self, sample_names: Union[str, List[str]], kind: str = 'distance', **kwargs) -> SamplesQuery:
         pass
 
     @abc.abstractmethod
