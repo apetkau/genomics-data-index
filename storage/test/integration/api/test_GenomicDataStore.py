@@ -10,10 +10,16 @@ def test_summaries_loaded_data(loaded_database_genomic_data_store: GenomicDataSt
             'SampleA', 'SampleB', 'SampleC'} == set(gds.sample_names())
     assert 112 == gds.count_mutations('genome')
 
-    ms = gds.mutations_summary('genome')
-    print(ms)
+    ms = gds.mutations_summary('genome', id_type='spdi')
     assert 112 == len(ms)
     assert 2 == ms.loc['reference:839:1:G']
     assert 1 == ms.loc['reference:866:9:G']
     assert 1 == ms.loc['reference:1048:1:G']
     assert 2 == ms.loc['reference:3897:5:G']
+
+    ms = gds.mutations_summary('genome', id_type='spdi_ref')
+    assert 112 == len(ms)
+    assert 2 == ms.loc['reference:839:C:G']
+    assert 1 == ms.loc['reference:866:GCCAGATCC:G']
+    assert 1 == ms.loc['reference:1048:C:G']
+    assert 2 == ms.loc['reference:3897:GCGCA:G']

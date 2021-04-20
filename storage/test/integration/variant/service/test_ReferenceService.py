@@ -25,6 +25,43 @@ def count_references_with_data(reference_service_with_data):
     assert 1 == reference_service_with_data.count_reference_genomes()
 
 
+def test_translate_spdi(reference_service_with_data):
+    spdi_ids = {
+        'reference:3762:1:G',
+        'reference:374:1:ATTCTAGGGTAGACGCT',
+        'reference:3576:4:T',
+        'reference:3513:1:G',
+        'reference:1984:7:TTGA',
+        'reference:1483:21:A',
+    }
+
+    translated_ids = reference_service_with_data.translate_spdi(spdi_ids, to='spdi_ref')
+    assert translated_ids['reference:3762:1:G'] == 'reference:3762:A:G'
+    assert translated_ids['reference:374:1:ATTCTAGGGTAGACGCT'] == 'reference:374:A:ATTCTAGGGTAGACGCT'
+    assert translated_ids['reference:3576:4:T'] == 'reference:3576:TTTC:T'
+    assert translated_ids['reference:3513:1:G'] == 'reference:3513:T:G'
+    assert translated_ids['reference:1984:7:TTGA'] == 'reference:1984:GTGATTG:TTGA'
+    assert translated_ids['reference:1483:21:A'] == 'reference:1483:AAAGAGGGGCTGCTGGAGCCG:A'
+
+
+    spdi_ids_ref = {
+        'reference:3762:A:G',
+        'reference:374:A:ATTCTAGGGTAGACGCT',
+        'reference:3576:TTTC:T',
+        'reference:3513:T:G',
+        'reference:1984:GTGATTG:TTGA',
+        'reference:1483:AAAGAGGGGCTGCTGGAGCCG:A'
+    }
+
+    translated_ids = reference_service_with_data.translate_spdi(spdi_ids_ref, to='spdi_ref')
+    assert translated_ids['reference:3762:A:G'] == 'reference:3762:A:G'
+    assert translated_ids['reference:374:A:ATTCTAGGGTAGACGCT'] == 'reference:374:A:ATTCTAGGGTAGACGCT'
+    assert translated_ids['reference:3576:TTTC:T'] == 'reference:3576:TTTC:T'
+    assert translated_ids['reference:3513:T:G'] == 'reference:3513:T:G'
+    assert translated_ids['reference:1984:GTGATTG:TTGA'] == 'reference:1984:GTGATTG:TTGA'
+    assert translated_ids['reference:1483:AAAGAGGGGCTGCTGGAGCCG:A'] == 'reference:1483:AAAGAGGGGCTGCTGGAGCCG:A'
+
+
 def test_insert_reference_genome(database, reference_service):
     assert 0 == database.get_session().query(Reference).count(), 'Database should be empty initially'
     reference_service.add_reference_genome(reference_file)

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Union
+
 from storage.variant.model import NUCLEOTIDE_UNKNOWN
 from storage.variant.model.QueryFeature import QueryFeature
 
@@ -24,6 +26,8 @@ class QueryFeatureMutation(QueryFeature):
 
         if ref == self.WILD:
             raise Exception(f'Cannot set ref to be wild ({self.WILD}): {spdi}')
+        elif ref.isdigit():
+            self._ref = int(ref)
         else:
             self._ref = ref
 
@@ -41,6 +45,10 @@ class QueryFeatureMutation(QueryFeature):
         return self._seq_name
 
     @property
+    def sequence(self) -> str:
+        return self.scope
+
+    @property
     def position(self) -> int:
         return self._pos
 
@@ -50,15 +58,34 @@ class QueryFeatureMutation(QueryFeature):
 
     @property
     def stop(self) -> int:
-        return self.position + len(self.ref)
+        if isinstance(self._ref, int):
+            return self.position + self._ref
+        else:
+            return self.position + len(self.ref)
 
     @property
-    def ref(self) -> str:
+    def start0(self) -> int:
+        return self.start - 1
+
+    @property
+    def stop0(self) -> int:
+        return self.stop - 1
+
+    @property
+    def ref(self) -> Union[str, int]:
         return self._ref
+
+    @property
+    def deletion(self) -> Union[str, int]:
+        return self.ref
 
     @property
     def alt(self) -> str:
         return self._alt
+
+    @property
+    def insertion(self) -> str:
+        return self.alt
 
     def is_unknown(self) -> bool:
         return False

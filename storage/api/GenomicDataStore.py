@@ -8,6 +8,8 @@ from storage.connector.DataIndexConnection import DataIndexConnection
 
 class GenomicDataStore:
 
+    MUTATION_ID_TYPES = ['spdi_ref', 'spdi']
+
     def __init__(self, connection: DataIndexConnection):
         self._connection = connection
 
@@ -27,8 +29,16 @@ class GenomicDataStore:
         return self._connection.variation_service.count_on_reference(reference_genome,
                                                                      include_unknown=include_unknown)
 
-    def mutations_summary(self, reference_genome: str, include_unknown: bool = False) -> pd.Series:
-        mutation_counts = self._connection.variation_service.mutation_counts_on_reference(reference_genome,
-                                                                                          include_unknown=include_unknown)
+    def mutations_summary(self, reference_genome: str, id_type: str = 'spdi_ref', include_unknown: bool = False) -> pd.Series:
+        rs = self._connection.reference_service
+        if id_type not in self.MUTATION_ID_TYPES:
+            raise Exception(f'id_type={id_type} must be one of {self.MUTATION_ID_TYPES}')
+
+        vs = self._connection.variation_service
+        mutation_counts = vs.mutation_counts_on_reference(reference_genome,
+                                                          include_unknown=include_unknown)
+        if id_type == 'spdi_ref':
+            translated_ids = rs.translate_spdi(mutation_counts.keys(), to=id_type)
+            mutation_counts = {translated_ids[m]: mutation_counts[m] for m in mutation_counts}
 
         return pd.Series(mutation_counts, name='Mutations')

@@ -1,18 +1,22 @@
 from pathlib import Path
-from typing import List, Dict
+from typing import List, Dict, Iterable
 
 import ga4gh.vrs.dataproxy as dataproxy
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from biocommons.seqrepo import SeqRepo
 from ete3 import Tree
+from storage.variant.model.NucleotideMutationTranslater import NucleotideMutationTranslater
 
 from storage.variant.model.db import Reference, SampleNucleotideVariation, ReferenceSequence, Sample
 from storage.variant.service import DatabaseConnection, EntityExistsError
 from storage.variant.util import parse_sequence_file
+from storage.variant.model.QueryFeatureMutation import QueryFeatureMutation
 
 
 class ReferenceService:
+
+    MUTATION_ID_TYPES = ['spdi_ref']
 
     def __init__(self, database_connection: DatabaseConnection, seq_repo_dir: Path,
                  seq_repo_namespace: str = 'storage'):
@@ -84,6 +88,29 @@ class ReferenceService:
 
     def count_reference_genomes(self) -> int:
         return self._connection.get_session().query(Reference).count()
+
+    def translate_spdi(self, spdi_ids: Iterable, to: str = 'spdi_ref') -> Dict[str, str]:
+        if to not in self.MUTATION_ID_TYPES:
+            raise Exception(f'to={to} must be one of {self.MUTATION_ID_TYPES}')
+
+        # Convert to query feature mutations so I can get spdi parts
+        spdi_features = {QueryFeatureMutation(i) for i in spdi_ids}
+
+        # Get set of sequence names since it's likely all (or most) of the input spdi_ids are on the same sequence
+        sequence_names = {f.sequence for f in spdi_features}
+
+        # Create map of seq name to sequences so I don't have to re-generate them for every spdi_id
+        namespace = self._seq_repo_namespace
+        name_sequence_map = {n: self._seq_repo_proxy.get_sequence(f'{namespace}:{n}') for n in sequence_names}
+
+        spdi_ids_map = {}
+        for f in spdi_features:
+            reference_sequence_str = name_sequence_map[f.sequence]
+            spdi_del_str = reference_sequence_str[f.start0:f.stop0]
+            spdi_ref = f'{f.sequence}:{f.position}:{spdi_del_str}:{f.insertion}'
+            spdi_ids_map[f.id] = spdi_ref
+
+        return spdi_ids_map
 
     def find_references_for_sample(self, sample_name: str) -> List[Reference]:
         return self._connection.get_session().query(Reference) \
