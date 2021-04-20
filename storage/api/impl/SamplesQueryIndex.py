@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Union
+from typing import Union, List
 
 import pandas as pd
 
@@ -151,7 +151,7 @@ class SamplesQueryIndex(SamplesQuery):
         return self._create_from(self._query_connection, intersect_found,
                                  queries_collection=queries_collection)
 
-    def within(self, distance: float, sample_name: str, units: str) -> SamplesQuery:
+    def within(self, sample_names: Union[str, List[str]], kind: str, **kwargs) -> SamplesQuery:
         raise Exception(f'Cannot query within a distance without a tree.'
                         f' Perhaps you want to run build_tree() first to build a tree.')
 

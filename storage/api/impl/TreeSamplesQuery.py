@@ -1,10 +1,10 @@
 from __future__ import annotations
 import copy
 
-from typing import Union
+from typing import Union, List, Dict, Optional
 
 import pandas as pd
-from ete3 import Tree, TreeStyle
+from ete3 import Tree, TreeStyle, TreeNode
 
 from storage.api.SamplesQuery import SamplesQuery
 from storage.api.impl.TreeBuilderReferenceMutations import TreeBuilderReferenceMutations
@@ -17,6 +17,7 @@ from storage.variant.model.QueryFeature import QueryFeature
 class TreeSamplesQuery(SamplesQuery):
     BUILD_TREE_KINDS = ['mutation']
     DISTANCE_UNITS = ['substitutions', 'substitutions/site']
+    WITHIN_TYPES = ['distance', 'mrca']
 
     def __init__(self, connection: DataIndexConnection, wrapped_query: SamplesQuery, tree: Tree,
                  alignment_length: int):
@@ -68,7 +69,7 @@ class TreeSamplesQuery(SamplesQuery):
     def tolist(self, names=True):
         return self._wrapped_query.tolist(names=names)
 
-    def within(self, distance: float, sample_name: str, units: str) -> SamplesQuery:
+    def _within_distance(self, sample_names: Union[str, List[str]], kind: str, distance: float, units: str) -> SamplesQuery:
         if units == 'substitutions':
             distance_multiplier = self._alignment_length
         elif units == 'substitutions/site':
@@ -76,13 +77,17 @@ class TreeSamplesQuery(SamplesQuery):
         else:
             raise Exception(f'Invalid units=[{units}]. Must be one of {self.DISTANCE_UNITS}')
 
-        sample_service = self._query_connection.sample_service
-        sample_name_ids = {s.name: s.id for s in sample_service.find_samples_by_ids(self._wrapped_query.sample_set)}
+        if isinstance(sample_names, list):
+            raise NotImplementedError
+        elif not isinstance(sample_names, str):
+            raise Exception(f'Invalid type for sample_names=[{sample_names}]')
 
-        sample_leaves = self._tree.get_leaves_by_name(sample_name)
+        sample_name_ids = self._get_sample_name_ids()
+
+        sample_leaves = self._tree.get_leaves_by_name(sample_names)
         if len(sample_leaves) != 1:
             raise Exception(
-                f'Invalid number of matching leaves for sample [{sample_name}], leaves {sample_leaves}')
+                f'Invalid number of matching leaves for sample [{sample_names}], leaves {sample_leaves}')
 
         sample_node = sample_leaves[0]
 
@@ -97,7 +102,22 @@ class TreeSamplesQuery(SamplesQuery):
                 found_samples_set.add(sample_name_ids[leaf.name])
 
         found_samples = SampleSet(found_samples_set)
-        return self.intersect(found_samples, f'within({distance} {units} of {sample_name})')
+        return self.intersect(found_samples, f'within({distance} {units} of {sample_names})')
+
+    def _get_sample_name_ids(self) -> Dict[str, int]:
+        sample_service = self._query_connection.sample_service
+        return {s.name: s.id for s in sample_service.find_samples_by_ids(self._wrapped_query.sample_set)}
+
+    def _within_mrca(self, sample_names: Union[str, List[str]]) -> SamplesQuery:
+        pass
+
+    def within(self, sample_names: Union[str, List[str]], kind: str = 'distance', **kwargs) -> SamplesQuery:
+        if kind == 'distance':
+            return self._within_distance(sample_names=sample_names, kind=kind, **kwargs)
+        elif kind == 'mrca':
+            return self._within_mrca(sample_names=sample_names)
+        else:
+            raise Exception(f'kind=[{kind}] is not supported. Must be one of {self.WITHIN_TYPES}')
 
     def tree_styler(self, initial_style: TreeStyle = TreeStyle()) -> TreeStyler:
         return TreeStyler(tree=copy.deepcopy(self._tree),

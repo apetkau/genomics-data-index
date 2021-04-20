@@ -516,7 +516,7 @@ def test_within_constructed_tree(loaded_database_connection: DataIndexConnection
     assert 2 == len(query_result)
 
     # subs/site
-    df = query_result.within(0.005, 'SampleC', units='substitutions/site').toframe().sort_values('Sample Name')
+    df = query_result.within('SampleC', distance=0.005, units='substitutions/site').toframe().sort_values('Sample Name')
     assert 2 == len(df)
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
     assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
@@ -524,21 +524,21 @@ def test_within_constructed_tree(loaded_database_connection: DataIndexConnection
             } == set(df['Query'].tolist())
 
     # subs
-    df = query_result.within(26, 'SampleC', units='substitutions').toframe().sort_values('Sample Name')
+    df = query_result.within('SampleC', distance=26, units='substitutions').toframe().sort_values('Sample Name')
     assert 2 == len(df)
     assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
     assert {'reference:839:C:G AND mutation_tree(genome) AND within(26 substitutions of SampleC)'
             } == set(df['Query'].tolist())
 
     # should not include reference genome
-    df = query_result.within(100, 'SampleC', units='substitutions').toframe().sort_values('Sample Name')
+    df = query_result.within('SampleC', distance=100, units='substitutions').toframe().sort_values('Sample Name')
     assert 2 == len(df)
     assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
     assert {'reference:839:C:G AND mutation_tree(genome) AND within(100 substitutions of SampleC)'
             } == set(df['Query'].tolist())
 
     # should have only query sample
-    df = query_result.within(1, 'SampleC', units='substitutions').toframe().sort_values('Sample Name')
+    df = query_result.within('SampleC', distance=1, units='substitutions').toframe().sort_values('Sample Name')
     assert 1 == len(df)
     assert ['SampleC'] == df['Sample Name'].tolist()
     assert {'reference:839:C:G AND mutation_tree(genome) AND within(1 substitutions of SampleC)'
