@@ -6,21 +6,26 @@ import pandas as pd
 import pytest
 
 from storage.api.impl.TreeSamplesQuery import TreeSamplesQuery
-from storage.api.query import query, connect
+from storage.api.SamplesQuery import SamplesQuery
+from storage.api.GenomicDataStore import GenomicDataStore
 from storage.connector.DataIndexConnection import DataIndexConnection
 from storage.variant.model.QueryFeatureMLST import QueryFeatureMLST
 from storage.variant.model.QueryFeatureMutation import QueryFeatureMutation
 from storage.variant.model.db import Sample
+
+# wrapper methods to simplify writing tests
+def query(connection: DataIndexConnection, **kwargs) -> SamplesQuery:
+    return GenomicDataStore(connection=connection).samples_query(**kwargs)
 
 
 def test_connect():
     with TemporaryDirectory() as tmp_file_str:
         tmp_file = Path(tmp_file_str)
 
-        connection = connect(database_connection='sqlite:///:memory:', database_dir=tmp_file)
-        assert connection is not None
-        assert connection.reference_service is not None
-        assert connection.filesystem_storage.variation_dir.parent == tmp_file
+        ds = GenomicDataStore.connect(database_connection='sqlite:///:memory:', database_dir=tmp_file)
+        assert ds is not None
+        assert ds.connection.reference_service is not None
+        assert ds.connection.filesystem_storage.variation_dir.parent == tmp_file
 
 
 def test_initialized_query_default(loaded_database_connection: DataIndexConnection):
