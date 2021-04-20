@@ -91,6 +91,10 @@ class SampleService:
     def get_samples(self) -> List[Sample]:
         return self._connection.get_session().query(Sample).all()
 
+    def get_all_sample_ids(self) -> SampleSet:
+        ids_list = [id for id, in self._connection.get_session().query(Sample.id).all()]
+        return SampleSet(ids_list)
+
     def get_existing_samples_by_names(self, sample_names: List[str]) -> List[Sample]:
         return self._connection.get_session().query(Sample) \
             .filter(Sample.name.in_(sample_names)) \
