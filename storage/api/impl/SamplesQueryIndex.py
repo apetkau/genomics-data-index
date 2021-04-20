@@ -19,12 +19,18 @@ class SamplesQueryIndex(SamplesQuery):
     HAS_KINDS = ['mutation', 'mlst']
 
     def __init__(self, connection: DataIndexConnection,
-                 sample_set: SampleSet = SamplesQuery.ALL_SAMPLES,
+                 universe_set: SampleSet,
+                 sample_set: SampleSet,
                  queries_collection: QueriesCollection = QueriesCollection.create_empty()):
         super().__init__()
         self._query_connection = connection
+        self._universe_set = universe_set
         self._sample_set = sample_set
         self._queries_collection = queries_collection
+
+    @property
+    def universe_set(self) -> SampleSet:
+        return self._universe_set
 
     @property
     def sample_set(self) -> SampleSet:
@@ -115,5 +121,6 @@ class SamplesQueryIndex(SamplesQuery):
     def _create_from(self, connection: DataIndexConnection, sample_set: SampleSet,
                      queries_collection: QueriesCollection) -> SamplesQuery:
         return SamplesQueryIndex(connection=self._query_connection,
+                                 universe_set=self._universe_set,
                                  sample_set=sample_set,
                                  queries_collection=queries_collection)

@@ -17,6 +17,11 @@ class SamplesQuery(abc.ABC):
 
     @property
     @abc.abstractmethod
+    def universe_set(self) -> SampleSet:
+        pass
+
+    @property
+    @abc.abstractmethod
     def sample_set(self) -> SampleSet:
         pass
 

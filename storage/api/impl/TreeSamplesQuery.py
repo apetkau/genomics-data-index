@@ -25,6 +25,10 @@ class TreeSamplesQuery(SamplesQuery):
         self._alignment_length = alignment_length
 
     @property
+    def universe_set(self) -> SampleSet:
+        return self._wrapped_query.universe_set
+
+    @property
     def sample_set(self) -> SampleSet:
         return self._wrapped_query.sample_set
 
