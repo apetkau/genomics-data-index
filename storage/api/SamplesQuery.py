@@ -65,6 +65,10 @@ class SamplesQuery(abc.ABC):
     def is_empty(self):
         pass
 
+    @abc.abstractmethod
+    def query_expression(self) -> str:
+        pass
+
     @property
     @abc.abstractmethod
     def tree(self):

@@ -48,6 +48,9 @@ class SamplesQueryIndex(SamplesQuery):
     def _intersect_sample_set(self, other: SampleSet) -> SampleSet:
         return self.sample_set.intersection(other)
 
+    def query_expression(self) -> str:
+        return self._queries_collection.query_expression()
+
     def build_tree(self, kind: str, scope: str, **kwargs):
         return TreeSamplesQuery.create(kind=kind, scope=scope, database_connection=self._query_connection,
                                        wrapped_query=self, **kwargs)
