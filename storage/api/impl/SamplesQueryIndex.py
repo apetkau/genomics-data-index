@@ -6,25 +6,30 @@ import pandas as pd
 
 from storage.api.SamplesQuery import SamplesQuery
 from storage.api.impl.QueriesCollection import QueriesCollection
+from storage.api.impl.TreeSamplesQuery import TreeSamplesQuery
 from storage.connector.DataIndexConnection import DataIndexConnection
 from storage.variant.SampleSet import SampleSet
 from storage.variant.model.QueryFeature import QueryFeature
 from storage.variant.model.QueryFeatureMLST import QueryFeatureMLST
 from storage.variant.model.QueryFeatureMutation import QueryFeatureMutation
-from storage.api.impl.TreeSamplesQuery import TreeSamplesQuery
 
 
 class SamplesQueryIndex(SamplesQuery):
-
     HAS_KINDS = ['mutation', 'mlst']
 
     def __init__(self, connection: DataIndexConnection,
-                 sample_set: SampleSet = SamplesQuery.ALL_SAMPLES,
+                 universe_set: SampleSet,
+                 sample_set: SampleSet,
                  queries_collection: QueriesCollection = QueriesCollection.create_empty()):
         super().__init__()
         self._query_connection = connection
+        self._universe_set = universe_set
         self._sample_set = sample_set
         self._queries_collection = queries_collection
+
+    @property
+    def universe_set(self) -> SampleSet:
+        return self._universe_set
 
     @property
     def sample_set(self) -> SampleSet:
@@ -47,10 +52,32 @@ class SamplesQueryIndex(SamplesQuery):
         return TreeSamplesQuery.create(kind=kind, scope=scope, database_connection=self._query_connection,
                                        wrapped_query=self, **kwargs)
 
-    def toframe(self) -> pd.DataFrame:
+    def toframe(self, exclude_absent: bool = True) -> pd.DataFrame:
         sample_service = self._query_connection.sample_service
         return sample_service.create_dataframe_from_sample_set(self.sample_set,
-                                                               self._queries_collection)
+                                                               universe_set=self._universe_set,
+                                                               exclude_absent=exclude_absent,
+                                                               queries_collection=self._queries_collection)
+
+    def summary(self) -> pd.DataFrame:
+        present = len(self)
+        total = len(self._universe_set)
+        unknown = pd.NA
+        absent = total - present
+        per_present = (present / total) * 100
+        per_absent = (absent / total) * 100
+        per_unknown = pd.NA
+
+        return pd.DataFrame([{
+            'Query': self._queries_collection.query_expression(),
+            'Present': present,
+            'Absent': absent,
+            'Unknown': unknown,
+            'Total': total,
+            '% Present': per_present,
+            '% Absent': per_absent,
+            '% Unknown': per_unknown,
+        }])
 
     def and_(self, other):
         if isinstance(other, SamplesQuery):
@@ -64,6 +91,13 @@ class SamplesQueryIndex(SamplesQuery):
     def is_empty(self) -> bool:
         return self.sample_set.is_empty()
 
+    def complement(self):
+        complement_set = self.universe_set.minus(self.sample_set)
+        query_collection = self._queries_collection.append('complement')
+        return self._create_from(connection=self._query_connection,
+                                 sample_set=complement_set,
+                                 queries_collection=query_collection)
+
     @property
     def tree(self):
         raise Exception(f'No tree exists for {self.__class__}.'
@@ -76,12 +110,14 @@ class SamplesQueryIndex(SamplesQuery):
         return len(self.sample_set)
 
     def __str__(self) -> str:
-        return f'<SamplesQueryIndex(samples={len(self)})>'
+        universe_length = len(self.universe_set)
+        percent_selected = (len(self) / universe_length) * 100
+        return f'<{self.__class__.__name__}[{percent_selected:0.0f}% ({len(self)}/{universe_length}) samples]>'
 
     def __repr__(self) -> str:
         return str(self)
 
-    def has(self, feature: Union[QueryFeature, str], kind = None) -> SamplesQuery:
+    def has(self, feature: Union[QueryFeature, str], kind=None) -> SamplesQuery:
         if isinstance(feature, QueryFeature):
             query_feature = feature
         elif kind is None:
@@ -115,5 +151,6 @@ class SamplesQueryIndex(SamplesQuery):
     def _create_from(self, connection: DataIndexConnection, sample_set: SampleSet,
                      queries_collection: QueriesCollection) -> SamplesQuery:
         return SamplesQueryIndex(connection=self._query_connection,
+                                 universe_set=self._universe_set,
                                  sample_set=sample_set,
                                  queries_collection=queries_collection)

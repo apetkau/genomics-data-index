@@ -52,6 +52,19 @@ def test_intersect_sample_set():
     assert {3, 10} == set(intersection)
 
 
+def test_complement_sample_set():
+    set1 = SampleSet(sample_ids=[1, 3, 10])
+    set2 = SampleSet(sample_ids=[3, 10, 20])
+    set3 = SampleSet(sample_ids=[40, 60, 80, 100])
+
+    assert {1} == set(set1.minus(set2))
+    assert {20} == set(set2.minus(set1))
+    assert set() == set(set1.minus(set1))
+    assert {1, 3, 10} == set(set1.minus(set3))
+    assert {40, 60, 80, 100} == set(set3.minus(set1))
+    assert {1, 3, 10} == set(set1.minus(SampleSet.create_empty()))
+
+
 def test_intersect_python_set():
     sample_set1 = SampleSet(sample_ids=[1, 3, 10])
 

@@ -1,18 +1,18 @@
 from __future__ import annotations
+
 from typing import Union
 
 import pandas as pd
 from ete3 import Tree
 
 from storage.api.SamplesQuery import SamplesQuery
+from storage.api.impl.TreeBuilderReferenceMutations import TreeBuilderReferenceMutations
+from storage.connector.DataIndexConnection import DataIndexConnection
 from storage.variant.SampleSet import SampleSet
 from storage.variant.model.QueryFeature import QueryFeature
-from storage.connector.DataIndexConnection import DataIndexConnection
-from storage.api.impl.TreeBuilderReferenceMutations import TreeBuilderReferenceMutations
 
 
 class TreeSamplesQuery(SamplesQuery):
-
     BUILD_TREE_KINDS = ['mutation']
     DISTANCE_UNITS = ['substitutions', 'substitutions/site']
 
@@ -23,6 +23,10 @@ class TreeSamplesQuery(SamplesQuery):
         self._wrapped_query = wrapped_query
         self._tree = tree
         self._alignment_length = alignment_length
+
+    @property
+    def universe_set(self) -> SampleSet:
+        return self._wrapped_query.universe_set
 
     @property
     def sample_set(self) -> SampleSet:
@@ -38,8 +42,11 @@ class TreeSamplesQuery(SamplesQuery):
                                 tree=self._tree,
                                 alignment_length=self._alignment_length)
 
-    def toframe(self) -> pd.DataFrame:
-        return self._wrapped_query.toframe()
+    def toframe(self, exclude_absent: bool = True) -> pd.DataFrame:
+        return self._wrapped_query.toframe(exclude_absent=exclude_absent)
+
+    def summary(self) -> pd.DataFrame:
+        return self._wrapped_query.summary()
 
     def and_(self, other: SamplesQuery) -> SamplesQuery:
         return self._wrap_create(self._wrapped_query.and_(other))
@@ -49,6 +56,9 @@ class TreeSamplesQuery(SamplesQuery):
 
     def has(self, feature: Union[QueryFeature, str], kind=None) -> SamplesQuery:
         return self._wrap_create(self._wrapped_query.has(feature=feature, kind=kind))
+
+    def complement(self):
+        return self._wrap_create(self._wrapped_query.complement())
 
     def within(self, distance: float, sample_name: str, units: str) -> SamplesQuery:
         if units == 'substitutions':
@@ -98,7 +108,9 @@ class TreeSamplesQuery(SamplesQuery):
         return len(self._wrapped_query)
 
     def __str__(self) -> str:
-        return f'<TreeSamplesQuery(samples={len(self)})>'
+        universe_length = len(self.universe_set)
+        percent_selected = (len(self) / universe_length) * 100
+        return f'<{self.__class__.__name__}[{percent_selected:0.0f}% ({len(self)}/{universe_length}) samples]>'
 
     def __repr__(self) -> str:
         return str(self)

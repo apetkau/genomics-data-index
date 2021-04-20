@@ -500,6 +500,7 @@ def db(ctx):
 
 UNITS = ['B', 'KB', 'MB', 'GB']
 
+
 @db.command(name='size')
 @click.pass_context
 @click.option('--unit', default='B', help='The unit to display data sizes as.', type=click.Choice(UNITS))

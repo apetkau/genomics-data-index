@@ -1,7 +1,7 @@
 from ete3 import Tree
 
-from storage.test.integration import tree_file
 from storage.api.impl.TreeBuilderReferenceMutations import TreeBuilderReferenceMutations
+from storage.test.integration import tree_file
 
 expected_tree = Tree(str(tree_file))
 
@@ -11,11 +11,11 @@ def test_build_tree(loaded_database_connection):
                                                  reference_name='genome')
 
     actual_tree, alignment_length, tree_set = tree_builder.build(samples_set=['SampleA', 'SampleB', 'SampleC'],
-                                               method='iqtree',
-                                               align_type='full',
-                                               include_reference=True,
-                                               extra_params='--seed 42 -m GTR'
-                                               )
+                                                                 method='iqtree',
+                                                                 align_type='full',
+                                                                 include_reference=True,
+                                                                 extra_params='--seed 42 -m GTR'
+                                                                 )
 
     assert 5180 == alignment_length
 
@@ -34,11 +34,11 @@ def test_build_tree_core(loaded_database_connection):
                                                  reference_name='genome')
 
     actual_tree, alignment_length, tree_set = tree_builder.build(samples_set=['SampleA', 'SampleB', 'SampleC'],
-                                               method='iqtree',
-                                               align_type='core',
-                                               include_reference=True,
-                                               extra_params='--seed 42 -m GTR+ASC'
-                                               )
+                                                                 method='iqtree',
+                                                                 align_type='core',
+                                                                 include_reference=True,
+                                                                 extra_params='--seed 42 -m GTR+ASC'
+                                                                 )
 
     # See test_CoreAlignmentService.py for where my test alignment is coming from and how I get the length
     assert 58 == alignment_length
@@ -58,10 +58,10 @@ def test_build_tree_exclude_reference(loaded_database_connection):
                                                  reference_name='genome')
 
     actual_tree, alignment_length, tree_set = tree_builder.build(samples_set=['SampleA', 'SampleB', 'SampleC'],
-                                               method='iqtree',
-                                               align_type='full',
-                                               include_reference=False,
-                                               extra_params='--seed 42 -m GTR'
-                                               )
+                                                                 method='iqtree',
+                                                                 align_type='full',
+                                                                 include_reference=False,
+                                                                 extra_params='--seed 42 -m GTR'
+                                                                 )
 
     assert {'SampleA', 'SampleB', 'SampleC'} == set(actual_tree.get_leaf_names())

@@ -289,7 +289,7 @@ def test_count_samples_by_mlst_features_multiple_features(sample_service, mlst_s
     assert 2 == mlst_counts['ecoli:adk:100']
 
 
-def test_create_dataframe_from_sample_set(database, sample_service, variation_service):
+def test_create_dataframe_from_sample_set(database, sample_service: SampleService, variation_service):
     sampleA = database.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
     sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
     sampleC = database.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
@@ -297,7 +297,9 @@ def test_create_dataframe_from_sample_set(database, sample_service, variation_se
     sample_set = SampleSet([sampleA.id, sampleB.id, sampleC.id])
     queries_collection = QueriesCollection.create_empty()
 
-    df = sample_service.create_dataframe_from_sample_set(sample_set,
+    df = sample_service.create_dataframe_from_sample_set(sample_set=sample_set,
+                                                         universe_set=sample_set,
+                                                         exclude_absent=True,
                                                          queries_collection=queries_collection)
     assert len(df) == 3
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
@@ -307,7 +309,7 @@ def test_create_dataframe_from_sample_set(database, sample_service, variation_se
     assert [sampleA.id, sampleB.id, sampleC.id] == df['Sample ID'].tolist()
 
 
-def test_create_dataframe_from_sample_set_subset_samples(database, sample_service, variation_service):
+def test_create_dataframe_from_sample_set_subset_samples(database, sample_service: SampleService, variation_service):
     sampleA = database.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
     sampleC = database.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
 
@@ -315,6 +317,8 @@ def test_create_dataframe_from_sample_set_subset_samples(database, sample_servic
     queries_collection = QueriesCollection.create_empty()
 
     df = sample_service.create_dataframe_from_sample_set(sample_set,
+                                                         universe_set=sample_set,
+                                                         exclude_absent=True,
                                                          queries_collection=queries_collection)
     assert len(df) == 2
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
@@ -324,17 +328,66 @@ def test_create_dataframe_from_sample_set_subset_samples(database, sample_servic
     assert [sampleA.id, sampleC.id] == df['Sample ID'].tolist()
 
 
-def test_create_dataframe_from_sample_set_empty(sample_service, variation_service):
-    sample_set = SampleSet.create_empty()
+def test_create_dataframe_from_sample_set_subset_samples_include_all(database,
+                                                                     sample_service: SampleService,
+                                                                     variation_service):
+    sampleA = database.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = database.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+
+    universe_set = SampleSet([sampleA.id, sampleB.id, sampleC.id])
+    sample_set = SampleSet([sampleA.id, sampleC.id])
     queries_collection = QueriesCollection.create_empty()
 
     df = sample_service.create_dataframe_from_sample_set(sample_set,
+                                                         universe_set=universe_set,
+                                                         exclude_absent=False,
+                                                         queries_collection=queries_collection)
+    assert len(df) == 3
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+
+    df = df.sort_values(['Sample Name'])
+    assert ['SampleA', 'SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert [sampleA.id, sampleB.id, sampleC.id] == df['Sample ID'].tolist()
+    assert ['Present', 'Absent', 'Present'] == df['Status'].tolist()
+
+
+def test_create_dataframe_from_sample_set_subset_samples_include_all_matching_universe(database,
+                                                                                       sample_service: SampleService,
+                                                                                       variation_service):
+    sampleA = database.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleC = database.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+
+    sample_set = SampleSet([sampleA.id, sampleC.id])
+    queries_collection = QueriesCollection.create_empty()
+
+    df = sample_service.create_dataframe_from_sample_set(sample_set,
+                                                         universe_set=sample_set,
+                                                         exclude_absent=False,
+                                                         queries_collection=queries_collection)
+    assert len(df) == 2
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+
+    df = df.sort_values(['Sample Name'])
+    assert ['SampleA', 'SampleC'] == df['Sample Name'].tolist()
+    assert [sampleA.id, sampleC.id] == df['Sample ID'].tolist()
+    assert ['Present', 'Present'] == df['Status'].tolist()
+
+
+def test_create_dataframe_from_sample_set_empty(sample_service: SampleService, variation_service):
+    sample_set = SampleSet.create_empty()
+    queries_collection = QueriesCollection.create_empty()
+
+    df = sample_service.create_dataframe_from_sample_set(sample_set=sample_set,
+                                                         universe_set=sample_set,
+                                                         exclude_absent=True,
                                                          queries_collection=queries_collection)
     assert len(df) == 0
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
 
 
-def test_create_dataframe_from_sample_set_single_query(database, sample_service, variation_service):
+def test_create_dataframe_from_sample_set_single_query(database, sample_service: SampleService,
+                                                       variation_service):
     sampleA = database.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
     sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
 
@@ -342,11 +395,14 @@ def test_create_dataframe_from_sample_set_single_query(database, sample_service,
     queries_collection = QueriesCollection.create_empty().append(QueryFeatureMLST('lmonocytogenes:abc:1'))
 
     df = sample_service.create_dataframe_from_sample_set(sample_set,
+                                                         universe_set=sample_set,
+                                                         exclude_absent=True,
                                                          queries_collection=queries_collection)
     assert {'lmonocytogenes:abc:1'} == set(df['Query'].tolist())
 
 
-def test_create_dataframe_from_sample_set_multiple_query(database, sample_service, variation_service):
+def test_create_dataframe_from_sample_set_multiple_query(database, sample_service: SampleService,
+                                                         variation_service):
     sampleA = database.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
     sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
 
@@ -356,11 +412,14 @@ def test_create_dataframe_from_sample_set_multiple_query(database, sample_servic
         QueryFeatureMutation('reference:1024:A:T'))
 
     df = sample_service.create_dataframe_from_sample_set(sample_set,
+                                                         universe_set=sample_set,
+                                                         exclude_absent=True,
                                                          queries_collection=queries_collection)
     assert {'lmonocytogenes:abc:1 AND reference:1024:A:T'} == set(df['Query'].tolist())
 
 
-def test_create_dataframe_from_sample_set_multiple_type_query(database, sample_service, variation_service):
+def test_create_dataframe_from_sample_set_multiple_type_query(database, sample_service: SampleService,
+                                                              variation_service):
     sampleA = database.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
     sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
 
@@ -369,6 +428,8 @@ def test_create_dataframe_from_sample_set_multiple_type_query(database, sample_s
         QueryFeatureMLST('lmonocytogenes:abc:1')).append('testquery')
 
     df = sample_service.create_dataframe_from_sample_set(sample_set,
+                                                         universe_set=sample_set,
+                                                         exclude_absent=True,
                                                          queries_collection=queries_collection)
     assert {'lmonocytogenes:abc:1 AND testquery'} == set(df['Query'].tolist())
 

@@ -17,11 +17,20 @@ class SamplesQuery(abc.ABC):
 
     @property
     @abc.abstractmethod
+    def universe_set(self) -> SampleSet:
+        pass
+
+    @property
+    @abc.abstractmethod
     def sample_set(self) -> SampleSet:
         pass
 
     @abc.abstractmethod
-    def toframe(self) -> pd.DataFrame:
+    def toframe(self, exclude_absent: bool = True) -> pd.DataFrame:
+        pass
+
+    @abc.abstractmethod
+    def summary(self) -> pd.DataFrame:
         pass
 
     @abc.abstractmethod
@@ -37,7 +46,11 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def has(self, feature: Union[QueryFeature, str], kind = None) -> SamplesQuery:
+    def has(self, feature: Union[QueryFeature, str], kind=None) -> SamplesQuery:
+        pass
+
+    @abc.abstractmethod
+    def complement(self):
         pass
 
     @abc.abstractmethod

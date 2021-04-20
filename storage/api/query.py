@@ -5,9 +5,9 @@ from pathlib import Path
 import pandas as pd
 
 from storage.api.SamplesQuery import SamplesQuery
-from storage.api.impl.TreeSamplesQuery import TreeSamplesQuery
 from storage.api.impl.DataFrameSamplesQuery import DataFrameSamplesQuery
 from storage.api.impl.SamplesQueryIndex import SamplesQueryIndex
+from storage.api.impl.TreeSamplesQuery import TreeSamplesQuery
 from storage.connector.DataIndexConnection import DataIndexConnection
 
 QUERY_UNIVERSE = ['all', 'mutations', 'dataframe']
@@ -31,14 +31,15 @@ def query(connection: DataIndexConnection, universe: str = 'all', **kwargs) -> S
 
 def _query_all_samples(connection: DataIndexConnection):
     all_samples = connection.sample_service.get_all_sample_ids()
-    return SamplesQueryIndex(connection=connection, sample_set=all_samples)
+    return SamplesQueryIndex(connection=connection, sample_set=all_samples, universe_set=all_samples)
 
 
 def _query_reference(connection: DataIndexConnection, reference_name: str):
     reference_samples = connection.sample_service.get_samples_associated_with_reference(reference_name)
     reference_genome = connection.reference_service.find_reference_genome(reference_name)
 
-    sample_query = SamplesQueryIndex(connection=connection, sample_set=reference_samples)
+    sample_query = SamplesQueryIndex(connection=connection, sample_set=reference_samples,
+                                     universe_set=reference_samples)
 
     if reference_genome.has_tree():
         sample_query = TreeSamplesQuery(connection=connection, wrapped_query=sample_query,
@@ -53,17 +54,20 @@ def _query_data_frame(connection: DataIndexConnection,
                       sample_ids_column=None,
                       sample_names_column=None
                       ):
-
     if data_frame is None:
         raise Exception('data_frame must be set when querying with universe="dataframe"')
     if sample_ids_column is None and sample_names_column is None:
         raise Exception('If querying with universe="dataframe", then one of sample_names_column or sample_ids_column '
                         'must be set')
     elif sample_ids_column is not None:
+        all_samples = connection.sample_service.get_all_sample_ids()
         return DataFrameSamplesQuery.create_with_sample_ids_column(sample_ids_column,
                                                                    data_frame=data_frame,
+                                                                   database_sample_set=all_samples,
                                                                    connection=connection)
     else:
+        all_samples = connection.sample_service.get_all_sample_ids()
         return DataFrameSamplesQuery.create_with_sample_names_column(sample_names_column,
                                                                      data_frame=data_frame,
+                                                                     database_sample_set=all_samples,
                                                                      connection=connection)

@@ -72,12 +72,19 @@ class SampleService:
         return samples
 
     def create_dataframe_from_sample_set(self, sample_set: SampleSet,
+                                         universe_set: SampleSet,
+                                         exclude_absent: bool,
                                          queries_collection: QueriesCollection) -> pd.DataFrame:
         samples = self.find_samples_by_ids(sample_set)
         query_expression = queries_collection.query_expression()
         data = []
         for sample in samples:
             data.append([query_expression, sample.name, sample.id, 'Present'])
+
+        if not exclude_absent:
+            complement_samples_set = self.find_samples_by_ids(universe_set.minus(sample_set))
+            for sample in complement_samples_set:
+                data.append([query_expression, sample.name, sample.id, 'Absent'])
 
         results_df = pd.DataFrame(data=data, columns=['Query', 'Sample Name', 'Sample ID', 'Status'])
         return results_df
