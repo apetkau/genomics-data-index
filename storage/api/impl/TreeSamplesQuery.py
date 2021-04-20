@@ -45,6 +45,9 @@ class TreeSamplesQuery(SamplesQuery):
     def toframe(self) -> pd.DataFrame:
         return self._wrapped_query.toframe()
 
+    def summary(self) -> pd.DataFrame:
+        return self._wrapped_query.summary()
+
     def and_(self, other: SamplesQuery) -> SamplesQuery:
         return self._wrap_create(self._wrapped_query.and_(other))
 

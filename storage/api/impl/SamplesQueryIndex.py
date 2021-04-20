@@ -58,6 +58,26 @@ class SamplesQueryIndex(SamplesQuery):
         return sample_service.create_dataframe_from_sample_set(self.sample_set,
                                                                self._queries_collection)
 
+    def summary(self) -> pd.DataFrame:
+        present = len(self)
+        total = len(self._universe_set)
+        unknown = pd.NA
+        absent = total - present
+        per_present = (present / total) * 100
+        per_absent = (absent / total) * 100
+        per_unknown = pd.NA
+
+        return pd.DataFrame([{
+            'Query': self._queries_collection.query_expression(),
+            'Present': present,
+            'Absent': absent,
+            'Unknown': unknown,
+            'Total': total,
+            '% Present': per_present,
+            '% Absent': per_absent,
+            '% Unknown': per_unknown,
+        }])
+
     def and_(self, other):
         if isinstance(other, SamplesQuery):
             intersect_set = self._intersect_sample_set(other.sample_set)

@@ -30,6 +30,10 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
+    def summary(self) -> pd.DataFrame:
+        pass
+
+    @abc.abstractmethod
     def intersect(self, sample_set: SampleSet, query_message: str = None) -> SamplesQuery:
         pass
 

@@ -1,5 +1,6 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
+import math
 
 import pandas as pd
 import pytest
@@ -54,6 +55,21 @@ def test_query_single_mutation(loaded_database_connection: DataIndexConnection):
     assert 1 == len(query_result)
     assert {sampleB.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)
+
+
+def test_query_single_mutation_summary(loaded_database_connection: DataIndexConnection):
+    df = query(loaded_database_connection).has('reference:5061:G:A', kind='mutation').summary()
+    assert 1 == len(df)
+    assert ['Query', 'Present', 'Absent', 'Unknown', 'Total',
+            '% Present', '% Absent', '% Unknown'] == df.columns.tolist()
+    assert 'reference:5061:G:A' == df.iloc[0]['Query']
+    assert 1 == df.iloc[0]['Present']
+    assert 8 == df.iloc[0]['Absent']
+    assert pd.isna(df.iloc[0]['Unknown'])
+    assert 9 == df.iloc[0]['Total']
+    assert math.isclose((1 / 9) * 100, df.iloc[0]['% Present'])
+    assert math.isclose((8 / 9) * 100, df.iloc[0]['% Absent'])
+    assert pd.isna(df.iloc[0]['% Unknown'])
 
 
 def test_query_single_mutation_two_samples(loaded_database_connection: DataIndexConnection):
@@ -183,6 +199,36 @@ def test_query_single_mutation_no_results_toframe(loaded_database_connection: Da
     df = query(loaded_database_connection).has('reference:1:1:A', kind='mutation').toframe()
     assert 0 == len(df)
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+
+
+def test_query_single_mutation_no_results_summary(loaded_database_connection: DataIndexConnection):
+    df = query(loaded_database_connection).has('reference:1:1:A', kind='mutation').summary()
+    assert 1 == len(df)
+    assert ['Query', 'Present', 'Absent', 'Unknown', 'Total',
+            '% Present', '% Absent', '% Unknown'] == df.columns.tolist()
+    assert 'reference:1:1:A' == df.iloc[0]['Query']
+    assert 0 == df.iloc[0]['Present']
+    assert 9 == df.iloc[0]['Absent']
+    assert pd.isna(df.iloc[0]['Unknown'])
+    assert 9 == df.iloc[0]['Total']
+    assert math.isclose((0 / 9) * 100, df.iloc[0]['% Present'])
+    assert math.isclose((9 / 9) * 100, df.iloc[0]['% Absent'])
+    assert pd.isna(df.iloc[0]['% Unknown'])
+
+
+def test_all_samples_summary(loaded_database_connection: DataIndexConnection):
+    df = query(loaded_database_connection).summary()
+    assert 1 == len(df)
+    assert ['Query', 'Present', 'Absent', 'Unknown', 'Total',
+            '% Present', '% Absent', '% Unknown'] == df.columns.tolist()
+    assert '' == df.iloc[0]['Query']
+    assert 9 == df.iloc[0]['Present']
+    assert 0 == df.iloc[0]['Absent']
+    assert pd.isna(df.iloc[0]['Unknown'])
+    assert 9 == df.iloc[0]['Total']
+    assert math.isclose((9 / 9) * 100, df.iloc[0]['% Present'])
+    assert math.isclose((0 / 9) * 100, df.iloc[0]['% Absent'])
+    assert pd.isna(df.iloc[0]['% Unknown'])
 
 
 def test_join_custom_dataframe_no_query(loaded_database_connection: DataIndexConnection):

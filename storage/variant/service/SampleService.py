@@ -79,6 +79,11 @@ class SampleService:
         for sample in samples:
             data.append([query_expression, sample.name, sample.id, 'Present'])
 
+        # # Add universe samples
+        # samples = self.find_samples_by_ids(sample_set)
+        # for sample in samples:
+        #     data.append([query_expression, sample.name, sample.id, 'Absent'])
+
         results_df = pd.DataFrame(data=data, columns=['Query', 'Sample Name', 'Sample ID', 'Status'])
         return results_df
 
