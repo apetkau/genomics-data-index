@@ -330,3 +330,39 @@ def test_query_build_tree_dataframe(loaded_database_connection: DataIndexConnect
     assert ['Present'] == df['Status'].tolist()
     assert [sampleB.id] == df['Sample ID'].tolist()
     assert ['reference:839:C:G AND mutation_tree(genome) AND reference:5061:G:A'] == df['Query'].tolist()
+
+
+def test_within_constructed_tree(loaded_database_connection: DataIndexConnection):
+    query_result = query(loaded_database_connection).has(
+        'reference:839:C:G', kind='mutation').build_tree(
+        kind='mutation', scope='genome', include_reference=True, extra_params='--seed 42 -m GTR')
+    assert 2 == len(query_result)
+
+    # subs/site
+    df = query_result.within(0.005, 'SampleC', units='substitutions/site').toframe().sort_values('Sample Name')
+    assert 2 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert {'reference:839:C:G AND mutation_tree(genome) AND within(0.005 substitutions/site of SampleC)'
+            } == set(df['Query'].tolist())
+
+    # subs
+    df = query_result.within(26, 'SampleC', units='substitutions').toframe().sort_values('Sample Name')
+    assert 2 == len(df)
+    assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert {'reference:839:C:G AND mutation_tree(genome) AND within(26 substitutions of SampleC)'
+            } == set(df['Query'].tolist())
+
+    # should not include reference genome
+    df = query_result.within(100, 'SampleC', units='substitutions').toframe().sort_values('Sample Name')
+    assert 2 == len(df)
+    assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert {'reference:839:C:G AND mutation_tree(genome) AND within(100 substitutions of SampleC)'
+            } == set(df['Query'].tolist())
+
+    # should have only query sample
+    df = query_result.within(1, 'SampleC', units='substitutions').toframe().sort_values('Sample Name')
+    assert 1 == len(df)
+    assert ['SampleC'] == df['Sample Name'].tolist()
+    assert {'reference:839:C:G AND mutation_tree(genome) AND within(1 substitutions of SampleC)'
+            } == set(df['Query'].tolist())

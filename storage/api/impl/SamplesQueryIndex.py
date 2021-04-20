@@ -105,11 +105,9 @@ class SamplesQueryIndex(SamplesQuery):
         return self._create_from(self._query_connection, intersect_found,
                                  queries_collection=queries_collection)
 
-    def within(self, distance: float, sample_name: str, kind: str) -> SamplesQuery:
-        raise Exception('Not implemented')
-
-    def within_kmer(self, distance: float, sample_name: str) -> SamplesQuery:
-        return self.within(distance, sample_name, 'kmer')
+    def within(self, distance: float, sample_name: str, units: str) -> SamplesQuery:
+        raise Exception(f'Cannot query within a distance without a tree.'
+                        f' Perhaps you want to run build_tree() first to build a tree.')
 
     def is_type(self, sample_type) -> SamplesQuery:
         raise Exception('Not implemented')

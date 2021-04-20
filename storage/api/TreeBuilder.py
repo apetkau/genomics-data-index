@@ -9,5 +9,5 @@ class TreeBuilder:
     def __init__(self):
         pass
 
-    def build(self, samples_set: SampleSet, method: str, **kwargs) -> Tuple[Tree, SampleSet]:
+    def build(self, samples_set: SampleSet, method: str, **kwargs) -> Tuple[Tree, int, SampleSet]:
         pass

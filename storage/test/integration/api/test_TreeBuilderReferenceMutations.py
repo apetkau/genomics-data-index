@@ -10,12 +10,14 @@ def test_build_tree(loaded_database_connection):
     tree_builder = TreeBuilderReferenceMutations(database_connection=loaded_database_connection,
                                                  reference_name='genome')
 
-    actual_tree, tree_set = tree_builder.build(samples_set=['SampleA', 'SampleB', 'SampleC'],
+    actual_tree, alignment_length, tree_set = tree_builder.build(samples_set=['SampleA', 'SampleB', 'SampleC'],
                                                method='iqtree',
                                                align_type='full',
                                                include_reference=True,
                                                extra_params='--seed 42 -m GTR'
                                                )
+
+    assert 5180 == alignment_length
 
     assert {'SampleA', 'SampleB', 'SampleC', 'genome'} == set(actual_tree.get_leaf_names())
 
@@ -31,12 +33,15 @@ def test_build_tree_core(loaded_database_connection):
     tree_builder = TreeBuilderReferenceMutations(database_connection=loaded_database_connection,
                                                  reference_name='genome')
 
-    actual_tree, tree_set = tree_builder.build(samples_set=['SampleA', 'SampleB', 'SampleC'],
+    actual_tree, alignment_length, tree_set = tree_builder.build(samples_set=['SampleA', 'SampleB', 'SampleC'],
                                                method='iqtree',
                                                align_type='core',
                                                include_reference=True,
                                                extra_params='--seed 42 -m GTR+ASC'
                                                )
+
+    # See test_CoreAlignmentService.py for where my test alignment is coming from and how I get the length
+    assert 58 == alignment_length
 
     assert {'SampleA', 'SampleB', 'SampleC', 'genome'} == set(actual_tree.get_leaf_names())
 
@@ -52,7 +57,7 @@ def test_build_tree_exclude_reference(loaded_database_connection):
     tree_builder = TreeBuilderReferenceMutations(database_connection=loaded_database_connection,
                                                  reference_name='genome')
 
-    actual_tree, tree_set = tree_builder.build(samples_set=['SampleA', 'SampleB', 'SampleC'],
+    actual_tree, alignment_length, tree_set = tree_builder.build(samples_set=['SampleA', 'SampleB', 'SampleC'],
                                                method='iqtree',
                                                align_type='full',
                                                include_reference=False,

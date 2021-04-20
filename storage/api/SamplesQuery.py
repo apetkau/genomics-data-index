@@ -33,7 +33,7 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def build_tree(self, kind: str, scope: str, **kwargs):
+    def build_tree(self, kind: str, scope: str, **kwargs) -> SamplesQuery:
         pass
 
     @abc.abstractmethod
@@ -41,7 +41,7 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def within(self, distance: float, sample_name: str, kind: str) -> SamplesQuery:
+    def within(self, distance: float, sample_name: str, units: str) -> SamplesQuery:
         pass
 
     @abc.abstractmethod
