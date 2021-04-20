@@ -38,7 +38,9 @@ class DataFrameSamplesQuery(SamplesQueryIndex):
                                      queries_collection=queries_collection)
 
     def __str__(self) -> str:
-        return f'<DataFrameSamplesQuery(samples={len(self)})>'
+        universe_length = len(self.universe_set)
+        percent_selected = (len(self) / universe_length) * 100
+        return f'<{self.__class__.__name__}[{percent_selected:0.0f}% ({len(self)}/{universe_length}) samples]>'
 
     def __repr__(self) -> str:
         return str(self)

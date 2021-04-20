@@ -110,8 +110,9 @@ class SamplesQueryIndex(SamplesQuery):
         return len(self.sample_set)
 
     def __str__(self) -> str:
-        percent_selected = (len(self) / len(self._universe_set)) * 100
-        return f'<SamplesQueryIndex({len(self)}/{len(self._universe_set)} ({percent_selected:0.1f}) samples)>'
+        universe_length = len(self.universe_set)
+        percent_selected = (len(self) / universe_length) * 100
+        return f'<{self.__class__.__name__}[{percent_selected:0.0f}% ({len(self)}/{universe_length}) samples]>'
 
     def __repr__(self) -> str:
         return str(self)
