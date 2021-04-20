@@ -23,10 +23,21 @@ def test_connect():
         assert connection.filesystem_storage.variation_dir.parent == tmp_file
 
 
-def test_initialized_query(loaded_database_connection: DataIndexConnection):
+def test_initialized_query_default(loaded_database_connection: DataIndexConnection):
     initial_query = query(loaded_database_connection)
 
     assert len(initial_query) == 9
+
+
+def test_initialized_query_mutations(loaded_database_connection_with_built_tree: DataIndexConnection):
+    initial_query = query(loaded_database_connection_with_built_tree)
+    assert len(initial_query) == 9
+
+    initial_query = query(loaded_database_connection_with_built_tree,
+                          universe='mutations', reference_name='genome')
+    assert len(initial_query) == 3
+    assert isinstance(initial_query, TreeSamplesQuery)
+    assert initial_query.tree is not None
 
 
 def test_query_single_mutation(loaded_database_connection: DataIndexConnection):
@@ -166,7 +177,8 @@ def test_join_custom_dataframe_no_query(loaded_database_connection: DataIndexCon
         [3, 'blue']
     ], columns=['Sample ID', 'Color'])
 
-    query_result = query(loaded_database_connection, data_frame=df, sample_ids_column='Sample ID')
+    query_result = query(loaded_database_connection, universe='dataframe',
+                         data_frame=df, sample_ids_column='Sample ID')
     assert 3 == len(query_result)
     assert {1, 2, 3} == set(query_result.sample_set)
 
@@ -184,6 +196,7 @@ def test_join_custom_dataframe_single_query(loaded_database_connection: DataInde
     ], columns=['Sample ID', 'Color'])
 
     query_result = query(loaded_database_connection,
+                         universe='dataframe',
                          data_frame=df,
                          sample_ids_column='Sample ID')
     query_result = query_result.has('reference:839:C:G', kind='mutation')
@@ -214,6 +227,7 @@ def test_join_custom_dataframe_single_query_sample_names(loaded_database_connect
     ], columns=['Samples', 'Color'])
 
     query_result = query(loaded_database_connection,
+                         universe='dataframe',
                          data_frame=df,
                          sample_names_column='Samples')
     query_result = query_result.has('reference:839:C:G', kind='mutation')
@@ -245,6 +259,7 @@ def test_join_custom_dataframe_extra_sample_names(loaded_database_connection: Da
     ], columns=['Samples', 'Color'])
 
     query_result = query(loaded_database_connection,
+                         universe='dataframe',
                          data_frame=df,
                          sample_names_column='Samples')
     df = query_result.has('reference:839:C:G', kind='mutation').toframe()
@@ -269,6 +284,7 @@ def test_join_custom_dataframe_missing_sample_names(loaded_database_connection: 
     ], columns=['Samples', 'Color'])
 
     query_result = query(loaded_database_connection,
+                         universe='dataframe',
                          data_frame=df,
                          sample_names_column='Samples')
     df = query_result.has('reference:839:C:G', kind='mutation').toframe()
