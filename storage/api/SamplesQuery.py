@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import abc
-from typing import Union
+from typing import Union, List
 
 import pandas as pd
 
@@ -65,9 +65,17 @@ class SamplesQuery(abc.ABC):
     def is_empty(self):
         pass
 
+    @abc.abstractmethod
+    def query_expression(self) -> str:
+        pass
+
     @property
     @abc.abstractmethod
     def tree(self):
+        pass
+
+    @abc.abstractmethod
+    def tolist(self, names = True) -> List[Union[int,str]]:
         pass
 
     @abc.abstractmethod

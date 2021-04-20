@@ -1,12 +1,14 @@
 from __future__ import annotations
+import copy
 
 from typing import Union
 
 import pandas as pd
-from ete3 import Tree
+from ete3 import Tree, TreeStyle
 
 from storage.api.SamplesQuery import SamplesQuery
 from storage.api.impl.TreeBuilderReferenceMutations import TreeBuilderReferenceMutations
+from storage.api.viewer.TreeStyler import TreeStyler, DEFAULT_HIGHLIGHT_STYLES
 from storage.connector.DataIndexConnection import DataIndexConnection
 from storage.variant.SampleSet import SampleSet
 from storage.variant.model.QueryFeature import QueryFeature
@@ -60,6 +62,12 @@ class TreeSamplesQuery(SamplesQuery):
     def complement(self):
         return self._wrap_create(self._wrapped_query.complement())
 
+    def query_expression(self) -> str:
+        return self._wrapped_query.query_expression()
+
+    def tolist(self, names=True):
+        return self._wrapped_query.tolist(names=names)
+
     def within(self, distance: float, sample_name: str, units: str) -> SamplesQuery:
         if units == 'substitutions':
             distance_multiplier = self._alignment_length
@@ -90,6 +98,11 @@ class TreeSamplesQuery(SamplesQuery):
 
         found_samples = SampleSet(found_samples_set)
         return self.intersect(found_samples, f'within({distance} {units} of {sample_name})')
+
+    def tree_styler(self, initial_style: TreeStyle = TreeStyle()) -> TreeStyler:
+        return TreeStyler(tree=copy.deepcopy(self._tree),
+                          default_highlight_styles=DEFAULT_HIGHLIGHT_STYLES,
+                          tree_style=initial_style)
 
     def is_type(self, sample_type) -> SamplesQuery:
         return self._wrap_create(self._wrapped_query.is_type(sample_type))
