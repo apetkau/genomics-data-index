@@ -102,7 +102,9 @@ class TreeSamplesQuery(SamplesQuery):
         return len(self._wrapped_query)
 
     def __str__(self) -> str:
-        return f'<TreeSamplesQuery(samples={len(self)})>'
+        universe_length = len(self._wrapped_query.universe_set)
+        percent_selected = (len(self) / universe_length) * 100
+        return f'<SamplesQueryIndex(selected {len(self)}/{universe_length} ({percent_selected:0.1f}) samples)>'
 
     def __repr__(self) -> str:
         return str(self)
