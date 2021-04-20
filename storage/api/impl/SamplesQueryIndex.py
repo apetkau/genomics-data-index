@@ -114,6 +114,13 @@ class SamplesQueryIndex(SamplesQuery):
         percent_selected = (len(self) / universe_length) * 100
         return f'<{self.__class__.__name__}[{percent_selected:0.0f}% ({len(self)}/{universe_length}) samples]>'
 
+    def tolist(self, names=True):
+        if names:
+            sample_service = self._query_connection.sample_service
+            return [s.name for s in sample_service.find_samples_by_ids(self._sample_set)]
+        else:
+            return list(self.sample_set)
+
     def __repr__(self) -> str:
         return str(self)
 

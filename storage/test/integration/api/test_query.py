@@ -64,12 +64,18 @@ def test_query_single_mutation_complement(loaded_database_connection: DataIndexC
     assert 1 == len(query_result)
     assert {sampleB.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)
+    assert [sampleB.id] == query_result.tolist(names=False)
+    assert ['SampleB'] == query_result.tolist(names=True)
+    assert ['SampleB'] == query_result.tolist()
 
     query_result = query_result.complement()
     assert 8 == len(query_result)
     assert 9 == len(query_result.universe_set)
 
     assert sampleB.id not in query_result.sample_set
+
+    assert {'SampleA', 'SampleC', 'CFSAN002349', 'CFSAN023463',
+            '2014C-3598', '2014C-3599', '2014D-0067', '2014D-0068'} == set(query_result.tolist())
 
     df = query_result.toframe()
     assert {'reference:5061:G:A AND complement'} == set(df['Query'].tolist())
@@ -163,6 +169,9 @@ def test_query_mlst_allele(loaded_database_connection: DataIndexConnection):
     assert {sample1.id, sample2.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)
 
+    assert {'CFSAN002349', 'CFSAN023463'} == set(query_result.tolist())
+    assert {sample1.id, sample2.id} == set(query_result.tolist(names=False))
+
 
 def test_query_chained_mlst_alleles(loaded_database_connection: DataIndexConnection):
     db = loaded_database_connection.database
@@ -199,6 +208,9 @@ def test_query_chained_mlst_nucleotide(loaded_database_connection: DataIndexConn
     assert 1 == len(query_result)
     assert {sample1.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)
+
+    assert ['SampleC'] == query_result.tolist()
+    assert [sample1.id] == query_result.tolist(names=False)
 
 
 def test_query_single_mutation_dataframe(loaded_database_connection: DataIndexConnection):
