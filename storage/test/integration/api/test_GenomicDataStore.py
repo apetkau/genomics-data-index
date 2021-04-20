@@ -17,15 +17,21 @@ def test_summaries_loaded_data(loaded_database_genomic_data_store: GenomicDataSt
     # Mutations
     assert 112 == gds.count_mutations('genome')
     ms = gds.mutations_summary('genome', id_type='spdi')
+    print(ms)
     assert 112 == len(ms)
-    assert 2 == ms.loc['reference:839:1:G']
-    assert 1 == ms.loc['reference:866:9:G']
-    assert 1 == ms.loc['reference:1048:1:G']
-    assert 2 == ms.loc['reference:3897:5:G']
+    assert 'Mutation' == ms.index.name
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Count'] == list(ms.columns)
+    assert ['reference', 839, 1, 'G', 2] == ms.loc['reference:839:1:G'].values.tolist()
+    assert ['reference', 866, 9, 'G', 1] == ms.loc['reference:866:9:G'].values.tolist()
+    assert ['reference', 1048, 1, 'G', 1] == ms.loc['reference:1048:1:G'].values.tolist()
+    assert ['reference', 3897, 5, 'G', 2] == ms.loc['reference:3897:5:G'].values.tolist()
 
     ms = gds.mutations_summary('genome', id_type='spdi_ref')
+    print(ms)
     assert 112 == len(ms)
-    assert 2 == ms.loc['reference:839:C:G']
-    assert 1 == ms.loc['reference:866:GCCAGATCC:G']
-    assert 1 == ms.loc['reference:1048:C:G']
-    assert 2 == ms.loc['reference:3897:GCGCA:G']
+    assert 'Mutation' == ms.index.name
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Count'] == list(ms.columns)
+    assert ['reference', 839, 'C', 'G', 2] == ms.loc['reference:839:C:G'].values.tolist()
+    assert ['reference', 866, 'GCCAGATCC', 'G', 1] == ms.loc['reference:866:GCCAGATCC:G'].values.tolist()
+    assert ['reference', 1048, 'C', 'G', 1] == ms.loc['reference:1048:C:G'].values.tolist()
+    assert ['reference', 3897, 'GCGCA', 'G', 2] == ms.loc['reference:3897:GCGCA:G'].values.tolist()

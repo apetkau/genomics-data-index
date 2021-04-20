@@ -6,6 +6,7 @@ import pandas as pd
 
 from storage.api.impl.DataFrameSamplesQuery import DataFrameSamplesQuery
 from storage.api.impl.TreeSamplesQuery import TreeSamplesQuery
+from storage.variant.model.NucleotideMutationTranslater import NucleotideMutationTranslater
 
 from storage.api.SamplesQuery import SamplesQuery
 from storage.api.impl.SamplesQueryIndex import SamplesQueryIndex
@@ -40,7 +41,7 @@ class GenomicDataStore:
         return self._connection.variation_service.count_on_reference(reference_genome,
                                                                      include_unknown=include_unknown)
 
-    def mutations_summary(self, reference_genome: str, id_type: str = 'spdi_ref', include_unknown: bool = False) -> pd.Series:
+    def mutations_summary(self, reference_genome: str, id_type: str = 'spdi_ref', include_unknown: bool = False) -> pd.DataFrame:
         rs = self._connection.reference_service
         if id_type not in self.MUTATION_ID_TYPES:
             raise Exception(f'id_type={id_type} must be one of {self.MUTATION_ID_TYPES}')
@@ -51,8 +52,19 @@ class GenomicDataStore:
         if id_type == 'spdi_ref':
             translated_ids = rs.translate_spdi(mutation_counts.keys(), to=id_type)
             mutation_counts = {translated_ids[m]: mutation_counts[m] for m in mutation_counts}
+            convert_deletion = False
+        else:
+            convert_deletion = True
 
-        return pd.Series(mutation_counts, name='Mutations')
+        data = []
+        for mutation in mutation_counts:
+            seq, pos, deletion, insertion = NucleotideMutationTranslater.from_spdi(mutation,
+                                                                                   convert_deletion=convert_deletion)
+            data.append([mutation, seq, pos, deletion, insertion, mutation_counts[mutation]])
+
+        return pd.DataFrame(data,
+                            columns=['Mutation', 'Sequence', 'Position',
+                                     'Deletion', 'Insertion', 'Count']).set_index('Mutation')
 
     def samples_query(self, universe: str = 'all', **kwargs) -> SamplesQuery:
         if universe == 'all':
