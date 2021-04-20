@@ -55,7 +55,8 @@ class TreeSamplesQuery(SamplesQuery):
         return self._wrap_create(self._wrapped_query.and_(other))
 
     def build_tree(self, kind: str, scope: str, **kwargs):
-        return self._wrap_create(self._wrapped_query.build_tree(kind=kind, scope=scope, **kwargs))
+        return TreeSamplesQuery.create(kind=kind, scope=scope, database_connection=self._query_connection,
+                                       wrapped_query=self, **kwargs)
 
     def has(self, feature: Union[QueryFeature, str], kind=None) -> SamplesQuery:
         return self._wrap_create(self._wrapped_query.has(feature=feature, kind=kind))
