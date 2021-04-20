@@ -516,7 +516,7 @@ def test_within_constructed_tree(loaded_database_connection: DataIndexConnection
     assert 2 == len(query_result)
 
     # subs/site
-    df = query_result.within(0.005, 'SampleC', units='substitutions/site').toframe().sort_values('Sample Name')
+    df = query_result.within('SampleC', distance=0.005, units='substitutions/site').toframe().sort_values('Sample Name')
     assert 2 == len(df)
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
     assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
@@ -524,22 +524,53 @@ def test_within_constructed_tree(loaded_database_connection: DataIndexConnection
             } == set(df['Query'].tolist())
 
     # subs
-    df = query_result.within(26, 'SampleC', units='substitutions').toframe().sort_values('Sample Name')
+    df = query_result.within('SampleC', distance=26, units='substitutions').toframe().sort_values('Sample Name')
     assert 2 == len(df)
     assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
     assert {'reference:839:C:G AND mutation_tree(genome) AND within(26 substitutions of SampleC)'
             } == set(df['Query'].tolist())
 
     # should not include reference genome
-    df = query_result.within(100, 'SampleC', units='substitutions').toframe().sort_values('Sample Name')
+    df = query_result.within('SampleC', distance=100, units='substitutions').toframe().sort_values('Sample Name')
     assert 2 == len(df)
     assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
     assert {'reference:839:C:G AND mutation_tree(genome) AND within(100 substitutions of SampleC)'
             } == set(df['Query'].tolist())
 
     # should have only query sample
-    df = query_result.within(1, 'SampleC', units='substitutions').toframe().sort_values('Sample Name')
+    df = query_result.within('SampleC', distance=1, units='substitutions').toframe().sort_values('Sample Name')
     assert 1 == len(df)
     assert ['SampleC'] == df['Sample Name'].tolist()
     assert {'reference:839:C:G AND mutation_tree(genome) AND within(1 substitutions of SampleC)'
+            } == set(df['Query'].tolist())
+
+    # mrca
+    df = query_result.within(['SampleB', 'SampleC'], kind='mrca').toframe().sort_values('Sample Name')
+    assert 2 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert {"reference:839:C:G AND mutation_tree(genome) AND within(mrca of ['SampleB', 'SampleC'])"
+            } == set(df['Query'].tolist())
+
+
+def test_within_constructed_tree_larger_tree(loaded_database_connection: DataIndexConnection):
+    # Construct new tree with all the samples
+    query_result = query(loaded_database_connection).build_tree(
+        kind='mutation', scope='genome', include_reference=True, extra_params='--seed 42 -m GTR')
+    assert 3 == len(query_result)
+
+    # mrca B and C
+    df = query_result.within(['SampleB', 'SampleC'], kind='mrca').toframe().sort_values('Sample Name')
+    assert 2 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert {"mutation_tree(genome) AND within(mrca of ['SampleB', 'SampleC'])"
+            } == set(df['Query'].tolist())
+
+    # mrca A and B
+    df = query_result.within(['SampleA', 'SampleC'], kind='mrca').toframe().sort_values('Sample Name')
+    assert 3 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    assert ['SampleA', 'SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert {"mutation_tree(genome) AND within(mrca of ['SampleA', 'SampleC'])"
             } == set(df['Query'].tolist())
