@@ -1,18 +1,18 @@
 from __future__ import annotations
+
 from typing import Union
 
 import pandas as pd
 from ete3 import Tree
 
 from storage.api.SamplesQuery import SamplesQuery
+from storage.api.impl.TreeBuilderReferenceMutations import TreeBuilderReferenceMutations
+from storage.connector.DataIndexConnection import DataIndexConnection
 from storage.variant.SampleSet import SampleSet
 from storage.variant.model.QueryFeature import QueryFeature
-from storage.connector.DataIndexConnection import DataIndexConnection
-from storage.api.impl.TreeBuilderReferenceMutations import TreeBuilderReferenceMutations
 
 
 class TreeSamplesQuery(SamplesQuery):
-
     BUILD_TREE_KINDS = ['mutation']
     DISTANCE_UNITS = ['substitutions', 'substitutions/site']
 

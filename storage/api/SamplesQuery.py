@@ -46,7 +46,7 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def has(self, feature: Union[QueryFeature, str], kind = None) -> SamplesQuery:
+    def has(self, feature: Union[QueryFeature, str], kind=None) -> SamplesQuery:
         pass
 
     @abc.abstractmethod

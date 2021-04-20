@@ -1,7 +1,7 @@
+import logging
 from typing import Union, Iterable, Tuple
 
 from ete3 import Tree
-import logging
 
 from storage.api.TreeBuilder import TreeBuilder
 from storage.connector.DataIndexConnection import DataIndexConnection

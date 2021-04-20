@@ -6,16 +6,15 @@ import pandas as pd
 
 from storage.api.SamplesQuery import SamplesQuery
 from storage.api.impl.QueriesCollection import QueriesCollection
+from storage.api.impl.TreeSamplesQuery import TreeSamplesQuery
 from storage.connector.DataIndexConnection import DataIndexConnection
 from storage.variant.SampleSet import SampleSet
 from storage.variant.model.QueryFeature import QueryFeature
 from storage.variant.model.QueryFeatureMLST import QueryFeatureMLST
 from storage.variant.model.QueryFeatureMutation import QueryFeatureMutation
-from storage.api.impl.TreeSamplesQuery import TreeSamplesQuery
 
 
 class SamplesQueryIndex(SamplesQuery):
-
     HAS_KINDS = ['mutation', 'mlst']
 
     def __init__(self, connection: DataIndexConnection,
@@ -117,7 +116,7 @@ class SamplesQueryIndex(SamplesQuery):
     def __repr__(self) -> str:
         return str(self)
 
-    def has(self, feature: Union[QueryFeature, str], kind = None) -> SamplesQuery:
+    def has(self, feature: Union[QueryFeature, str], kind=None) -> SamplesQuery:
         if isinstance(feature, QueryFeature):
             query_feature = feature
         elif kind is None:

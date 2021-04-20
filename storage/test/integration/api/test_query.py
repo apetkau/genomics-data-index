@@ -1,17 +1,16 @@
+import math
 from pathlib import Path
 from tempfile import TemporaryDirectory
-import math
 
 import pandas as pd
 import pytest
 
+from storage.api.impl.TreeSamplesQuery import TreeSamplesQuery
 from storage.api.query import query, connect
 from storage.connector.DataIndexConnection import DataIndexConnection
-from storage.variant.SampleSet import AllSampleSet
 from storage.variant.model.QueryFeatureMLST import QueryFeatureMLST
 from storage.variant.model.QueryFeatureMutation import QueryFeatureMutation
 from storage.variant.model.db import Sample
-from storage.api.impl.TreeSamplesQuery import TreeSamplesQuery
 
 
 def test_connect():

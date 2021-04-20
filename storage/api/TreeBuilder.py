@@ -1,4 +1,5 @@
 from typing import Tuple
+
 from ete3 import Tree
 
 from storage.variant.SampleSet import SampleSet

@@ -5,9 +5,9 @@ from pathlib import Path
 import pandas as pd
 
 from storage.api.SamplesQuery import SamplesQuery
-from storage.api.impl.TreeSamplesQuery import TreeSamplesQuery
 from storage.api.impl.DataFrameSamplesQuery import DataFrameSamplesQuery
 from storage.api.impl.SamplesQueryIndex import SamplesQueryIndex
+from storage.api.impl.TreeSamplesQuery import TreeSamplesQuery
 from storage.connector.DataIndexConnection import DataIndexConnection
 
 QUERY_UNIVERSE = ['all', 'mutations', 'dataframe']
@@ -54,7 +54,6 @@ def _query_data_frame(connection: DataIndexConnection,
                       sample_ids_column=None,
                       sample_names_column=None
                       ):
-
     if data_frame is None:
         raise Exception('data_frame must be set when querying with universe="dataframe"')
     if sample_ids_column is None and sample_names_column is None:
