@@ -371,3 +371,15 @@ def test_create_dataframe_from_sample_set_multiple_type_query(database, sample_s
     df = sample_service.create_dataframe_from_sample_set(sample_set,
                                                          queries_collection=queries_collection)
     assert {'lmonocytogenes:abc:1 AND testquery'} == set(df['Query'].tolist())
+
+
+def test_get_all_sample_ids(database, sample_service, variation_service):
+    sampleA = database.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = database.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+
+    assert {sampleA.id, sampleB.id, sampleC.id} == set(sample_service.get_all_sample_ids())
+
+
+def test_get_all_sample_ids_empty_db(database, sample_service):
+    assert set() == set(sample_service.get_all_sample_ids())

@@ -35,6 +35,12 @@ class DataFrameSamplesQuery(SamplesQueryIndex):
                                      sample_set=sample_set,
                                      queries_collection=queries_collection)
 
+    def __str__(self) -> str:
+        return f'<DataFrameSamplesQuery(samples={len(self)})>'
+
+    def __repr__(self) -> str:
+        return str(self)
+
     @classmethod
     def create_with_sample_ids_column(self, sample_ids_column: str, data_frame: pd.DataFrame,
                                       connection: DataIndexConnection) -> DataFrameSamplesQuery:

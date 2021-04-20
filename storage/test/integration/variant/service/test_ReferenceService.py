@@ -75,7 +75,7 @@ def test_update_tree(database, reference_service, example_tree):
     reference_genome = database.get_session().query(Reference).filter(Reference.name == 'genome').one()
     assert reference_genome is not None
     with pytest.raises(Exception) as execinfo:
-        reference_genome.tree()
+        reference_genome.tree
     assert 'Cannot convert an empty tree' in str(execinfo.value)
 
     reference_service.update_tree(reference_name='genome', tree=example_tree, alignment_length=1000)

@@ -79,6 +79,9 @@ class Reference(Base):
     sequences = relationship('ReferenceSequence')
     sample_nucleotide_variation = relationship('SampleNucleotideVariation', back_populates='reference')
 
+    def has_tree(self) -> bool:
+        return self._tree is not None
+
     @hybrid_property
     def tree(self) -> Tree:
         if self._tree is None:

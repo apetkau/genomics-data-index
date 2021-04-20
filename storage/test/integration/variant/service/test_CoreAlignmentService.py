@@ -8,6 +8,7 @@ from Bio import AlignIO
 from Bio.Align import MultipleSeqAlignment
 
 from storage.test.integration import data_dir
+from storage.variant.service.CoreAlignmentService import CoreAlignmentService
 
 
 def remove_column(alignment: MultipleSeqAlignment, position: int) -> MultipleSeqAlignment:
@@ -128,7 +129,7 @@ def compare_alignments(a: MultipleSeqAlignment, b: MultipleSeqAlignment) -> None
         assert a[i].seq == b[i].seq, f'Alignment sequences are not equal for [a.id={a[i].id}, b.id={b[i].id}]'
 
 
-def test_snippy_core_align(core_alignment_service, expected_alignment_core):
+def test_snippy_core_align(core_alignment_service: CoreAlignmentService, expected_alignment_core):
     actual_alignment = core_alignment_service.construct_alignment(reference_name='genome',
                                                                   samples=['SampleA', 'SampleB', 'SampleC'])
     compare_alignments(expected_alignment_core, actual_alignment)
