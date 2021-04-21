@@ -66,6 +66,9 @@ class GenomicDataStore:
                             columns=['Mutation', 'Sequence', 'Position',
                                      'Deletion', 'Insertion', 'Count']).set_index('Mutation')
 
+    def db_size(self, unit: str = 'B') -> pd.DataFrame:
+        return self._connection.db_size(unit)
+
     def samples_query(self, universe: str = 'all', **kwargs) -> SamplesQuery:
         if universe == 'all':
             return self._query_all_samples(self._connection)
