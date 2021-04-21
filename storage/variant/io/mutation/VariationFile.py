@@ -49,24 +49,45 @@ class VariationFile:
 
     @classmethod
     def union_all_files(cls, variant_files: List[Path], include_expression: str = 'TYPE="SNP"',
-                        ncores = 2) -> pd.DataFrame:
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            union_file = Path(tmp_dir) / 'union.tsv'
+                        ncores=2) -> pd.DataFrame:
 
-            if len(variant_files) == 0:
-                raise Exception('Cannot take union of 0 files')
-            elif len(variant_files) == 1:
-                command = ['bcftools', 'query', '-f', '%CHROM\t%POS\t%REF\t%ALT\t1\n']
-                if include_expression is not None:
-                    command.extend(['-i', include_expression])
-                command.extend(['-o', str(union_file), str(variant_files[0])])
-            else:
-                command = ['bcftools', 'isec']
-                if include_expression is not None:
-                    command.extend(['-i', include_expression])
-                command.extend(['-c', 'none', '-n', '+1', '--threads', f'{ncores}', '-o', str(union_file)])
-                for file in variant_files:
-                    command.append(str(file))
+        if len(variant_files) == 0:
+            raise Exception('Cannot take union of 0 files')
+        elif len(variant_files) == 1:
+            return cls.read_single_file(variant_files[0], include_expression=include_expression)
+        else:
+            return cls._union_multiple_files(variant_files, include_expression=include_expression,
+                                             ncores=ncores)
+
+    @classmethod
+    def read_single_file(cls, variant_file: Path, include_expression: str = 'TYPE="SNP"') -> pd.DataFrame:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            output_file = Path(tmp_dir) / 'output.tsv'
+
+            command = ['bcftools', 'query', '-f', '%CHROM\t%POS\t%REF\t%ALT\t1\n']
+            if include_expression is not None:
+                command.extend(['-i', include_expression])
+            command.extend(['-o', str(output_file), str(variant_file)])
+
+            execute_commands([
+                command
+            ])
+            var_df = pd.read_csv(output_file, sep='\t', dtype=str,
+                                 names=['CHROM', 'POS', 'REF', 'ALT', 'INDEXES'])
+            var_df['POS'] = var_df['POS'].astype(int)
+            return var_df.sort_values(['CHROM', 'POS'])
+
+    @classmethod
+    def _union_multiple_files(cls, variant_files: List[Path], include_expression: str = 'TYPE="SNP"',
+                              ncores=2) -> pd.DataFrame:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            union_file = Path(tmp_dir) / 'output.tsv'
+            command = ['bcftools', 'isec']
+            if include_expression is not None:
+                command.extend(['-i', include_expression])
+            command.extend(['-c', 'none', '-n', '+1', '--threads', f'{ncores}', '-o', str(union_file)])
+            for file in variant_files:
+                command.append(str(file))
 
             execute_commands([
                 command
