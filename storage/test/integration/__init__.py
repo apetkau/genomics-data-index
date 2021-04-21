@@ -27,6 +27,17 @@ sourmash_signatures = {
     'SampleC': sourmash_dir / 'SampleC.sig.gz',
 }
 
+snippy_snps_dataframes = {
+    'SampleA': data_dir / 'SampleA' /'mutations-dataframe.snps.tsv',
+    'SampleB': data_dir / 'SampleB' / 'mutations-dataframe.snps.tsv',
+    'SampleC': data_dir / 'SampleC' / 'mutations-dataframe.snps.tsv',
+}
+
+snippy_all_dataframes = {
+    'SampleA': data_dir / 'SampleA' / 'mutations-dataframe.all.tsv',
+    'SampleB': data_dir / 'SampleB' / 'mutations-dataframe.all.tsv',
+    'SampleC': data_dir / 'SampleC' / 'mutations-dataframe.all.tsv',
+}
 
 def expand_list_by(list_in: List[str], number: int) -> List[str]:
     new_list = []

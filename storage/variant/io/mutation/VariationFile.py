@@ -48,18 +48,23 @@ class VariationFile:
             return sequences
 
     @classmethod
-    def union_all_files(cls, variant_files: List[Path], include_expression: str = 'TYPE="SNP"') -> pd.DataFrame:
+    def union_all_files(cls, variant_files: List[Path], include_expression: str = 'TYPE="SNP"',
+                        ncores = 2) -> pd.DataFrame:
         with tempfile.TemporaryDirectory() as tmp_dir:
             union_file = Path(tmp_dir) / 'union.tsv'
 
             if len(variant_files) == 0:
                 raise Exception('Cannot take union of 0 files')
             elif len(variant_files) == 1:
-                command = ['bcftools', 'query', '-f', '%CHROM\t%POS\t%REF\t%ALT\t1\n', '-i', include_expression,
-                           '-o', str(union_file), str(variant_files[0])]
+                command = ['bcftools', 'query', '-f', '%CHROM\t%POS\t%REF\t%ALT\t1\n']
+                if include_expression is not None:
+                    command.extend(['-i', include_expression])
+                command.extend(['-o', str(union_file), str(variant_files[0])])
             else:
-                command = ['bcftools', 'isec', '-i', include_expression, '-c', 'none',
-                           '-n', '+1', '--threads', '2', '-o', str(union_file)]
+                command = ['bcftools', 'isec']
+                if include_expression is not None:
+                    command.extend(['-i', include_expression])
+                command.extend(['-c', 'none', '-n', '+1', '--threads', f'{ncores}', '-o', str(union_file)])
                 for file in variant_files:
                     command.append(str(file))
 

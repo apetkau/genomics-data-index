@@ -3,9 +3,10 @@ from tempfile import TemporaryDirectory
 from typing import List
 
 import pytest
+import pandas as pd
 from sqlalchemy.orm.exc import NoResultFound
 
-from storage.test.integration import data_dir
+from storage.test.integration import data_dir, snippy_snps_dataframes, snippy_all_dataframes
 from storage.variant.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
 from storage.variant.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor
 from storage.variant.model.db import NucleotideVariantsSamples, SampleNucleotideVariation, Sample
@@ -298,3 +299,93 @@ def test_get_sample_nucleotide_variation_all_samples(variation_service):
 
     assert 3 == len(sample_variations)
     assert {'SampleA', 'SampleB', 'SampleC'} == {v.sample.name for v in sample_variations}
+
+
+def test_count_mutations_in_sample_ids_one_sample(database, variation_service: VariationService):
+    sampleA = database.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+
+    expected_df = pd.read_csv(snippy_all_dataframes['SampleA'], sep='\t').groupby('Mutation').agg({
+        'Sequence': 'first',
+        'Position': 'first',
+        'Deletion': 'first',
+        'Insertion': 'first',
+        'Mutation': 'count',
+    }).rename(columns={'Mutation': 'Count'}).sort_index()
+    print('Expected')
+    print(expected_df)
+
+    mutations_df = variation_service.count_mutations_in_sample_ids_dataframe([sampleA.id])
+    mutations_df = mutations_df.sort_index()
+    print('Actual')
+    print(mutations_df)
+
+    assert len(expected_df) == len(mutations_df)
+    assert list(expected_df.columns) == list(mutations_df.columns)
+    print(list(mutations_df.index))
+    assert list(expected_df.index) == list(mutations_df.index)
+    assert list(expected_df['Position']) == list(mutations_df['Position'])
+    assert list(expected_df['Deletion']) == list(mutations_df['Deletion'])
+    assert list(expected_df['Insertion']) == list(mutations_df['Insertion'])
+    assert list(expected_df['Count']) == list(mutations_df['Count'])
+
+
+def test_count_mutations_in_sample_ids_three_samples_only_snps(database, variation_service: VariationService):
+    sampleA = database.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = database.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+
+    dfA = pd.read_csv(snippy_snps_dataframes['SampleA'], sep='\t')
+    dfB = pd.read_csv(snippy_snps_dataframes['SampleB'], sep='\t')
+    dfC = pd.read_csv(snippy_snps_dataframes['SampleC'], sep='\t')
+    expected_df = pd.concat([dfA, dfB, dfC])
+    expected_df = expected_df.groupby('Mutation').agg({
+        'Sequence': 'first',
+        'Position': 'first',
+        'Deletion': 'first',
+        'Insertion': 'first',
+        'Mutation': 'count',
+    }).rename(columns={'Mutation': 'Count'}).sort_index()
+
+    mutations_df = variation_service.count_mutations_in_sample_ids_dataframe([sampleA.id, sampleB.id, sampleC.id],
+                                                                             mutation_type='snp')
+    mutations_df = mutations_df.sort_index()
+
+    assert len(expected_df) == len(mutations_df)
+    assert list(expected_df.columns) == list(mutations_df.columns)
+    print(list(mutations_df.index))
+    assert list(expected_df.index) == list(mutations_df.index)
+    assert list(expected_df['Position']) == list(mutations_df['Position'])
+    assert list(expected_df['Deletion']) == list(mutations_df['Deletion'])
+    assert list(expected_df['Insertion']) == list(mutations_df['Insertion'])
+    assert list(expected_df['Count']) == list(mutations_df['Count'])
+
+
+def test_count_mutations_in_sample_ids_three_samples_all_mutations(database, variation_service: VariationService):
+    sampleA = database.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = database.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+
+    dfA = pd.read_csv(snippy_all_dataframes['SampleA'], sep='\t')
+    dfB = pd.read_csv(snippy_all_dataframes['SampleB'], sep='\t')
+    dfC = pd.read_csv(snippy_all_dataframes['SampleC'], sep='\t')
+    expected_df = pd.concat([dfA, dfB, dfC])
+    expected_df = expected_df.groupby('Mutation').agg({
+        'Sequence': 'first',
+        'Position': 'first',
+        'Deletion': 'first',
+        'Insertion': 'first',
+        'Mutation': 'count',
+    }).rename(columns={'Mutation': 'Count'}).sort_index()
+
+    mutations_df = variation_service.count_mutations_in_sample_ids_dataframe([sampleA.id, sampleB.id, sampleC.id],
+                                                                             )
+    mutations_df = mutations_df.sort_index()
+
+    assert len(expected_df) == len(mutations_df)
+    assert list(expected_df.columns) == list(mutations_df.columns)
+    print(list(mutations_df.index))
+    assert list(expected_df.index) == list(mutations_df.index)
+    assert list(expected_df['Position']) == list(mutations_df['Position'])
+    assert list(expected_df['Deletion']) == list(mutations_df['Deletion'])
+    assert list(expected_df['Insertion']) == list(mutations_df['Insertion'])
+    assert list(expected_df['Count']) == list(mutations_df['Count'])
