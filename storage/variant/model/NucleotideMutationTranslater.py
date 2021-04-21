@@ -46,11 +46,14 @@ class NucleotideMutationTranslater:
             return str(values[0]), position, deletion, str(values[3])
 
     @classmethod
-    def to_spdi(cls, sequence_name: str, position: int, ref: Union[str, int], alt: str) -> str:
+    def to_spdi(cls, sequence_name: str, position: int, ref: Union[str, int], alt: str,
+                convert_deletion: bool = True) -> str:
         if position < 0:
             raise Exception(f'Position must be non-negative: {position}')
 
-        ref = cls.convert_deletion(ref)
+        if convert_deletion:
+            ref = cls.convert_deletion(ref)
+
         return f'{sequence_name}:{position}:{ref}:{alt}'
 
     @classmethod

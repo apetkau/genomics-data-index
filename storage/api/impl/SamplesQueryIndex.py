@@ -16,6 +16,7 @@ from storage.variant.model.QueryFeatureMutation import QueryFeatureMutation
 
 class SamplesQueryIndex(SamplesQuery):
     HAS_KINDS = ['mutation', 'mlst']
+    SUMMARY_FEATURES_KINDS = ['mutations']
 
     def __init__(self, connection: DataIndexConnection,
                  universe_set: SampleSet,
@@ -81,6 +82,20 @@ class SamplesQueryIndex(SamplesQuery):
             '% Absent': per_absent,
             '% Unknown': per_unknown,
         }])
+
+    def summary_features(self, kind: str = 'mutations', **kwargs) -> pd.DataFrame:
+        if kind == 'mutations':
+            return self._summary_features_mutations(kind=kind, **kwargs)
+        else:
+            raise Exception(f'Unsupported value kind=[{kind}]. Must be one of {self.SUMMARY_FEATURES_KINDS}.')
+
+    def _summary_features_mutations(self, kind: str, ncores: int = 1,
+                                    mutation_type: str = 'all'):
+        vs = self._query_connection.variation_service
+        return vs.count_mutations_in_sample_ids_dataframe(sample_ids=self._sample_set,
+                                                   ncores=ncores,
+                                                   mutation_type=mutation_type
+                                                   )
 
     def and_(self, other):
         if isinstance(other, SamplesQuery):

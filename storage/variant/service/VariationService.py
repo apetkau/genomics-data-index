@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import List, Set, Any, Dict, cast
+from typing import List, Set, Any, Dict, cast, Union
 
 import pandas as pd
 
@@ -16,11 +16,14 @@ from storage.variant.service import DatabaseConnection
 from storage.variant.service.FeatureService import FeatureService
 from storage.variant.service.ReferenceService import ReferenceService
 from storage.variant.service.SampleService import SampleService
+from storage.variant.io.mutation.VariationFile import VariationFile
+from storage.variant.model.NucleotideMutationTranslater import NucleotideMutationTranslater
 
 logger = logging.getLogger(__name__)
 
 
 class VariationService(FeatureService):
+    MUTATION_TYPES = ['snp', 'indel', 'all', 'other']
 
     def __init__(self, database_connection: DatabaseConnection, variation_dir: Path,
                  reference_service: ReferenceService, sample_service: SampleService):
@@ -45,6 +48,66 @@ class VariationService(FeatureService):
             .all()
 
         return {m.spdi: len(m.sample_ids) for m in mutations}
+
+    def count_mutations_in_sample_ids_dataframe(self, sample_ids: Union[SampleSet, List[int]],
+                                                ncores: int = 1,
+                                                mutation_type: str = 'all',
+                                                include_unknown: bool = False) -> pd.DataFrame:
+        if include_unknown:
+            raise Exception(f'support for include_unknown is not implemented')
+
+        if mutation_type == 'all':
+            include_expression = None
+        elif mutation_type == 'snp':
+            include_expression = 'TYPE="SNP"'
+        elif mutation_type == 'indel':
+            include_expression = 'TYPE="INDEL"'
+        elif mutation_type == 'other':
+            include_expression = 'TYPE="OTHER"'
+        else:
+            raise Exception(f'Unsupported option mutation_type=[{mutation_type}]. Must be one of {self.MUTATION_TYPES}')
+
+        if isinstance(sample_ids, SampleSet):
+            sample_ids = list(sample_ids)
+
+        sample_nucleotide_variation = self._connection.get_session().query(SampleNucleotideVariation) \
+            .filter(SampleNucleotideVariation.sample_id.in_(sample_ids)) \
+            .all()
+
+        nucleotide_variants_files = [snv.nucleotide_variants_file for snv in sample_nucleotide_variation]
+        mutation_df = VariationFile.union_all_files(nucleotide_variants_files,
+                                                    include_expression=include_expression,
+                                                    ncores=ncores)
+        # Count occurences of '1' character in INDEXES which represents number of samples with this mutation
+        mutation_df['Count'] = mutation_df['INDEXES'].apply(lambda x: x.count('1'))
+
+        mutation_df = mutation_df.rename(columns={
+            'CHROM': 'Sequence',
+            'POS': 'Position',
+            'REF': 'Deletion',
+            'ALT': 'Insertion'
+        }).drop(columns={'INDEXES'})
+
+        def translate_to_mutation_id(x: pd.Series) -> str:
+            return NucleotideMutationTranslater.to_spdi(sequence_name=x['Sequence'],
+                                                        position=x['Position'],
+                                                        ref=x['Deletion'],
+                                                        alt=x['Insertion'],
+                                                        convert_deletion=False)
+
+        mutation_df['Mutation'] = mutation_df.apply(translate_to_mutation_id, axis='columns')
+
+        # This might not be needed
+        mutation_df.groupby('Mutation').agg({
+            'Count': 'sum',
+            'Sequence': 'first',
+            'Position': 'first',
+            'Deletion': 'first',
+            'Insertion': 'first',
+            'Mutation': 'first',
+        })
+
+        return mutation_df[['Mutation', 'Sequence', 'Position', 'Deletion', 'Insertion', 'Count']].set_index('Mutation')
 
     def get_variants_ordered(self, sequence_name: str, type: str = 'SNP') -> List[NucleotideVariantsSamples]:
         return self._connection.get_session().query(NucleotideVariantsSamples) \

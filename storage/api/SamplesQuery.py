@@ -34,6 +34,10 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
+    def summary_features(self, kind: str = 'mutations', **kwargs) -> pd.DataFrame:
+        pass
+
+    @abc.abstractmethod
     def intersect(self, sample_set: SampleSet, query_message: str = None) -> SamplesQuery:
         pass
 
