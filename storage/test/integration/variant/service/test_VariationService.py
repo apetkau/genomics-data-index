@@ -321,7 +321,6 @@ def test_count_mutations_in_sample_ids_one_sample(database, variation_service: V
 
     assert len(expected_df) == len(mutations_df)
     assert list(expected_df.columns) == list(mutations_df.columns)
-    print(list(mutations_df.index))
     assert list(expected_df.index) == list(mutations_df.index)
     assert list(expected_df['Position']) == list(mutations_df['Position'])
     assert list(expected_df['Deletion']) == list(mutations_df['Deletion'])
@@ -352,7 +351,6 @@ def test_count_mutations_in_sample_ids_three_samples_only_snps(database, variati
 
     assert len(expected_df) == len(mutations_df)
     assert list(expected_df.columns) == list(mutations_df.columns)
-    print(list(mutations_df.index))
     assert list(expected_df.index) == list(mutations_df.index)
     assert list(expected_df['Position']) == list(mutations_df['Position'])
     assert list(expected_df['Deletion']) == list(mutations_df['Deletion'])
@@ -383,7 +381,6 @@ def test_count_mutations_in_sample_ids_three_samples_all_mutations(database, var
 
     assert len(expected_df) == len(mutations_df)
     assert list(expected_df.columns) == list(mutations_df.columns)
-    print(list(mutations_df.index))
     assert list(expected_df.index) == list(mutations_df.index)
     assert list(expected_df['Position']) == list(mutations_df['Position'])
     assert list(expected_df['Deletion']) == list(mutations_df['Deletion'])

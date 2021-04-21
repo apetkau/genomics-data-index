@@ -5,6 +5,7 @@ from tempfile import TemporaryDirectory
 import pandas as pd
 import pytest
 
+from storage.test.integration import snippy_all_dataframes
 from storage.api.impl.TreeSamplesQuery import TreeSamplesQuery
 from storage.api.SamplesQuery import SamplesQuery
 from storage.api.GenomicDataStore import GenomicDataStore
@@ -574,3 +575,45 @@ def test_within_constructed_tree_larger_tree(loaded_database_connection: DataInd
     assert ['SampleA', 'SampleB', 'SampleC'] == df['Sample Name'].tolist()
     assert {"mutation_tree(genome) AND within(mrca of ['SampleA', 'SampleC'])"
             } == set(df['Query'].tolist())
+
+
+def test_summary_features_all(loaded_database_connection: DataIndexConnection):
+    dfA = pd.read_csv(snippy_all_dataframes['SampleA'], sep='\t')
+    dfB = pd.read_csv(snippy_all_dataframes['SampleB'], sep='\t')
+    dfC = pd.read_csv(snippy_all_dataframes['SampleC'], sep='\t')
+    expected_df = pd.concat([dfA, dfB, dfC])
+    expected_df = expected_df.groupby('Mutation').agg({
+        'Sequence': 'first',
+        'Position': 'first',
+        'Deletion': 'first',
+        'Insertion': 'first',
+        'Mutation': 'count',
+    }).rename(columns={'Mutation': 'Count'}).sort_index()
+
+    mutations_df = query(loaded_database_connection).summary_features()
+    mutations_df = mutations_df.sort_index()
+
+    assert len(expected_df) == len(mutations_df)
+    assert list(expected_df.index) == list(mutations_df.index)
+    assert list(expected_df['Count']) == list(mutations_df['Count'])
+
+
+def test_summary_features_two(loaded_database_connection: DataIndexConnection):
+    dfB = pd.read_csv(snippy_all_dataframes['SampleB'], sep='\t')
+    dfC = pd.read_csv(snippy_all_dataframes['SampleC'], sep='\t')
+    expected_df = pd.concat([dfB, dfC])
+    expected_df = expected_df.groupby('Mutation').agg({
+        'Sequence': 'first',
+        'Position': 'first',
+        'Deletion': 'first',
+        'Insertion': 'first',
+        'Mutation': 'count',
+    }).rename(columns={'Mutation': 'Count'}).sort_index()
+
+    mutations_df = query(loaded_database_connection).has(
+        'reference:839:C:G', kind='mutation').summary_features()
+    mutations_df = mutations_df.sort_index()
+
+    assert len(expected_df) == len(mutations_df)
+    assert list(expected_df.index) == list(mutations_df.index)
+    assert list(expected_df['Count']) == list(mutations_df['Count'])
