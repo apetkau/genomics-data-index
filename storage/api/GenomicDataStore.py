@@ -89,7 +89,7 @@ class GenomicDataStore:
         return SamplesQueryIndex(connection=connection, sample_set=all_samples, universe_set=all_samples)
 
     def _query_reference(self, connection: DataIndexConnection, reference_name: str):
-        reference_samples = connection.sample_service.get_samples_associated_with_reference(reference_name)
+        reference_samples = connection.sample_service.get_samples_set_associated_with_reference(reference_name)
         reference_genome = connection.reference_service.find_reference_genome(reference_name)
 
         sample_query = SamplesQueryIndex(connection=connection, sample_set=reference_samples,

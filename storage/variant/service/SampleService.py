@@ -71,6 +71,20 @@ class SampleService:
             .all()
         return samples
 
+    def get_samples_set_associated_with_reference(self, reference_name: str) -> SampleSet:
+        """
+        Gets a list of all samples associated with a reference name.
+        :reference_name: The reference name.
+        :return: A list of Samples associated with the reference name or an empty list if no Samples.
+        """
+        sample_ids = [i for i, in self._connection.get_session().query(Sample.id) \
+            .join(Sample.sample_nucleotide_variation) \
+            .join(SampleNucleotideVariation.reference) \
+            .filter(Reference.name == reference_name) \
+            .all()]
+
+        return SampleSet(sample_ids=sample_ids)
+
     def create_dataframe_from_sample_set(self, sample_set: SampleSet,
                                          universe_set: SampleSet,
                                          exclude_absent: bool,

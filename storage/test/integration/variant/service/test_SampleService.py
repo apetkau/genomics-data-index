@@ -20,9 +20,22 @@ def test_samples_with_variants_on_sequence(sample_service, variation_service):
     assert {'SampleA', 'SampleB', 'SampleC'} == {sample.name for sample in samples_with_variants}
 
 
-def test_samples_associated_with_reference(sample_service, variation_service):
+def test_samples_associated_with_reference(sample_service: SampleService, variation_service):
     samples_reference = sample_service.get_samples_associated_with_reference('genome')
     assert {'SampleA', 'SampleB', 'SampleC'} == {sample.name for sample in samples_reference}
+
+
+def test_samples_set_associated_with_reference(database, sample_service, variation_service):
+    sampleA = database.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = database.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+
+    expected_sample_set = SampleSet([sampleA.id, sampleB.id, sampleC.id])
+
+    samples_set_reference = sample_service.get_samples_set_associated_with_reference('genome')
+
+    assert isinstance(samples_set_reference, SampleSet)
+    assert set(samples_set_reference) == set(expected_sample_set)
 
 
 def test_find_sample_name_ids(database, sample_service, variation_service):
