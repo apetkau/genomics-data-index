@@ -38,6 +38,10 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
+    def tofeaturesset(self, kind: str = 'mutations') -> set:
+        pass
+
+    @abc.abstractmethod
     def intersect(self, sample_set: SampleSet, query_message: str = None) -> SamplesQuery:
         pass
 

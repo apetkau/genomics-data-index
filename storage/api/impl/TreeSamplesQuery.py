@@ -54,6 +54,9 @@ class TreeSamplesQuery(SamplesQuery):
     def summary_features(self, kind: str = 'mutations', **kwargs) -> pd.DataFrame:
         return self._wrapped_query.summary_features(kind=kind, **kwargs)
 
+    def tofeaturesset(self, kind: str = 'mutations') -> set:
+        return self._wrapped_query.tofeaturesset(kind=kind)
+
     def and_(self, other: SamplesQuery) -> SamplesQuery:
         return self._wrap_create(self._wrapped_query.and_(other))
 

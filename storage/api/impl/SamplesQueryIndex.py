@@ -99,6 +99,9 @@ class SamplesQueryIndex(SamplesQuery):
                                                           mutation_type=mutation_type
                                                           )
 
+    def tofeaturesset(self, kind: str = 'mutations') -> set:
+        return set(self.summary_features(kind=kind).index)
+
     def and_(self, other):
         if isinstance(other, SamplesQuery):
             intersect_set = self._intersect_sample_set(other.sample_set)

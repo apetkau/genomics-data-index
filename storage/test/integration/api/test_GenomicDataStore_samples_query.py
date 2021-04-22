@@ -617,3 +617,23 @@ def test_summary_features_two(loaded_database_connection: DataIndexConnection):
     assert len(expected_df) == len(mutations_df)
     assert list(expected_df.index) == list(mutations_df.index)
     assert list(expected_df['Count']) == list(mutations_df['Count'])
+
+
+def test_tofeaturesset_all(loaded_database_connection: DataIndexConnection):
+    dfA = pd.read_csv(snippy_all_dataframes['SampleA'], sep='\t')
+    dfB = pd.read_csv(snippy_all_dataframes['SampleB'], sep='\t')
+    dfC = pd.read_csv(snippy_all_dataframes['SampleC'], sep='\t')
+    expected_df = pd.concat([dfA, dfB, dfC])
+    expected_df = expected_df.groupby('Mutation').agg({
+        'Sequence': 'first',
+        'Position': 'first',
+        'Deletion': 'first',
+        'Insertion': 'first',
+        'Mutation': 'count',
+    }).rename(columns={'Mutation': 'Count'}).sort_index()
+    expected_set = set(expected_df.index)
+
+    mutations = query(loaded_database_connection).tofeaturesset()
+
+    assert 112 == len(mutations)
+    assert set(expected_set) == set(mutations)
