@@ -3,6 +3,7 @@ import tempfile
 from pathlib import Path
 
 from storage.test.integration import data_dir, regular_vcf_dir, variation_dir, reference_file, consensus_dir
+from storage.test.integration import extra_snippy_dir
 from storage.test.integration.variant.io import read_vcf_df
 from storage.variant.MaskedGenomicRegions import MaskedGenomicRegions
 from storage.variant.io.mutation.VariationFile import VariationFile
@@ -172,6 +173,7 @@ def test_union_all_files():
     union_df = VariationFile.union_all_files(variant_files)
 
     assert 60 == len(union_df)
+    assert ['ID', 'CHROM', 'POS', 'REF', 'ALT', 'COUNT'] == union_df.columns.tolist()
     assert 1 == union_df[(union_df['CHROM'] == 'reference') & (union_df['POS'] == 190)]['COUNT'].values[0]
     assert 1 == union_df[(union_df['CHROM'] == 'reference') & (union_df['POS'] == 5061)]['COUNT'].values[0]
     assert 2 == union_df[(union_df['CHROM'] == 'reference') & (union_df['POS'] == 4975)]['COUNT'].values[0]
@@ -183,6 +185,7 @@ def test_union_one_file():
     union_df = VariationFile.union_all_files([sample_bcf])
 
     assert 26 == len(union_df)
+    assert ['ID', 'CHROM', 'POS', 'REF', 'ALT', 'COUNT'] == union_df.columns.tolist()
     assert 1 == union_df[(union_df['CHROM'] == 'reference') & (union_df['POS'] == 293)]['COUNT'].values[0]
     assert 1 == union_df[(union_df['CHROM'] == 'reference') & (union_df['POS'] == 4929)]['COUNT'].values[0]
 
@@ -197,23 +200,111 @@ def test_union_batch_size_1():
     union_df = VariationFile.union_all_files(variant_files, batch_size=1)
 
     assert 60 == len(union_df)
+    assert ['ID', 'CHROM', 'POS', 'REF', 'ALT', 'COUNT'] == union_df.columns.tolist()
     assert 1 == union_df[(union_df['CHROM'] == 'reference') & (union_df['POS'] == 190)]['COUNT'].values[0]
     assert 1 == union_df[(union_df['CHROM'] == 'reference') & (union_df['POS'] == 5061)]['COUNT'].values[0]
     assert 2 == union_df[(union_df['CHROM'] == 'reference') & (union_df['POS'] == 4975)]['COUNT'].values[0]
     assert 1 == union_df[(union_df['CHROM'] == 'reference') & (union_df['POS'] == 2076)]['COUNT'].values[0]
 
 
-def test_union_batch_size_2():
+def test_union_batch_size_2_all_data():
     # List like this to guarantee a specific order
     variant_files = [
         data_dir / 'SampleA' / 'snps.vcf.gz',
         data_dir / 'SampleB' / 'snps.vcf.gz',
         data_dir / 'SampleC' / 'snps.vcf.gz'
     ]
-    union_df = VariationFile.union_all_files(variant_files, batch_size=2)
+    union_df = VariationFile.union_all_files(variant_files, include_expression=None, batch_size=2)
 
-    assert 60 == len(union_df)
+    assert 112 == len(union_df)
+    assert ['ID', 'CHROM', 'POS', 'REF', 'ALT', 'COUNT'] == union_df.columns.tolist()
     assert 1 == union_df[(union_df['CHROM'] == 'reference') & (union_df['POS'] == 190)]['COUNT'].values[0]
     assert 1 == union_df[(union_df['CHROM'] == 'reference') & (union_df['POS'] == 5061)]['COUNT'].values[0]
     assert 2 == union_df[(union_df['CHROM'] == 'reference') & (union_df['POS'] == 4975)]['COUNT'].values[0]
     assert 1 == union_df[(union_df['CHROM'] == 'reference') & (union_df['POS'] == 2076)]['COUNT'].values[0]
+
+
+def test_union_many_files_batch_size_2_more_data():
+    # List like this to guarantee a specific order
+    variant_files = [
+        data_dir / 'SampleA' / 'snps.vcf.gz',
+        data_dir / 'SampleB' / 'snps.vcf.gz',
+        data_dir / 'SampleC' / 'snps.vcf.gz',
+        extra_snippy_dir / 'SampleB2.snps.fill-tags.vcf.gz',
+        extra_snippy_dir / 'SampleB3.snps.fill-tags.vcf.gz',
+        extra_snippy_dir / 'SampleB4.snps.fill-tags.vcf.gz',
+        extra_snippy_dir / 'SampleB5.snps.fill-tags.vcf.gz',
+        extra_snippy_dir / 'SampleB5-different-allele.fill-tags.vcf.gz',
+    ]
+    union_df = VariationFile.union_all_files(variant_files, batch_size=2, include_expression=None)
+
+    assert 115 == len(union_df)
+    assert ['ID', 'CHROM', 'POS', 'REF', 'ALT', 'COUNT'] == union_df.columns.tolist()
+    assert 6 == union_df[union_df['ID'] == 'reference:190:A:G']['COUNT'].values[0]
+    assert 6 == union_df[union_df['ID'] == 'reference:5061:G:A']['COUNT'].values[0]
+
+    assert 6 == union_df[union_df['ID'] == 'reference:4975:T:C']['COUNT'].values[0]
+    assert 1 == union_df[union_df['ID'] == 'reference:4975:T:CAT']['COUNT'].values[0]
+
+    assert 1 == union_df[union_df['ID'] == 'reference:2076:A:T']['COUNT'].values[0]
+
+    assert 2 == union_df[union_df['ID'] == 'reference:1483:AAAGAGGGGCTGCTGGAGCCG:A']['COUNT'].values[0]
+    assert 3 == union_df[union_df['ID'] == 'reference:1640:C:A']['COUNT'].values[0]
+
+    assert 6 == union_df[union_df['ID'] == 'reference:4693:C:CGA']['COUNT'].values[0]
+    assert 1 == union_df[union_df['ID'] == 'reference:4693:C:G']['COUNT'].values[0]
+
+    assert 3 == union_df[union_df['ID'] == 'reference:883:CACATG:C']['COUNT'].values[0]
+
+    assert 5 == union_df[union_df['ID'] == 'reference:349:AAGT:A']['COUNT'].values[0]
+    assert 1 == union_df[union_df['ID'] == 'reference:349:AAGT:T']['COUNT'].values[0]
+
+
+def test_union_many_files_batch_size_2_with_empty_vcf():
+    # List like this to guarantee a specific order
+    variant_files = [
+        data_dir / 'SampleA' / 'snps.vcf.gz',
+        data_dir / 'SampleB' / 'snps.vcf.gz',
+        data_dir / 'SampleC' / 'snps.vcf.gz',
+        extra_snippy_dir / 'SampleB2.snps.fill-tags.vcf.gz',
+        extra_snippy_dir / 'SampleB3.snps.fill-tags.vcf.gz',
+        extra_snippy_dir / 'SampleB4.snps.fill-tags.vcf.gz',
+        extra_snippy_dir / 'SampleB5.snps.fill-tags.vcf.gz',
+        extra_snippy_dir / 'SampleB5-different-allele.fill-tags.vcf.gz',
+        extra_snippy_dir / 'SampleB-empty.snps.fill-tags.vcf.gz'
+    ]
+    union_df = VariationFile.union_all_files(variant_files, batch_size=2, include_expression=None)
+    print(union_df)
+
+    assert 115 == len(union_df)
+    assert ['ID', 'CHROM', 'POS', 'REF', 'ALT', 'COUNT'] == union_df.columns.tolist()
+    assert 6 == union_df[union_df['ID'] == 'reference:190:A:G']['COUNT'].values[0]
+    assert 6 == union_df[union_df['ID'] == 'reference:5061:G:A']['COUNT'].values[0]
+
+    assert 6 == union_df[union_df['ID'] == 'reference:4975:T:C']['COUNT'].values[0]
+    assert 1 == union_df[union_df['ID'] == 'reference:4975:T:CAT']['COUNT'].values[0]
+
+    assert 1 == union_df[union_df['ID'] == 'reference:2076:A:T']['COUNT'].values[0]
+
+    assert 2 == union_df[union_df['ID'] == 'reference:1483:AAAGAGGGGCTGCTGGAGCCG:A']['COUNT'].values[0]
+    assert 3 == union_df[union_df['ID'] == 'reference:1640:C:A']['COUNT'].values[0]
+
+    assert 6 == union_df[union_df['ID'] == 'reference:4693:C:CGA']['COUNT'].values[0]
+    assert 1 == union_df[union_df['ID'] == 'reference:4693:C:G']['COUNT'].values[0]
+
+    assert 3 == union_df[union_df['ID'] == 'reference:883:CACATG:C']['COUNT'].values[0]
+
+    assert 5 == union_df[union_df['ID'] == 'reference:349:AAGT:A']['COUNT'].values[0]
+    assert 1 == union_df[union_df['ID'] == 'reference:349:AAGT:T']['COUNT'].values[0]
+
+
+def test_union_many_files_batch_size_2_single_empty_vcf():
+    # List like this to guarantee a specific order
+    variant_files = [
+        extra_snippy_dir / 'SampleB-empty.snps.fill-tags.vcf.gz'
+    ]
+    union_df = VariationFile.union_all_files(variant_files, batch_size=2, include_expression=None)
+    print(union_df)
+
+    assert 0 == len(union_df)
+    assert ['ID', 'CHROM', 'POS', 'REF', 'ALT', 'COUNT'] == union_df.columns.tolist()

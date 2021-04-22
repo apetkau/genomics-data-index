@@ -4,7 +4,7 @@ import uuid
 import logging
 import tempfile
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 import multiprocessing as mp
 
 import pandas as pd
@@ -64,7 +64,7 @@ class VariationFile:
             return sequences
 
     @classmethod
-    def union_all_files(cls, variant_files: List[Path], include_expression: str = 'TYPE="SNP"',
+    def union_all_files(cls, variant_files: List[Path], include_expression: Optional[str] = 'TYPE="SNP"',
                         ncores=1, batch_size=50) -> pd.DataFrame:
         if len(variant_files) == 0:
             raise Exception('Cannot take union of 0 files')
@@ -157,12 +157,14 @@ class BcfToolsUnionExecutor:
         var_df['COUNT'] = 1
 
         # Added this ID so I can group by later
-        var_df['ID'] = var_df.apply(translate_to_mutation_id, axis='columns')
+        if len(var_df) == 0:
+            var_df['ID'] = None
+        else:
+            var_df['ID'] = var_df.apply(translate_to_mutation_id, axis='columns')
 
         return var_df.sort_values(['CHROM', 'POS'])
 
     def _union_multiple(self, files: List[Path]) -> pd.DataFrame:
-        print(f'Union multiple: {files}')
         command = ['bcftools', 'isec']
         if self._include_expression is not None:
             command.extend(['-i', self._include_expression])
