@@ -78,36 +78,17 @@ class VariationService(FeatureService):
         mutation_df = VariationFile.union_all_files(nucleotide_variants_files,
                                                     include_expression=include_expression,
                                                     ncores=ncores)
-        # Count occurences of '1' character in INDEXES which represents number of samples with this mutation
-        mutation_df['Count'] = mutation_df['INDEXES'].apply(lambda x: x.count('1'))
 
         mutation_df = mutation_df.rename(columns={
+            'ID': 'Mutation',
             'CHROM': 'Sequence',
             'POS': 'Position',
             'REF': 'Deletion',
-            'ALT': 'Insertion'
-        }).drop(columns={'INDEXES'})
-
-        def translate_to_mutation_id(x: pd.Series) -> str:
-            return NucleotideMutationTranslater.to_spdi(sequence_name=x['Sequence'],
-                                                        position=x['Position'],
-                                                        ref=x['Deletion'],
-                                                        alt=x['Insertion'],
-                                                        convert_deletion=False)
-
-        mutation_df['Mutation'] = mutation_df.apply(translate_to_mutation_id, axis='columns')
-
-        # This might not be needed
-        mutation_df.groupby('Mutation').agg({
-            'Count': 'sum',
-            'Sequence': 'first',
-            'Position': 'first',
-            'Deletion': 'first',
-            'Insertion': 'first',
-            'Mutation': 'first',
+            'ALT': 'Insertion',
+            'COUNT': 'Count',
         })
 
-        return mutation_df[['Mutation', 'Sequence', 'Position', 'Deletion', 'Insertion', 'Count']].set_index('Mutation')
+        return mutation_df.set_index('Mutation')
 
     def get_variants_ordered(self, sequence_name: str, type: str = 'SNP') -> List[NucleotideVariantsSamples]:
         return self._connection.get_session().query(NucleotideVariantsSamples) \

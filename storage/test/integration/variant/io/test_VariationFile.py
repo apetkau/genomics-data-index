@@ -171,10 +171,10 @@ def test_union_all_files():
     union_df = VariationFile.union_all_files(variant_files)
 
     assert 60 == len(union_df)
-    assert '010' == union_df[(union_df['CHROM'] == 'reference') & (union_df['POS'] == 190)]['INDEXES'].values[0]
-    assert '010' == union_df[(union_df['CHROM'] == 'reference') & (union_df['POS'] == 5061)]['INDEXES'].values[0]
-    assert '011' == union_df[(union_df['CHROM'] == 'reference') & (union_df['POS'] == 4975)]['INDEXES'].values[0]
-    assert '100' == union_df[(union_df['CHROM'] == 'reference') & (union_df['POS'] == 2076)]['INDEXES'].values[0]
+    assert 1 == union_df[(union_df['CHROM'] == 'reference') & (union_df['POS'] == 190)]['COUNT'].values[0]
+    assert 1 == union_df[(union_df['CHROM'] == 'reference') & (union_df['POS'] == 5061)]['COUNT'].values[0]
+    assert 2 == union_df[(union_df['CHROM'] == 'reference') & (union_df['POS'] == 4975)]['COUNT'].values[0]
+    assert 1 == union_df[(union_df['CHROM'] == 'reference') & (union_df['POS'] == 2076)]['COUNT'].values[0]
 
 
 def test_union_one_file():
@@ -182,5 +182,5 @@ def test_union_one_file():
     union_df = VariationFile.union_all_files([sample_bcf])
 
     assert 26 == len(union_df)
-    assert '1' == union_df[(union_df['CHROM'] == 'reference') & (union_df['POS'] == 293)]['INDEXES'].values[0]
-    assert '1' == union_df[(union_df['CHROM'] == 'reference') & (union_df['POS'] == 4929)]['INDEXES'].values[0]
+    assert 1 == union_df[(union_df['CHROM'] == 'reference') & (union_df['POS'] == 293)]['COUNT'].values[0]
+    assert 1 == union_df[(union_df['CHROM'] == 'reference') & (union_df['POS'] == 4929)]['COUNT'].values[0]
