@@ -11,7 +11,7 @@ import pandas as pd
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 
-from build.lib.storage.variant.model.NucleotideMutationTranslater import NucleotideMutationTranslater
+from storage.variant.model.NucleotideMutationTranslater import NucleotideMutationTranslater
 from storage.variant.util import execute_commands
 
 logger = logging.getLogger(__name__)
