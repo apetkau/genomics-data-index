@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Union, Iterable
 
 import copy
 import logging
@@ -53,7 +53,8 @@ class TreeStyler:
         self._default_highlight_styles = default_highlight_styles
         self._tree_style = tree_style
 
-    def highlight(self, samples_query: SamplesQuery, nstyle: NodeStyle = None, legend_color: str = None,
+    def highlight(self, samples: Union[SamplesQuery, Iterable[str]],
+                  nstyle: NodeStyle = None, legend_color: str = None,
                   include_legend = False) -> TreeStyler:
         if nstyle is None and legend_color is None:
             nstyle = self._default_highlight_styles[0]['nstyle']
@@ -65,7 +66,12 @@ class TreeStyler:
         else:
             new_default_styles = self._default_highlight_styles
 
-        sample_names = samples_query.tolist(names=True)
+        if isinstance(samples, SamplesQuery):
+            sample_names = samples.tolist(names=True)
+            query_expression = samples.query_expression()
+        else:
+            sample_names = set(samples)
+            query_expression = f'set({len(sample_names)} samples)'
 
         # Add legend item
         ts = copy.deepcopy(self._tree_style)
@@ -73,7 +79,7 @@ class TreeStyler:
             nsize = 10
             lfsize = 11
             ts.legend.add_face(CircleFace(radius=nsize / 2, color=legend_color), column=0)
-            ts.legend.add_face(TextFace(f' {samples_query.query_expression()}', fsize=lfsize), column=1)
+            ts.legend.add_face(TextFace(f' {query_expression}', fsize=lfsize), column=1)
 
         # Highlight nodes
         tree = copy.deepcopy(self._tree)
