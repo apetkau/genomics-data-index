@@ -170,7 +170,7 @@ def test_union_all_files():
         data_dir / 'SampleB' / 'snps.vcf.gz',
         data_dir / 'SampleC' / 'snps.vcf.gz'
     ]
-    union_df = VariationFile.union_all_files(variant_files)
+    union_df = VariationFile.union_all_files(variant_files, include_expression='TYPE="SNP"')
 
     assert 60 == len(union_df)
     assert ['ID', 'CHROM', 'POS', 'REF', 'ALT', 'COUNT'] == union_df.columns.tolist()
@@ -182,7 +182,7 @@ def test_union_all_files():
 
 def test_union_one_file():
     sample_bcf = variation_dir / 'SampleA.bcf'
-    union_df = VariationFile.union_all_files([sample_bcf])
+    union_df = VariationFile.union_all_files([sample_bcf], include_expression='TYPE="SNP"')
 
     assert 26 == len(union_df)
     assert ['ID', 'CHROM', 'POS', 'REF', 'ALT', 'COUNT'] == union_df.columns.tolist()
@@ -197,7 +197,7 @@ def test_union_batch_size_1():
         data_dir / 'SampleB' / 'snps.vcf.gz',
         data_dir / 'SampleC' / 'snps.vcf.gz'
     ]
-    union_df = VariationFile.union_all_files(variant_files, batch_size=1)
+    union_df = VariationFile.union_all_files(variant_files, include_expression='TYPE="SNP"', batch_size=1)
 
     assert 60 == len(union_df)
     assert ['ID', 'CHROM', 'POS', 'REF', 'ALT', 'COUNT'] == union_df.columns.tolist()
@@ -214,7 +214,7 @@ def test_union_batch_size_2_all_data():
         data_dir / 'SampleB' / 'snps.vcf.gz',
         data_dir / 'SampleC' / 'snps.vcf.gz'
     ]
-    union_df = VariationFile.union_all_files(variant_files, include_expression=None, batch_size=2)
+    union_df = VariationFile.union_all_files(variant_files, batch_size=2)
 
     assert 112 == len(union_df)
     assert ['ID', 'CHROM', 'POS', 'REF', 'ALT', 'COUNT'] == union_df.columns.tolist()
@@ -236,7 +236,7 @@ def test_union_many_files_batch_size_2_more_data():
         extra_snippy_dir / 'SampleB5.snps.fill-tags.vcf.gz',
         extra_snippy_dir / 'SampleB5-different-allele.fill-tags.vcf.gz',
     ]
-    union_df = VariationFile.union_all_files(variant_files, batch_size=2, include_expression=None)
+    union_df = VariationFile.union_all_files(variant_files, batch_size=2)
 
     assert 115 == len(union_df)
     assert ['ID', 'CHROM', 'POS', 'REF', 'ALT', 'COUNT'] == union_df.columns.tolist()
@@ -273,7 +273,7 @@ def test_union_many_files_batch_size_2_with_empty_vcf():
         extra_snippy_dir / 'SampleB5-different-allele.fill-tags.vcf.gz',
         extra_snippy_dir / 'SampleB-empty.snps.fill-tags.vcf.gz'
     ]
-    union_df = VariationFile.union_all_files(variant_files, batch_size=2, include_expression=None)
+    union_df = VariationFile.union_all_files(variant_files, batch_size=2)
     print(union_df)
 
     assert 115 == len(union_df)
@@ -311,7 +311,7 @@ def test_union_many_files_batch_size_odd_cores_3():
         extra_snippy_dir / 'SampleB5-different-allele.fill-tags.vcf.gz',
         extra_snippy_dir / 'SampleB-empty.snps.fill-tags.vcf.gz'
     ]
-    union_df = VariationFile.union_all_files(variant_files, ncores=3, batch_size=3, include_expression=None)
+    union_df = VariationFile.union_all_files(variant_files, ncores=3, batch_size=3)
     print(union_df)
 
     assert 115 == len(union_df)
@@ -349,7 +349,7 @@ def test_union_many_files_ambiguous():
         extra_snippy_dir / 'SampleB5-different-allele.fill-tags.vcf.gz',
         extra_snippy_dir / 'SampleB5-different-allele-ambiguous.vcf.gz',
     ]
-    union_df = VariationFile.union_all_files(variant_files, include_expression=None)
+    union_df = VariationFile.union_all_files(variant_files)
     print(union_df)
 
     assert 119 == len(union_df)
@@ -378,7 +378,7 @@ def test_union_many_files_batch_size_2_single_empty_vcf():
     variant_files = [
         extra_snippy_dir / 'SampleB-empty.snps.fill-tags.vcf.gz'
     ]
-    union_df = VariationFile.union_all_files(variant_files, batch_size=2, include_expression=None)
+    union_df = VariationFile.union_all_files(variant_files, batch_size=2)
     print(union_df)
 
     assert 0 == len(union_df)

@@ -48,7 +48,7 @@ class VariationFile:
         ])
         return output, output_index
 
-    def consensus(self, reference_file: Path, mask_file: Path = None, include_expression='TYPE="SNP"',
+    def consensus(self, reference_file: Path, mask_file: Path = None, include_expression: str = 'TYPE="SNP"',
                   mask_with: str = 'N') -> List[SeqRecord]:
         with tempfile.NamedTemporaryFile() as out_f:
             command = ['bcftools', 'consensus', '--fasta-ref', str(reference_file)]
@@ -64,7 +64,7 @@ class VariationFile:
             return sequences
 
     @classmethod
-    def union_all_files(cls, variant_files: List[Path], include_expression: Optional[str] = 'TYPE="SNP"',
+    def union_all_files(cls, variant_files: List[Path], include_expression: Optional[str] = None,
                         ncores=1, batch_size=50) -> pd.DataFrame:
         if len(variant_files) == 0:
             raise Exception('Cannot take union of 0 files')
