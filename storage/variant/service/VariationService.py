@@ -51,6 +51,7 @@ class VariationService(FeatureService):
 
     def count_mutations_in_sample_ids_dataframe(self, sample_ids: Union[SampleSet, List[int]],
                                                 ncores: int = 1,
+                                                batch_size: int = 50,
                                                 mutation_type: str = 'all',
                                                 include_unknown: bool = False) -> pd.DataFrame:
         if include_unknown:
@@ -77,6 +78,7 @@ class VariationService(FeatureService):
         nucleotide_variants_files = [snv.nucleotide_variants_file for snv in sample_nucleotide_variation]
         mutation_df = VariationFile.union_all_files(nucleotide_variants_files,
                                                     include_expression=include_expression,
+                                                    batch_size=batch_size,
                                                     ncores=ncores)
 
         mutation_df = mutation_df.rename(columns={
