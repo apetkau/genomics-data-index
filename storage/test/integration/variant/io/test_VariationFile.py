@@ -1,3 +1,4 @@
+import pytest
 import tempfile
 from pathlib import Path
 
@@ -184,3 +185,35 @@ def test_union_one_file():
     assert 26 == len(union_df)
     assert 1 == union_df[(union_df['CHROM'] == 'reference') & (union_df['POS'] == 293)]['COUNT'].values[0]
     assert 1 == union_df[(union_df['CHROM'] == 'reference') & (union_df['POS'] == 4929)]['COUNT'].values[0]
+
+
+def test_union_batch_size_1():
+    # List like this to guarantee a specific order
+    variant_files = [
+        data_dir / 'SampleA' / 'snps.vcf.gz',
+        data_dir / 'SampleB' / 'snps.vcf.gz',
+        data_dir / 'SampleC' / 'snps.vcf.gz'
+    ]
+    union_df = VariationFile.union_all_files(variant_files, batch_size=1)
+
+    assert 60 == len(union_df)
+    assert 1 == union_df[(union_df['CHROM'] == 'reference') & (union_df['POS'] == 190)]['COUNT'].values[0]
+    assert 1 == union_df[(union_df['CHROM'] == 'reference') & (union_df['POS'] == 5061)]['COUNT'].values[0]
+    assert 2 == union_df[(union_df['CHROM'] == 'reference') & (union_df['POS'] == 4975)]['COUNT'].values[0]
+    assert 1 == union_df[(union_df['CHROM'] == 'reference') & (union_df['POS'] == 2076)]['COUNT'].values[0]
+
+
+def test_union_batch_size_2():
+    # List like this to guarantee a specific order
+    variant_files = [
+        data_dir / 'SampleA' / 'snps.vcf.gz',
+        data_dir / 'SampleB' / 'snps.vcf.gz',
+        data_dir / 'SampleC' / 'snps.vcf.gz'
+    ]
+    union_df = VariationFile.union_all_files(variant_files, batch_size=2)
+
+    assert 60 == len(union_df)
+    assert 1 == union_df[(union_df['CHROM'] == 'reference') & (union_df['POS'] == 190)]['COUNT'].values[0]
+    assert 1 == union_df[(union_df['CHROM'] == 'reference') & (union_df['POS'] == 5061)]['COUNT'].values[0]
+    assert 2 == union_df[(union_df['CHROM'] == 'reference') & (union_df['POS'] == 4975)]['COUNT'].values[0]
+    assert 1 == union_df[(union_df['CHROM'] == 'reference') & (union_df['POS'] == 2076)]['COUNT'].values[0]

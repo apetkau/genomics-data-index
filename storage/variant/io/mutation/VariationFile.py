@@ -65,86 +65,54 @@ class VariationFile:
 
     @classmethod
     def union_all_files(cls, variant_files: List[Path], include_expression: str = 'TYPE="SNP"',
-                        ncores=2) -> pd.DataFrame:
-
+                        ncores=1, batch_size=50) -> pd.DataFrame:
         if len(variant_files) == 0:
             raise Exception('Cannot take union of 0 files')
-        elif len(variant_files) == 1:
-            return cls.read_single_file(variant_files[0], include_expression=include_expression)
         else:
-            return cls._union_multiple_files(variant_files, include_expression=include_expression,
-                                             ncores=ncores)
+            with tempfile.TemporaryDirectory() as tmp_dir_str:
+                # First batch up files to be processed (tools cannot handle too many command-line arguments and
+                # bcftools isec does not support reading list of file names from a file)
+                # Plus, batch processing means I can distribute over multiple processes
+                tmp_dir = Path(tmp_dir_str)
+                batches = []
+                tmp_file = Path(tmp_dir, str(uuid.uuid1()))
+                batch = BcfToolsUnionExecutor(nthreads=1, include_expression=include_expression,
+                                              out_file=tmp_file)
+                batches.append(batch)
+                num_in_batch = 0
+                for file in variant_files:
+                    batch.add_file(file)
+                    num_in_batch += 1
+                    # start new batch
+                    if num_in_batch == batch_size:
+                        tmp_file = Path(tmp_dir, str(uuid.uuid1()))
+                        batch = BcfToolsUnionExecutor(nthreads=1, include_expression=include_expression,
+                                                      out_file=tmp_file)
+                        batches.append(batch)
+                        num_in_batch = 0
 
-    @classmethod
-    def read_single_file(cls, variant_file: Path, include_expression: str = 'TYPE="SNP"') -> pd.DataFrame:
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            output_file = Path(tmp_dir) / 'output.tsv'
+                # Execute batches in a process pool
+                logger.debug(f'Started processing {len(variant_files)} VCF/BCF files in batches of {batch_size}')
+                with mp.Pool(ncores) as pool:
+                    union_df_results = []
 
-            command = ['bcftools', 'query', '-f', '%CHROM\t%POS\t%REF\t%ALT\n']
-            if include_expression is not None:
-                command.extend(['-i', include_expression])
-            command.extend(['-o', str(output_file), str(variant_file)])
+                    union_dfs = pool.map(cls._single_batch_union, batches)
 
-            execute_commands([
-                command
-            ])
-            var_df = pd.read_csv(output_file, sep='\t', dtype=str,
-                                 names=['CHROM', 'POS', 'REF', 'ALT'])
-            var_df['POS'] = var_df['POS'].astype(int)
+                    for union_df in union_dfs:
+                        union_df_results.append(union_df)
 
-            # Should only be one entry in a single file, so count is always 1
-            var_df['COUNT'] = 1
+                    var_df = pd.concat(union_df_results).groupby('ID').agg({
+                        'ID': 'first',
+                        'CHROM': 'first',
+                        'POS': 'first',
+                        'REF': 'first',
+                        'ALT': 'first',
+                        'COUNT': 'sum',
+                    })
+                    var_df['POS'] = var_df['POS'].astype(int)
 
-            # Added this ID so I can group by later
-            var_df['ID'] = var_df.apply(translate_to_mutation_id, axis='columns')
-
-            return var_df.sort_values(['CHROM', 'POS'])
-
-    @classmethod
-    def _union_multiple_files(cls, variant_files: List[Path], include_expression: str = 'TYPE="SNP"',
-                              ncores: int = 1, batch_size: int = 50) -> pd.DataFrame:
-        with tempfile.TemporaryDirectory() as tmp_dir_str:
-            # First batch up files to be processed by bcftools isec (cannot handle very long lists of files)
-            tmp_dir = Path(tmp_dir_str)
-            batches = []
-            tmp_file = Path(tmp_dir, str(uuid.uuid1()))
-            batch = BcfToolsUnionExecutor(nthreads=1, include_expression=include_expression,
-                                          out_file=tmp_file)
-            batches.append(batch)
-            num_in_batch = 0
-            for file in variant_files:
-                batch.add(file)
-                num_in_batch += 1
-                # start new batch
-                if num_in_batch == batch_size:
-                    tmp_file = Path(tmp_dir, str(uuid.uuid1()))
-                    batch = BcfToolsUnionExecutor(nthreads=1, include_expression=include_expression,
-                                                  out_file=tmp_file)
-                    batches.append(batch)
-                    num_in_batch = 0
-
-            # Execute batches in a process pool
-            logger.debug(f'Started processing {len(variant_files)} VCF/BCF files in batches of {batch_size}')
-            with mp.Pool(ncores) as pool:
-                union_df_results = []
-
-                union_dfs = pool.map(cls._single_batch_union, batches)
-
-                for union_df in union_dfs:
-                    union_df_results.append(union_df)
-
-                var_df = pd.concat(union_df_results).groupby('ID').agg({
-                    'ID': 'first',
-                    'CHROM': 'first',
-                    'POS': 'first',
-                    'REF': 'first',
-                    'ALT': 'first',
-                    'COUNT': 'sum',
-                })
-                var_df['POS'] = var_df['POS'].astype(int)
-
-                logger.debug(f'Finished processing {len(variant_files)} VCF/BCF files')
-                return var_df.sort_values(['CHROM', 'POS'])
+                    logger.debug(f'Finished processing {len(variant_files)} VCF/BCF files')
+                    return var_df.sort_values(['CHROM', 'POS'])
 
     @classmethod
     def _single_batch_union(cls, union_executor: BcfToolsUnionExecutor) -> pd.DataFrame:
@@ -159,15 +127,47 @@ class BcfToolsUnionExecutor:
         self._include_expression = include_expression
         self._out_file = out_file
 
-    def add(self, file: Path):
+    def add_file(self, file: Path):
         self._files.append(file)
 
     def union(self) -> pd.DataFrame:
+        if len(self._files) == 0:
+            empty_df = pd.DataFrame([], columns=['ID', 'CHROM', 'POS', 'REF', 'ALT', 'COUNT'])
+            empty_df['POS'] = empty_df['POS'].astype(int)
+            return empty_df
+        elif len(self._files) == 1:
+            return self._union_single(self._files[0])
+        else:
+            return self._union_multiple(self._files)
+
+    def _union_single(self, file: Path) -> pd.Dataframe:
+        command = ['bcftools', 'query', '-f', '%CHROM\t%POS\t%REF\t%ALT\n']
+        if self._include_expression is not None:
+            command.extend(['-i', self._include_expression])
+        command.extend(['-o', str(self._out_file), str(file)])
+
+        execute_commands([
+            command
+        ])
+        var_df = pd.read_csv(self._out_file, sep='\t', dtype=str,
+                             names=['CHROM', 'POS', 'REF', 'ALT'])
+        var_df['POS'] = var_df['POS'].astype(int)
+
+        # Only single file so count is 1
+        var_df['COUNT'] = 1
+
+        # Added this ID so I can group by later
+        var_df['ID'] = var_df.apply(translate_to_mutation_id, axis='columns')
+
+        return var_df.sort_values(['CHROM', 'POS'])
+
+    def _union_multiple(self, files: List[Path]) -> pd.DataFrame:
+        print(f'Union multiple: {files}')
         command = ['bcftools', 'isec']
         if self._include_expression is not None:
             command.extend(['-i', self._include_expression])
         command.extend(['-c', 'none', '-n', '+1', '--threads', f'{self._nthreads}', '-o', str(self._out_file)])
-        for file in self._files:
+        for file in files:
             command.append(str(file))
 
         execute_commands([
