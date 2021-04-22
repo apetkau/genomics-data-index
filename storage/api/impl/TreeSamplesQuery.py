@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import copy
-from typing import Union, List, Dict
+from typing import Union, List, Dict, Set
 
 import pandas as pd
 from ete3 import Tree, TreeStyle
@@ -54,8 +54,8 @@ class TreeSamplesQuery(SamplesQuery):
     def summary_features(self, kind: str = 'mutations', **kwargs) -> pd.DataFrame:
         return self._wrapped_query.summary_features(kind=kind, **kwargs)
 
-    def tofeaturesset(self, kind: str = 'mutations') -> set:
-        return self._wrapped_query.tofeaturesset(kind=kind)
+    def tofeaturesset(self, kind: str = 'mutations', selection: str = 'all') -> Set[str]:
+        return self._wrapped_query.tofeaturesset(kind=kind, selection=selection)
 
     def and_(self, other: SamplesQuery) -> SamplesQuery:
         return self._wrap_create(self._wrapped_query.and_(other))

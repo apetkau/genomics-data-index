@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import abc
-from typing import Union, List
+from typing import Union, List, Set
 
 import pandas as pd
 
@@ -38,7 +38,7 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def tofeaturesset(self, kind: str = 'mutations') -> set:
+    def tofeaturesset(self, kind: str = 'mutations', selection: str = 'all') -> Set[str]:
         pass
 
     @abc.abstractmethod
