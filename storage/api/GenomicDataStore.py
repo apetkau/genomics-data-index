@@ -1,8 +1,10 @@
 from __future__ import annotations
-from typing import List
+from typing import List, Union
 from pathlib import Path
 
 import pandas as pd
+import yaml
+import logging
 
 from storage.api.impl.DataFrameSamplesQuery import DataFrameSamplesQuery
 from storage.api.impl.TreeSamplesQuery import TreeSamplesQuery
@@ -11,6 +13,9 @@ from storage.variant.model.NucleotideMutationTranslater import NucleotideMutatio
 from storage.api.SamplesQuery import SamplesQuery
 from storage.api.impl.SamplesQueryIndex import SamplesQueryIndex
 from storage.connector.DataIndexConnection import DataIndexConnection
+
+
+logger = logging.getLogger(__name__)
 
 
 class GenomicDataStore:
@@ -122,10 +127,22 @@ class GenomicDataStore:
                                                                          connection=connection)
 
     @classmethod
-    def connect(cls, database_connection: str, database_dir: Path) -> GenomicDataStore:
-        dconnection = DataIndexConnection.connect(database_connection=database_connection,
+    def connect(cls, config_file: Union[Path, str] = None,
+                database_connection: str = None,
+                database_dir: Union[Path,str] = None) -> GenomicDataStore:
+        if config_file is not None:
+            config = ConfigManager(config_file).read_config()
+            if 'database_connection' in config:
+                database_connection = config['database_connection']
+            if 'database_dir' in config:
+                database_dir = config['database_dir']
+        elif database_connection is None or database_dir is None:
+            raise Exception(f'Both database_connection=[{database_connection}] '
+                            f'and database_dir=[{database_dir}] must be set if not using a configuration file')
+
+        database_connection = DataIndexConnection.connect(database_connection=database_connection,
                                            database_dir=database_dir)
-        return GenomicDataStore(connection=dconnection)
+        return GenomicDataStore(connection=database_connection)
 
     def __str__(self) -> str:
         samples_count = self._samples_count
@@ -133,3 +150,25 @@ class GenomicDataStore:
 
     def __repr__(self) -> str:
         return str(self)
+
+
+class ConfigManager:
+
+    def __init__(self, config_file: Union[Path, str]):
+        self._config_file = config_file
+
+    def read_config(self):
+        if not self._config_file.exists():
+            raise Exception(f'Config file {self._config_file} does not exist')
+
+        with open(self._config_file) as file:
+            config = yaml.load(file, Loader=yaml.FullLoader)
+            if config is None:
+                config = {}
+
+            if 'database_connection' not in config:
+                logger.warning(f'Missing database_connection in config file {self._config_file}')
+            if 'database_dir' not in config:
+                logger.warning(f'Missing database_dir in config file {self._config_file}')
+
+            return config
