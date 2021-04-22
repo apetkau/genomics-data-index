@@ -23,6 +23,15 @@ def test_to_spdi_deletion():
     assert 'seq:1:1:T' == NucleotideMutationTranslater.to_spdi('seq', 1, '1', 'T')
 
 
+def test_to_spdi_deletion_no_convert_deletion():
+    assert 'seq:1:1:T' == NucleotideMutationTranslater.to_spdi('seq', 1, 1, 'T', convert_deletion=False)
+    assert 'seq:1:2:T' == NucleotideMutationTranslater.to_spdi('seq', 1, 2, 'T', convert_deletion=False)
+    assert 'seq:1:A:T' == NucleotideMutationTranslater.to_spdi('seq', 1, 'A', 'T', convert_deletion=False)
+    assert 'seq:1:AT:T' == NucleotideMutationTranslater.to_spdi('seq', 1, 'AT', 'T', convert_deletion=False)
+    assert 'seq:1::T' == NucleotideMutationTranslater.to_spdi('seq', 1, '', 'T', convert_deletion=False)
+    assert 'seq:1:1:T' == NucleotideMutationTranslater.to_spdi('seq', 1, '1', 'T', convert_deletion=False)
+
+
 def test_to_spdi_alt():
     assert 'seq:1:1:T' == NucleotideMutationTranslater.to_spdi('seq', 1, 1, 'T')
     assert 'seq:1:1:AT' == NucleotideMutationTranslater.to_spdi('seq', 1, 1, 'AT')
@@ -46,6 +55,18 @@ def test_from_spdi_deletion():
     assert ('seq', 1, 2, 'T') == NucleotideMutationTranslater.from_spdi('seq:1:AT:T')
     assert ('seq', 1, 0, 'T') == NucleotideMutationTranslater.from_spdi('seq:1:0:T')
     assert ('seq', 1, 0, 'T') == NucleotideMutationTranslater.from_spdi('seq:1::T')
+
+
+def test_from_spdi_deletion_no_convert_deletion():
+    assert ('seq', 1, 'A', 'T') == NucleotideMutationTranslater.from_spdi('seq:1:A:T', convert_deletion=False)
+    assert ('seq', 1, 1, 'T') == NucleotideMutationTranslater.from_spdi('seq:1:1:T', convert_deletion=False)
+    assert ('seq', 1, 2, 'T') == NucleotideMutationTranslater.from_spdi('seq:1:2:T', convert_deletion=False)
+    assert ('seq', 1, 'AT', 'T') == NucleotideMutationTranslater.from_spdi('seq:1:AT:T', convert_deletion=False)
+    assert ('seq', 1, 0, 'T') == NucleotideMutationTranslater.from_spdi('seq:1:0:T', convert_deletion=False)
+
+    with pytest.raises(Exception) as execinfo:
+        NucleotideMutationTranslater.from_spdi('seq:1::T', convert_deletion=False)
+    assert 'deletion=[] but convert_deletion is False' in str(execinfo.value)
 
 
 def test_from_spdi_insertion():

@@ -11,9 +11,18 @@ import pandas as pd
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 
+from build.lib.storage.variant.model.NucleotideMutationTranslater import NucleotideMutationTranslater
 from storage.variant.util import execute_commands
 
 logger = logging.getLogger(__name__)
+
+
+def translate_to_mutation_id(x: pd.Series) -> str:
+    return NucleotideMutationTranslater.to_spdi(sequence_name=x['CHROM'],
+                                                position=x['POS'],
+                                                ref=x['REF'],
+                                                alt=x['ALT'],
+                                                convert_deletion=False)
 
 
 class VariationFile:
@@ -71,7 +80,7 @@ class VariationFile:
         with tempfile.TemporaryDirectory() as tmp_dir:
             output_file = Path(tmp_dir) / 'output.tsv'
 
-            command = ['bcftools', 'query', '-f', '%CHROM\t%POS\t%REF\t%ALT\t1\n']
+            command = ['bcftools', 'query', '-f', '%CHROM\t%POS\t%REF\t%ALT\n']
             if include_expression is not None:
                 command.extend(['-i', include_expression])
             command.extend(['-o', str(output_file), str(variant_file)])
@@ -80,12 +89,14 @@ class VariationFile:
                 command
             ])
             var_df = pd.read_csv(output_file, sep='\t', dtype=str,
-                                 names=['CHROM', 'POS', 'REF', 'ALT', 'INDEXES'])
+                                 names=['CHROM', 'POS', 'REF', 'ALT'])
             var_df['POS'] = var_df['POS'].astype(int)
 
             # Should only be one entry in a single file, so count is always 1
             var_df['COUNT'] = 1
-            var_df = var_df.drop(columns='INDEXES')
+
+            # Added this ID so I can group by later
+            var_df['ID'] = var_df.apply(translate_to_mutation_id, axis='columns')
 
             return var_df.sort_values(['CHROM', 'POS'])
 
@@ -169,7 +180,9 @@ class BcfToolsUnionExecutor:
         var_df['COUNT'] = var_df['INDEXES'].apply(lambda x: x.count('1'))
         var_df = var_df.drop(columns=['INDEXES'])
 
+        var_df['POS'] = var_df['POS'].astype(int)
+
         # Added this ID so I can group by later
-        var_df['ID'] = var_df.apply(lambda x: f'{x["CHROM"]}:{x["POS"]}:{x["REF"]}:{x["ALT"]}', axis='columns')
+        var_df['ID'] = var_df.apply(translate_to_mutation_id, axis='columns')
 
         return var_df
