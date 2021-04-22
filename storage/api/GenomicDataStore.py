@@ -131,6 +131,9 @@ class GenomicDataStore:
                 database_connection: str = None,
                 database_dir: Union[Path,str] = None) -> GenomicDataStore:
         if config_file is not None:
+            if isinstance(config_file, str):
+                config_file = Path(config_file)
+
             config = ConfigManager(config_file).read_config()
             if 'database_connection' in config:
                 database_connection = config['database_connection']
@@ -160,6 +163,8 @@ class ConfigManager:
     def read_config(self):
         if not self._config_file.exists():
             raise Exception(f'Config file {self._config_file} does not exist')
+
+        logger.info(f'Reading configuration from {self._config_file}')
 
         with open(self._config_file) as file:
             config = yaml.load(file, Loader=yaml.FullLoader)
