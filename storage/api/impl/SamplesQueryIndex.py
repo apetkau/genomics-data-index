@@ -102,14 +102,11 @@ class SamplesQueryIndex(SamplesQuery):
 
     def tofeaturesset(self, kind: str = 'mutations', selection: str = 'all') -> Set[str]:
         if selection == 'all':
-            if len(self) == 0:
-                return set()
-            else:
                 return set(self.summary_features(kind=kind).index)
         elif selection == 'unique':
-            all_features_set = set(self.summary_features(kind=kind).index)
-            complement_features_set = self.complement().tofeaturesset(kind=kind, selection='all')
-            return complement_features_set - all_features_set
+            features_set = set(self.summary_features(kind=kind).index)
+            complement_features_set = set(self.complement().summary_features(kind=kind).index)
+            return features_set - complement_features_set
         else:
             raise Exception(f'Unsupported selection=[{selection}]. Must be one of {self.FEATURES_SELECTIONS}.')
 
