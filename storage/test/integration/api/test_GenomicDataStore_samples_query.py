@@ -654,8 +654,6 @@ def test_tofeaturesset_unique_none_selected(loaded_database_connection: DataInde
 def test_tofeaturesset_unique_one_sample(loaded_database_only_snippy: DataIndexConnection):
     db = loaded_database_only_snippy.database
     sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
-    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
-    sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
 
     with open(data_dir / 'features_in_A_not_BC.txt', 'r') as fh:
         expected_set = {line.rstrip() for line in fh}
@@ -667,3 +665,20 @@ def test_tofeaturesset_unique_one_sample(loaded_database_only_snippy: DataIndexC
 
     assert 46 == len(unique_mutations_A)
     assert expected_set == unique_mutations_A
+
+
+def test_tofeaturesset_unique_two_samples(loaded_database_only_snippy: DataIndexConnection):
+    db = loaded_database_only_snippy.database
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+
+    with open(data_dir / 'features_in_BC_not_A.txt', 'r') as fh:
+        expected_set = {line.rstrip() for line in fh}
+
+    sample_setBC = SampleSet([sampleB.id, sampleC.id])
+
+    query_BC = query(loaded_database_only_snippy).intersect(sample_setBC)
+    unique_mutations_BC = query_BC.tofeaturesset(selection='unique')
+
+    assert 66 == len(unique_mutations_BC)
+    assert expected_set == unique_mutations_BC
