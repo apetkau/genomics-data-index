@@ -298,6 +298,44 @@ def test_union_many_files_batch_size_2_with_empty_vcf():
     assert 1 == union_df[union_df['ID'] == 'reference:349:AAGT:T']['COUNT'].values[0]
 
 
+def test_union_many_files_batch_size_odd_cores_3():
+    # List like this to guarantee a specific order
+    variant_files = [
+        data_dir / 'SampleA' / 'snps.vcf.gz',
+        data_dir / 'SampleB' / 'snps.vcf.gz',
+        data_dir / 'SampleC' / 'snps.vcf.gz',
+        extra_snippy_dir / 'SampleB2.snps.fill-tags.vcf.gz',
+        extra_snippy_dir / 'SampleB3.snps.fill-tags.vcf.gz',
+        extra_snippy_dir / 'SampleB4.snps.fill-tags.vcf.gz',
+        extra_snippy_dir / 'SampleB5.snps.fill-tags.vcf.gz',
+        extra_snippy_dir / 'SampleB5-different-allele.fill-tags.vcf.gz',
+        extra_snippy_dir / 'SampleB-empty.snps.fill-tags.vcf.gz'
+    ]
+    union_df = VariationFile.union_all_files(variant_files, ncores=3, batch_size=3, include_expression=None)
+    print(union_df)
+
+    assert 115 == len(union_df)
+    assert ['ID', 'CHROM', 'POS', 'REF', 'ALT', 'COUNT'] == union_df.columns.tolist()
+    assert 6 == union_df[union_df['ID'] == 'reference:190:A:G']['COUNT'].values[0]
+    assert 6 == union_df[union_df['ID'] == 'reference:5061:G:A']['COUNT'].values[0]
+
+    assert 6 == union_df[union_df['ID'] == 'reference:4975:T:C']['COUNT'].values[0]
+    assert 1 == union_df[union_df['ID'] == 'reference:4975:T:CAT']['COUNT'].values[0]
+
+    assert 1 == union_df[union_df['ID'] == 'reference:2076:A:T']['COUNT'].values[0]
+
+    assert 2 == union_df[union_df['ID'] == 'reference:1483:AAAGAGGGGCTGCTGGAGCCG:A']['COUNT'].values[0]
+    assert 3 == union_df[union_df['ID'] == 'reference:1640:C:A']['COUNT'].values[0]
+
+    assert 6 == union_df[union_df['ID'] == 'reference:4693:C:CGA']['COUNT'].values[0]
+    assert 1 == union_df[union_df['ID'] == 'reference:4693:C:G']['COUNT'].values[0]
+
+    assert 3 == union_df[union_df['ID'] == 'reference:883:CACATG:C']['COUNT'].values[0]
+
+    assert 5 == union_df[union_df['ID'] == 'reference:349:AAGT:A']['COUNT'].values[0]
+    assert 1 == union_df[union_df['ID'] == 'reference:349:AAGT:T']['COUNT'].values[0]
+
+
 def test_union_many_files_batch_size_2_single_empty_vcf():
     # List like this to guarantee a specific order
     variant_files = [
