@@ -5,6 +5,7 @@ from typing import List
 root_data_dir = Path(path.dirname(__file__), 'data')
 mlst_dir = root_data_dir / 'mlst'
 data_dir = root_data_dir / 'snippy'
+extra_snippy_dir = root_data_dir / 'extra-snippy-samples'
 regular_vcf_dir = root_data_dir / 'regular-vcf'
 variation_dir = root_data_dir / 'variation'
 consensus_dir = root_data_dir / 'consensus'
