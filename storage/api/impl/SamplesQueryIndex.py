@@ -91,7 +91,7 @@ class SamplesQueryIndex(SamplesQuery):
             raise Exception(f'Unsupported value kind=[{kind}]. Must be one of {self.SUMMARY_FEATURES_KINDS}.')
 
     def _summary_features_mutations(self, kind: str, ncores: int = 1,
-                                    batch_size: int = 50,
+                                    batch_size: int = 500,
                                     mutation_type: str = 'all'):
         vs = self._query_connection.variation_service
         return vs.count_mutations_in_sample_ids_dataframe(sample_ids=self._sample_set,
@@ -106,7 +106,7 @@ class SamplesQueryIndex(SamplesQuery):
             return set(self.summary_features(kind=kind, ncores=ncores).index)
         elif selection == 'unique':
             features_set = set(self.summary_features(kind=kind, ncores=ncores).index)
-            complement_features_set = set(self.complement().summary_features(kind=kind).index)
+            complement_features_set = set(self.complement().summary_features(kind=kind, ncores=ncores).index)
             return features_set - complement_features_set
         else:
             raise Exception(f'Unsupported selection=[{selection}]. Must be one of {self.FEATURES_SELECTIONS}.')

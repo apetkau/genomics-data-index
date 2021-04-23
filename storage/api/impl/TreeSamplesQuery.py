@@ -56,7 +56,7 @@ class TreeSamplesQuery(SamplesQuery):
 
     def tofeaturesset(self, kind: str = 'mutations', selection: str = 'all',
                       ncores: int = 1) -> Set[str]:
-        return self._wrapped_query.tofeaturesset(kind=kind, selection=selection)
+        return self._wrapped_query.tofeaturesset(kind=kind, selection=selection, ncores=ncores)
 
     def and_(self, other: SamplesQuery) -> SamplesQuery:
         return self._wrap_create(self._wrapped_query.and_(other))
