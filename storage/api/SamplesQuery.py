@@ -38,7 +38,8 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def tofeaturesset(self, kind: str = 'mutations', selection: str = 'all') -> Set[str]:
+    def tofeaturesset(self, kind: str = 'mutations', selection: str = 'all',
+                      ncores: int = 1) -> Set[str]:
         pass
 
     @abc.abstractmethod

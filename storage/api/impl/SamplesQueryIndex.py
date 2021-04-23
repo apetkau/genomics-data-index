@@ -100,11 +100,12 @@ class SamplesQueryIndex(SamplesQuery):
                                                           mutation_type=mutation_type
                                                           )
 
-    def tofeaturesset(self, kind: str = 'mutations', selection: str = 'all') -> Set[str]:
+    def tofeaturesset(self, kind: str = 'mutations', selection: str = 'all',
+                      ncores: int = 1) -> Set[str]:
         if selection == 'all':
-            return set(self.summary_features(kind=kind).index)
+            return set(self.summary_features(kind=kind, ncores=ncores).index)
         elif selection == 'unique':
-            features_set = set(self.summary_features(kind=kind).index)
+            features_set = set(self.summary_features(kind=kind, ncores=ncores).index)
             complement_features_set = set(self.complement().summary_features(kind=kind).index)
             return features_set - complement_features_set
         else:
