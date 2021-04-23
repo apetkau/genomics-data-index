@@ -5,7 +5,8 @@ from tempfile import TemporaryDirectory
 import pandas as pd
 import pytest
 
-from storage.test.integration import snippy_all_dataframes
+from storage.test.integration import snippy_all_dataframes, data_dir
+from storage.variant.SampleSet import SampleSet
 from storage.api.impl.TreeSamplesQuery import TreeSamplesQuery
 from storage.api.SamplesQuery import SamplesQuery
 from storage.api.GenomicDataStore import GenomicDataStore
@@ -619,7 +620,7 @@ def test_summary_features_two(loaded_database_connection: DataIndexConnection):
     assert list(expected_df['Count']) == list(mutations_df['Count'])
 
 
-def test_tofeaturesset_all(loaded_database_connection: DataIndexConnection):
+def test_tofeaturesset_all(loaded_database_only_snippy: DataIndexConnection):
     dfA = pd.read_csv(snippy_all_dataframes['SampleA'], sep='\t')
     dfB = pd.read_csv(snippy_all_dataframes['SampleB'], sep='\t')
     dfC = pd.read_csv(snippy_all_dataframes['SampleC'], sep='\t')
@@ -633,7 +634,51 @@ def test_tofeaturesset_all(loaded_database_connection: DataIndexConnection):
     }).rename(columns={'Mutation': 'Count'}).sort_index()
     expected_set = set(expected_df.index)
 
-    mutations = query(loaded_database_connection).tofeaturesset()
+    mutations = query(loaded_database_only_snippy).tofeaturesset()
 
     assert 112 == len(mutations)
     assert set(expected_set) == set(mutations)
+
+
+def test_tofeaturesset_unique_all_selected(loaded_database_connection: DataIndexConnection):
+    unique_mutations = query(loaded_database_connection).tofeaturesset(selection='unique')
+    assert 112 == len(unique_mutations)
+
+
+def test_tofeaturesset_unique_none_selected(loaded_database_connection: DataIndexConnection):
+    unique_mutations = query(loaded_database_connection).intersect(
+        SampleSet.create_empty()).tofeaturesset(selection='unique')
+    assert 0 == len(unique_mutations)
+
+
+def test_tofeaturesset_unique_one_sample(loaded_database_only_snippy: DataIndexConnection):
+    db = loaded_database_only_snippy.database
+    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+
+    with open(data_dir / 'features_in_A_not_BC.txt', 'r') as fh:
+        expected_set = {line.rstrip() for line in fh}
+
+    sample_setA = SampleSet([sampleA.id])
+
+    query_A = query(loaded_database_only_snippy).intersect(sample_setA)
+    unique_mutations_A = query_A.tofeaturesset(selection='unique')
+
+    assert 46 == len(unique_mutations_A)
+    assert expected_set == unique_mutations_A
+
+
+def test_tofeaturesset_unique_two_samples(loaded_database_only_snippy: DataIndexConnection):
+    db = loaded_database_only_snippy.database
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+
+    with open(data_dir / 'features_in_BC_not_A.txt', 'r') as fh:
+        expected_set = {line.rstrip() for line in fh}
+
+    sample_setBC = SampleSet([sampleB.id, sampleC.id])
+
+    query_BC = query(loaded_database_only_snippy).intersect(sample_setBC)
+    unique_mutations_BC = query_BC.tofeaturesset(selection='unique')
+
+    assert 66 == len(unique_mutations_BC)
+    assert expected_set == unique_mutations_BC

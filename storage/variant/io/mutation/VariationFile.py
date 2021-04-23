@@ -67,7 +67,9 @@ class VariationFile:
     def union_all_files(cls, variant_files: List[Path], include_expression: Optional[str] = None,
                         ncores=1, batch_size=50) -> pd.DataFrame:
         if len(variant_files) == 0:
-            raise Exception('Cannot take union of 0 files')
+            empty_df = pd.DataFrame([], columns=['ID', 'CHROM', 'POS', 'REF', 'ALT', 'COUNT'])
+            empty_df['POS'] = empty_df['POS'].astype(int)
+            return empty_df
         else:
             with tempfile.TemporaryDirectory() as tmp_dir_str:
                 # First batch up files to be processed (tools cannot handle too many command-line arguments and

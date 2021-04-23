@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Union, List
+from typing import Union, List, Set
 
 import pandas as pd
 
@@ -17,6 +17,7 @@ from storage.variant.model.QueryFeatureMutation import QueryFeatureMutation
 class SamplesQueryIndex(SamplesQuery):
     HAS_KINDS = ['mutation', 'mlst']
     SUMMARY_FEATURES_KINDS = ['mutations']
+    FEATURES_SELECTIONS = ['all', 'unique']
 
     def __init__(self, connection: DataIndexConnection,
                  universe_set: SampleSet,
@@ -99,8 +100,15 @@ class SamplesQueryIndex(SamplesQuery):
                                                           mutation_type=mutation_type
                                                           )
 
-    def tofeaturesset(self, kind: str = 'mutations') -> set:
-        return set(self.summary_features(kind=kind).index)
+    def tofeaturesset(self, kind: str = 'mutations', selection: str = 'all') -> Set[str]:
+        if selection == 'all':
+            return set(self.summary_features(kind=kind).index)
+        elif selection == 'unique':
+            features_set = set(self.summary_features(kind=kind).index)
+            complement_features_set = set(self.complement().summary_features(kind=kind).index)
+            return features_set - complement_features_set
+        else:
+            raise Exception(f'Unsupported selection=[{selection}]. Must be one of {self.FEATURES_SELECTIONS}.')
 
     def and_(self, other):
         if isinstance(other, SamplesQuery):
