@@ -12,8 +12,9 @@ logger = logging.getLogger(__name__)
 
 
 class Project:
-    DATA_DIR = 'data'
-    CONFIG_FILE = 'config.yaml'
+    DATA_DIR = '.genomics-data'
+    DATABASE_FILE = 'genomics-db.sqlite'
+    CONFIG_FILE = 'data-config.yaml'
 
     def __init__(self, root_dir: Union[Path, str]):
         if isinstance(root_dir, str):
@@ -83,7 +84,7 @@ class Project:
         os.mkdir(data_dir)
 
         config = ConfigFile()
-        config.sqlite_database = 'db.sqlite'
+        config.sqlite_database = cls.DATA_DIR + os.path.sep + cls.DATABASE_FILE
         config.database_dir = cls.DATA_DIR
 
         config.write(project_dir / cls.CONFIG_FILE)

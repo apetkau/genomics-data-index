@@ -17,20 +17,20 @@ def test_create_new_project():
         Project.create_new_project(tmp_dir / 'project')
 
         assert (tmp_dir / 'project').exists()
-        assert (tmp_dir / 'project' / 'data').exists()
-        assert (tmp_dir / 'project' / 'config.yaml').exists()
+        assert (tmp_dir / 'project' / '.genomics-data').exists()
+        assert (tmp_dir / 'project' / 'data-config.yaml').exists()
 
-        config = ConfigFile.read_config(tmp_dir / 'project' / 'config.yaml')
+        config = ConfigFile.read_config(tmp_dir / 'project' / 'data-config.yaml')
         assert config.database_connection is None
-        assert config.database_dir == Path('data')
-        assert config.sqlite_database == Path('db.sqlite')
+        assert config.database_dir == Path('.genomics-data')
+        assert config.sqlite_database == Path('.genomics-data') / 'genomics-db.sqlite'
 
 
 def test_from_existing_project():
     project = Project(test_project_dir)
 
-    assert f'sqlite:///{test_project_dir}/db.sqlite' == project.get_database_connection_str()
-    assert test_project_dir / 'data' == project.get_database_dir()
+    assert f'sqlite:///{test_project_dir}/.genomics-data/db.sqlite' == project.get_database_connection_str()
+    assert test_project_dir / '.genomics-data' == project.get_database_dir()
 
     connection = project.create_connection()
-    assert connection.filesystem_storage.variation_dir.parent == test_project_dir / 'data'
+    assert connection.filesystem_storage.variation_dir.parent == test_project_dir / '.genomics-data'
