@@ -45,7 +45,7 @@ def test_connect_to_project_from_dir():
     with TemporaryDirectory() as tmp_file_str:
         tmp_file = Path(tmp_file_str)
         project_dir = tmp_file / 'project'
-        Project.create_new_project(project_dir)
+        Project.initialize_project(project_dir)
 
         ds = GenomicDataStore.connect(project_dir=project_dir)
         assert ds is not None
@@ -57,7 +57,7 @@ def test_connect_to_project_from_project():
     with TemporaryDirectory() as tmp_file_str:
         tmp_file = Path(tmp_file_str)
         project_dir = tmp_file / 'project'
-        project = Project.create_new_project(project_dir)
+        project = Project.initialize_project(project_dir)
 
         ds = GenomicDataStore.connect(project=project)
         assert ds is not None

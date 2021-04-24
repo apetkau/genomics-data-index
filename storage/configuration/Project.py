@@ -70,17 +70,16 @@ class Project:
                                            database_dir=self._database_dir)
 
     @classmethod
-    def create_new_project(cls, project_dir: Path, force_new: bool = False) -> Project:
-        if project_dir.exists():
-            if force_new:
-                logger.warning(f'Project directory [{project_dir}] exists but force_new={force_new} so overwriting.')
-                shutil.rmtree(project_dir)
-            else:
-                raise Exception(f'Project directory [{project_dir}] already exists')
+    def initialize_project(cls, project_dir: Path) -> Project:
+        if not project_dir.exists():
+            os.mkdir(project_dir)
 
+        config_file = project_dir / cls.CONFIG_FILE
         data_dir = project_dir / cls.DATA_DIR
 
-        os.mkdir(project_dir)
+        if data_dir.exists() or config_file.exists():
+            raise Exception(f'Project directory [{project_dir}] has already been initialized')
+
         os.mkdir(data_dir)
 
         config = ConfigFile()

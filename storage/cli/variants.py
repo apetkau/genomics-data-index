@@ -75,8 +75,8 @@ def main(ctx, project_dir, ncores, log_level):
 @click.argument('project_dir', type=click.Path(exists=False), nargs=1)
 def init(project_dir: str):
     project_dir = Path(project_dir)
-    click.echo(f'Setting up project in {project_dir}')
-    Project.create_new_project(project_dir)
+    click.echo(f'Initializing empty project in [{project_dir}]')
+    Project.initialize_project(project_dir)
 
 
 @main.group()

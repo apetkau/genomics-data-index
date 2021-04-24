@@ -87,7 +87,7 @@ def loaded_database_only_snippy() -> DataIndexConnection:
 def loaded_data_store_from_project_dir() -> GenomicDataStore:
     tmp_dir = Path(tempfile.mkdtemp())
     project_dir = tmp_dir / 'project'
-    project = Project.create_new_project(project_dir)
+    project = Project.initialize_project(project_dir)
 
     database_connection = project.create_connection()
 

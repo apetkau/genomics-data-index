@@ -1,5 +1,9 @@
+import pytest
+
 from pathlib import Path
 from tempfile import TemporaryDirectory
+import shutil
+import os
 
 import warnings
 
@@ -14,7 +18,7 @@ def test_create_new_project():
     with TemporaryDirectory() as tmp_dir_str:
         tmp_dir = Path(tmp_dir_str)
 
-        Project.create_new_project(tmp_dir / 'project')
+        Project.initialize_project(tmp_dir / 'project')
 
         assert (tmp_dir / 'project').exists()
         assert (tmp_dir / 'project' / '.genomics-data').exists()
@@ -34,3 +38,15 @@ def test_from_existing_project():
 
     connection = project.create_connection()
     assert connection.filesystem_storage.variation_dir.parent == test_project_dir / '.genomics-data'
+
+
+def test_initialize_from_existing_project():
+    with TemporaryDirectory() as tmp_dir_str:
+        tmp_dir = Path(tmp_dir_str)
+        project_dir = tmp_dir / 'project'
+        shutil.copytree(test_project_dir, project_dir)
+        print(os.listdir(project_dir))
+
+        with pytest.raises(Exception) as execinfo:
+            Project.initialize_project(project_dir)
+        assert 'has already been initialized' in str(execinfo.value)
