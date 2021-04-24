@@ -22,6 +22,8 @@ mlst_snippy_file = mlst_dir / 'mlst-snippy-data.csv'
 
 data_dir_empty = root_data_dir / 'empty_vcfs'
 
+test_project_dir = root_data_dir / 'test_project_dir'
+
 sourmash_signatures = {
     'SampleA': sourmash_dir / 'SampleA.sig.gz',
     'SampleB': sourmash_dir / 'SampleB.sig.gz',

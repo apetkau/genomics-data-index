@@ -1,0 +1,3 @@
+---
+database_dir: 'data'
+sqlite_database: 'db.sqlite'
