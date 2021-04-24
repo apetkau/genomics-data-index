@@ -1,8 +1,8 @@
 from __future__ import annotations
-from typing import List, Dict, Any, Union, Iterable
 
 import copy
 import logging
+from typing import List, Dict, Any, Union, Iterable
 
 from ete3 import Tree, NodeStyle, TreeStyle, CircleFace, TextFace
 
@@ -46,6 +46,7 @@ style3 = {
 
 DEFAULT_HIGHLIGHT_STYLES = [style1, style2, style3]
 
+
 class TreeStyler:
 
     def __init__(self, tree: Tree, default_highlight_styles: List[Dict[str, Any]], tree_style: TreeStyle):
@@ -55,7 +56,7 @@ class TreeStyler:
 
     def highlight(self, samples: Union[SamplesQuery, Iterable[str]],
                   nstyle: NodeStyle = None, legend_color: str = None,
-                  include_legend = False) -> TreeStyler:
+                  include_legend=False) -> TreeStyler:
         if nstyle is None and legend_color is None:
             nstyle = self._default_highlight_styles[0]['nstyle']
             legend_color = self._default_highlight_styles[0]['legend_color']

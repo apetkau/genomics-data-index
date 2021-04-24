@@ -84,7 +84,7 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def tolist(self, names = True) -> List[Union[int,str]]:
+    def tolist(self, names=True) -> List[Union[int, str]]:
         pass
 
     @abc.abstractmethod

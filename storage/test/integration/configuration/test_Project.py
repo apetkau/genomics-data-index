@@ -1,11 +1,10 @@
-import pytest
-
+import os
+import shutil
+import warnings
 from pathlib import Path
 from tempfile import TemporaryDirectory
-import shutil
-import os
 
-import warnings
+import pytest
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 

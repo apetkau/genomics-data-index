@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import uuid
 import logging
+import multiprocessing as mp
 import tempfile
+import uuid
 from pathlib import Path
 from typing import List, Tuple, Optional
-import multiprocessing as mp
 
 import pandas as pd
 from Bio import SeqIO

@@ -1,12 +1,12 @@
 from __future__ import annotations
-from typing import Union
-import logging
-from pathlib import Path
-import shutil
-import os
 
-from storage.configuration.connector.DataIndexConnection import DataIndexConnection
+import logging
+import os
+from pathlib import Path
+from typing import Union
+
 from storage.configuration.ConfigFile import ConfigFile
+from storage.configuration.connector.DataIndexConnection import DataIndexConnection
 
 logger = logging.getLogger(__name__)
 

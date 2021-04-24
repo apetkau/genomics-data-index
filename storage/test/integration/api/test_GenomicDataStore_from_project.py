@@ -1,7 +1,7 @@
 from storage.api.GenomicDataStore import GenomicDataStore
-from storage.variant.model.db import Sample
-from storage.variant.model.QueryFeatureMutation import QueryFeatureMutation
 from storage.variant.model.QueryFeatureMLST import QueryFeatureMLST
+from storage.variant.model.QueryFeatureMutation import QueryFeatureMutation
+from storage.variant.model.db import Sample
 
 
 def test_query_single_mutation(loaded_data_store_from_project_dir: GenomicDataStore):

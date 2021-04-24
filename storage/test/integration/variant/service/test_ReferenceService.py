@@ -43,7 +43,6 @@ def test_translate_spdi(reference_service_with_data):
     assert translated_ids['reference:1984:7:TTGA'] == 'reference:1984:GTGATTG:TTGA'
     assert translated_ids['reference:1483:21:A'] == 'reference:1483:AAAGAGGGGCTGCTGGAGCCG:A'
 
-
     spdi_ids_ref = {
         'reference:3762:A:G',
         'reference:374:A:ATTCTAGGGTAGACGCT',

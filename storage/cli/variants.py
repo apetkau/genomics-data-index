@@ -15,6 +15,7 @@ from Bio import AlignIO
 
 import storage.variant.service.FeatureService as FeatureService
 from storage.cli import yaml_config_provider
+from storage.configuration.Project import Project
 from storage.variant.index.KmerIndexer import KmerIndexerSourmash, KmerIndexManager
 from storage.variant.io.mlst.MLSTChewbbacaReader import MLSTChewbbacaReader
 from storage.variant.io.mlst.MLSTSampleDataPackage import MLSTSampleDataPackage
@@ -32,7 +33,6 @@ from storage.variant.service.SampleService import SampleService
 from storage.variant.service.TreeService import TreeService
 from storage.variant.service.VariationService import VariationService
 from storage.variant.util import get_genome_name
-from storage.configuration.Project import Project
 
 logger = logging.getLogger('storage')
 max_cores = multiprocessing.cpu_count()

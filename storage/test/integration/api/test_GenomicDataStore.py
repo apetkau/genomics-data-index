@@ -1,8 +1,8 @@
-from tempfile import TemporaryDirectory
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
-from storage.configuration.Project import Project
 from storage.api.GenomicDataStore import GenomicDataStore
+from storage.configuration.Project import Project
 
 
 def test_summaries_loaded_data(loaded_database_genomic_data_store: GenomicDataStore):

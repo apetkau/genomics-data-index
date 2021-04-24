@@ -6,16 +6,14 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from biocommons.seqrepo import SeqRepo
 from ete3 import Tree
-from storage.variant.model.NucleotideMutationTranslater import NucleotideMutationTranslater
 
+from storage.variant.model.QueryFeatureMutation import QueryFeatureMutation
 from storage.variant.model.db import Reference, SampleNucleotideVariation, ReferenceSequence, Sample
 from storage.variant.service import DatabaseConnection, EntityExistsError
 from storage.variant.util import parse_sequence_file
-from storage.variant.model.QueryFeatureMutation import QueryFeatureMutation
 
 
 class ReferenceService:
-
     MUTATION_ID_TYPES = ['spdi_ref']
 
     def __init__(self, database_connection: DatabaseConnection, seq_repo_dir: Path,

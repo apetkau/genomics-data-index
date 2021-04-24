@@ -1,10 +1,10 @@
 from __future__ import annotations
-from typing import Optional, Dict
+
+import logging
 from pathlib import Path
+from typing import Optional, Dict
 
 import yaml
-import logging
-
 
 logger = logging.getLogger(__name__)
 

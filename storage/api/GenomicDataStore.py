@@ -1,20 +1,19 @@
 from __future__ import annotations
-from typing import List
-from pathlib import Path
+
+import logging
 import os
+from pathlib import Path
+from typing import List
 
 import pandas as pd
-import logging
-
-from storage.configuration.Project import Project
-from storage.api.impl.DataFrameSamplesQuery import DataFrameSamplesQuery
-from storage.api.impl.TreeSamplesQuery import TreeSamplesQuery
-from storage.variant.model.NucleotideMutationTranslater import NucleotideMutationTranslater
 
 from storage.api.SamplesQuery import SamplesQuery
+from storage.api.impl.DataFrameSamplesQuery import DataFrameSamplesQuery
 from storage.api.impl.SamplesQueryIndex import SamplesQueryIndex
+from storage.api.impl.TreeSamplesQuery import TreeSamplesQuery
+from storage.configuration.Project import Project
 from storage.configuration.connector.DataIndexConnection import DataIndexConnection
-
+from storage.variant.model.NucleotideMutationTranslater import NucleotideMutationTranslater
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +46,8 @@ class GenomicDataStore:
         return self._connection.variation_service.count_on_reference(reference_genome,
                                                                      include_unknown=include_unknown)
 
-    def mutations_summary(self, reference_genome: str, id_type: str = 'spdi_ref', include_unknown: bool = False) -> pd.DataFrame:
+    def mutations_summary(self, reference_genome: str, id_type: str = 'spdi_ref',
+                          include_unknown: bool = False) -> pd.DataFrame:
         rs = self._connection.reference_service
         if id_type not in self.MUTATION_ID_TYPES:
             raise Exception(f'id_type={id_type} must be one of {self.MUTATION_ID_TYPES}')
