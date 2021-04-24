@@ -1,0 +1,85 @@
+from __future__ import annotations
+import abc
+from typing import Set, Union, Dict
+
+import pandas as pd
+
+from storage.api.SamplesQuery import SamplesQuery
+from storage.configuration.connector import DataIndexConnection
+from storage.variant.SampleSet import SampleSet
+from storage.variant.model.QueryFeature import QueryFeature
+
+
+class WrappedSamplesQuery(SamplesQuery, abc.ABC):
+
+    def __init__(self, connection: DataIndexConnection, wrapped_query: SamplesQuery):
+        super().__init__()
+        self._query_connection = connection
+        self._wrapped_query = wrapped_query
+
+    @property
+    def universe_set(self) -> SampleSet:
+        return self._wrapped_query.universe_set
+
+    @property
+    def sample_set(self) -> SampleSet:
+        return self._wrapped_query.sample_set
+
+    def intersect(self, sample_set: SampleSet, query_message: str = None) -> SamplesQuery:
+        intersected_query = self._wrapped_query.intersect(sample_set=sample_set, query_message=query_message)
+        return self._wrap_create(intersected_query)
+
+    @abc.abstractmethod
+    def _wrap_create(self, wrapped_query: SamplesQuery) -> WrappedSamplesQuery:
+        pass
+
+    def toframe(self, exclude_absent: bool = True) -> pd.DataFrame:
+        return self._wrapped_query.toframe(exclude_absent=exclude_absent)
+
+    def summary(self) -> pd.DataFrame:
+        return self._wrapped_query.summary()
+
+    def summary_features(self, kind: str = 'mutations', **kwargs) -> pd.DataFrame:
+        return self._wrapped_query.summary_features(kind=kind, **kwargs)
+
+    def tofeaturesset(self, kind: str = 'mutations', selection: str = 'all', ncores: int = 1) -> Set[str]:
+        return self._wrapped_query.tofeaturesset(kind=kind, selection=selection, ncores=ncores)
+
+    def and_(self, other: SamplesQuery) -> SamplesQuery:
+        return self._wrap_create(self._wrapped_query.and_(other))
+
+    def has(self, feature: Union[QueryFeature, str], kind=None) -> SamplesQuery:
+        return self._wrap_create(self._wrapped_query.has(feature=feature, kind=kind))
+
+    def complement(self):
+        return self._wrap_create(self._wrapped_query.complement())
+
+    def query_expression(self) -> str:
+        return self._wrapped_query.query_expression()
+
+    def tolist(self, names=True):
+        return self._wrapped_query.tolist(names=names)
+
+    def _get_sample_name_ids(self) -> Dict[str, int]:
+        sample_service = self._query_connection.sample_service
+        return {s.name: s.id for s in sample_service.find_samples_by_ids(self._wrapped_query.sample_set)}
+
+    def is_type(self, sample_type) -> SamplesQuery:
+        return self._wrap_create(self._wrapped_query.is_type(sample_type))
+
+    def is_empty(self):
+        return self._wrapped_query.is_empty()
+
+    def __and__(self, other):
+        return self.and_(other)
+
+    def __len__(self):
+        return len(self._wrapped_query)
+
+    def __str__(self) -> str:
+        universe_length = len(self.universe_set)
+        percent_selected = (len(self) / universe_length) * 100
+        return f'<{self.__class__.__name__}[{percent_selected:0.0f}% ({len(self)}/{universe_length}) samples]>'
+
+    def __repr__(self) -> str:
+        return str(self)
