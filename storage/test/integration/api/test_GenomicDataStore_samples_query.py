@@ -312,6 +312,7 @@ def test_join_custom_dataframe_no_query(loaded_database_connection: DataIndexCon
     assert 3 == len(query_result)
     assert 3 == len(query_result.universe_set)
     assert {sampleA.id, sampleB.id, sampleC.id} == set(query_result.sample_set)
+    assert {'dataframe(ids_col=[Sample ID])'} == set(query_result.toframe()['Query'].tolist())
 
 
 def test_join_custom_dataframe_single_query(loaded_database_connection: DataIndexConnection):
@@ -348,7 +349,7 @@ def test_join_custom_dataframe_single_query(loaded_database_connection: DataInde
     assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
     assert [sampleB.id, sampleC.id] == df['Sample ID'].tolist()
     assert ['green', 'blue'] == df['Color'].tolist()
-    assert {'reference:839:C:G'} == set(df['Query'].tolist())
+    assert {'dataframe(ids_col=[Sample ID]) AND reference:839:C:G'} == set(df['Query'].tolist())
 
 
 def test_join_custom_dataframe_single_query_sample_names(loaded_database_connection: DataIndexConnection):
@@ -384,7 +385,7 @@ def test_join_custom_dataframe_single_query_sample_names(loaded_database_connect
     assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
     assert [sampleB.id, sampleC.id] == df['Sample ID'].tolist()
     assert ['green', 'blue'] == df['Color'].tolist()
-    assert {'reference:839:C:G'} == set(df['Query'].tolist())
+    assert {'dataframe(names_col=[Samples]) AND reference:839:C:G'} == set(df['Query'].tolist())
 
 
 def test_join_custom_dataframe_extra_sample_names(loaded_database_connection: DataIndexConnection):
@@ -417,7 +418,7 @@ def test_join_custom_dataframe_extra_sample_names(loaded_database_connection: Da
     assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
     assert [sampleB.id, sampleC.id] == df['Sample ID'].tolist()
     assert ['green', 'blue'] == df['Color'].tolist()
-    assert {'reference:839:C:G'} == set(df['Query'].tolist())
+    assert {'dataframe(names_col=[Samples]) AND reference:839:C:G'} == set(df['Query'].tolist())
 
 
 def test_join_custom_dataframe_missing_sample_names(loaded_database_connection: DataIndexConnection):
@@ -447,7 +448,7 @@ def test_join_custom_dataframe_missing_sample_names(loaded_database_connection: 
     assert ['SampleC'] == df['Sample Name'].tolist()
     assert [sampleC.id] == df['Sample ID'].tolist()
     assert ['blue'] == df['Color'].tolist()
-    assert {'reference:839:C:G'} == set(df['Query'].tolist())
+    assert {'dataframe(names_col=[Samples]) AND reference:839:C:G'} == set(df['Query'].tolist())
 
 
 def test_query_and_build_mutation_tree(loaded_database_connection: DataIndexConnection):

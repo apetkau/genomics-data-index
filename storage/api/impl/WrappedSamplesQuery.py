@@ -1,6 +1,6 @@
 from __future__ import annotations
 import abc
-from typing import Set, Union, Dict
+from typing import Set, Union, Dict, List
 
 import pandas as pd
 
@@ -12,14 +12,18 @@ from storage.variant.model.QueryFeature import QueryFeature
 
 class WrappedSamplesQuery(SamplesQuery, abc.ABC):
 
-    def __init__(self, connection: DataIndexConnection, wrapped_query: SamplesQuery):
+    def __init__(self, connection: DataIndexConnection, wrapped_query: SamplesQuery, universe_set: SampleSet = None):
         super().__init__()
         self._query_connection = connection
         self._wrapped_query = wrapped_query
+        self._universe_set = universe_set
 
     @property
     def universe_set(self) -> SampleSet:
-        return self._wrapped_query.universe_set
+        if self._universe_set is None:
+            return self._wrapped_query.universe_set
+        else:
+            return self._universe_set
 
     @property
     def sample_set(self) -> SampleSet:
@@ -69,6 +73,15 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
 
     def is_empty(self):
         return self._wrapped_query.is_empty()
+
+    @property
+    def tree(self):
+        raise Exception(f'No tree exists for {self.__class__}.'
+                        f' Perhaps you should try to run build_tree() first to build a tree.')
+
+    def within(self, sample_names: Union[str, List[str]], kind: str = 'distance', **kwargs) -> SamplesQuery:
+        raise Exception(f'Cannot query within a distance without a tree.'
+                        f' Perhaps you want to run build_tree() first to build a tree.')
 
     def __and__(self, other):
         return self.and_(other)

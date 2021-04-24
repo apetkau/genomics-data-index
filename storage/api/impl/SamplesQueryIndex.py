@@ -53,20 +53,20 @@ class SamplesQueryIndex(SamplesQuery):
     def query_expression(self) -> str:
         return self._queries_collection.query_expression()
 
-    def build_tree(self, kind: str, scope: str, **kwargs):
+    def build_tree(self, kind: str, scope: str, **kwargs) -> SamplesQuery:
         return TreeSamplesQuery.create(kind=kind, scope=scope, database_connection=self._query_connection,
                                        wrapped_query=self, **kwargs)
 
     def toframe(self, exclude_absent: bool = True) -> pd.DataFrame:
         sample_service = self._query_connection.sample_service
         return sample_service.create_dataframe_from_sample_set(self.sample_set,
-                                                               universe_set=self._universe_set,
+                                                               universe_set=self.universe_set,
                                                                exclude_absent=exclude_absent,
                                                                queries_collection=self._queries_collection)
 
     def summary(self) -> pd.DataFrame:
         present = len(self)
-        total = len(self._universe_set)
+        total = len(self.universe_set)
         unknown = pd.NA
         absent = total - present
         per_present = (present / total) * 100
@@ -190,6 +190,6 @@ class SamplesQueryIndex(SamplesQuery):
     def _create_from(self, connection: DataIndexConnection, sample_set: SampleSet,
                      queries_collection: QueriesCollection) -> SamplesQuery:
         return SamplesQueryIndex(connection=self._query_connection,
-                                 universe_set=self._universe_set,
+                                 universe_set=self.universe_set,
                                  sample_set=sample_set,
                                  queries_collection=queries_collection)
