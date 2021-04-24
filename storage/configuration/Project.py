@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Union
 import logging
 from pathlib import Path
 import shutil
@@ -14,7 +15,10 @@ class Project:
     DATA_DIR = 'data'
     CONFIG_FILE = 'config.yaml'
 
-    def __init__(self, root_dir: Path):
+    def __init__(self, root_dir: Union[Path, str]):
+        if isinstance(root_dir, str):
+            root_dir = Path(root_dir)
+
         self._root_dir = root_dir
         self._config_file = root_dir / self.CONFIG_FILE
 

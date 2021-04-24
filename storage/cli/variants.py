@@ -2,7 +2,7 @@ import logging
 import multiprocessing
 import sys
 from functools import partial
-from os import path, listdir
+from os import path, listdir, getcwd
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import List, cast
@@ -15,7 +15,6 @@ from Bio import AlignIO
 
 import storage.variant.service.FeatureService as FeatureService
 from storage.cli import yaml_config_provider
-from storage.configuration.connector.DataIndexConnection import DataIndexConnection
 from storage.variant.index.KmerIndexer import KmerIndexerSourmash, KmerIndexManager
 from storage.variant.io.mlst.MLSTChewbbacaReader import MLSTChewbbacaReader
 from storage.variant.io.mlst.MLSTSampleDataPackage import MLSTSampleDataPackage
@@ -33,6 +32,7 @@ from storage.variant.service.SampleService import SampleService
 from storage.variant.service.TreeService import TreeService
 from storage.variant.service.VariationService import VariationService
 from storage.variant.util import get_genome_name
+from storage.configuration.Project import Project
 
 logger = logging.getLogger('storage')
 max_cores = multiprocessing.cpu_count()
@@ -42,20 +42,7 @@ LOG_LEVELS = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
 click.option = partial(click.option, show_default=True)
 
 
-@click.group()
-@click.pass_context
-@click.option('--database-connection', help='A connection string for the database.')
-@click.option('--database-dir', help='The root directory for the database files.',
-              type=click.Path())
-@click.option('--ncores', help='Number of cores for any parallel processing', default=max_cores,
-              type=click.IntRange(min=1, max=max_cores))
-@click.option('--log-level', default='WARNING', help='Sets the log level', type=click.Choice(LOG_LEVELS))
-@click_config_file.configuration_option(provider=yaml_config_provider,
-                                        config_file_name='config.yaml',
-                                        implicit=True)
-def main(ctx, database_connection, database_dir, ncores, log_level):
-    ctx.ensure_object(dict)
-
+def setup_logging(log_level: str) -> None:
     if log_level == 'INFO' or log_level == 'DEBUG':
         log_format = '%(asctime)s %(levelname)s %(name)s.%(funcName)s,%(lineno)s: %(message)s'
     else:
@@ -63,17 +50,40 @@ def main(ctx, database_connection, database_dir, ncores, log_level):
 
     coloredlogs.install(level=log_level, fmt=log_format, logger=logger)
 
-    data_index_connection = DataIndexConnection.connect(database_connection=database_connection,
-                                                        database_dir=database_dir)
 
-    ctx.obj['data_index_connection'] = data_index_connection
+@click.group()
+@click.pass_context
+@click.option('--project-dir', help='A project directory containing the data and connection information.')
+@click.option('--ncores', help='Number of cores for any parallel processing', default=max_cores,
+              type=click.IntRange(min=1, max=max_cores))
+@click.option('--log-level', default='WARNING', help='Sets the log level', type=click.Choice(LOG_LEVELS))
+@click_config_file.configuration_option(provider=yaml_config_provider,
+                                        config_file_name='config.yaml',
+                                        implicit=True)
+def main(ctx, project_dir, ncores, log_level):
+    ctx.ensure_object(dict)
+    setup_logging(log_level)
+
+    if project_dir is None:
+        project_dir = getcwd()
+
+    ctx.obj['project_dir'] = project_dir
     ctx.obj['ncores'] = ncores
+
+
+@main.command(name='init')
+@click.argument('project_dir', type=click.Path(exists=False), nargs=1)
+def init(project_dir: str):
+    project_dir = Path(project_dir)
+    click.echo(f'Setting up project in {project_dir}')
+    Project.create_new_project(project_dir)
 
 
 @main.group()
 @click.pass_context
 def load(ctx):
-    pass
+    project = Project(ctx.obj['project_dir'])
+    ctx.obj['data_index_connection'] = project.create_connection()
 
 
 def load_variants_common(ctx, data_package: NucleotideSampleDataPackage, reference_file, input, build_tree, align_type,
@@ -265,7 +275,8 @@ def load_mlst_sistr(ctx, mlst_file: List[Path], scheme_name: str):
 @main.group(name='list')
 @click.pass_context
 def list_data(ctx):
-    pass
+    project = Project(ctx.obj['project_dir'])
+    ctx.obj['data_index_connection'] = project.create_connection()
 
 
 @list_data.command(name='genomes')
@@ -285,7 +296,8 @@ def list_samples(ctx):
 @main.group()
 @click.pass_context
 def export(ctx):
-    pass
+    project = Project(ctx.obj['project_dir'])
+    ctx.obj['data_index_connection'] = project.create_connection()
 
 
 @export.command(name='tree')
@@ -307,7 +319,8 @@ def export_tree(ctx, name: List[str], ascii: bool):
 @main.group()
 @click.pass_context
 def build(ctx):
-    pass
+    project = Project(ctx.obj['project_dir'])
+    ctx.obj['data_index_connection'] = project.create_connection()
 
 
 @build.command()
@@ -396,7 +409,8 @@ def tree(ctx, output_file: Path, reference_name: str, align_type: str,
 @main.group()
 @click.pass_context
 def rebuild(ctx):
-    pass
+    project = Project(ctx.obj['project_dir'])
+    ctx.obj['data_index_connection'] = project.create_connection()
 
 
 @rebuild.command(name='tree')
@@ -433,7 +447,8 @@ def rebuild_tree(ctx, reference: List[str], align_type: str, extra_params: str):
 @main.group()
 @click.pass_context
 def query(ctx):
-    pass
+    project = Project(ctx.obj['project_dir'])
+    ctx.obj['data_index_connection'] = project.create_connection()
 
 
 @query.command(name='sample-mutation')
@@ -495,7 +510,8 @@ def query_mlst(ctx, name: List[str], include_unknown: bool, summarize: bool):
 @main.group(name='db')
 @click.pass_context
 def db(ctx):
-    pass
+    project = Project(ctx.obj['project_dir'])
+    ctx.obj['data_index_connection'] = project.create_connection()
 
 
 UNITS = ['B', 'KB', 'MB', 'GB']
