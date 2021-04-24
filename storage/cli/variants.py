@@ -15,7 +15,7 @@ from Bio import AlignIO
 
 import storage.variant.service.FeatureService as FeatureService
 from storage.cli import yaml_config_provider
-from storage.connector.DataIndexConnection import DataIndexConnection
+from storage.configuration.connector.DataIndexConnection import DataIndexConnection
 from storage.variant.index.KmerIndexer import KmerIndexerSourmash, KmerIndexManager
 from storage.variant.io.mlst.MLSTChewbbacaReader import MLSTChewbbacaReader
 from storage.variant.io.mlst.MLSTSampleDataPackage import MLSTSampleDataPackage

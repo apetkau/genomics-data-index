@@ -11,7 +11,7 @@ from storage.variant.io.mlst.MLSTTSeemannFeaturesReader import MLSTTSeemannFeatu
 from storage.api.GenomicDataStore import GenomicDataStore
 
 from storage.test.integration import sample_dirs, reference_file, basic_mlst_file
-from storage.connector.DataIndexConnection import DataIndexConnection
+from storage.configuration.connector.DataIndexConnection import DataIndexConnection
 from storage.variant.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
 from storage.variant.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor
 

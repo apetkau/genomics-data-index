@@ -12,7 +12,7 @@ from storage.variant.model.NucleotideMutationTranslater import NucleotideMutatio
 
 from storage.api.SamplesQuery import SamplesQuery
 from storage.api.impl.SamplesQueryIndex import SamplesQueryIndex
-from storage.connector.DataIndexConnection import DataIndexConnection
+from storage.configuration.connector.DataIndexConnection import DataIndexConnection
 
 
 logger = logging.getLogger(__name__)

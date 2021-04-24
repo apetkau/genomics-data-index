@@ -10,7 +10,7 @@ from storage.variant.SampleSet import SampleSet
 from storage.api.impl.TreeSamplesQuery import TreeSamplesQuery
 from storage.api.SamplesQuery import SamplesQuery
 from storage.api.GenomicDataStore import GenomicDataStore
-from storage.connector.DataIndexConnection import DataIndexConnection
+from storage.configuration.connector.DataIndexConnection import DataIndexConnection
 from storage.variant.model.QueryFeatureMLST import QueryFeatureMLST
 from storage.variant.model.QueryFeatureMutation import QueryFeatureMutation
 from storage.variant.model.db import Sample
