@@ -5,9 +5,9 @@ from typing import Union, List, Set
 import pandas as pd
 
 from storage.api.SamplesQuery import SamplesQuery
+from storage.api.impl.DataFrameSamplesQuery import DataFrameSamplesQuery
 from storage.api.impl.QueriesCollection import QueriesCollection
 from storage.api.impl.TreeSamplesQuery import TreeSamplesQuery
-from storage.api.impl.DataFrameSamplesQuery import DataFrameSamplesQuery
 from storage.configuration.connector import DataIndexConnection
 from storage.variant.SampleSet import SampleSet
 from storage.variant.model.QueryFeature import QueryFeature

@@ -26,7 +26,8 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def join(self, data_frame: pd.DataFrame, sample_ids_column: str = None, sample_names_column: str = None) -> SamplesQuery:
+    def join(self, data_frame: pd.DataFrame, sample_ids_column: str = None,
+             sample_names_column: str = None) -> SamplesQuery:
         """
         Joins the passed dataframe onto the current query using the passed column name in the dataframe.
         The column can either contain sample IDs (in sample_ids_column) or sample names (sample_names_column).

@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import pandas as pd
-from storage.api.impl.TreeSamplesQuery import TreeSamplesQuery
 
 from storage.api.SamplesQuery import SamplesQuery
+from storage.api.impl.TreeSamplesQuery import TreeSamplesQuery
 from storage.api.impl.WrappedSamplesQuery import WrappedSamplesQuery
 from storage.configuration.connector import DataIndexConnection
 from storage.variant.SampleSet import SampleSet

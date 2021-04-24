@@ -1,12 +1,13 @@
 from __future__ import annotations
+
 import copy
 from typing import Union, List
 
 from ete3 import Tree, TreeStyle
 
 from storage.api.SamplesQuery import SamplesQuery
-from storage.api.impl.WrappedSamplesQuery import WrappedSamplesQuery
 from storage.api.impl.TreeBuilderReferenceMutations import TreeBuilderReferenceMutations
+from storage.api.impl.WrappedSamplesQuery import WrappedSamplesQuery
 from storage.api.viewer.TreeStyler import TreeStyler, DEFAULT_HIGHLIGHT_STYLES
 from storage.configuration.connector import DataIndexConnection
 from storage.variant.SampleSet import SampleSet
