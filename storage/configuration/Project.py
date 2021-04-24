@@ -42,12 +42,14 @@ class Project:
             else:
                 raise Exception(f'Project directory [{project_dir}] already exists')
 
+        data_dir = project_dir / cls.DATA_DIR
+
         os.mkdir(project_dir)
-        os.mkdir(project_dir / cls.DATA_DIR)
+        os.mkdir(data_dir)
 
         config = ConfigFile()
         config.database_connection = 'sqlite:///database.sqlite'
-        config.database_dir = project_dir
+        config.database_dir = data_dir
 
         config.write(project_dir / cls.CONFIG_FILE)
 

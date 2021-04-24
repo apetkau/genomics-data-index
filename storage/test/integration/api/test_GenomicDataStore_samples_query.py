@@ -20,16 +20,6 @@ def query(connection: DataIndexConnection, **kwargs) -> SamplesQuery:
     return GenomicDataStore(connection=connection).samples_query(**kwargs)
 
 
-def test_connect():
-    with TemporaryDirectory() as tmp_file_str:
-        tmp_file = Path(tmp_file_str)
-
-        ds = GenomicDataStore.connect(database_connection='sqlite:///:memory:', database_dir=tmp_file)
-        assert ds is not None
-        assert ds.connection.reference_service is not None
-        assert ds.connection.filesystem_storage.variation_dir.parent == tmp_file
-
-
 def test_initialized_query_default(loaded_database_connection: DataIndexConnection):
     initial_query = query(loaded_database_connection)
 

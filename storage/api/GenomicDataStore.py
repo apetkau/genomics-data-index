@@ -5,7 +5,7 @@ from pathlib import Path
 import pandas as pd
 import logging
 
-from storage.configuration.ConfigFile import ConfigFile
+from storage.configuration.Project import Project
 from storage.api.impl.DataFrameSamplesQuery import DataFrameSamplesQuery
 from storage.api.impl.TreeSamplesQuery import TreeSamplesQuery
 from storage.variant.model.NucleotideMutationTranslater import NucleotideMutationTranslater
@@ -127,25 +127,15 @@ class GenomicDataStore:
                                                                          connection=connection)
 
     @classmethod
-    def connect(cls, config_file: Union[Path, str] = None,
-                database_connection: str = None,
-                database_dir: Union[Path,str] = None) -> GenomicDataStore:
-        if config_file is not None:
-            if isinstance(config_file, str):
-                config_file = Path(config_file)
-
-            config = ConfigFile(config_file).read_config()
-            if 'database_connection' in config:
-                database_connection = config['database_connection']
-            if 'database_dir' in config:
-                database_dir = config['database_dir']
-        elif database_connection is None or database_dir is None:
-            raise Exception(f'Both database_connection=[{database_connection}] '
-                            f'and database_dir=[{database_dir}] must be set if not using a configuration file')
-
-        database_connection = DataIndexConnection.connect(database_connection=database_connection,
-                                           database_dir=database_dir)
-        return GenomicDataStore(connection=database_connection)
+    def connect(cls, project_dir: Path) -> GenomicDataStore:
+        if project_dir is None:
+            raise Exception('project_dir cannot be None')
+        elif not project_dir.exists():
+            raise Exception(f'project_dir=[{project_dir}] does not exist')
+        else:
+            project = Project(root_dir=project_dir)
+            database_connection = project.create_connection()
+            return GenomicDataStore(connection=database_connection)
 
     def __str__(self) -> str:
         samples_count = self._samples_count
