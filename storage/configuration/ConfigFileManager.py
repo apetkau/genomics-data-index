@@ -1,4 +1,5 @@
-from typing import Union
+from __future__ import annotations
+from typing import Optional, Dict
 from pathlib import Path
 
 import yaml
@@ -10,23 +11,58 @@ logger = logging.getLogger(__name__)
 
 class ConfigFileManager:
 
-    def __init__(self, config_file: Union[Path, str]):
-        self._config_file = config_file
+    def __init__(self, config_dict: Optional[Dict[str, str]] = None):
+        if config_dict is None:
+            config_dict = {}
+        self._config = config_dict
 
-    def read_config(self):
-        if not self._config_file.exists():
-            raise Exception(f'Config file {self._config_file} does not exist')
+    @property
+    def database_connection(self) -> str:
+        return self._config['database_connection']
 
-        logger.info(f'Reading configuration from {self._config_file}')
+    @database_connection.setter
+    def database_connection(self, connection: str) -> None:
+        self._config['database_connection'] = connection
 
-        with open(self._config_file) as file:
+    @property
+    def database_dir(self) -> Path:
+        return Path(self._config['database_dir'])
+
+    @database_dir.setter
+    def database_dir(self, dir: Path) -> None:
+        self._config['database_dir'] = str(dir)
+
+    def write(self, file: Path) -> None:
+        """
+        Writes The configuration to the passed file.
+        :param file: The file where configuration should be written.
+        :return: None.
+        """
+        if file.exists():
+            raise Exception(f'File [{file}] already exists')
+
+        with open(file, 'w') as fh:
+            yaml.dump(self._config, fh)
+
+        logger.debug(f'Wrote configuration to [{file}]')
+
+    @classmethod
+    def read_config(self, file: Path) -> ConfigFileManager:
+        if not file.exists():
+            raise Exception(f'Config file {file} does not exist')
+
+        logger.info(f'Reading configuration from {file}')
+
+        with open(file) as file:
             config = yaml.load(file, Loader=yaml.FullLoader)
             if config is None:
                 config = {}
 
             if 'database_connection' not in config:
-                logger.warning(f'Missing database_connection in config file {self._config_file}')
+                logger.warning(f'Missing database_connection in config file {file}')
+                config['database_connection'] = None
             if 'database_dir' not in config:
-                logger.warning(f'Missing database_dir in config file {self._config_file}')
+                logger.warning(f'Missing database_dir in config file {file}')
+                config['database_dir'] = None
 
-            return config
+            return ConfigFileManager(config_dict=config)
