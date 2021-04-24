@@ -5,7 +5,7 @@ import shutil
 import os
 
 from storage.configuration.connector.DataIndexConnection import DataIndexConnection
-from storage.configuration.ConfigFileManager import ConfigFileManager
+from storage.configuration.ConfigFile import ConfigFile
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +27,7 @@ class Project:
             raise Exception(f'Config file [{config_file}] does not exist. '
                             f'Please verify that project directory [{root_dir}] is valid.')
 
-        self._config_file_manager = ConfigFileManager.read_config(config_file)
+        self._config_file_manager = ConfigFile.read_config(config_file)
 
     def create_connection(self) -> DataIndexConnection:
         return DataIndexConnection.connect(database_connection=self._config_file_manager.database_connection,
@@ -45,7 +45,7 @@ class Project:
         os.mkdir(project_dir)
         os.mkdir(project_dir / cls.DATA_DIR)
 
-        config = ConfigFileManager()
+        config = ConfigFile()
         config.database_connection = 'sqlite:///database.sqlite'
         config.database_dir = project_dir
 

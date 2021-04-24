@@ -9,7 +9,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class ConfigFileManager:
+class ConfigFile:
 
     def __init__(self, config_dict: Optional[Dict[str, str]] = None):
         if config_dict is None:
@@ -47,7 +47,7 @@ class ConfigFileManager:
         logger.debug(f'Wrote configuration to [{file}]')
 
     @classmethod
-    def read_config(self, file: Path) -> ConfigFileManager:
+    def read_config(self, file: Path) -> ConfigFile:
         if not file.exists():
             raise Exception(f'Config file {file} does not exist')
 
@@ -65,4 +65,4 @@ class ConfigFileManager:
                 logger.warning(f'Missing database_dir in config file {file}')
                 config['database_dir'] = None
 
-            return ConfigFileManager(config_dict=config)
+            return ConfigFile(config_dict=config)

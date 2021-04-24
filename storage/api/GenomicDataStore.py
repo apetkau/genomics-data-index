@@ -5,7 +5,7 @@ from pathlib import Path
 import pandas as pd
 import logging
 
-from storage.configuration.ConfigFileManager import ConfigFileManager
+from storage.configuration.ConfigFile import ConfigFile
 from storage.api.impl.DataFrameSamplesQuery import DataFrameSamplesQuery
 from storage.api.impl.TreeSamplesQuery import TreeSamplesQuery
 from storage.variant.model.NucleotideMutationTranslater import NucleotideMutationTranslater
@@ -134,7 +134,7 @@ class GenomicDataStore:
             if isinstance(config_file, str):
                 config_file = Path(config_file)
 
-            config = ConfigFileManager(config_file).read_config()
+            config = ConfigFile(config_file).read_config()
             if 'database_connection' in config:
                 database_connection = config['database_connection']
             if 'database_dir' in config:
