@@ -5,6 +5,7 @@ import pytest
 
 from storage.api.GenomicDataStore import GenomicDataStore
 from storage.api.SamplesQuery import SamplesQuery
+from storage.api.impl.DataFrameSamplesQuery import DataFrameSamplesQuery
 from storage.api.impl.TreeSamplesQuery import TreeSamplesQuery
 from storage.configuration.connector.DataIndexConnection import DataIndexConnection
 from storage.test.integration import snippy_all_dataframes, data_dir
@@ -451,6 +452,51 @@ def test_join_custom_dataframe_missing_sample_names(loaded_database_connection: 
     assert {'dataframe(names_col=[Samples]) AND reference:839:C:G'} == set(df['Query'].tolist())
 
 
+def test_query_then_join_dataframe_single_query(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+
+    metadata_df = pd.DataFrame([
+        [sampleA.id, 'red'],
+        [sampleB.id, 'green'],
+        [sampleC.id, 'blue']
+    ], columns=['Sample ID', 'Color'])
+
+    query_result = query(loaded_database_connection)
+
+    assert 9 == len(query_result)
+    assert 9 == len(query_result.universe_set)
+
+    query_result = query_result.has('reference:839:C:G', kind='mutation')
+    assert 2 == len(query_result)
+    assert 9 == len(query_result.universe_set)
+    assert {sampleB.id, sampleC.id} == set(query_result.sample_set)
+
+    df = query_result.toframe()
+
+    assert 2 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    assert {'reference:839:C:G'} == set(df['Query'].tolist())
+
+    # Now join data frame
+    query_result = query_result.join(data_frame=metadata_df, sample_ids_column='Sample ID')
+    assert 2 == len(query_result)
+    assert 3 == len(query_result.universe_set)
+
+    df = query_result.toframe()
+
+    assert 2 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status', 'Color'] == df.columns.tolist()
+    assert {'reference:839:C:G AND dataframe(ids_col=[Sample ID])'} == set(df['Query'].tolist())
+
+    df = df.sort_values(['Sample Name'])
+    assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert [sampleB.id, sampleC.id] == df['Sample ID'].tolist()
+    assert ['green', 'blue'] == df['Color'].tolist()
+
+
 def test_query_and_build_mutation_tree(loaded_database_connection: DataIndexConnection):
     query_result = query(loaded_database_connection).has('reference:839:C:G', kind='mutation')
     assert 2 == len(query_result)
@@ -499,6 +545,58 @@ def test_query_build_tree_dataframe(loaded_database_connection: DataIndexConnect
     assert ['Present'] == df['Status'].tolist()
     assert [sampleB.id] == df['Sample ID'].tolist()
     assert ['reference:839:C:G AND mutation_tree(genome) AND reference:5061:G:A'] == df['Query'].tolist()
+
+
+def test_query_then_build_tree_then_join_dataframe(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+
+    metadata_df = pd.DataFrame([
+        [sampleA.id, 'red'],
+        [sampleB.id, 'green'],
+        [sampleC.id, 'blue']
+    ], columns=['Sample ID', 'Color'])
+
+    query_result = query(loaded_database_connection).has('reference:839:C:G', kind='mutation')
+    assert 2 == len(query_result)
+    assert 9 == len(query_result.universe_set)
+
+    query_result = query_result.build_tree(kind='mutation', scope='genome', include_reference=True)
+    assert 2 == len(query_result)
+    assert 9 == len(query_result.universe_set)
+    assert isinstance(query_result, TreeSamplesQuery)
+
+    df = query_result.toframe()
+
+    assert 2 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    assert {'reference:839:C:G AND mutation_tree(genome)'} == set(df['Query'].tolist())
+
+    # Now join data frame
+    query_result = query_result.join(data_frame=metadata_df, sample_ids_column='Sample ID')
+    assert 2 == len(query_result)
+    assert 3 == len(query_result.universe_set)
+    assert isinstance(query_result, TreeSamplesQuery)
+
+    df = query_result.toframe()
+
+    assert 2 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status', 'Color'] == df.columns.tolist()
+    assert {'reference:839:C:G AND mutation_tree(genome) AND dataframe(ids_col=[Sample ID])'} == set(df['Query'].tolist())
+
+    df = df.sort_values(['Sample Name'])
+    assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert [sampleB.id, sampleC.id] == df['Sample ID'].tolist()
+    assert ['green', 'blue'] == df['Color'].tolist()
+
+    # I should still be able to perform within queries since I have a tree attached
+    query_result = query_result.within(['SampleB'], kind='mrca')
+
+    assert 1 == len(query_result)
+    assert 3 == len(query_result.universe_set)
+    assert ['SampleB'] == query_result.tolist()
 
 
 def test_within_constructed_tree(loaded_database_connection: DataIndexConnection):

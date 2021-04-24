@@ -33,6 +33,11 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
         intersected_query = self._wrapped_query.intersect(sample_set=sample_set, query_message=query_message)
         return self._wrap_create(intersected_query)
 
+    def join(self, data_frame: pd.DataFrame, sample_ids_column: str = None,
+             sample_names_column: str = None) -> SamplesQuery:
+        return self._wrap_create(self._wrapped_query.join(data_frame=data_frame, sample_ids_column=sample_ids_column,
+                                                          sample_names_column=sample_names_column))
+
     @abc.abstractmethod
     def _wrap_create(self, wrapped_query: SamplesQuery) -> WrappedSamplesQuery:
         pass

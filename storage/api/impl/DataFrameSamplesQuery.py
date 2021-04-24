@@ -21,9 +21,11 @@ class DataFrameSamplesQuery(WrappedSamplesQuery):
 
     def toframe(self, exclude_absent: bool = True) -> pd.DataFrame:
         samples_dataframe = super().toframe()
+        samples_df_cols = list(samples_dataframe.columns)
         merged_df = self._data_frame.merge(samples_dataframe, how='inner', left_on=self._sample_ids_col,
                                            right_on='Sample ID')
-        return merged_df
+        new_col_order = samples_df_cols + [col for col in list(merged_df.columns) if col not in samples_df_cols]
+        return merged_df[new_col_order]
 
     def _wrap_create(self, wrapped_query: SamplesQuery) -> WrappedSamplesQuery:
         return DataFrameSamplesQuery(connection=self._query_connection,
@@ -55,6 +57,10 @@ class DataFrameSamplesQuery(WrappedSamplesQuery):
                                      universe_set=universe_set,
                                      data_frame=data_frame,
                                      sample_ids_col=sample_ids_column)
+
+    def join(self, data_frame: pd.DataFrame, sample_ids_column: str = None,
+             sample_names_column: str = None) -> SamplesQuery:
+        raise Exception(f'Cannot join a new dataframe onto an existing data frame query: {self}')
 
     @classmethod
     def create_with_sample_names_column(self, sample_names_column: str, data_frame: pd.DataFrame,

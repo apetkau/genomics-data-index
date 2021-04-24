@@ -7,6 +7,7 @@ import pandas as pd
 from storage.api.SamplesQuery import SamplesQuery
 from storage.api.impl.QueriesCollection import QueriesCollection
 from storage.api.impl.TreeSamplesQuery import TreeSamplesQuery
+from storage.api.impl.DataFrameSamplesQuery import DataFrameSamplesQuery
 from storage.configuration.connector import DataIndexConnection
 from storage.variant.SampleSet import SampleSet
 from storage.variant.model.QueryFeature import QueryFeature
@@ -36,6 +37,21 @@ class SamplesQueryIndex(SamplesQuery):
     @property
     def sample_set(self) -> SampleSet:
         return self._sample_set
+
+    def join(self, data_frame: pd.DataFrame, sample_ids_column: str = None,
+             sample_names_column: str = None) -> SamplesQuery:
+        if sample_ids_column is None and sample_names_column is None:
+            raise Exception('At least one of sample_ids_column or sample_names_column must be set.')
+        elif sample_ids_column is not None:
+            return DataFrameSamplesQuery.create_with_sample_ids_column(sample_ids_column=sample_ids_column,
+                                                                       data_frame=data_frame,
+                                                                       wrapped_query=self,
+                                                                       connection=self._query_connection)
+        else:
+            return DataFrameSamplesQuery.create_with_sample_names_column(sample_names_column=sample_names_column,
+                                                                         data_frame=data_frame,
+                                                                         wrapped_query=self,
+                                                                         connection=self._query_connection)
 
     def intersect(self, sample_set: SampleSet, query_message: str = None) -> SamplesQuery:
         intersected_set = self._intersect_sample_set(sample_set)
