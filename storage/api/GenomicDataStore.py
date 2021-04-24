@@ -3,9 +3,9 @@ from typing import List, Union
 from pathlib import Path
 
 import pandas as pd
-import yaml
 import logging
 
+from storage.configuration.ConfigFileManager import ConfigFileManager
 from storage.api.impl.DataFrameSamplesQuery import DataFrameSamplesQuery
 from storage.api.impl.TreeSamplesQuery import TreeSamplesQuery
 from storage.variant.model.NucleotideMutationTranslater import NucleotideMutationTranslater
@@ -134,7 +134,7 @@ class GenomicDataStore:
             if isinstance(config_file, str):
                 config_file = Path(config_file)
 
-            config = ConfigManager(config_file).read_config()
+            config = ConfigFileManager(config_file).read_config()
             if 'database_connection' in config:
                 database_connection = config['database_connection']
             if 'database_dir' in config:
@@ -153,27 +153,3 @@ class GenomicDataStore:
 
     def __repr__(self) -> str:
         return str(self)
-
-
-class ConfigManager:
-
-    def __init__(self, config_file: Union[Path, str]):
-        self._config_file = config_file
-
-    def read_config(self):
-        if not self._config_file.exists():
-            raise Exception(f'Config file {self._config_file} does not exist')
-
-        logger.info(f'Reading configuration from {self._config_file}')
-
-        with open(self._config_file) as file:
-            config = yaml.load(file, Loader=yaml.FullLoader)
-            if config is None:
-                config = {}
-
-            if 'database_connection' not in config:
-                logger.warning(f'Missing database_connection in config file {self._config_file}')
-            if 'database_dir' not in config:
-                logger.warning(f'Missing database_dir in config file {self._config_file}')
-
-            return config
