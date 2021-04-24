@@ -127,14 +127,18 @@ class GenomicDataStore:
                                                                          connection=connection)
 
     @classmethod
-    def connect(cls, project_dir: Path) -> GenomicDataStore:
-        if project_dir is None:
-            raise Exception('project_dir cannot be None')
-        elif not project_dir.exists():
-            raise Exception(f'project_dir=[{project_dir}] does not exist')
+    def connect(cls, project_dir: Path = None, project: Project = None) -> GenomicDataStore:
+        if project_dir is None and project is None:
+            raise Exception('Both project_dir and project are None')
         else:
-            project = Project(root_dir=project_dir)
-            database_connection = project.create_connection()
+            if project_dir is not None and project is None:
+                if not project_dir.exists():
+                    raise Exception(f'project_dir=[{project_dir}] does not exist')
+                data_store_project = Project(root_dir=project_dir)
+            else:
+                data_store_project = project
+
+            database_connection = data_store_project.create_connection()
             return GenomicDataStore(connection=database_connection)
 
     def __str__(self) -> str:

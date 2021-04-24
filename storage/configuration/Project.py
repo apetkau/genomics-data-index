@@ -16,21 +16,44 @@ class Project:
 
     def __init__(self, root_dir: Path):
         self._root_dir = root_dir
-        fs_dir = root_dir / self.DATA_DIR
-        config_file = root_dir / self.CONFIG_FILE
+        self._config_file = root_dir / self.CONFIG_FILE
+
+        if not self._config_file.exists():
+            raise Exception(f'Config file [{self._config_file}] does not exist. '
+                            f'Please verify that project directory [{root_dir}] is valid.')
+
+        self._config_file_manager = ConfigFile.read_config(self._config_file)
+        cfm = self._config_file_manager
+        fs_dir = cfm.database_dir
 
         if not fs_dir.exists():
             raise Exception(f'Data directory [{fs_dir}] does not exist. '
                             f'Please verify that project directory [{root_dir}] is valid.')
 
-        if not config_file.exists():
-            raise Exception(f'Config file [{config_file}] does not exist. '
-                            f'Please verify that project directory [{root_dir}] is valid.')
-
-        self._config_file_manager = ConfigFile.read_config(config_file)
+        if cfm.database_connection is None and cfm.sqlite_database is None:
+            raise Exception(f'No valid configured database in config file {self._config_file}')
 
     def create_connection(self) -> DataIndexConnection:
-        return DataIndexConnection.connect(database_connection=self._config_file_manager.database_connection,
+        cfm = self._config_file_manager
+        database_connection = None
+        if cfm.database_connection is None:
+            if cfm.sqlite_database is None:
+                raise Exception(f'No valid configured database in config file {self._config_file}')
+            else:
+                # Provide support for defining sqlite file relative to project directory or as an absolute string
+                sqlite_path = None
+                if cfm.sqlite_database.is_absolute():
+                    sqlite_path = cfm.sqlite_database
+                else:
+                    sqlite_path = self._root_dir / cfm.sqlite_database
+
+            database_connection = f'sqlite:///{sqlite_path}'
+        elif cfm.database_connection is None:
+            raise Exception(f'No valid configured database in config file {self._config_file}')
+        else:
+            database_connection = cfm.database_connection
+
+        return DataIndexConnection.connect(database_connection=database_connection,
                                            database_dir=self._config_file_manager.database_dir)
 
     @classmethod
@@ -48,7 +71,7 @@ class Project:
         os.mkdir(data_dir)
 
         config = ConfigFile()
-        config.database_connection = 'sqlite:///database.sqlite'
+        config.sqlite_database = 'db.sqlite'
         config.database_dir = data_dir
 
         config.write(project_dir / cls.CONFIG_FILE)

@@ -32,6 +32,14 @@ class ConfigFile:
     def database_dir(self, dir: Path) -> None:
         self._config['database_dir'] = str(dir)
 
+    @property
+    def sqlite_database(self) -> Path:
+        return Path(self._config['sqlite_database'])
+
+    @sqlite_database.setter
+    def sqlite_database(self, db_path: Path):
+        self._config['sqlite_database'] = str(db_path)
+
     def write(self, file: Path) -> None:
         """
         Writes The configuration to the passed file.
@@ -58,9 +66,13 @@ class ConfigFile:
             if config is None:
                 config = {}
 
+            if 'database_connection' not in config and 'sqlite_database' not in config:
+                logger.warning(f'Missing database_connection and sqlite_database in config file {file}')
+
             if 'database_connection' not in config:
-                logger.warning(f'Missing database_connection in config file {file}')
                 config['database_connection'] = None
+            if 'sqlite_database' not in config:
+                config['sqlite_database'] = None
             if 'database_dir' not in config:
                 logger.warning(f'Missing database_dir in config file {file}')
                 config['database_dir'] = None

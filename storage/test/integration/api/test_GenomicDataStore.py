@@ -41,13 +41,25 @@ def test_summaries_loaded_data(loaded_database_genomic_data_store: GenomicDataSt
     assert ['reference', 3897, 'GCGCA', 'G', 2] == ms.loc['reference:3897:GCGCA:G'].values.tolist()
 
 
-def test_connect_to_project():
+def test_connect_to_project_from_dir():
     with TemporaryDirectory() as tmp_file_str:
         tmp_file = Path(tmp_file_str)
         project_dir = tmp_file / 'project'
         Project.create_new_project(project_dir)
 
         ds = GenomicDataStore.connect(project_dir=project_dir)
+        assert ds is not None
+        assert ds.connection.reference_service is not None
+        assert ds.connection.filesystem_storage.variation_dir.parent == project_dir / 'data'
+
+
+def test_connect_to_project_from_project():
+    with TemporaryDirectory() as tmp_file_str:
+        tmp_file = Path(tmp_file_str)
+        project_dir = tmp_file / 'project'
+        project = Project.create_new_project(project_dir)
+
+        ds = GenomicDataStore.connect(project=project)
         assert ds is not None
         assert ds.connection.reference_service is not None
         assert ds.connection.filesystem_storage.variation_dir.parent == project_dir / 'data'
