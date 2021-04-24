@@ -4,7 +4,7 @@ import logging
 from pathlib import Path
 import pandas as pd
 
-from storage.FilesystemStorage import FilesystemStorage
+from storage.configuration.connector.FilesystemStorage import FilesystemStorage
 from storage.variant.service import DatabaseConnection
 from storage.variant.service.CoreAlignmentService import CoreAlignmentService
 from storage.variant.service.KmerQueryService import KmerQueryService
