@@ -1,6 +1,7 @@
 from __future__ import annotations
-from typing import List, Union
+from typing import List
 from pathlib import Path
+import os
 
 import pandas as pd
 import logging
@@ -129,17 +130,18 @@ class GenomicDataStore:
     @classmethod
     def connect(cls, project_dir: Path = None, project: Project = None) -> GenomicDataStore:
         if project_dir is None and project is None:
-            raise Exception('Both project_dir and project are None')
+            project_dir = os.getcwd()
+            logger.warning(f'No project_dir or project specified. Assuming project is current dir [{project_dir}]')
+            data_store_project = Project(project_dir)
+        elif project_dir is not None and project is None:
+            if not project_dir.exists():
+                raise Exception(f'project_dir=[{project_dir}] does not exist')
+            data_store_project = Project(root_dir=project_dir)
         else:
-            if project_dir is not None and project is None:
-                if not project_dir.exists():
-                    raise Exception(f'project_dir=[{project_dir}] does not exist')
-                data_store_project = Project(root_dir=project_dir)
-            else:
-                data_store_project = project
+            data_store_project = project
 
-            database_connection = data_store_project.create_connection()
-            return GenomicDataStore(connection=database_connection)
+        database_connection = data_store_project.create_connection()
+        return GenomicDataStore(connection=database_connection)
 
     def __str__(self) -> str:
         samples_count = self._samples_count
