@@ -50,7 +50,7 @@ def test_connect_to_project_from_dir():
         ds = GenomicsDataIndex.connect(project_dir=project_dir)
         assert ds is not None
         assert ds.connection.reference_service is not None
-        assert ds.connection.filesystem_storage.variation_dir.parent == project_dir / '.genomics-data'
+        assert ds.connection.filesystem_storage.variation_dir.parent == project_dir / '.gdi-data'
 
 
 def test_connect_to_project_from_project():
@@ -62,4 +62,4 @@ def test_connect_to_project_from_project():
         ds = GenomicsDataIndex.connect(project=project)
         assert ds is not None
         assert ds.connection.reference_service is not None
-        assert ds.connection.filesystem_storage.variation_dir.parent == project_dir / '.genomics-data'
+        assert ds.connection.filesystem_storage.variation_dir.parent == project_dir / '.gdi-data'
