@@ -198,14 +198,20 @@ class SampleMLSTAlleles(Base):
         if self._alleles_file is None:
             raise Exception('Empty _alleles_file')
         else:
-            return Path(self._alleles_file)
+            if database_path_translator is None:
+                raise Exception('Empty database_path_translator')
+            else:
+                return database_path_translator.from_database(self._alleles_file)
 
     @alleles_file.setter
     def alleles_file(self, file: Path) -> None:
         if file is None:
             self._alleles_file = None
         else:
-            self._alleles_file = str(file)
+            if database_path_translator is None:
+                raise Exception('Empty database_path_translator')
+            else:
+                self._alleles_file = database_path_translator.to_database(file)
 
     sample = relationship('Sample', back_populates='sample_mlst_alleles')
     scheme = relationship('MLSTScheme')
@@ -292,11 +298,16 @@ class SampleKmerIndex(Base):
 
     @hybrid_property
     def kmer_index_path(self) -> Path:
-        return Path(self._kmer_index_path)
+        if database_path_translator is None:
+            raise Exception('Empty database_path_translator')
+        else:
+            return database_path_translator.from_database(self._kmer_index_path)
 
     @kmer_index_path.setter
     def kmer_index_path(self, file: Union[str, Path]):
-        if isinstance(file, Path):
-            self._kmer_index_path = str(file)
+        if isinstance(file, str):
+            file = Path(file)
+        if database_path_translator is None:
+            raise Exception('Empty database_path_translator')
         else:
-            self._kmer_index_path = file
+            self._kmer_index_path = database_path_translator.to_database(file)

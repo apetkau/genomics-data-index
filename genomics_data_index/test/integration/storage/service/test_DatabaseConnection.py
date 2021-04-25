@@ -3,10 +3,13 @@ from pathlib import Path
 from typing import Dict, Any
 import shutil
 
+from genomics_data_index.storage.service.KmerService import KmerService
 from genomics_data_index.test.integration import reference_file
+from genomics_data_index.test.integration import sourmash_signatures
 from genomics_data_index.configuration.connector.FilesystemStorage import FilesystemStorage
 from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
-from genomics_data_index.storage.model.db import DatabasePathTranslator, SampleNucleotideVariation, Sample
+from genomics_data_index.storage.model.db import DatabasePathTranslator, SampleNucleotideVariation, Sample, \
+    SampleKmerIndex
 from genomics_data_index.storage.service import DatabaseConnection
 from genomics_data_index.storage.service.ReferenceService import ReferenceService
 from genomics_data_index.storage.service.SampleService import SampleService
@@ -23,11 +26,14 @@ def setup_services(root_dir: Path, database_file: Path) -> Dict[str, Any]:
                                          reference_service=reference_service,
                                          sample_service=sample_service,
                                          variation_dir=filesystem_storage.variation_dir)
+    kmer_service = KmerService(database_connection=db_connection,
+                               sample_service=sample_service)
 
     return {
         'reference_service': reference_service,
         'variation_service': variation_service,
         'database_connection': db_connection,
+        'kmer_service': kmer_service
     }
 
 
@@ -82,3 +88,51 @@ def test_path_translation_nucleotide_data(snippy_nucleotide_data_package: Nucleo
             assert nvf_2.parent.parent == data_dir_2
             assert bf_2.exists()
             assert bf_2.parent.parent == data_dir_2
+
+
+def test_path_translation_kmer_data(snippy_nucleotide_data_package: NucleotideSampleDataPackage):
+    with TemporaryDirectory() as root_dir_1_str:
+        root_dir_1 = Path(root_dir_1_str)
+        data_dir_1 = root_dir_1 / 'data'
+        database_file = root_dir_1 / 'db.sqlite'
+
+
+
+        services = setup_services(data_dir_1, database_file)
+        kmer_service = services['kmer_service']
+        database_connection = services['database_connection']
+
+        # Insert data
+        for sample_name in sourmash_signatures:
+            kmer_service.insert_kmer_index(sample_name=sample_name,
+                                           kmer_index_path=sourmash_signatures[sample_name])
+
+        # Get a single saved object which has attached files on the filesystem
+        sampleA_kmer = database_connection.get_session().query(SampleKmerIndex) \
+            .join(SampleKmerIndex.sample) \
+            .filter(Sample.name == 'SampleA').one()
+
+        # Make sure this file exists and is in the correct location
+        kf: Path = sampleA_kmer.kmer_index_path
+        assert kf.exists()
+        assert kf.parent.parent == data_dir_1
+
+        # Now we move data files into brand new directory
+        with TemporaryDirectory() as root_dir_2_str:
+            root_dir_2 = Path(root_dir_2_str)
+            data_dir_2 = root_dir_2 / 'data'
+            shutil.move(data_dir_1, data_dir_2)
+
+            assert not kf.exists(), 'Data should be moved so original file not exist'
+
+            services_2 = setup_services(data_dir_2, database_file)
+            database_connection_2 = services_2['database_connection']
+
+            # Get a single saved object which has attached files on the filesystem
+            sampleA_kmer_2 = database_connection_2.get_session().query(SampleKmerIndex) \
+                .join(SampleKmerIndex.sample) \
+                .filter(Sample.name == 'SampleA').one()
+            kf_2 : Path = sampleA_kmer_2.nucleotide_variants_file
+
+            assert kf_2.exists(), 'Path from database should now correspond to moved path'
+            assert kf_2.parent.parent == data_dir_2
