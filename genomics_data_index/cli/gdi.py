@@ -44,7 +44,7 @@ click.option = partial(click.option, show_default=True)
 
 
 def setup_logging(log_level: str) -> None:
-    if log_level == 'INFO' or log_level == 'DEBUG':
+    if log_level == 'DEBUG':
         log_format = '%(asctime)s %(levelname)s %(name)s.%(funcName)s,%(lineno)s: %(message)s'
     else:
         log_format = '%(asctime)s %(levelname)s: %(message)s'
@@ -69,10 +69,10 @@ def get_project_exit_on_error(ctx) -> Project:
 @click.option('--project-dir', help='A project directory containing the data and connection information.')
 @click.option('--ncores', help='Number of cores for any parallel processing', default=max_cores,
               type=click.IntRange(min=1, max=max_cores))
-@click.option('--log-level', default='WARNING', help='Sets the log level', type=click.Choice(LOG_LEVELS))
+@click.option('--log-level', default='INFO', help='Sets the log level', type=click.Choice(LOG_LEVELS))
 @click_config_file.configuration_option(provider=yaml_config_provider,
                                         config_file_name='config.yaml',
-                                        implicit=True)
+                                        implicit=False)
 def main(ctx, project_dir, ncores, log_level):
     ctx.ensure_object(dict)
     setup_logging(log_level)
