@@ -4,7 +4,7 @@ from typing import Union, List
 
 import pandas as pd
 
-from genomics_data_index.api.SamplesQuery import SamplesQuery
+from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.api.query.impl.TreeSamplesQuery import TreeSamplesQuery
 from genomics_data_index.api.query.impl.WrappedSamplesQuery import WrappedSamplesQuery
 from genomics_data_index.configuration.connector import DataIndexConnection

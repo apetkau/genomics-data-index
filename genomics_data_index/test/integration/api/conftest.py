@@ -9,7 +9,7 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 from genomics_data_index.configuration.Project import Project
 from genomics_data_index.storage.io.mlst.MLSTSampleDataPackage import MLSTSampleDataPackage
 from genomics_data_index.storage.io.mlst.MLSTTSeemannFeaturesReader import MLSTTSeemannFeaturesReader
-from genomics_data_index.api.GenomicsDataIndex import GenomicsDataIndex
+from genomics_data_index.api.query.GenomicsDataIndex import GenomicsDataIndex
 
 from genomics_data_index.test.integration import sample_dirs, reference_file, basic_mlst_file
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection

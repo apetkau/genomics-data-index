@@ -6,7 +6,7 @@ from typing import List, Dict, Any, Union, Iterable
 
 from ete3 import Tree, NodeStyle, TreeStyle, CircleFace, TextFace
 
-from genomics_data_index.api.SamplesQuery import SamplesQuery
+from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 
 logger = logging.getLogger(__name__)
 

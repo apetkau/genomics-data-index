@@ -5,7 +5,7 @@ from typing import Union, List
 
 from ete3 import Tree, TreeStyle
 
-from genomics_data_index.api.SamplesQuery import SamplesQuery
+from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.api.query.impl.TreeBuilderReferenceMutations import TreeBuilderReferenceMutations
 from genomics_data_index.api.query.impl.WrappedSamplesQuery import WrappedSamplesQuery
 from genomics_data_index.api.viewer.TreeStyler import TreeStyler, DEFAULT_HIGHLIGHT_STYLES

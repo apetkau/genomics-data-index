@@ -5,7 +5,7 @@ from typing import Set, Union, Dict, List
 
 import pandas as pd
 
-from genomics_data_index.api.SamplesQuery import SamplesQuery
+from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.configuration.connector import DataIndexConnection
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.QueryFeature import QueryFeature

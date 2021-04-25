@@ -3,7 +3,7 @@ from typing import Union, Iterable, Tuple
 
 from ete3 import Tree
 
-from genomics_data_index.api.TreeBuilder import TreeBuilder
+from genomics_data_index.api.query.TreeBuilder import TreeBuilder
 from genomics_data_index.configuration.connector import DataIndexConnection
 from genomics_data_index.storage.SampleSet import SampleSet
 

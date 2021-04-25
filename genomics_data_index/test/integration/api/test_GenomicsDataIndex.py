@@ -1,7 +1,7 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from genomics_data_index.api.GenomicsDataIndex import GenomicsDataIndex
+from genomics_data_index.api.query.GenomicsDataIndex import GenomicsDataIndex
 from genomics_data_index.configuration.Project import Project
 
 
