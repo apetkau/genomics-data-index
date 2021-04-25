@@ -18,7 +18,7 @@ from genomics_data_index.storage.model.NucleotideMutationTranslater import Nucle
 logger = logging.getLogger(__name__)
 
 
-class GenomicDataStore:
+class GenomicsDataIndex:
     QUERY_UNIVERSE = ['all', 'mutations', 'dataframe']
     MUTATION_ID_TYPES = ['spdi_ref', 'spdi']
 
@@ -128,7 +128,7 @@ class GenomicDataStore:
                                                                          connection=connection)
 
     @classmethod
-    def connect(cls, project_dir: Path = None, project: Project = None) -> GenomicDataStore:
+    def connect(cls, project_dir: Path = None, project: Project = None) -> GenomicsDataIndex:
         if project_dir is None and project is None:
             project_dir = os.getcwd()
             logger.warning(f'No project_dir or project specified. Assuming project is current dir [{project_dir}]')
@@ -141,7 +141,7 @@ class GenomicDataStore:
             data_store_project = project
 
         database_connection = data_store_project.create_connection()
-        return GenomicDataStore(connection=database_connection)
+        return GenomicsDataIndex(connection=database_connection)
 
     def __str__(self) -> str:
         samples_count = self._samples_count

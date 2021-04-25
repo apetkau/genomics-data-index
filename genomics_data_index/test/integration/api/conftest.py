@@ -9,7 +9,7 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 from genomics_data_index.configuration.Project import Project
 from genomics_data_index.storage.io.mlst.MLSTSampleDataPackage import MLSTSampleDataPackage
 from genomics_data_index.storage.io.mlst.MLSTTSeemannFeaturesReader import MLSTTSeemannFeaturesReader
-from genomics_data_index.api.GenomicDataStore import GenomicDataStore
+from genomics_data_index.api.GenomicsDataIndex import GenomicsDataIndex
 
 from genomics_data_index.test.integration import sample_dirs, reference_file, basic_mlst_file
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
@@ -43,7 +43,7 @@ def loaded_database_connection() -> DataIndexConnection:
 
 @pytest.fixture
 def loaded_database_genomic_data_store(loaded_database_connection):
-    return GenomicDataStore(connection=loaded_database_connection)
+    return GenomicsDataIndex(connection=loaded_database_connection)
 
 
 @pytest.fixture
@@ -84,7 +84,7 @@ def loaded_database_only_snippy() -> DataIndexConnection:
 
 
 @pytest.fixture
-def loaded_data_store_from_project_dir() -> GenomicDataStore:
+def loaded_data_store_from_project_dir() -> GenomicsDataIndex:
     tmp_dir = Path(tempfile.mkdtemp())
     project_dir = tmp_dir / 'project'
     project = Project.initialize_project(project_dir)
@@ -103,4 +103,4 @@ def loaded_data_store_from_project_dir() -> GenomicDataStore:
     database_connection.mlst_service.insert(mlst_package)
     print(tmp_dir)
 
-    return GenomicDataStore.connect(project_dir=project_dir)
+    return GenomicsDataIndex.connect(project_dir=project_dir)

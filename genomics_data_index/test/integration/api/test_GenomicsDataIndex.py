@@ -1,11 +1,11 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from genomics_data_index.api.GenomicDataStore import GenomicDataStore
+from genomics_data_index.api.GenomicsDataIndex import GenomicsDataIndex
 from genomics_data_index.configuration.Project import Project
 
 
-def test_summaries_loaded_data(loaded_database_genomic_data_store: GenomicDataStore):
+def test_summaries_loaded_data(loaded_database_genomic_data_store: GenomicsDataIndex):
     gds = loaded_database_genomic_data_store
 
     # Samples
@@ -47,7 +47,7 @@ def test_connect_to_project_from_dir():
         project_dir = tmp_file / 'project'
         Project.initialize_project(project_dir)
 
-        ds = GenomicDataStore.connect(project_dir=project_dir)
+        ds = GenomicsDataIndex.connect(project_dir=project_dir)
         assert ds is not None
         assert ds.connection.reference_service is not None
         assert ds.connection.filesystem_storage.variation_dir.parent == project_dir / '.genomics-data'
@@ -59,7 +59,7 @@ def test_connect_to_project_from_project():
         project_dir = tmp_file / 'project'
         project = Project.initialize_project(project_dir)
 
-        ds = GenomicDataStore.connect(project=project)
+        ds = GenomicsDataIndex.connect(project=project)
         assert ds is not None
         assert ds.connection.reference_service is not None
         assert ds.connection.filesystem_storage.variation_dir.parent == project_dir / '.genomics-data'

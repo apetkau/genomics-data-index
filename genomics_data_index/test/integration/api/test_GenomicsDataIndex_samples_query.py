@@ -3,9 +3,8 @@ import math
 import pandas as pd
 import pytest
 
-from genomics_data_index.api.GenomicDataStore import GenomicDataStore
+from genomics_data_index.api.GenomicsDataIndex import GenomicsDataIndex
 from genomics_data_index.api.SamplesQuery import SamplesQuery
-from genomics_data_index.api.impl.DataFrameSamplesQuery import DataFrameSamplesQuery
 from genomics_data_index.api.impl.TreeSamplesQuery import TreeSamplesQuery
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
 from genomics_data_index.test.integration import snippy_all_dataframes, data_dir
@@ -17,7 +16,7 @@ from genomics_data_index.storage.model.db import Sample
 
 # wrapper methods to simplify writing tests
 def query(connection: DataIndexConnection, **kwargs) -> SamplesQuery:
-    return GenomicDataStore(connection=connection).samples_query(**kwargs)
+    return GenomicsDataIndex(connection=connection).samples_query(**kwargs)
 
 
 def test_initialized_query_default(loaded_database_connection: DataIndexConnection):

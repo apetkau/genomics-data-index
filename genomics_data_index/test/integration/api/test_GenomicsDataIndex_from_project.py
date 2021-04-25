@@ -1,10 +1,10 @@
-from genomics_data_index.api.GenomicDataStore import GenomicDataStore
+from genomics_data_index.api.GenomicsDataIndex import GenomicsDataIndex
 from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
 from genomics_data_index.storage.model.QueryFeatureMutation import QueryFeatureMutation
 from genomics_data_index.storage.model.db import Sample
 
 
-def test_query_single_mutation(loaded_data_store_from_project_dir: GenomicDataStore):
+def test_query_single_mutation(loaded_data_store_from_project_dir: GenomicsDataIndex):
     ds = loaded_data_store_from_project_dir
     db = ds.connection.database
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
@@ -15,7 +15,7 @@ def test_query_single_mutation(loaded_data_store_from_project_dir: GenomicDataSt
     assert 9 == len(query_result.universe_set)
 
 
-def test_query_chained_mlst_alleles(loaded_data_store_from_project_dir: GenomicDataStore):
+def test_query_chained_mlst_alleles(loaded_data_store_from_project_dir: GenomicsDataIndex):
     ds = loaded_data_store_from_project_dir
     db = ds.connection.database
     sample1 = db.get_session().query(Sample).filter(Sample.name == 'CFSAN002349').one()
