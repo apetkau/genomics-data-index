@@ -1,4 +1,4 @@
-recursive-include storage/test/integration/data *
+recursive-include genomics_data_index/test/integration/data *
 include README.md
 include MANIFEST.in
 include LICENSE

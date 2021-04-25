@@ -17,10 +17,10 @@ Operating System :: POSIX :: Linux
 
 setup(name='thesis-index',
       version=__version__,
-      description='Indexes genomes.',
+      description='Indexes genomics data (mutations, kmers, MLST) for fast querying of features.',
       author='Aaron Petkau',
       author_email='aaron.petkau@gmail.com',
-      url='https://github.com/apetkau/thesis-index',
+      url='https://github.com/apetkau/genomics-data-index',
       license='Apache v2.0',
       classifiers=classifiers,
       install_requires=[
