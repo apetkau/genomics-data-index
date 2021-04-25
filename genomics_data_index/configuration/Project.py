@@ -12,9 +12,9 @@ logger = logging.getLogger(__name__)
 
 
 class Project:
-    DATA_DIR = '.genomics-data'
-    DATABASE_FILE = 'genomics-db.sqlite'
-    CONFIG_FILE = 'data-config.yaml'
+    DATA_DIR = '.gdi-data'
+    DATABASE_FILE = 'gdi-db.sqlite'
+    CONFIG_FILE = 'gdi-config.yaml'
 
     def __init__(self, root_dir: Union[Path, str]):
         if isinstance(root_dir, str):

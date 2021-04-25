@@ -20,23 +20,28 @@ def test_create_new_project():
         Project.initialize_project(tmp_dir / 'project')
 
         assert (tmp_dir / 'project').exists()
-        assert (tmp_dir / 'project' / '.genomics-data').exists()
-        assert (tmp_dir / 'project' / 'data-config.yaml').exists()
+        assert (tmp_dir / 'project' / '.gdi-data').exists()
+        assert (tmp_dir / 'project' / 'gdi-config.yaml').exists()
 
-        config = ConfigFile.read_config(tmp_dir / 'project' / 'data-config.yaml')
+        config = ConfigFile.read_config(tmp_dir / 'project' / 'gdi-config.yaml')
         assert config.database_connection is None
-        assert config.database_dir == Path('.genomics-data')
-        assert config.sqlite_database == Path('.genomics-data') / 'genomics-db.sqlite'
+        assert config.database_dir == Path('.gdi-data')
+        assert config.sqlite_database == Path('.gdi-data') / 'gdi-db.sqlite'
 
 
 def test_from_existing_project():
-    project = Project(test_project_dir)
+    with TemporaryDirectory() as tmp_dir_str:
+        tmp_dir = Path(tmp_dir_str)
+        project_dir = tmp_dir / 'project'
+        shutil.copytree(test_project_dir, project_dir)
 
-    assert f'sqlite:///{test_project_dir}/.genomics-data/db.sqlite' == project.get_database_connection_str()
-    assert test_project_dir / '.genomics-data' == project.get_database_dir()
+        project = Project(project_dir)
 
-    connection = project.create_connection()
-    assert connection.filesystem_storage.variation_dir.parent == test_project_dir / '.genomics-data'
+        assert f'sqlite:///{project_dir}/.gdi-data/gdi-db.sqlite' == project.get_database_connection_str()
+        assert project_dir / '.gdi-data' == project.get_database_dir()
+
+        connection = project.create_connection()
+        assert connection.filesystem_storage.variation_dir.parent == project_dir / '.gdi-data'
 
 
 def test_initialize_from_existing_project():
@@ -44,7 +49,6 @@ def test_initialize_from_existing_project():
         tmp_dir = Path(tmp_dir_str)
         project_dir = tmp_dir / 'project'
         shutil.copytree(test_project_dir, project_dir)
-        print(os.listdir(project_dir))
 
         with pytest.raises(Exception) as execinfo:
             Project.initialize_project(project_dir)

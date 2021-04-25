@@ -1,0 +1,3 @@
+---
+database_dir: '.gdi-data'
+sqlite_database: '.gdi-data/gdi-db.sqlite'
