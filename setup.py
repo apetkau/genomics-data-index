@@ -15,7 +15,7 @@ Programming Language :: Python :: 3.8
 Operating System :: POSIX :: Linux
 """.strip().split('\n')
 
-setup(name='thesis-index',
+setup(name='genomics-data-index',
       version=__version__,
       description='Indexes genomics data (mutations, kmers, MLST) for fast querying of features.',
       author='Aaron Petkau',
@@ -49,6 +49,6 @@ setup(name='thesis-index',
       packages=find_packages(),
       include_package_data=True,
       entry_points={
-          'console_scripts': ['variants=genomics_data_index.cli.gdi:main'],
+          'console_scripts': ['gdi=genomics_data_index.cli.gdi:main'],
       },
       )
