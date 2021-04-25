@@ -11,6 +11,12 @@ from genomics_data_index.configuration.connector.DataIndexConnection import Data
 logger = logging.getLogger(__name__)
 
 
+class ProjectConfigurationError(Exception):
+
+    def __init__(self, msg: str):
+        super().__init__(msg)
+
+
 class Project:
     DATA_DIR = '.gdi-data'
     DATABASE_FILE = 'gdi-db.sqlite'
@@ -24,8 +30,8 @@ class Project:
         self._config_file = root_dir / self.CONFIG_FILE
 
         if not self._config_file.exists():
-            raise Exception(f'Config file [{self._config_file}] does not exist. '
-                            f'Please verify that project directory [{root_dir}] is valid.')
+            raise ProjectConfigurationError(f'Config file [{self._config_file}] does not exist. '
+                                            f'Please verify that project directory [{root_dir}] is valid.')
 
         self._config = ConfigFile.read_config(self._config_file)
         self._database_connection = self.get_database_connection_str()
@@ -34,7 +40,7 @@ class Project:
     def get_database_connection_str(self) -> str:
         if self._config.database_connection is None:
             if self._config.sqlite_database is None:
-                raise Exception(f'No valid configured database in config file {self._config_file}')
+                raise ProjectConfigurationError(f'No valid configured database in config file {self._config_file}')
             else:
                 # Provide support for defining sqlite file relative to project directory or as an absolute string
                 if self._config.sqlite_database.is_absolute():
@@ -52,7 +58,8 @@ class Project:
 
     def get_database_dir(self) -> Path:
         if self._config.database_dir is None:
-            raise Exception(f'database_dir is not configured properly in config file {self._config_file}')
+            raise ProjectConfigurationError(
+                f'database_dir is not configured properly in config file {self._config_file}')
 
         if self._config.database_dir.is_absolute():
             database_dir = self._config.database_dir
@@ -60,8 +67,8 @@ class Project:
             database_dir = self._root_dir / self._config.database_dir
 
         if not database_dir.exists():
-            raise Exception(f'database_dir=[{database_dir}] does not exist. '
-                            f'Please verify that project directory [{self._root_dir}] is valid.')
+            raise ProjectConfigurationError(f'database_dir=[{database_dir}] does not exist. '
+                                            f'Please verify that project directory [{self._root_dir}] is valid.')
         else:
             return database_dir
 

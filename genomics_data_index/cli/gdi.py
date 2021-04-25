@@ -15,7 +15,7 @@ from Bio import AlignIO
 
 import genomics_data_index.storage.service.FeatureService as FeatureService
 from genomics_data_index.cli import yaml_config_provider
-from genomics_data_index.configuration.Project import Project
+from genomics_data_index.configuration.Project import Project, ProjectConfigurationError
 from genomics_data_index.storage.index.KmerIndexer import KmerIndexerSourmash, KmerIndexManager
 from genomics_data_index.storage.io.mlst.MLSTChewbbacaReader import MLSTChewbbacaReader
 from genomics_data_index.storage.io.mlst.MLSTSampleDataPackage import MLSTSampleDataPackage
@@ -52,6 +52,18 @@ def setup_logging(log_level: str) -> None:
     coloredlogs.install(level=log_level, fmt=log_format, logger=logger)
 
 
+def get_project_exit_on_error(ctx) -> Project:
+    project_dir = ctx.obj['project_dir']
+    try:
+        project = Project(project_dir)
+        return project
+    except ProjectConfigurationError as e:
+        logger.error(f'Could not properly load configuration for project directory [{project_dir}]. '
+                     f'Please verify this directory has been configured as a project or set the correct directory '
+                     f'with --project-dir')
+        logger.debug(e, exc_info=True)
+        sys.exit(1)
+
 @click.group()
 @click.pass_context
 @click.option('--project-dir', help='A project directory containing the data and connection information.')
@@ -83,7 +95,7 @@ def init(project_dir: str):
 @main.group()
 @click.pass_context
 def load(ctx):
-    project = Project(ctx.obj['project_dir'])
+    project = get_project_exit_on_error(ctx)
     ctx.obj['data_index_connection'] = project.create_connection()
 
 
@@ -276,7 +288,7 @@ def load_mlst_sistr(ctx, mlst_file: List[Path], scheme_name: str):
 @main.group(name='list')
 @click.pass_context
 def list_data(ctx):
-    project = Project(ctx.obj['project_dir'])
+    project = get_project_exit_on_error(ctx)
     ctx.obj['data_index_connection'] = project.create_connection()
 
 
@@ -297,7 +309,7 @@ def list_samples(ctx):
 @main.group()
 @click.pass_context
 def export(ctx):
-    project = Project(ctx.obj['project_dir'])
+    project = get_project_exit_on_error(ctx)
     ctx.obj['data_index_connection'] = project.create_connection()
 
 
@@ -320,7 +332,7 @@ def export_tree(ctx, name: List[str], ascii: bool):
 @main.group()
 @click.pass_context
 def build(ctx):
-    project = Project(ctx.obj['project_dir'])
+    project = get_project_exit_on_error(ctx)
     ctx.obj['data_index_connection'] = project.create_connection()
 
 
@@ -410,7 +422,7 @@ def tree(ctx, output_file: Path, reference_name: str, align_type: str,
 @main.group()
 @click.pass_context
 def rebuild(ctx):
-    project = Project(ctx.obj['project_dir'])
+    project = get_project_exit_on_error(ctx)
     ctx.obj['data_index_connection'] = project.create_connection()
 
 
@@ -448,7 +460,7 @@ def rebuild_tree(ctx, reference: List[str], align_type: str, extra_params: str):
 @main.group()
 @click.pass_context
 def query(ctx):
-    project = Project(ctx.obj['project_dir'])
+    project = get_project_exit_on_error(ctx)
     ctx.obj['data_index_connection'] = project.create_connection()
 
 
@@ -511,7 +523,7 @@ def query_mlst(ctx, name: List[str], include_unknown: bool, summarize: bool):
 @main.group(name='db')
 @click.pass_context
 def db(ctx):
-    project = Project(ctx.obj['project_dir'])
+    project = get_project_exit_on_error(ctx)
     ctx.obj['data_index_connection'] = project.create_connection()
 
 
