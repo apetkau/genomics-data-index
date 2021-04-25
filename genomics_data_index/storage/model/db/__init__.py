@@ -16,6 +16,12 @@ Base = declarative_base()
 # Max of 500 million bytes
 MAX_SAMPLE_SET_BYTES = 500 * 10 ** 6
 
+# The root of the data directory used to translate full paths to relative paths when storing files in the database.
+# TODO: I don not like the idea of using a global variable here and would rather use something more in tune with
+# SQLAlchemy (e.g., some hook) or have a manager class keep track of the data root directory. But I haven't
+# had time to look into implementing that yet.
+database_path_translator: Path = None
+
 
 class NucleotideVariantsSamples(Base):
     __tablename__ = 'nucleotide_variants_samples'
