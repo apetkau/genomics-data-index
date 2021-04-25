@@ -27,7 +27,8 @@ def setup_services(root_dir: Path, database_file: Path) -> Dict[str, Any]:
                                          sample_service=sample_service,
                                          variation_dir=filesystem_storage.variation_dir)
     kmer_service = KmerService(database_connection=db_connection,
-                               sample_service=sample_service)
+                               sample_service=sample_service,
+                               features_dir=filesystem_storage.kmer_dir)
 
     return {
         'reference_service': reference_service,
@@ -132,7 +133,7 @@ def test_path_translation_kmer_data(snippy_nucleotide_data_package: NucleotideSa
             sampleA_kmer_2 = database_connection_2.get_session().query(SampleKmerIndex) \
                 .join(SampleKmerIndex.sample) \
                 .filter(Sample.name == 'SampleA').one()
-            kf_2 : Path = sampleA_kmer_2.nucleotide_variants_file
+            kf_2 : Path = sampleA_kmer_2.kmer_index_path
 
             assert kf_2.exists(), 'Path from database should now correspond to moved path'
             assert kf_2.parent.parent == data_dir_2

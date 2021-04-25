@@ -152,7 +152,8 @@ class DataIndexConnection:
                                                       tree_service=tree_service)
 
         kmer_service = KmerService(database_connection=database,
-                                   sample_service=sample_service)
+                                   sample_service=sample_service,
+                                   features_dir=filesystem_storage.kmer_dir)
 
         kmer_query_service = KmerQueryService(sample_service=sample_service)
 

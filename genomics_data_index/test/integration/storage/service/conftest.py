@@ -145,9 +145,10 @@ def tree_service_with_tree_stored(database, reference_service_with_data,
 
 
 @pytest.fixture
-def kmer_service_with_data(database, sample_service) -> KmerService:
+def kmer_service_with_data(database, sample_service, filesystem_storage) -> KmerService:
     kmer_service = KmerService(database_connection=database,
-                               sample_service=sample_service)
+                               sample_service=sample_service,
+                               features_dir=filesystem_storage.kmer_dir)
     for sample_name in sourmash_signatures:
         kmer_service.insert_kmer_index(sample_name=sample_name,
                                        kmer_index_path=sourmash_signatures[sample_name])
