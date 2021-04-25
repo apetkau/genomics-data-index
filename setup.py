@@ -49,6 +49,6 @@ setup(name='thesis-index',
       packages=find_packages(),
       include_package_data=True,
       entry_points={
-          'console_scripts': ['variants=genomics_data_index.cli.variants:main'],
+          'console_scripts': ['variants=genomics_data_index.cli.gdi:main'],
       },
       )
