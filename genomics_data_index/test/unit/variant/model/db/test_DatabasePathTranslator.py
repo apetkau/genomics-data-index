@@ -42,3 +42,17 @@ def test_translate_from_database_fail():
         with pytest.raises(Exception) as execinfo:
             dpt.from_database('file1')
         assert 'does not exist for relative path' in str(execinfo.value)
+
+
+def test_translate_to_database():
+    with TemporaryDirectory() as tmp_dir_str:
+        tmp_dir = Path(tmp_dir_str)
+        file1 = tmp_dir / 'file1'
+        file2 = tmp_dir / 'dir' / 'file2'
+        file3 = tmp_dir / 'dir' / 'subdir' / 'file3.txt'
+
+        dpt = DatabasePathTranslator(tmp_dir)
+
+        assert 'file1' == dpt.to_database(file1)
+        assert 'dir/file2' == dpt.to_database(file2)
+        assert 'dir/subdir/file3.txt' == dpt.to_database(file3)

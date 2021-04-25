@@ -16,11 +16,11 @@ class DatabasePathTranslator:
         :param file: The file to translate.
         :return: A string with the relative representation to store in the database.
         """
-        if not file.is_relative_to(self._root_path):
-            raise Exception(f'File to save [{file}] is not relative to root data path [{self._root_path}]')
-
-        relative_path = file.relative_to(self._root_path)
-        return str(relative_path)
+        try:
+            relative_path = file.relative_to(self._root_path)
+            return str(relative_path)
+        except ValueError as e:
+            raise Exception(f'File to save [{file}] is not relative to root data path [{self._root_path}]', e)
 
     def from_database(self, file: str) -> Path:
         """
