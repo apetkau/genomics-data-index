@@ -3,11 +3,11 @@ from typing import cast
 import pandas as pd
 import pytest
 
-from genomics_data_index.test.integration import basic_mlst_file
 from genomics_data_index.storage.io.mlst.MLSTFeaturesReader import MLSTFeaturesReader
 from genomics_data_index.storage.io.mlst.MLSTSampleData import MLSTSampleData
 from genomics_data_index.storage.io.mlst.MLSTSampleDataPackage import MLSTSampleDataPackage
 from genomics_data_index.storage.io.mlst.MLSTTSeemannFeaturesReader import MLSTTSeemannFeaturesReader
+from genomics_data_index.test.integration import basic_mlst_file
 
 
 @pytest.fixture

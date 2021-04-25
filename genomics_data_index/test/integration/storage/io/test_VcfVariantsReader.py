@@ -5,12 +5,12 @@ from typing import List, Dict, cast
 
 import pytest
 
-from genomics_data_index.test.integration import data_dir
-from genomics_data_index.test.integration import data_dir_empty
 from genomics_data_index.storage.io.mutation.NucleotideSampleData import NucleotideSampleData
 from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
 from genomics_data_index.storage.io.mutation.VcfVariantsReader import VcfVariantsReader
 from genomics_data_index.storage.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor
+from genomics_data_index.test.integration import data_dir
+from genomics_data_index.test.integration import data_dir_empty
 
 
 @pytest.fixture

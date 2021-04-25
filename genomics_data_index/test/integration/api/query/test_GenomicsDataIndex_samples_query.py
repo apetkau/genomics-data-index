@@ -7,11 +7,11 @@ from genomics_data_index.api.query.GenomicsDataIndex import GenomicsDataIndex
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.api.query.impl.TreeSamplesQuery import TreeSamplesQuery
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
-from genomics_data_index.test.integration import snippy_all_dataframes, data_dir
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
 from genomics_data_index.storage.model.QueryFeatureMutation import QueryFeatureMutation
 from genomics_data_index.storage.model.db import Sample
+from genomics_data_index.test.integration import snippy_all_dataframes, data_dir
 
 
 # wrapper methods to simplify writing tests
@@ -553,7 +553,8 @@ def test_query_join_dataframe_has_dataframe_column_select_two_samples(loaded_dat
     assert {'dataframe(ids_col=[Sample ID]) AND has(subset from series)'} == set(df['Query'].tolist())
 
 
-def test_query_join_dataframe_has_dataframe_column_invalid_series_index(loaded_database_connection: DataIndexConnection):
+def test_query_join_dataframe_has_dataframe_column_invalid_series_index(
+        loaded_database_connection: DataIndexConnection):
     db = loaded_database_connection.database
     sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
@@ -572,7 +573,6 @@ def test_query_join_dataframe_has_dataframe_column_invalid_series_index(loaded_d
     with pytest.raises(Exception) as execinfo:
         query_result.has(property=invalid_series_select, kind='dataframe')
     assert 'does not have same index as internal data frame' in str(execinfo.value)
-
 
 
 def test_query_and_build_mutation_tree(loaded_database_connection: DataIndexConnection):
@@ -662,7 +662,8 @@ def test_query_then_build_tree_then_join_dataframe(loaded_database_connection: D
 
     assert 2 == len(df)
     assert ['Query', 'Sample Name', 'Sample ID', 'Status', 'Color'] == df.columns.tolist()
-    assert {'reference:839:C:G AND mutation_tree(genome) AND dataframe(ids_col=[Sample ID])'} == set(df['Query'].tolist())
+    assert {'reference:839:C:G AND mutation_tree(genome) AND dataframe(ids_col=[Sample ID])'} == set(
+        df['Query'].tolist())
 
     df = df.sort_values(['Sample Name'])
     assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()

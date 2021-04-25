@@ -1,12 +1,12 @@
 import tempfile
 from pathlib import Path
 
-from genomics_data_index.test.integration import data_dir, regular_vcf_dir, variation_dir, reference_file, consensus_dir
-from genomics_data_index.test.integration import extra_snippy_dir
-from genomics_data_index.test.integration.storage.io import read_vcf_df
 from genomics_data_index.storage.MaskedGenomicRegions import MaskedGenomicRegions
 from genomics_data_index.storage.io.mutation.VariationFile import VariationFile
 from genomics_data_index.storage.util import parse_sequence_file
+from genomics_data_index.test.integration import data_dir, regular_vcf_dir, variation_dir, reference_file, consensus_dir
+from genomics_data_index.test.integration import extra_snippy_dir
+from genomics_data_index.test.integration.storage.io import read_vcf_df
 
 
 def test_write():

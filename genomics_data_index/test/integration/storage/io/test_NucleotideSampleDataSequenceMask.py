@@ -4,9 +4,9 @@ from typing import Dict
 
 import pytest
 
+from genomics_data_index.storage.io.mutation.NucleotideSampleDataSequenceMask import NucleotideSampleDataSequenceMask
 from genomics_data_index.test.integration import regular_vcf_dir, data_dir
 from genomics_data_index.test.integration.storage.io import read_vcf_df
-from genomics_data_index.storage.io.mutation.NucleotideSampleDataSequenceMask import NucleotideSampleDataSequenceMask
 
 
 @pytest.fixture

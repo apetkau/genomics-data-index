@@ -1,7 +1,8 @@
-import pytest
+import tempfile
 import warnings
 from pathlib import Path
-import tempfile
+
+import pytest
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 

@@ -3,9 +3,9 @@ from pathlib import Path
 
 from sourmash import load_file_as_signatures
 
+from genomics_data_index.storage.index.KmerIndexer import KmerIndexerSourmash
 from genomics_data_index.test.integration import data_dir
 from genomics_data_index.test.integration.storage.index import get_values_from_signatures
-from genomics_data_index.storage.index.KmerIndexer import KmerIndexerSourmash
 
 
 def test_index_single_file_uncompressed():

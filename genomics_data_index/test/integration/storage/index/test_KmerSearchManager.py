@@ -1,7 +1,7 @@
 import math
 
-from genomics_data_index.test.integration import sourmash_dir
 from genomics_data_index.storage.index.KmerSearchManager import KmerSearchManagerSourmash
+from genomics_data_index.test.integration import sourmash_dir
 
 sigs = {
     'SampleA': sourmash_dir / 'SampleA.sig.gz',

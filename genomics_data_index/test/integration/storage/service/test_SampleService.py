@@ -403,7 +403,7 @@ def test_create_dataframe_from_sample_set_empty(sample_service: SampleService, v
 
 
 def test_create_dataframe_from_sample_set_with_query_expression(database, sample_service: SampleService,
-                                                       variation_service):
+                                                                variation_service):
     sampleA = database.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
     sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
 

@@ -6,12 +6,12 @@ import pandas as pd
 import pytest
 from sqlalchemy.orm.exc import NoResultFound
 
-from genomics_data_index.test.integration import data_dir, snippy_snps_dataframes, snippy_all_dataframes
 from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
 from genomics_data_index.storage.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor
 from genomics_data_index.storage.model.db import NucleotideVariantsSamples, SampleNucleotideVariation, Sample
 from genomics_data_index.storage.service import EntityExistsError
 from genomics_data_index.storage.service.VariationService import VariationService
+from genomics_data_index.test.integration import data_dir, snippy_snps_dataframes, snippy_all_dataframes
 
 
 def test_insert_variants_saved_files(database, snippy_nucleotide_data_package, reference_service_with_data,

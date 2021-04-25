@@ -1,7 +1,7 @@
 import pytest
 
-from genomics_data_index.test.integration import chewbbaca_mlst_file, expand_list_by
 from genomics_data_index.storage.io.mlst.MLSTChewbbacaReader import MLSTChewbbacaReader
+from genomics_data_index.test.integration import chewbbaca_mlst_file, expand_list_by
 
 
 @pytest.fixture

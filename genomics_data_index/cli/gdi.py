@@ -22,7 +22,8 @@ from genomics_data_index.storage.io.mlst.MLSTSampleDataPackage import MLSTSample
 from genomics_data_index.storage.io.mlst.MLSTSistrReader import MLSTSistrReader
 from genomics_data_index.storage.io.mlst.MLSTTSeemannFeaturesReader import MLSTTSeemannFeaturesReader
 from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
-from genomics_data_index.storage.io.processor.MultipleProcessSampleFilesProcessor import MultipleProcessSampleFilesProcessor
+from genomics_data_index.storage.io.processor.MultipleProcessSampleFilesProcessor import \
+    MultipleProcessSampleFilesProcessor
 from genomics_data_index.storage.io.processor.NullSampleFilesProcessor import NullSampleFilesProcessor
 from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
 from genomics_data_index.storage.model.QueryFeatureMutation import QueryFeatureMutation

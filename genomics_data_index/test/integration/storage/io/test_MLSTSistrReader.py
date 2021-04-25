@@ -1,7 +1,7 @@
 import pytest
 
-from genomics_data_index.test.integration import sistr_mlst_file, expand_list_by
 from genomics_data_index.storage.io.mlst.MLSTSistrReader import MLSTSistrReader
+from genomics_data_index.test.integration import sistr_mlst_file, expand_list_by
 
 
 @pytest.fixture
