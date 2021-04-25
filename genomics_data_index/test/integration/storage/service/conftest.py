@@ -24,16 +24,18 @@ from genomics_data_index.storage.service.MLSTService import MLSTService
 from genomics_data_index.storage.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor
 from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
 from genomics_data_index.storage.io.mlst.MLSTSampleDataPackage import MLSTSampleDataPackage
-
-
-@pytest.fixture
-def database() -> DatabaseConnection:
-    return DatabaseConnection('sqlite:///:memory:')
+from genomics_data_index.storage.model.db.DatabasePathTranslator import DatabasePathTranslator
 
 
 @pytest.fixture
 def filesystem_storage() -> FilesystemStorage:
     return FilesystemStorage(Path(tempfile.mkdtemp(prefix='index-test')))
+
+
+@pytest.fixture
+def database(filesystem_storage) -> DatabaseConnection:
+    dpt = DatabasePathTranslator(filesystem_storage.root_dir)
+    return DatabaseConnection('sqlite:///:memory:', dpt)
 
 
 @pytest.fixture

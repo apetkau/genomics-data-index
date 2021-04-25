@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Union, Tuple
+from typing import Union, Tuple, Optional
 
 from ete3 import Tree
 from sqlalchemy import Column, String, Integer, LargeBinary, UnicodeText, ForeignKey
@@ -10,17 +10,19 @@ from sqlalchemy.orm import relationship
 from genomics_data_index.storage.MaskedGenomicRegions import MaskedGenomicRegions
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.NucleotideMutationTranslater import NucleotideMutationTranslater
+from genomics_data_index.storage.model.db.DatabasePathTranslator import DatabasePathTranslator
 
 Base = declarative_base()
 
 # Max of 500 million bytes
 MAX_SAMPLE_SET_BYTES = 500 * 10 ** 6
 
-# The root of the data directory used to translate full paths to relative paths when storing files in the database.
-# TODO: I don not like the idea of using a global variable here and would rather use something more in tune with
+# Used to translate between relative and absolute Paths when persisting to the database.
+# TODO: I don't like the idea of using a global variable here and would rather use something more in tune with
 # SQLAlchemy (e.g., some hook) or have a manager class keep track of the data root directory. But I haven't
 # had time to look into implementing that yet.
-database_path_translator: Path = None
+# This variable is set in the DatabaseConnection class elsewhere in my code
+database_path_translator: Optional[DatabasePathTranslator] = None
 
 
 class NucleotideVariantsSamples(Base):

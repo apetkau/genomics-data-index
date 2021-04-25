@@ -17,6 +17,7 @@ from genomics_data_index.storage.service.ReferenceService import ReferenceServic
 from genomics_data_index.storage.service.SampleService import SampleService
 from genomics_data_index.storage.service.TreeService import TreeService
 from genomics_data_index.storage.service.VariationService import VariationService
+from genomics_data_index.storage.model.db.DatabasePathTranslator import DatabasePathTranslator
 
 logger = logging.getLogger(__name__)
 
@@ -124,11 +125,14 @@ class DataIndexConnection:
 
     @classmethod
     def connect(cls, database_connection: str, database_dir: Path) -> DataIndexConnection:
-        logger.info(f'Connecting to database {database_connection}')
-        database = DatabaseConnection(database_connection)
         filesystem_storage = FilesystemStorage(Path(database_dir))
-
+        dpt = DatabasePathTranslator(filesystem_storage.root_dir)
         logger.info(f'Using database directory {database_dir}')
+
+        logger.info(f'Connecting to database {database_connection}')
+        database = DatabaseConnection(connection_string=database_connection,
+                                      database_path_translator=dpt)
+
         reference_service = ReferenceService(database, filesystem_storage.reference_dir)
         sample_service = SampleService(database)
         variation_service = VariationService(database_connection=database,
