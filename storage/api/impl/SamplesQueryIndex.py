@@ -5,6 +5,7 @@ from typing import Union, List, Set
 import pandas as pd
 
 from storage.api.SamplesQuery import SamplesQuery
+from storage.api.impl.DataFrameSamplesQuery import DataFrameSamplesQuery
 from storage.api.impl.QueriesCollection import QueriesCollection
 from storage.api.impl.TreeSamplesQuery import TreeSamplesQuery
 from storage.configuration.connector import DataIndexConnection
@@ -37,6 +38,21 @@ class SamplesQueryIndex(SamplesQuery):
     def sample_set(self) -> SampleSet:
         return self._sample_set
 
+    def join(self, data_frame: pd.DataFrame, sample_ids_column: str = None,
+             sample_names_column: str = None) -> SamplesQuery:
+        if sample_ids_column is None and sample_names_column is None:
+            raise Exception('At least one of sample_ids_column or sample_names_column must be set.')
+        elif sample_ids_column is not None:
+            return DataFrameSamplesQuery.create_with_sample_ids_column(sample_ids_column=sample_ids_column,
+                                                                       data_frame=data_frame,
+                                                                       wrapped_query=self,
+                                                                       connection=self._query_connection)
+        else:
+            return DataFrameSamplesQuery.create_with_sample_names_column(sample_names_column=sample_names_column,
+                                                                         data_frame=data_frame,
+                                                                         wrapped_query=self,
+                                                                         connection=self._query_connection)
+
     def intersect(self, sample_set: SampleSet, query_message: str = None) -> SamplesQuery:
         intersected_set = self._intersect_sample_set(sample_set)
 
@@ -50,23 +66,26 @@ class SamplesQueryIndex(SamplesQuery):
     def _intersect_sample_set(self, other: SampleSet) -> SampleSet:
         return self.sample_set.intersection(other)
 
+    def _get_has_kinds(self) -> List[str]:
+        return self.HAS_KINDS
+
     def query_expression(self) -> str:
         return self._queries_collection.query_expression()
 
-    def build_tree(self, kind: str, scope: str, **kwargs):
+    def build_tree(self, kind: str, scope: str, **kwargs) -> SamplesQuery:
         return TreeSamplesQuery.create(kind=kind, scope=scope, database_connection=self._query_connection,
                                        wrapped_query=self, **kwargs)
 
     def toframe(self, exclude_absent: bool = True) -> pd.DataFrame:
         sample_service = self._query_connection.sample_service
         return sample_service.create_dataframe_from_sample_set(self.sample_set,
-                                                               universe_set=self._universe_set,
+                                                               universe_set=self.universe_set,
                                                                exclude_absent=exclude_absent,
                                                                queries_collection=self._queries_collection)
 
     def summary(self) -> pd.DataFrame:
         present = len(self)
-        total = len(self._universe_set)
+        total = len(self.universe_set)
         unknown = pd.NA
         absent = total - present
         per_present = (present / total) * 100
@@ -156,17 +175,20 @@ class SamplesQueryIndex(SamplesQuery):
     def __repr__(self) -> str:
         return str(self)
 
-    def has(self, feature: Union[QueryFeature, str], kind=None) -> SamplesQuery:
-        if isinstance(feature, QueryFeature):
-            query_feature = feature
+    def has(self, property: Union[QueryFeature, str, pd.Series], kind=None) -> SamplesQuery:
+        if isinstance(property, QueryFeature):
+            query_feature = property
+        elif isinstance(property, pd.Series):
+            raise Exception(f'The query type {self.__class__.__name__} cannot support querying with respect to a '
+                            f'dataframe. Perhaps you could try attaching a dataframe with join() first before querying.')
         elif kind is None:
-            raise Exception(f'feature=[{feature}] is not of type QueryFeature so must set "kind" parameter')
+            raise Exception(f'property=[{property}] is not of type QueryFeature so must set "kind" parameter')
         elif kind == 'mutation':
-            query_feature = QueryFeatureMutation(feature)
+            query_feature = QueryFeatureMutation(property)
         elif kind == 'mlst':
-            query_feature = QueryFeatureMLST(feature)
+            query_feature = QueryFeatureMLST(property)
         else:
-            raise Exception(f'kind={kind} is not recognized. Must be one of {self.HAS_KINDS}')
+            raise Exception(f'kind={kind} is not recognized for {self}. Must be one of {self._get_has_kinds()}')
 
         found_set_dict = self._query_connection.sample_service.find_sample_sets_by_features([query_feature])
 
@@ -190,6 +212,6 @@ class SamplesQueryIndex(SamplesQuery):
     def _create_from(self, connection: DataIndexConnection, sample_set: SampleSet,
                      queries_collection: QueriesCollection) -> SamplesQuery:
         return SamplesQueryIndex(connection=self._query_connection,
-                                 universe_set=self._universe_set,
+                                 universe_set=self.universe_set,
                                  sample_set=sample_set,
                                  queries_collection=queries_collection)

@@ -115,16 +115,16 @@ class GenomicDataStore:
                 'If querying with universe="dataframe", then one of sample_names_column or sample_ids_column '
                 'must be set')
         elif sample_ids_column is not None:
-            all_samples = connection.sample_service.get_all_sample_ids()
+            sample_query = self._query_all_samples(connection=connection)
             return DataFrameSamplesQuery.create_with_sample_ids_column(sample_ids_column,
                                                                        data_frame=data_frame,
-                                                                       database_sample_set=all_samples,
+                                                                       wrapped_query=sample_query,
                                                                        connection=connection)
         else:
-            all_samples = connection.sample_service.get_all_sample_ids()
+            sample_query = self._query_all_samples(connection=connection)
             return DataFrameSamplesQuery.create_with_sample_names_column(sample_names_column,
                                                                          data_frame=data_frame,
-                                                                         database_sample_set=all_samples,
+                                                                         wrapped_query=sample_query,
                                                                          connection=connection)
 
     @classmethod

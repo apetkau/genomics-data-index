@@ -26,6 +26,21 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
+    def join(self, data_frame: pd.DataFrame, sample_ids_column: str = None,
+             sample_names_column: str = None) -> SamplesQuery:
+        """
+        Joins the passed dataframe onto the current query using the passed column name in the dataframe.
+        The column can either contain sample IDs (in sample_ids_column) or sample names (sample_names_column).
+        This will modify the universe set to the subset of samples found within the passed data frame.
+        :param data_frame: The data frame to join on.
+        :param sample_ids_column: The column name in the data frame containing internal sample IDs used for joining.
+        :param sample_names_column: The column name in the data frame containing sample names to join on.
+                                    Internally these will be mapped to Sample IDs.
+        :return: A SamplesQuery representing the query joined with the data frame.
+        """
+        pass
+
+    @abc.abstractmethod
     def toframe(self, exclude_absent: bool = True) -> pd.DataFrame:
         pass
 
@@ -55,7 +70,7 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def has(self, feature: Union[QueryFeature, str], kind=None) -> SamplesQuery:
+    def has(self, property: Union[QueryFeature, str, pd.Series], kind=None) -> SamplesQuery:
         pass
 
     @abc.abstractmethod
@@ -68,6 +83,10 @@ class SamplesQuery(abc.ABC):
 
     @abc.abstractmethod
     def is_type(self, sample_type) -> SamplesQuery:
+        pass
+
+    @abc.abstractmethod
+    def _get_has_kinds(self) -> List[str]:
         pass
 
     @abc.abstractmethod

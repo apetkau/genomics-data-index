@@ -1,81 +1,38 @@
 from __future__ import annotations
 
 import copy
-from typing import Union, List, Dict, Set
+from typing import Union, List
 
-import pandas as pd
 from ete3 import Tree, TreeStyle
 
 from storage.api.SamplesQuery import SamplesQuery
 from storage.api.impl.TreeBuilderReferenceMutations import TreeBuilderReferenceMutations
+from storage.api.impl.WrappedSamplesQuery import WrappedSamplesQuery
 from storage.api.viewer.TreeStyler import TreeStyler, DEFAULT_HIGHLIGHT_STYLES
 from storage.configuration.connector import DataIndexConnection
 from storage.variant.SampleSet import SampleSet
-from storage.variant.model.QueryFeature import QueryFeature
 
 
-class TreeSamplesQuery(SamplesQuery):
+class TreeSamplesQuery(WrappedSamplesQuery):
     BUILD_TREE_KINDS = ['mutation']
     DISTANCE_UNITS = ['substitutions', 'substitutions/site']
     WITHIN_TYPES = ['distance', 'mrca']
 
     def __init__(self, connection: DataIndexConnection, wrapped_query: SamplesQuery, tree: Tree,
                  alignment_length: int):
-        super().__init__()
-        self._query_connection = connection
-        self._wrapped_query = wrapped_query
+        super().__init__(connection=connection, wrapped_query=wrapped_query)
         self._tree = tree
         self._alignment_length = alignment_length
 
-    @property
-    def universe_set(self) -> SampleSet:
-        return self._wrapped_query.universe_set
-
-    @property
-    def sample_set(self) -> SampleSet:
-        return self._wrapped_query.sample_set
-
-    def intersect(self, sample_set: SampleSet, query_message: str = None) -> SamplesQuery:
-        intersected_query = self._wrapped_query.intersect(sample_set=sample_set, query_message=query_message)
-        return self._wrap_create(intersected_query)
-
-    def _wrap_create(self, wrapped_query: SamplesQuery) -> TreeSamplesQuery:
+    def _wrap_create(self, wrapped_query: SamplesQuery) -> WrappedSamplesQuery:
         return TreeSamplesQuery(connection=self._query_connection,
                                 wrapped_query=wrapped_query,
                                 tree=self._tree,
                                 alignment_length=self._alignment_length)
 
-    def toframe(self, exclude_absent: bool = True) -> pd.DataFrame:
-        return self._wrapped_query.toframe(exclude_absent=exclude_absent)
-
-    def summary(self) -> pd.DataFrame:
-        return self._wrapped_query.summary()
-
-    def summary_features(self, kind: str = 'mutations', **kwargs) -> pd.DataFrame:
-        return self._wrapped_query.summary_features(kind=kind, **kwargs)
-
-    def tofeaturesset(self, kind: str = 'mutations', selection: str = 'all',
-                      ncores: int = 1) -> Set[str]:
-        return self._wrapped_query.tofeaturesset(kind=kind, selection=selection, ncores=ncores)
-
-    def and_(self, other: SamplesQuery) -> SamplesQuery:
-        return self._wrap_create(self._wrapped_query.and_(other))
-
     def build_tree(self, kind: str, scope: str, **kwargs):
         return TreeSamplesQuery.create(kind=kind, scope=scope, database_connection=self._query_connection,
                                        wrapped_query=self, **kwargs)
-
-    def has(self, feature: Union[QueryFeature, str], kind=None) -> SamplesQuery:
-        return self._wrap_create(self._wrapped_query.has(feature=feature, kind=kind))
-
-    def complement(self):
-        return self._wrap_create(self._wrapped_query.complement())
-
-    def query_expression(self) -> str:
-        return self._wrapped_query.query_expression()
-
-    def tolist(self, names=True):
-        return self._wrapped_query.tolist(names=names)
 
     def _within_distance(self, sample_names: Union[str, List[str]], kind: str, distance: float,
                          units: str) -> SamplesQuery:
@@ -112,10 +69,6 @@ class TreeSamplesQuery(SamplesQuery):
 
         found_samples = SampleSet(found_samples_set)
         return self.intersect(found_samples, f'within({distance} {units} of {sample_names})')
-
-    def _get_sample_name_ids(self) -> Dict[str, int]:
-        sample_service = self._query_connection.sample_service
-        return {s.name: s.id for s in sample_service.find_samples_by_ids(self._wrapped_query.sample_set)}
 
     def _within_mrca(self, sample_names: Union[str, List[str]]) -> SamplesQuery:
         if isinstance(sample_names, str):
@@ -160,29 +113,9 @@ class TreeSamplesQuery(SamplesQuery):
                           default_highlight_styles=DEFAULT_HIGHLIGHT_STYLES,
                           tree_style=initial_style)
 
-    def is_type(self, sample_type) -> SamplesQuery:
-        return self._wrap_create(self._wrapped_query.is_type(sample_type))
-
-    def is_empty(self):
-        return self._wrapped_query.is_empty()
-
     @property
     def tree(self):
         return self._tree
-
-    def __and__(self, other):
-        return self.and_(other)
-
-    def __len__(self):
-        return len(self._wrapped_query)
-
-    def __str__(self) -> str:
-        universe_length = len(self.universe_set)
-        percent_selected = (len(self) / universe_length) * 100
-        return f'<{self.__class__.__name__}[{percent_selected:0.0f}% ({len(self)}/{universe_length}) samples]>'
-
-    def __repr__(self) -> str:
-        return str(self)
 
     @classmethod
     def create(cls, kind: str, scope: str, database_connection: DataIndexConnection,
