@@ -7,8 +7,8 @@ import pandas as pd
 
 from genomics_data_index.api.SamplesQuery import SamplesQuery
 from genomics_data_index.configuration.connector import DataIndexConnection
-from genomics_data_index.variant.SampleSet import SampleSet
-from genomics_data_index.variant.model.QueryFeature import QueryFeature
+from genomics_data_index.storage.SampleSet import SampleSet
+from genomics_data_index.storage.model.QueryFeature import QueryFeature
 
 
 class WrappedSamplesQuery(SamplesQuery, abc.ABC):

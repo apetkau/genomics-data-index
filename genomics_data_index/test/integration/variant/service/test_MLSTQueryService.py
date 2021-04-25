@@ -3,9 +3,9 @@ import math
 import pandas as pd
 import pytest
 
-from genomics_data_index.variant.model.QueryFeatureMLST import QueryFeatureMLST
-from genomics_data_index.variant.model.db import Sample
-from genomics_data_index.variant.service.MLSTQueryService import MLSTQueryService
+from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
+from genomics_data_index.storage.model.db import Sample
+from genomics_data_index.storage.service.MLSTQueryService import MLSTQueryService
 
 
 @pytest.fixture

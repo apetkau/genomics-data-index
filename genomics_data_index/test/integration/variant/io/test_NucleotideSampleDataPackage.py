@@ -8,10 +8,10 @@ import pytest
 
 from genomics_data_index.test.integration import data_dir
 from genomics_data_index.test.integration import data_dir_empty
-from genomics_data_index.variant.io.mutation.NucleotideSampleData import NucleotideSampleData
-from genomics_data_index.variant.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
-from genomics_data_index.variant.io.processor.MultipleProcessSampleFilesProcessor import MultipleProcessSampleFilesProcessor
-from genomics_data_index.variant.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor
+from genomics_data_index.storage.io.mutation.NucleotideSampleData import NucleotideSampleData
+from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
+from genomics_data_index.storage.io.processor.MultipleProcessSampleFilesProcessor import MultipleProcessSampleFilesProcessor
+from genomics_data_index.storage.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor
 
 
 @pytest.fixture

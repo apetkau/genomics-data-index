@@ -9,21 +9,21 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 from genomics_data_index.test.integration import sample_dirs, reference_file, regular_vcf_dir, data_dir
 from genomics_data_index.test.integration import mlst_file_single_scheme, basic_mlst_file, mlst_file_unknown
 from genomics_data_index.test.integration import sourmash_signatures
-from genomics_data_index.variant.service import DatabaseConnection
-from genomics_data_index.variant.service.ReferenceService import ReferenceService
-from genomics_data_index.variant.service.VariationService import VariationService
-from genomics_data_index.variant.service.CoreAlignmentService import CoreAlignmentService
-from genomics_data_index.variant.io.mlst.MLSTFeaturesReader import MLSTFeaturesReader
-from genomics_data_index.variant.io.mlst.MLSTTSeemannFeaturesReader import MLSTTSeemannFeaturesReader
-from genomics_data_index.variant.service.SampleService import SampleService
-from genomics_data_index.variant.service.TreeService import TreeService
-from genomics_data_index.variant.service.KmerQueryService import KmerQueryService
-from genomics_data_index.variant.service.KmerService import KmerService
+from genomics_data_index.storage.service import DatabaseConnection
+from genomics_data_index.storage.service.ReferenceService import ReferenceService
+from genomics_data_index.storage.service.VariationService import VariationService
+from genomics_data_index.storage.service.CoreAlignmentService import CoreAlignmentService
+from genomics_data_index.storage.io.mlst.MLSTFeaturesReader import MLSTFeaturesReader
+from genomics_data_index.storage.io.mlst.MLSTTSeemannFeaturesReader import MLSTTSeemannFeaturesReader
+from genomics_data_index.storage.service.SampleService import SampleService
+from genomics_data_index.storage.service.TreeService import TreeService
+from genomics_data_index.storage.service.KmerQueryService import KmerQueryService
+from genomics_data_index.storage.service.KmerService import KmerService
 from genomics_data_index.configuration.connector.FilesystemStorage import FilesystemStorage
-from genomics_data_index.variant.service.MLSTService import MLSTService
-from genomics_data_index.variant.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor
-from genomics_data_index.variant.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
-from genomics_data_index.variant.io.mlst.MLSTSampleDataPackage import MLSTSampleDataPackage
+from genomics_data_index.storage.service.MLSTService import MLSTService
+from genomics_data_index.storage.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor
+from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
+from genomics_data_index.storage.io.mlst.MLSTSampleDataPackage import MLSTSampleDataPackage
 
 
 @pytest.fixture

@@ -5,8 +5,8 @@ from typing import Union, List, Set
 
 import pandas as pd
 
-from genomics_data_index.variant.SampleSet import SampleSet
-from genomics_data_index.variant.model.QueryFeature import QueryFeature
+from genomics_data_index.storage.SampleSet import SampleSet
+from genomics_data_index.storage.model.QueryFeature import QueryFeature
 
 
 class SamplesQuery(abc.ABC):

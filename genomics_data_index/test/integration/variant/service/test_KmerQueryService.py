@@ -1,6 +1,6 @@
 import math
 
-from genomics_data_index.variant.service.KmerQueryService import KmerQueryService
+from genomics_data_index.storage.service.KmerQueryService import KmerQueryService
 
 
 def test_find_matches(kmer_query_service_with_data: KmerQueryService):

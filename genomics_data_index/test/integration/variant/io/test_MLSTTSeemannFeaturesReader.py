@@ -2,7 +2,7 @@ import pandas as pd
 import pytest
 
 from genomics_data_index.test.integration import basic_mlst_file, mlst_file_unknown, expand_list_by
-from genomics_data_index.variant.io.mlst.MLSTTSeemannFeaturesReader import MLSTTSeemannFeaturesReader
+from genomics_data_index.storage.io.mlst.MLSTTSeemannFeaturesReader import MLSTTSeemannFeaturesReader
 
 
 @pytest.fixture

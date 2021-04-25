@@ -10,7 +10,7 @@ from genomics_data_index.api.impl.TreeBuilderReferenceMutations import TreeBuild
 from genomics_data_index.api.impl.WrappedSamplesQuery import WrappedSamplesQuery
 from genomics_data_index.api.viewer.TreeStyler import TreeStyler, DEFAULT_HIGHLIGHT_STYLES
 from genomics_data_index.configuration.connector import DataIndexConnection
-from genomics_data_index.variant.SampleSet import SampleSet
+from genomics_data_index.storage.SampleSet import SampleSet
 
 
 class TreeSamplesQuery(WrappedSamplesQuery):

@@ -6,7 +6,7 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from pybedtools import BedTool
 
-from genomics_data_index.variant.MaskedGenomicRegions import MaskedGenomicRegions
+from genomics_data_index.storage.MaskedGenomicRegions import MaskedGenomicRegions
 
 
 def test_create_from_sequence():

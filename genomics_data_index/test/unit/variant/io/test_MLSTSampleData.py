@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from genomics_data_index.variant.io.mlst.MLSTSampleData import MLSTSampleData
+from genomics_data_index.storage.io.mlst.MLSTSampleData import MLSTSampleData
 
 
 @pytest.fixture

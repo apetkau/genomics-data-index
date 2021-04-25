@@ -9,10 +9,10 @@ from genomics_data_index.api.impl.DataFrameSamplesQuery import DataFrameSamplesQ
 from genomics_data_index.api.impl.TreeSamplesQuery import TreeSamplesQuery
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
 from genomics_data_index.test.integration import snippy_all_dataframes, data_dir
-from genomics_data_index.variant.SampleSet import SampleSet
-from genomics_data_index.variant.model.QueryFeatureMLST import QueryFeatureMLST
-from genomics_data_index.variant.model.QueryFeatureMutation import QueryFeatureMutation
-from genomics_data_index.variant.model.db import Sample
+from genomics_data_index.storage.SampleSet import SampleSet
+from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
+from genomics_data_index.storage.model.QueryFeatureMutation import QueryFeatureMutation
+from genomics_data_index.storage.model.db import Sample
 
 
 # wrapper methods to simplify writing tests

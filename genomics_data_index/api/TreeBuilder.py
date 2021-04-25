@@ -2,7 +2,7 @@ from typing import Tuple
 
 from ete3 import Tree
 
-from genomics_data_index.variant.SampleSet import SampleSet
+from genomics_data_index.storage.SampleSet import SampleSet
 
 
 class TreeBuilder:

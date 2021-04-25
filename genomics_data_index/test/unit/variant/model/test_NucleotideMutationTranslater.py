@@ -1,7 +1,7 @@
 import pytest
 
-from genomics_data_index.variant.model.NucleotideMutationTranslater import NucleotideMutationTranslater
-from genomics_data_index.variant.model.QueryFeatureMutation import QueryFeatureMutation
+from genomics_data_index.storage.model.NucleotideMutationTranslater import NucleotideMutationTranslater
+from genomics_data_index.storage.model.QueryFeatureMutation import QueryFeatureMutation
 
 
 def test_to_spdi_position():

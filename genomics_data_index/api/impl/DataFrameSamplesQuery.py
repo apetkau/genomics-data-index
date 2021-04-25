@@ -8,8 +8,8 @@ from genomics_data_index.api.SamplesQuery import SamplesQuery
 from genomics_data_index.api.impl.TreeSamplesQuery import TreeSamplesQuery
 from genomics_data_index.api.impl.WrappedSamplesQuery import WrappedSamplesQuery
 from genomics_data_index.configuration.connector import DataIndexConnection
-from genomics_data_index.variant.SampleSet import SampleSet
-from genomics_data_index.variant.model.QueryFeature import QueryFeature
+from genomics_data_index.storage.SampleSet import SampleSet
+from genomics_data_index.storage.model.QueryFeature import QueryFeature
 
 
 class DataFrameSamplesQuery(WrappedSamplesQuery):

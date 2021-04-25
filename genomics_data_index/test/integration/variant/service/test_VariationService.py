@@ -7,11 +7,11 @@ import pytest
 from sqlalchemy.orm.exc import NoResultFound
 
 from genomics_data_index.test.integration import data_dir, snippy_snps_dataframes, snippy_all_dataframes
-from genomics_data_index.variant.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
-from genomics_data_index.variant.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor
-from genomics_data_index.variant.model.db import NucleotideVariantsSamples, SampleNucleotideVariation, Sample
-from genomics_data_index.variant.service import EntityExistsError
-from genomics_data_index.variant.service.VariationService import VariationService
+from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
+from genomics_data_index.storage.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor
+from genomics_data_index.storage.model.db import NucleotideVariantsSamples, SampleNucleotideVariation, Sample
+from genomics_data_index.storage.service import EntityExistsError
+from genomics_data_index.storage.service.VariationService import VariationService
 
 
 def test_insert_variants_saved_files(database, snippy_nucleotide_data_package, reference_service_with_data,
@@ -92,7 +92,7 @@ def test_insert_variants_examine_variation(database, snippy_nucleotide_data_pack
 
     assert 3 == session.query(SampleNucleotideVariation).count(), 'Incorrect number of SampleSequences'
 
-    assert 112 == session.query(NucleotideVariantsSamples).count(), 'Incorrect number of variant entries'
+    assert 112 == session.query(NucleotideVariantsSamples).count(), 'Incorrect number of storage entries'
 
     # Check to make sure some variants are stored
     v = session.query(NucleotideVariantsSamples).get({
@@ -101,7 +101,7 @@ def test_insert_variants_examine_variation(database, snippy_nucleotide_data_pack
         'deletion': len('C'),
         'insertion': 'G'
     })
-    assert v is not None, 'Particular variant does not exist'
+    assert v is not None, 'Particular storage does not exist'
     assert 'SNP' == v.var_type, 'Type is incorrect'
     assert {sample_name_ids['SampleA']} == set(v.sample_ids)
 
@@ -149,7 +149,7 @@ def test_insert_variants_regular_vcf_reader_examine_variation(database, regular_
 
     assert 3 == session.query(SampleNucleotideVariation).count(), 'Incorrect number of SampleSequences'
 
-    assert 112 == session.query(NucleotideVariantsSamples).count(), 'Incorrect number of variant entries'
+    assert 112 == session.query(NucleotideVariantsSamples).count(), 'Incorrect number of storage entries'
 
     # Check to make sure some variants are stored
     v = session.query(NucleotideVariantsSamples).get({
@@ -158,7 +158,7 @@ def test_insert_variants_regular_vcf_reader_examine_variation(database, regular_
         'deletion': len('C'),
         'insertion': 'G'
     })
-    assert v is not None, 'Particular variant does not exist'
+    assert v is not None, 'Particular storage does not exist'
     assert 'SNP' == v.var_type, 'Type is incorrect'
     assert {sample_name_ids['SampleA']} == set(v.sample_ids)
 
@@ -198,13 +198,13 @@ def test_insert_variants_duplicates(database, snippy_nucleotide_data_package, re
                                          variation_dir=filesystem_storage.variation_dir)
     session = database.get_session()
 
-    assert 0 == session.query(NucleotideVariantsSamples).count(), 'Incorrect number of variant entries'
+    assert 0 == session.query(NucleotideVariantsSamples).count(), 'Incorrect number of storage entries'
     assert 0 == session.query(Sample).count(), 'Incorrect number of Samples'
     assert 0 == session.query(SampleNucleotideVariation).count(), 'Incorrect number of SampleNucleotideVariation'
 
     variation_service.insert(feature_scope_name='genome', data_package=snippy_nucleotide_data_package)
 
-    assert 112 == session.query(NucleotideVariantsSamples).count(), 'Incorrect number of variant entries'
+    assert 112 == session.query(NucleotideVariantsSamples).count(), 'Incorrect number of storage entries'
     assert 3 == session.query(Sample).count(), 'Incorrect number of Samples'
     assert 3 == session.query(SampleNucleotideVariation).count(), 'Incorrect number of SampleNucleotideVariation'
 
@@ -212,7 +212,7 @@ def test_insert_variants_duplicates(database, snippy_nucleotide_data_package, re
         variation_service.insert(feature_scope_name='genome', data_package=snippy_nucleotide_data_package)
 
     assert 'Passed samples already have features for feature scope [genome]' in str(execinfo.value)
-    assert 112 == session.query(NucleotideVariantsSamples).count(), 'Incorrect number of variant entries'
+    assert 112 == session.query(NucleotideVariantsSamples).count(), 'Incorrect number of storage entries'
     assert 3 == session.query(Sample).count(), 'Incorrect number of Samples'
     assert 3 == session.query(SampleNucleotideVariation).count(), 'Incorrect number of SampleNucleotideVariation'
 
@@ -225,13 +225,13 @@ def test_insert_variants_duplicates_subset(database, snippy_nucleotide_data_pack
                                          variation_dir=filesystem_storage.variation_dir)
     session = database.get_session()
 
-    assert 0 == session.query(NucleotideVariantsSamples).count(), 'Incorrect number of variant entries'
+    assert 0 == session.query(NucleotideVariantsSamples).count(), 'Incorrect number of storage entries'
     assert 0 == session.query(Sample).count(), 'Incorrect number of Samples'
     assert 0 == session.query(SampleNucleotideVariation).count(), 'Incorrect number of SampleSequences'
 
     variation_service.insert(feature_scope_name='genome', data_package=snippy_nucleotide_data_package)
 
-    assert 112 == session.query(NucleotideVariantsSamples).count(), 'Incorrect number of variant entries'
+    assert 112 == session.query(NucleotideVariantsSamples).count(), 'Incorrect number of storage entries'
     assert 3 == session.query(Sample).count(), 'Incorrect number of Samples'
     assert 3 == session.query(SampleNucleotideVariation).count(), 'Incorrect number of SampleSequences'
 
@@ -248,7 +248,7 @@ def test_insert_variants_duplicates_subset(database, snippy_nucleotide_data_pack
             variation_service.insert(feature_scope_name='genome', data_package=subset_snippy_data_package)
 
         assert 'Passed samples already have features for feature scope [genome]' in str(execinfo.value)
-        assert 112 == session.query(NucleotideVariantsSamples).count(), 'Incorrect number of variant entries'
+        assert 112 == session.query(NucleotideVariantsSamples).count(), 'Incorrect number of storage entries'
         assert 3 == session.query(Sample).count(), 'Incorrect number of Samples'
         assert 3 == session.query(SampleNucleotideVariation).count(), 'Incorrect number of SampleSequences'
 
@@ -260,7 +260,7 @@ def test_get_variants_ordered(database, snippy_nucleotide_data_package, referenc
             if v.position == position:
                 return v
 
-        raise Exception(f'Could not find variant with position {position}')
+        raise Exception(f'Could not find storage with position {position}')
 
     variation_service = VariationService(database_connection=database,
                                          reference_service=reference_service_with_data,
@@ -278,11 +278,11 @@ def test_get_variants_ordered(database, snippy_nucleotide_data_package, referenc
     assert 60 == len(variants), 'Incorrect number of variants returned (counting only SNV/SNPs)'
 
     v1 = find_variant_by_position(variants, 4265)
-    assert 'reference:4265:1:C' == v1.spdi, 'Incorrect variant returned'
+    assert 'reference:4265:1:C' == v1.spdi, 'Incorrect storage returned'
     assert {sampleA.id} == set(v1.sample_ids)
 
     v2 = find_variant_by_position(variants, 839)
-    assert 'reference:839:1:G' == v2.spdi, 'Incorrect variant returned'
+    assert 'reference:839:1:G' == v2.spdi, 'Incorrect storage returned'
     assert {sampleB.id, sampleC.id} == set(v2.sample_ids)
 
 

@@ -13,26 +13,26 @@ import coloredlogs
 import pandas as pd
 from Bio import AlignIO
 
-import genomics_data_index.variant.service.FeatureService as FeatureService
+import genomics_data_index.storage.service.FeatureService as FeatureService
 from genomics_data_index.cli import yaml_config_provider
 from genomics_data_index.configuration.Project import Project
-from genomics_data_index.variant.index.KmerIndexer import KmerIndexerSourmash, KmerIndexManager
-from genomics_data_index.variant.io.mlst.MLSTChewbbacaReader import MLSTChewbbacaReader
-from genomics_data_index.variant.io.mlst.MLSTSampleDataPackage import MLSTSampleDataPackage
-from genomics_data_index.variant.io.mlst.MLSTSistrReader import MLSTSistrReader
-from genomics_data_index.variant.io.mlst.MLSTTSeemannFeaturesReader import MLSTTSeemannFeaturesReader
-from genomics_data_index.variant.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
-from genomics_data_index.variant.io.processor.MultipleProcessSampleFilesProcessor import MultipleProcessSampleFilesProcessor
-from genomics_data_index.variant.io.processor.NullSampleFilesProcessor import NullSampleFilesProcessor
-from genomics_data_index.variant.model.QueryFeatureMLST import QueryFeatureMLST
-from genomics_data_index.variant.model.QueryFeatureMutation import QueryFeatureMutation
-from genomics_data_index.variant.service import EntityExistsError
-from genomics_data_index.variant.service.CoreAlignmentService import CoreAlignmentService
-from genomics_data_index.variant.service.MLSTService import MLSTService
-from genomics_data_index.variant.service.SampleService import SampleService
-from genomics_data_index.variant.service.TreeService import TreeService
-from genomics_data_index.variant.service.VariationService import VariationService
-from genomics_data_index.variant.util import get_genome_name
+from genomics_data_index.storage.index.KmerIndexer import KmerIndexerSourmash, KmerIndexManager
+from genomics_data_index.storage.io.mlst.MLSTChewbbacaReader import MLSTChewbbacaReader
+from genomics_data_index.storage.io.mlst.MLSTSampleDataPackage import MLSTSampleDataPackage
+from genomics_data_index.storage.io.mlst.MLSTSistrReader import MLSTSistrReader
+from genomics_data_index.storage.io.mlst.MLSTTSeemannFeaturesReader import MLSTTSeemannFeaturesReader
+from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
+from genomics_data_index.storage.io.processor.MultipleProcessSampleFilesProcessor import MultipleProcessSampleFilesProcessor
+from genomics_data_index.storage.io.processor.NullSampleFilesProcessor import NullSampleFilesProcessor
+from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
+from genomics_data_index.storage.model.QueryFeatureMutation import QueryFeatureMutation
+from genomics_data_index.storage.service import EntityExistsError
+from genomics_data_index.storage.service.CoreAlignmentService import CoreAlignmentService
+from genomics_data_index.storage.service.MLSTService import MLSTService
+from genomics_data_index.storage.service.SampleService import SampleService
+from genomics_data_index.storage.service.TreeService import TreeService
+from genomics_data_index.storage.service.VariationService import VariationService
+from genomics_data_index.storage.util import get_genome_name
 
 logger = logging.getLogger('genomics_data_index')
 max_cores = multiprocessing.cpu_count()

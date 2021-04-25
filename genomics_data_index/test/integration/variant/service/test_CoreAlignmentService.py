@@ -8,7 +8,7 @@ from Bio import AlignIO
 from Bio.Align import MultipleSeqAlignment
 
 from genomics_data_index.test.integration import data_dir
-from genomics_data_index.variant.service.CoreAlignmentService import CoreAlignmentService
+from genomics_data_index.storage.service.CoreAlignmentService import CoreAlignmentService
 
 
 def remove_column(alignment: MultipleSeqAlignment, position: int) -> MultipleSeqAlignment:

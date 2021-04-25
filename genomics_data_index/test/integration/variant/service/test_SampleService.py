@@ -1,9 +1,9 @@
 from genomics_data_index.api.impl.QueriesCollection import QueriesCollection
-from genomics_data_index.variant.SampleSet import SampleSet
-from genomics_data_index.variant.model.QueryFeatureMLST import QueryFeatureMLST
-from genomics_data_index.variant.model.QueryFeatureMutation import QueryFeatureMutation
-from genomics_data_index.variant.model.db import Sample
-from genomics_data_index.variant.service.SampleService import SampleService
+from genomics_data_index.storage.SampleSet import SampleSet
+from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
+from genomics_data_index.storage.model.QueryFeatureMutation import QueryFeatureMutation
+from genomics_data_index.storage.model.db import Sample
+from genomics_data_index.storage.service.SampleService import SampleService
 
 
 def count_samples(sample_service, variation_service):

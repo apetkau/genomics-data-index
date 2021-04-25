@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import List, Union
 
-from genomics_data_index.variant.model.QueryFeature import QueryFeature
+from genomics_data_index.storage.model.QueryFeature import QueryFeature
 
 
 class QueriesCollection:

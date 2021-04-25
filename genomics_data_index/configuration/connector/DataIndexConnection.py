@@ -6,17 +6,17 @@ from pathlib import Path
 import pandas as pd
 
 from genomics_data_index.configuration.connector.FilesystemStorage import FilesystemStorage
-from genomics_data_index.variant.service import DatabaseConnection
-from genomics_data_index.variant.service.CoreAlignmentService import CoreAlignmentService
-from genomics_data_index.variant.service.KmerQueryService import KmerQueryService
-from genomics_data_index.variant.service.KmerService import KmerService
-from genomics_data_index.variant.service.MLSTQueryService import MLSTQueryService
-from genomics_data_index.variant.service.MLSTService import MLSTService
-from genomics_data_index.variant.service.MutationQueryService import MutationQueryService
-from genomics_data_index.variant.service.ReferenceService import ReferenceService
-from genomics_data_index.variant.service.SampleService import SampleService
-from genomics_data_index.variant.service.TreeService import TreeService
-from genomics_data_index.variant.service.VariationService import VariationService
+from genomics_data_index.storage.service import DatabaseConnection
+from genomics_data_index.storage.service.CoreAlignmentService import CoreAlignmentService
+from genomics_data_index.storage.service.KmerQueryService import KmerQueryService
+from genomics_data_index.storage.service.KmerService import KmerService
+from genomics_data_index.storage.service.MLSTQueryService import MLSTQueryService
+from genomics_data_index.storage.service.MLSTService import MLSTService
+from genomics_data_index.storage.service.MutationQueryService import MutationQueryService
+from genomics_data_index.storage.service.ReferenceService import ReferenceService
+from genomics_data_index.storage.service.SampleService import SampleService
+from genomics_data_index.storage.service.TreeService import TreeService
+from genomics_data_index.storage.service.VariationService import VariationService
 
 logger = logging.getLogger(__name__)
 

@@ -7,14 +7,14 @@ import pytest
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 from genomics_data_index.configuration.Project import Project
-from genomics_data_index.variant.io.mlst.MLSTSampleDataPackage import MLSTSampleDataPackage
-from genomics_data_index.variant.io.mlst.MLSTTSeemannFeaturesReader import MLSTTSeemannFeaturesReader
+from genomics_data_index.storage.io.mlst.MLSTSampleDataPackage import MLSTSampleDataPackage
+from genomics_data_index.storage.io.mlst.MLSTTSeemannFeaturesReader import MLSTTSeemannFeaturesReader
 from genomics_data_index.api.GenomicDataStore import GenomicDataStore
 
 from genomics_data_index.test.integration import sample_dirs, reference_file, basic_mlst_file
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
-from genomics_data_index.variant.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
-from genomics_data_index.variant.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor
+from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
+from genomics_data_index.storage.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor
 
 
 @pytest.fixture

@@ -1,8 +1,8 @@
 import pytest
 
-from genomics_data_index.variant.model.db import SampleMLSTAlleles, MLSTAllelesSamples, Sample
-from genomics_data_index.variant.service import EntityExistsError
-from genomics_data_index.variant.service.MLSTService import MLSTService
+from genomics_data_index.storage.model.db import SampleMLSTAlleles, MLSTAllelesSamples, Sample
+from genomics_data_index.storage.service import EntityExistsError
+from genomics_data_index.storage.service.MLSTService import MLSTService
 
 
 def test_insert_mlst_results(database, mlst_data_package_single_scheme, sample_service, filesystem_storage):

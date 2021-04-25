@@ -8,8 +8,8 @@ from sqlalchemy.orm.exc import NoResultFound
 
 from genomics_data_index.test.integration import reference_file
 from genomics_data_index.test.integration import tree_file
-from genomics_data_index.variant.model.db import Reference
-from genomics_data_index.variant.service import EntityExistsError
+from genomics_data_index.storage.model.db import Reference
+from genomics_data_index.storage.service import EntityExistsError
 
 
 @pytest.fixture

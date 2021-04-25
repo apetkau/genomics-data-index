@@ -3,9 +3,9 @@ import math
 import pandas as pd
 import pytest
 
-from genomics_data_index.variant.model.QueryFeatureMutation import QueryFeatureMutation
-from genomics_data_index.variant.model.db import Sample
-from genomics_data_index.variant.service.MutationQueryService import MutationQueryService
+from genomics_data_index.storage.model.QueryFeatureMutation import QueryFeatureMutation
+from genomics_data_index.storage.model.db import Sample
+from genomics_data_index.storage.service.MutationQueryService import MutationQueryService
 
 
 @pytest.fixture
