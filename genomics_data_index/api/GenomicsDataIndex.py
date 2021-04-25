@@ -145,7 +145,7 @@ class GenomicsDataIndex:
 
     def __str__(self) -> str:
         samples_count = self._samples_count
-        return f'<GenomicDataStore(samples={samples_count})>'
+        return f'<{self.__class__.__name__}(samples={samples_count})>'
 
     def __repr__(self) -> str:
         return str(self)
