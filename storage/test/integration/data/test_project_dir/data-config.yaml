@@ -1,3 +1,0 @@
----
-database_dir: '.genomics-data'
-sqlite_database: '.genomics-data/db.sqlite'

@@ -2,7 +2,7 @@ from distutils.core import setup
 
 from setuptools import find_packages
 
-from storage import __version__
+from genomics_data_index import __version__
 
 classifiers = """
 Development Status :: 4 - Beta
@@ -15,12 +15,12 @@ Programming Language :: Python :: 3.8
 Operating System :: POSIX :: Linux
 """.strip().split('\n')
 
-setup(name='thesis-index',
+setup(name='genomics-data-index',
       version=__version__,
-      description='Indexes genomes.',
+      description='Indexes genomics data (mutations, kmers, MLST) for fast querying of features.',
       author='Aaron Petkau',
       author_email='aaron.petkau@gmail.com',
-      url='https://github.com/apetkau/thesis-index',
+      url='https://github.com/apetkau/genomics-data-index',
       license='Apache v2.0',
       classifiers=classifiers,
       install_requires=[
@@ -49,6 +49,6 @@ setup(name='thesis-index',
       packages=find_packages(),
       include_package_data=True,
       entry_points={
-          'console_scripts': ['variants=storage.cli.variants:main'],
+          'console_scripts': ['gdi=genomics_data_index.cli.gdi:main'],
       },
       )
