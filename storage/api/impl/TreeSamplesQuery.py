@@ -9,7 +9,7 @@ from ete3 import Tree, TreeStyle
 from storage.api.SamplesQuery import SamplesQuery
 from storage.api.impl.TreeBuilderReferenceMutations import TreeBuilderReferenceMutations
 from storage.api.viewer.TreeStyler import TreeStyler, DEFAULT_HIGHLIGHT_STYLES
-from storage.connector.DataIndexConnection import DataIndexConnection
+from storage.configuration.connector import DataIndexConnection
 from storage.variant.SampleSet import SampleSet
 from storage.variant.model.QueryFeature import QueryFeature
 

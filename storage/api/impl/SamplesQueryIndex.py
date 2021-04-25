@@ -7,7 +7,7 @@ import pandas as pd
 from storage.api.SamplesQuery import SamplesQuery
 from storage.api.impl.QueriesCollection import QueriesCollection
 from storage.api.impl.TreeSamplesQuery import TreeSamplesQuery
-from storage.connector.DataIndexConnection import DataIndexConnection
+from storage.configuration.connector import DataIndexConnection
 from storage.variant.SampleSet import SampleSet
 from storage.variant.model.QueryFeature import QueryFeature
 from storage.variant.model.QueryFeatureMLST import QueryFeatureMLST

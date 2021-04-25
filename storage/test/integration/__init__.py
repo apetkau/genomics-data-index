@@ -22,6 +22,8 @@ mlst_snippy_file = mlst_dir / 'mlst-snippy-data.csv'
 
 data_dir_empty = root_data_dir / 'empty_vcfs'
 
+test_project_dir = root_data_dir / 'test_project_dir'
+
 sourmash_signatures = {
     'SampleA': sourmash_dir / 'SampleA.sig.gz',
     'SampleB': sourmash_dir / 'SampleB.sig.gz',
@@ -29,7 +31,7 @@ sourmash_signatures = {
 }
 
 snippy_snps_dataframes = {
-    'SampleA': data_dir / 'SampleA' /'mutations-dataframe.snps.tsv',
+    'SampleA': data_dir / 'SampleA' / 'mutations-dataframe.snps.tsv',
     'SampleB': data_dir / 'SampleB' / 'mutations-dataframe.snps.tsv',
     'SampleC': data_dir / 'SampleC' / 'mutations-dataframe.snps.tsv',
 }
@@ -39,6 +41,7 @@ snippy_all_dataframes = {
     'SampleB': data_dir / 'SampleB' / 'mutations-dataframe.all.tsv',
     'SampleC': data_dir / 'SampleC' / 'mutations-dataframe.all.tsv',
 }
+
 
 def expand_list_by(list_in: List[str], number: int) -> List[str]:
     new_list = []

@@ -2,8 +2,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import List
 
-import pytest
 import pandas as pd
+import pytest
 from sqlalchemy.orm.exc import NoResultFound
 
 from storage.test.integration import data_dir, snippy_snps_dataframes, snippy_all_dataframes
@@ -56,7 +56,7 @@ def test_insert_variants_masked_regions(database, snippy_nucleotide_data_package
 
 
 def test_summarize_variants(database, snippy_nucleotide_data_package, reference_service_with_data,
-                                           sample_service, filesystem_storage):
+                            sample_service, filesystem_storage):
     variation_service = VariationService(database_connection=database,
                                          reference_service=reference_service_with_data,
                                          sample_service=sample_service,

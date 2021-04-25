@@ -19,7 +19,7 @@ from storage.variant.service.SampleService import SampleService
 from storage.variant.service.TreeService import TreeService
 from storage.variant.service.KmerQueryService import KmerQueryService
 from storage.variant.service.KmerService import KmerService
-from storage.FilesystemStorage import FilesystemStorage
+from storage.configuration.connector.FilesystemStorage import FilesystemStorage
 from storage.variant.service.MLSTService import MLSTService
 from storage.variant.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor
 from storage.variant.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage

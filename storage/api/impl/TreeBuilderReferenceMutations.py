@@ -4,7 +4,7 @@ from typing import Union, Iterable, Tuple
 from ete3 import Tree
 
 from storage.api.TreeBuilder import TreeBuilder
-from storage.connector.DataIndexConnection import DataIndexConnection
+from storage.configuration.connector import DataIndexConnection
 from storage.variant.SampleSet import SampleSet
 
 logger = logging.getLogger(__name__)

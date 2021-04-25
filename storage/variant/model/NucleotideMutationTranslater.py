@@ -24,7 +24,7 @@ class NucleotideMutationTranslater:
         return deletion
 
     @classmethod
-    def from_spdi(cls, spdi: str, convert_deletion = True) -> Tuple[str, int, Union[int, str], str]:
+    def from_spdi(cls, spdi: str, convert_deletion=True) -> Tuple[str, int, Union[int, str], str]:
         if spdi is None:
             raise Exception('Cannot parse value spdi=None')
 

@@ -10,14 +10,13 @@ from storage.variant.io.SampleData import SampleData
 from storage.variant.io.SampleDataPackage import SampleDataPackage
 from storage.variant.io.mutation.NucleotideSampleData import NucleotideSampleData
 from storage.variant.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
+from storage.variant.io.mutation.VariationFile import VariationFile
 from storage.variant.io.mutation.VcfVariantsReader import VcfVariantsReader
 from storage.variant.model.db import NucleotideVariantsSamples, SampleNucleotideVariation, Sample
 from storage.variant.service import DatabaseConnection
 from storage.variant.service.FeatureService import FeatureService
 from storage.variant.service.ReferenceService import ReferenceService
 from storage.variant.service.SampleService import SampleService
-from storage.variant.io.mutation.VariationFile import VariationFile
-from storage.variant.model.NucleotideMutationTranslater import NucleotideMutationTranslater
 
 logger = logging.getLogger(__name__)
 

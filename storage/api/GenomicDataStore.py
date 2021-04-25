@@ -1,19 +1,19 @@
 from __future__ import annotations
-from typing import List, Union
+
+import logging
+import os
 from pathlib import Path
+from typing import List
 
 import pandas as pd
-import yaml
-import logging
-
-from storage.api.impl.DataFrameSamplesQuery import DataFrameSamplesQuery
-from storage.api.impl.TreeSamplesQuery import TreeSamplesQuery
-from storage.variant.model.NucleotideMutationTranslater import NucleotideMutationTranslater
 
 from storage.api.SamplesQuery import SamplesQuery
+from storage.api.impl.DataFrameSamplesQuery import DataFrameSamplesQuery
 from storage.api.impl.SamplesQueryIndex import SamplesQueryIndex
-from storage.connector.DataIndexConnection import DataIndexConnection
-
+from storage.api.impl.TreeSamplesQuery import TreeSamplesQuery
+from storage.configuration.Project import Project
+from storage.configuration.connector.DataIndexConnection import DataIndexConnection
+from storage.variant.model.NucleotideMutationTranslater import NucleotideMutationTranslater
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +46,8 @@ class GenomicDataStore:
         return self._connection.variation_service.count_on_reference(reference_genome,
                                                                      include_unknown=include_unknown)
 
-    def mutations_summary(self, reference_genome: str, id_type: str = 'spdi_ref', include_unknown: bool = False) -> pd.DataFrame:
+    def mutations_summary(self, reference_genome: str, id_type: str = 'spdi_ref',
+                          include_unknown: bool = False) -> pd.DataFrame:
         rs = self._connection.reference_service
         if id_type not in self.MUTATION_ID_TYPES:
             raise Exception(f'id_type={id_type} must be one of {self.MUTATION_ID_TYPES}')
@@ -127,24 +128,19 @@ class GenomicDataStore:
                                                                          connection=connection)
 
     @classmethod
-    def connect(cls, config_file: Union[Path, str] = None,
-                database_connection: str = None,
-                database_dir: Union[Path,str] = None) -> GenomicDataStore:
-        if config_file is not None:
-            if isinstance(config_file, str):
-                config_file = Path(config_file)
+    def connect(cls, project_dir: Path = None, project: Project = None) -> GenomicDataStore:
+        if project_dir is None and project is None:
+            project_dir = os.getcwd()
+            logger.warning(f'No project_dir or project specified. Assuming project is current dir [{project_dir}]')
+            data_store_project = Project(project_dir)
+        elif project_dir is not None and project is None:
+            if not project_dir.exists():
+                raise Exception(f'project_dir=[{project_dir}] does not exist')
+            data_store_project = Project(root_dir=project_dir)
+        else:
+            data_store_project = project
 
-            config = ConfigManager(config_file).read_config()
-            if 'database_connection' in config:
-                database_connection = config['database_connection']
-            if 'database_dir' in config:
-                database_dir = config['database_dir']
-        elif database_connection is None or database_dir is None:
-            raise Exception(f'Both database_connection=[{database_connection}] '
-                            f'and database_dir=[{database_dir}] must be set if not using a configuration file')
-
-        database_connection = DataIndexConnection.connect(database_connection=database_connection,
-                                           database_dir=database_dir)
+        database_connection = data_store_project.create_connection()
         return GenomicDataStore(connection=database_connection)
 
     def __str__(self) -> str:
@@ -153,27 +149,3 @@ class GenomicDataStore:
 
     def __repr__(self) -> str:
         return str(self)
-
-
-class ConfigManager:
-
-    def __init__(self, config_file: Union[Path, str]):
-        self._config_file = config_file
-
-    def read_config(self):
-        if not self._config_file.exists():
-            raise Exception(f'Config file {self._config_file} does not exist')
-
-        logger.info(f'Reading configuration from {self._config_file}')
-
-        with open(self._config_file) as file:
-            config = yaml.load(file, Loader=yaml.FullLoader)
-            if config is None:
-                config = {}
-
-            if 'database_connection' not in config:
-                logger.warning(f'Missing database_connection in config file {self._config_file}')
-            if 'database_dir' not in config:
-                logger.warning(f'Missing database_dir in config file {self._config_file}')
-
-            return config
