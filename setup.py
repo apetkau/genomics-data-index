@@ -2,7 +2,7 @@ from distutils.core import setup
 
 from setuptools import find_packages
 
-from storage import __version__
+from genomics_data_index import __version__
 
 classifiers = """
 Development Status :: 4 - Beta
@@ -49,6 +49,6 @@ setup(name='thesis-index',
       packages=find_packages(),
       include_package_data=True,
       entry_points={
-          'console_scripts': ['variants=storage.cli.variants:main'],
+          'console_scripts': ['variants=genomics_data_index.cli.variants:main'],
       },
       )
