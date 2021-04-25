@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Union, List
+
 import pandas as pd
 
 from storage.api.SamplesQuery import SamplesQuery
@@ -7,9 +9,11 @@ from storage.api.impl.TreeSamplesQuery import TreeSamplesQuery
 from storage.api.impl.WrappedSamplesQuery import WrappedSamplesQuery
 from storage.configuration.connector import DataIndexConnection
 from storage.variant.SampleSet import SampleSet
+from storage.variant.model.QueryFeature import QueryFeature
 
 
 class DataFrameSamplesQuery(WrappedSamplesQuery):
+    HAS_KINDS = ['dataframe']
 
     def __init__(self, connection: DataIndexConnection, wrapped_query: SamplesQuery,
                  universe_set: SampleSet,
@@ -18,6 +22,30 @@ class DataFrameSamplesQuery(WrappedSamplesQuery):
         super().__init__(connection=connection, wrapped_query=wrapped_query, universe_set=universe_set)
         self._sample_ids_col = sample_ids_col
         self._data_frame = data_frame
+
+    def has(self, property: Union[QueryFeature, str, pd.Series], kind=None) -> SamplesQuery:
+        if kind == 'dataframe':
+            if isinstance(property, pd.Series) and property.dtype == bool:
+                if property.index.equals(self._data_frame.index):
+                    return self._handle_select_by_series(property)
+                else:
+                    raise Exception(f'Passed property=[series with length {len(property)}] '
+                                    f'does not have same index as internal data frame (length={len(self._data_frame)})')
+            else:
+                raise Exception(f'property=[{property}] is wrong type for kind=[{kind}]. '
+                                f'Must be a boolean pandas.Series')
+        else:
+            return self._wrap_create(self._wrapped_query.has(property=property, kind=kind))
+
+    def _get_has_kinds(self) -> List[str]:
+        return self._wrapped_query._get_has_kinds() + self.HAS_KINDS
+
+    def _handle_select_by_series(self, series_selection: pd.Series) -> SamplesQuery:
+        subset_df = self._data_frame[series_selection]
+        subset_sample_set = SampleSet(subset_df[self._sample_ids_col].tolist())
+        query_message = 'has(subset from series)'
+        subset_query = self._wrapped_query.intersect(sample_set=subset_sample_set, query_message=query_message)
+        return self._wrap_create(subset_query)
 
     def toframe(self, exclude_absent: bool = True) -> pd.DataFrame:
         samples_dataframe = super().toframe()

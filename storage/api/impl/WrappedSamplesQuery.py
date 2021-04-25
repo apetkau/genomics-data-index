@@ -58,8 +58,11 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
     def and_(self, other: SamplesQuery) -> SamplesQuery:
         return self._wrap_create(self._wrapped_query.and_(other))
 
-    def has(self, feature: Union[QueryFeature, str], kind=None) -> SamplesQuery:
-        return self._wrap_create(self._wrapped_query.has(feature=feature, kind=kind))
+    def has(self, property: Union[QueryFeature, str, pd.Series], kind=None) -> SamplesQuery:
+        return self._wrap_create(self._wrapped_query.has(property=property, kind=kind))
+
+    def _get_has_kinds(self) -> List[str]:
+        return self._wrapped_query._get_has_kinds()
 
     def complement(self):
         return self._wrap_create(self._wrapped_query.complement())

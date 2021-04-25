@@ -66,6 +66,9 @@ class SamplesQueryIndex(SamplesQuery):
     def _intersect_sample_set(self, other: SampleSet) -> SampleSet:
         return self.sample_set.intersection(other)
 
+    def _get_has_kinds(self) -> List[str]:
+        return self.HAS_KINDS
+
     def query_expression(self) -> str:
         return self._queries_collection.query_expression()
 
@@ -172,17 +175,20 @@ class SamplesQueryIndex(SamplesQuery):
     def __repr__(self) -> str:
         return str(self)
 
-    def has(self, feature: Union[QueryFeature, str], kind=None) -> SamplesQuery:
-        if isinstance(feature, QueryFeature):
-            query_feature = feature
+    def has(self, property: Union[QueryFeature, str, pd.Series], kind=None) -> SamplesQuery:
+        if isinstance(property, QueryFeature):
+            query_feature = property
+        elif isinstance(property, pd.Series):
+            raise Exception(f'The query type {self.__class__.__name__} cannot support querying with respect to a '
+                            f'dataframe. Perhaps you could try attaching a dataframe with join() first before querying.')
         elif kind is None:
-            raise Exception(f'feature=[{feature}] is not of type QueryFeature so must set "kind" parameter')
+            raise Exception(f'property=[{property}] is not of type QueryFeature so must set "kind" parameter')
         elif kind == 'mutation':
-            query_feature = QueryFeatureMutation(feature)
+            query_feature = QueryFeatureMutation(property)
         elif kind == 'mlst':
-            query_feature = QueryFeatureMLST(feature)
+            query_feature = QueryFeatureMLST(property)
         else:
-            raise Exception(f'kind={kind} is not recognized. Must be one of {self.HAS_KINDS}')
+            raise Exception(f'kind={kind} is not recognized for {self}. Must be one of {self._get_has_kinds()}')
 
         found_set_dict = self._query_connection.sample_service.find_sample_sets_by_features([query_feature])
 

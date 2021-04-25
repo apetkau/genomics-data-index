@@ -70,7 +70,7 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def has(self, feature: Union[QueryFeature, str], kind=None) -> SamplesQuery:
+    def has(self, property: Union[QueryFeature, str, pd.Series], kind=None) -> SamplesQuery:
         pass
 
     @abc.abstractmethod
@@ -83,6 +83,10 @@ class SamplesQuery(abc.ABC):
 
     @abc.abstractmethod
     def is_type(self, sample_type) -> SamplesQuery:
+        pass
+
+    @abc.abstractmethod
+    def _get_has_kinds(self) -> List[str]:
         pass
 
     @abc.abstractmethod
