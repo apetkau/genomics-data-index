@@ -120,14 +120,20 @@ class SampleNucleotideVariation(Base):
         if self._nucleotide_variants_file is None:
             raise Exception('Empty _nucleotide_variants_file')
         else:
-            return Path(self._nucleotide_variants_file)
+            if database_path_translator is None:
+                raise Exception('Empty database_path_translator')
+            else:
+                return database_path_translator.from_database(self._nucleotide_variants_file)
 
     @nucleotide_variants_file.setter
     def nucleotide_variants_file(self, file: Path) -> None:
         if file is None:
             self._nucleotide_variants_file = None
         else:
-            self._nucleotide_variants_file = str(file)
+            if database_path_translator is None:
+                raise Exception('Empty database_path_translator')
+            else:
+                self._nucleotide_variants_file = database_path_translator.to_database(file)
 
     @property
     def masked_regions(self) -> MaskedGenomicRegions:
@@ -138,14 +144,20 @@ class SampleNucleotideVariation(Base):
         if self._masked_regions_file is None:
             raise Exception('Empty _masked_regions_file')
         else:
-            return Path(self._masked_regions_file)
+            if database_path_translator is None:
+                raise Exception('Empty database_path_translator')
+            else:
+                return database_path_translator.from_database(self._masked_regions_file)
 
     @masked_regions_file.setter
     def masked_regions_file(self, file: Path) -> None:
         if file is None:
             self._masked_regions_file = None
         else:
-            self._masked_regions_file = str(file)
+            if database_path_translator is None:
+                raise Exception('Empty database_path_translator')
+            else:
+                self._masked_regions_file = database_path_translator.to_database(file)
 
     sample = relationship('Sample', back_populates='sample_nucleotide_variation')
     reference = relationship('Reference', back_populates='sample_nucleotide_variation')

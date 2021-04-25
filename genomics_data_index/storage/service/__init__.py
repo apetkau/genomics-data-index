@@ -24,8 +24,7 @@ class DatabaseConnection:
         if genomics_data_index.storage.model.db.database_path_translator is not None:
             logger.warning(f'Attempting to set global database_path_translator={database_path_translator}'
                            ' but it is already set')
-        else:
-            genomics_data_index.storage.model.db.database_path_translator = database_path_translator
+        genomics_data_index.storage.model.db.database_path_translator = database_path_translator
 
         Base.metadata.create_all(engine)
 
