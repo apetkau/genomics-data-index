@@ -5,7 +5,7 @@ import tempfile
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-import genomics_data_index as gdi
+import genomics_data_index.api as gdi
 
 from genomics_data_index.test.integration import reference_file, sample_dirs, basic_mlst_file
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection

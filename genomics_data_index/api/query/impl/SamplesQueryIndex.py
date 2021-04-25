@@ -78,10 +78,11 @@ class SamplesQueryIndex(SamplesQuery):
 
     def toframe(self, exclude_absent: bool = True) -> pd.DataFrame:
         sample_service = self._query_connection.sample_service
+        queries_expression = self._queries_collection.query_expression()
         return sample_service.create_dataframe_from_sample_set(self.sample_set,
                                                                universe_set=self.universe_set,
                                                                exclude_absent=exclude_absent,
-                                                               queries_collection=self._queries_collection)
+                                                               queries_expression=queries_expression)
 
     def summary(self) -> pd.DataFrame:
         present = len(self)
