@@ -1,6 +1,6 @@
 from ete3 import Tree
 
-from genomics_data_index.api.impl.TreeBuilderReferenceMutations import TreeBuilderReferenceMutations
+from genomics_data_index.api.query.impl.TreeBuilderReferenceMutations import TreeBuilderReferenceMutations
 from genomics_data_index.test.integration import tree_file
 
 expected_tree = Tree(str(tree_file))

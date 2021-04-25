@@ -1,4 +1,4 @@
-from genomics_data_index.api.impl.QueriesCollection import QueriesCollection
+from genomics_data_index.api.query.impl.QueriesCollection import QueriesCollection
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
 from genomics_data_index.storage.model.QueryFeatureMutation import QueryFeatureMutation

@@ -5,7 +5,7 @@ import pytest
 
 from genomics_data_index.api.GenomicsDataIndex import GenomicsDataIndex
 from genomics_data_index.api.SamplesQuery import SamplesQuery
-from genomics_data_index.api.impl.TreeSamplesQuery import TreeSamplesQuery
+from genomics_data_index.api.query.impl.TreeSamplesQuery import TreeSamplesQuery
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
 from genomics_data_index.test.integration import snippy_all_dataframes, data_dir
 from genomics_data_index.storage.SampleSet import SampleSet

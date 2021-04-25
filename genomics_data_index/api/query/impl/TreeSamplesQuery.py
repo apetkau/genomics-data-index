@@ -6,8 +6,8 @@ from typing import Union, List
 from ete3 import Tree, TreeStyle
 
 from genomics_data_index.api.SamplesQuery import SamplesQuery
-from genomics_data_index.api.impl.TreeBuilderReferenceMutations import TreeBuilderReferenceMutations
-from genomics_data_index.api.impl.WrappedSamplesQuery import WrappedSamplesQuery
+from genomics_data_index.api.query.impl.TreeBuilderReferenceMutations import TreeBuilderReferenceMutations
+from genomics_data_index.api.query.impl.WrappedSamplesQuery import WrappedSamplesQuery
 from genomics_data_index.api.viewer.TreeStyler import TreeStyler, DEFAULT_HIGHLIGHT_STYLES
 from genomics_data_index.configuration.connector import DataIndexConnection
 from genomics_data_index.storage.SampleSet import SampleSet

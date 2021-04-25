@@ -8,9 +8,9 @@ from typing import List
 import pandas as pd
 
 from genomics_data_index.api.SamplesQuery import SamplesQuery
-from genomics_data_index.api.impl.DataFrameSamplesQuery import DataFrameSamplesQuery
-from genomics_data_index.api.impl.SamplesQueryIndex import SamplesQueryIndex
-from genomics_data_index.api.impl.TreeSamplesQuery import TreeSamplesQuery
+from genomics_data_index.api.query.impl.DataFrameSamplesQuery import DataFrameSamplesQuery
+from genomics_data_index.api.query.impl.SamplesQueryIndex import SamplesQueryIndex
+from genomics_data_index.api.query.impl.TreeSamplesQuery import TreeSamplesQuery
 from genomics_data_index.configuration.Project import Project
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
 from genomics_data_index.storage.model.NucleotideMutationTranslater import NucleotideMutationTranslater
