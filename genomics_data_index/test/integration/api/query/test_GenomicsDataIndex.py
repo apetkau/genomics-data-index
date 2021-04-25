@@ -1,6 +1,11 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
+import tempfile
+import shutil
 
+from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
+from genomics_data_index.storage.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor
+from genomics_data_index.test.integration import sample_dirs, reference_file
 from genomics_data_index.api.query.GenomicsDataIndex import GenomicsDataIndex
 from genomics_data_index.configuration.Project import Project
 
@@ -63,3 +68,33 @@ def test_connect_to_project_from_project():
         assert ds is not None
         assert ds.connection.reference_service is not None
         assert ds.connection.filesystem_storage.variation_dir.parent == project_dir / '.gdi-data'
+
+
+def test_connect_and_tree_after_moving_project(loaded_data_store_from_project_dir):
+    with TemporaryDirectory() as tmp_file_str:
+        tmp_file = Path(tmp_file_str)
+        project_dir = tmp_file / 'project'
+        Project.initialize_project(project_dir)
+        ds = GenomicsDataIndex.connect(project_dir=project_dir)
+        database_connection = ds.connection
+
+        # Load Nucleotide variation
+        database_connection.reference_service.add_reference_genome(reference_file)
+        snippy_tmp_dir = Path(tempfile.mkdtemp())
+        data_package = NucleotideSampleDataPackage.create_from_snippy(sample_dirs,
+                                                                      SerialSampleFilesProcessor(snippy_tmp_dir))
+        database_connection.variation_service.insert(data_package, feature_scope_name='genome')
+
+        # I should be able to build tree initially
+        tq1 = ds.samples_query().build_tree(kind='mutation', scope='genome')
+        assert tq1.tree is not None
+
+        # Move project
+        project_dir_2 = tmp_file / 'project2'
+        shutil.move(project_dir, project_dir_2)
+
+        ds2 = GenomicsDataIndex.connect(project_dir=project_dir_2)
+
+        # I should still be able to build tree even after project has been moved
+        tq2 = ds2.samples_query().build_tree(kind='mutation', scope='genome')
+        assert tq2.tree is not None
