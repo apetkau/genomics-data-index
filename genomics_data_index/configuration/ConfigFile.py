@@ -59,7 +59,7 @@ class ConfigFile:
         if not file.exists():
             raise Exception(f'Config file {file} does not exist')
 
-        logger.info(f'Reading configuration from {file}')
+        logger.debug(f'Reading configuration from {file}')
 
         with open(file) as file:
             config = yaml.load(file, Loader=yaml.FullLoader)

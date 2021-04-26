@@ -127,9 +127,9 @@ class DataIndexConnection:
     def connect(cls, database_connection: str, database_dir: Path) -> DataIndexConnection:
         filesystem_storage = FilesystemStorage(Path(database_dir))
         dpt = DatabasePathTranslator(filesystem_storage.root_dir)
-        logger.info(f'Using database directory {database_dir}')
+        logger.debug(f'Using database directory {database_dir}')
 
-        logger.info(f'Connecting to database {database_connection}')
+        logger.debug(f'Connecting to database {database_connection}')
         database = DatabaseConnection(connection_string=database_connection,
                                       database_path_translator=dpt)
 

@@ -50,7 +50,7 @@ class Project:
 
             database_connection = f'sqlite:///{sqlite_path}'
         elif self._config.database_connection is None:
-            raise Exception(f'No valid configured database in config file {self._config_file}')
+            raise ProjectConfigurationError(f'No valid configured database in config file {self._config_file}')
         else:
             database_connection = self._config.database_connection
 
