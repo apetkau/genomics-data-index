@@ -51,6 +51,10 @@ class FilesystemStorage:
         return pd.DataFrame(sizes_list, columns=['Type', 'Name', 'Division', 'Data Size', 'Number of Items'])
 
     @property
+    def root_dir(self):
+        return self._root_dir
+
+    @property
     def reference_dir(self):
         return self._check_make_dir('reference')
 

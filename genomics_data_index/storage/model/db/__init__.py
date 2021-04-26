@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Union, Tuple
+from typing import Union, Tuple, Optional
 
 from ete3 import Tree
 from sqlalchemy import Column, String, Integer, LargeBinary, UnicodeText, ForeignKey
@@ -10,11 +10,19 @@ from sqlalchemy.orm import relationship
 from genomics_data_index.storage.MaskedGenomicRegions import MaskedGenomicRegions
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.NucleotideMutationTranslater import NucleotideMutationTranslater
+from genomics_data_index.storage.model.db.DatabasePathTranslator import DatabasePathTranslator
 
 Base = declarative_base()
 
 # Max of 500 million bytes
 MAX_SAMPLE_SET_BYTES = 500 * 10 ** 6
+
+# Used to translate between relative and absolute Paths when persisting to the database.
+# TODO: I don't like the idea of using a global variable here and would rather use something more in tune with
+# SQLAlchemy (e.g., some hook) or have a manager class keep track of the data root directory. But I haven't
+# had time to look into implementing that yet.
+# This variable is set in the DatabaseConnection class elsewhere in my code
+database_path_translator: Optional[DatabasePathTranslator] = None
 
 
 class NucleotideVariantsSamples(Base):
@@ -112,14 +120,20 @@ class SampleNucleotideVariation(Base):
         if self._nucleotide_variants_file is None:
             raise Exception('Empty _nucleotide_variants_file')
         else:
-            return Path(self._nucleotide_variants_file)
+            if database_path_translator is None:
+                raise Exception('Empty database_path_translator')
+            else:
+                return database_path_translator.from_database(self._nucleotide_variants_file)
 
     @nucleotide_variants_file.setter
     def nucleotide_variants_file(self, file: Path) -> None:
         if file is None:
             self._nucleotide_variants_file = None
         else:
-            self._nucleotide_variants_file = str(file)
+            if database_path_translator is None:
+                raise Exception('Empty database_path_translator')
+            else:
+                self._nucleotide_variants_file = database_path_translator.to_database(file)
 
     @property
     def masked_regions(self) -> MaskedGenomicRegions:
@@ -130,14 +144,20 @@ class SampleNucleotideVariation(Base):
         if self._masked_regions_file is None:
             raise Exception('Empty _masked_regions_file')
         else:
-            return Path(self._masked_regions_file)
+            if database_path_translator is None:
+                raise Exception('Empty database_path_translator')
+            else:
+                return database_path_translator.from_database(self._masked_regions_file)
 
     @masked_regions_file.setter
     def masked_regions_file(self, file: Path) -> None:
         if file is None:
             self._masked_regions_file = None
         else:
-            self._masked_regions_file = str(file)
+            if database_path_translator is None:
+                raise Exception('Empty database_path_translator')
+            else:
+                self._masked_regions_file = database_path_translator.to_database(file)
 
     sample = relationship('Sample', back_populates='sample_nucleotide_variation')
     reference = relationship('Reference', back_populates='sample_nucleotide_variation')
@@ -178,14 +198,20 @@ class SampleMLSTAlleles(Base):
         if self._alleles_file is None:
             raise Exception('Empty _alleles_file')
         else:
-            return Path(self._alleles_file)
+            if database_path_translator is None:
+                raise Exception('Empty database_path_translator')
+            else:
+                return database_path_translator.from_database(self._alleles_file)
 
     @alleles_file.setter
     def alleles_file(self, file: Path) -> None:
         if file is None:
             self._alleles_file = None
         else:
-            self._alleles_file = str(file)
+            if database_path_translator is None:
+                raise Exception('Empty database_path_translator')
+            else:
+                self._alleles_file = database_path_translator.to_database(file)
 
     sample = relationship('Sample', back_populates='sample_mlst_alleles')
     scheme = relationship('MLSTScheme')
@@ -272,11 +298,16 @@ class SampleKmerIndex(Base):
 
     @hybrid_property
     def kmer_index_path(self) -> Path:
-        return Path(self._kmer_index_path)
+        if database_path_translator is None:
+            raise Exception('Empty database_path_translator')
+        else:
+            return database_path_translator.from_database(self._kmer_index_path)
 
     @kmer_index_path.setter
     def kmer_index_path(self, file: Union[str, Path]):
-        if isinstance(file, Path):
-            self._kmer_index_path = str(file)
+        if isinstance(file, str):
+            file = Path(file)
+        if database_path_translator is None:
+            raise Exception('Empty database_path_translator')
         else:
-            self._kmer_index_path = file
+            self._kmer_index_path = database_path_translator.to_database(file)

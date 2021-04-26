@@ -24,16 +24,18 @@ from genomics_data_index.storage.service.MLSTService import MLSTService
 from genomics_data_index.storage.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor
 from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
 from genomics_data_index.storage.io.mlst.MLSTSampleDataPackage import MLSTSampleDataPackage
-
-
-@pytest.fixture
-def database() -> DatabaseConnection:
-    return DatabaseConnection('sqlite:///:memory:')
+from genomics_data_index.storage.model.db.DatabasePathTranslator import DatabasePathTranslator
 
 
 @pytest.fixture
 def filesystem_storage() -> FilesystemStorage:
     return FilesystemStorage(Path(tempfile.mkdtemp(prefix='index-test')))
+
+
+@pytest.fixture
+def database(filesystem_storage) -> DatabaseConnection:
+    dpt = DatabasePathTranslator(filesystem_storage.root_dir)
+    return DatabaseConnection('sqlite:///:memory:', dpt)
 
 
 @pytest.fixture
@@ -143,9 +145,10 @@ def tree_service_with_tree_stored(database, reference_service_with_data,
 
 
 @pytest.fixture
-def kmer_service_with_data(database, sample_service) -> KmerService:
+def kmer_service_with_data(database, sample_service, filesystem_storage) -> KmerService:
     kmer_service = KmerService(database_connection=database,
-                               sample_service=sample_service)
+                               sample_service=sample_service,
+                               features_dir=filesystem_storage.kmer_dir)
     for sample_name in sourmash_signatures:
         kmer_service.insert_kmer_index(sample_name=sample_name,
                                        kmer_index_path=sourmash_signatures[sample_name])

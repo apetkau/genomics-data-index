@@ -1,17 +1,30 @@
 import pandas as pd
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+import logging
 
 from genomics_data_index.storage.model.db import Base
+import genomics_data_index.storage.model.db
+from genomics_data_index.storage.model.db.DatabasePathTranslator import DatabasePathTranslator
+
+logger = logging.getLogger(__name__)
 
 
 class DatabaseConnection:
 
-    def __init__(self, connection_string: str):
+    def __init__(self, connection_string: str, database_path_translator: DatabasePathTranslator):
         engine = create_engine(connection_string, echo=False)
 
         Session = sessionmaker(bind=engine)
         self._session = Session()
+        self._database_path_translator = database_path_translator
+
+        # Sets global variable here for translating between relative/absolute paths in the database
+        # I don't like using global variables and have to look into some other method to set this later
+        if genomics_data_index.storage.model.db.database_path_translator is not None:
+            logger.warning(f'Attempting to set global database_path_translator={database_path_translator}'
+                           ' but it is already set')
+        genomics_data_index.storage.model.db.database_path_translator = database_path_translator
 
         Base.metadata.create_all(engine)
 
