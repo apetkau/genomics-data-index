@@ -23,7 +23,7 @@ class DataFrameSamplesQuery(WrappedSamplesQuery):
         self._sample_ids_col = sample_ids_col
         self._data_frame = data_frame
 
-    def has(self, property: Union[QueryFeature, str, pd.Series], kind=None) -> SamplesQuery:
+    def hasa(self, property: Union[QueryFeature, str, pd.Series], kind=None) -> SamplesQuery:
         if kind == 'dataframe':
             if isinstance(property, pd.Series) and property.dtype == bool:
                 if property.index.equals(self._data_frame.index):
@@ -35,7 +35,7 @@ class DataFrameSamplesQuery(WrappedSamplesQuery):
                 raise Exception(f'property=[{property}] is wrong type for kind=[{kind}]. '
                                 f'Must be a boolean pandas.Series')
         else:
-            return self._wrap_create(self._wrapped_query.has(property=property, kind=kind))
+            return self._wrap_create(self._wrapped_query.hasa(property=property, kind=kind))
 
     def _get_has_kinds(self) -> List[str]:
         return self._wrapped_query._get_has_kinds() + self.HAS_KINDS
@@ -43,7 +43,7 @@ class DataFrameSamplesQuery(WrappedSamplesQuery):
     def _handle_select_by_series(self, series_selection: pd.Series) -> SamplesQuery:
         subset_df = self._data_frame[series_selection]
         subset_sample_set = SampleSet(subset_df[self._sample_ids_col].tolist())
-        query_message = 'has(subset from series)'
+        query_message = 'hasa(subset from series)'
         subset_query = self._wrapped_query.intersect(sample_set=subset_sample_set, query_message=query_message)
         return self._wrap_create(subset_query)
 

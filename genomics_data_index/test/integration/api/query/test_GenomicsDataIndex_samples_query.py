@@ -46,7 +46,7 @@ def test_query_single_mutation(loaded_database_connection: DataIndexConnection):
     db = loaded_database_connection.database
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
 
-    query_result = query(loaded_database_connection).has(QueryFeatureMutation('reference:5061:G:A'))
+    query_result = query(loaded_database_connection).hasa(QueryFeatureMutation('reference:5061:G:A'))
     assert 1 == len(query_result)
     assert {sampleB.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)
@@ -56,7 +56,7 @@ def test_query_single_mutation_complement(loaded_database_connection: DataIndexC
     db = loaded_database_connection.database
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
 
-    query_result = query(loaded_database_connection).has(QueryFeatureMutation('reference:5061:G:A'))
+    query_result = query(loaded_database_connection).hasa(QueryFeatureMutation('reference:5061:G:A'))
     assert 1 == len(query_result)
     assert {sampleB.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)
@@ -81,7 +81,7 @@ def test_query_single_mutation_complement(loaded_database_connection: DataIndexC
 
 
 def test_query_single_mutation_summary(loaded_database_connection: DataIndexConnection):
-    df = query(loaded_database_connection).has('reference:5061:G:A', kind='mutation').summary()
+    df = query(loaded_database_connection).hasa('reference:5061:G:A', kind='mutation').summary()
     assert 1 == len(df)
     assert ['Query', 'Present', 'Absent', 'Unknown', 'Total',
             '% Present', '% Absent', '% Unknown'] == df.columns.tolist()
@@ -100,7 +100,7 @@ def test_query_single_mutation_two_samples(loaded_database_connection: DataIndex
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
     sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
 
-    query_result = query(loaded_database_connection).has(QueryFeatureMutation('reference:839:C:G'))
+    query_result = query(loaded_database_connection).hasa(QueryFeatureMutation('reference:839:C:G'))
     assert 2 == len(query_result)
     assert {sampleB.id, sampleC.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)
@@ -112,7 +112,7 @@ def test_query_single_mutation_two_samples_complement(loaded_database_connection
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
     sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
 
-    query_result = query(loaded_database_connection).has(QueryFeatureMutation('reference:839:C:G'))
+    query_result = query(loaded_database_connection).hasa(QueryFeatureMutation('reference:839:C:G'))
     assert 2 == len(query_result)
     assert {sampleB.id, sampleC.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)
@@ -125,7 +125,7 @@ def test_query_single_mutation_two_samples_complement(loaded_database_connection
 
 
 def test_query_single_mutation_no_results(loaded_database_connection: DataIndexConnection):
-    query_result = query(loaded_database_connection).has(QueryFeatureMutation('reference:1:1:A'))
+    query_result = query(loaded_database_connection).hasa(QueryFeatureMutation('reference:1:1:A'))
     assert 0 == len(query_result)
     assert query_result.is_empty()
     assert 9 == len(query_result.universe_set)
@@ -135,8 +135,8 @@ def test_query_chained_mutation(loaded_database_connection: DataIndexConnection)
     db = loaded_database_connection.database
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
 
-    query_result = query(loaded_database_connection).has(
-        QueryFeatureMutation('reference:839:C:G')).has(
+    query_result = query(loaded_database_connection).hasa(
+        QueryFeatureMutation('reference:839:C:G')).hasa(
         QueryFeatureMutation('reference:5061:G:A'))
     assert 1 == len(query_result)
     assert {sampleB.id} == set(query_result.sample_set)
@@ -147,8 +147,8 @@ def test_query_chained_mutation_has_mutation(loaded_database_connection: DataInd
     db = loaded_database_connection.database
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
 
-    query_result = query(loaded_database_connection).has(
-        'reference:839:C:G', kind='mutation').has(
+    query_result = query(loaded_database_connection).hasa(
+        'reference:839:C:G', kind='mutation').hasa(
         'reference:5061:G:A', kind='mutation')
     assert 1 == len(query_result)
     assert {sampleB.id} == set(query_result.sample_set)
@@ -160,7 +160,7 @@ def test_query_mlst_allele(loaded_database_connection: DataIndexConnection):
     sample1 = db.get_session().query(Sample).filter(Sample.name == 'CFSAN002349').one()
     sample2 = db.get_session().query(Sample).filter(Sample.name == 'CFSAN023463').one()
 
-    query_result = query(loaded_database_connection).has(QueryFeatureMLST('lmonocytogenes:abcZ:1'))
+    query_result = query(loaded_database_connection).hasa(QueryFeatureMLST('lmonocytogenes:abcZ:1'))
     assert 2 == len(query_result)
     assert {sample1.id, sample2.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)
@@ -173,8 +173,8 @@ def test_query_chained_mlst_alleles(loaded_database_connection: DataIndexConnect
     db = loaded_database_connection.database
     sample1 = db.get_session().query(Sample).filter(Sample.name == 'CFSAN002349').one()
 
-    query_result = query(loaded_database_connection).has(
-        QueryFeatureMLST('lmonocytogenes:abcZ:1')).has(
+    query_result = query(loaded_database_connection).hasa(
+        QueryFeatureMLST('lmonocytogenes:abcZ:1')).hasa(
         QueryFeatureMLST('lmonocytogenes:lhkA:4'))
     assert 1 == len(query_result)
     assert {sample1.id} == set(query_result.sample_set)
@@ -186,8 +186,8 @@ def test_query_chained_mlst_alleles_has_allele(loaded_database_connection: DataI
     sample1 = db.get_session().query(Sample).filter(Sample.name == 'CFSAN002349').one()
 
     query_result = query(loaded_database_connection) \
-        .has('lmonocytogenes:abcZ:1', kind='mlst') \
-        .has('lmonocytogenes:lhkA:4', kind='mlst')
+        .hasa('lmonocytogenes:abcZ:1', kind='mlst') \
+        .hasa('lmonocytogenes:lhkA:4', kind='mlst')
     assert 1 == len(query_result)
     assert {sample1.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)
@@ -199,8 +199,8 @@ def test_query_chained_mlst_nucleotide(loaded_database_connection: DataIndexConn
     sample1 = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
 
     query_result = query(loaded_database_connection) \
-        .has('reference:839:C:G', kind='mutation') \
-        .has('lmonocytogenes:cat:12', kind='mlst')
+        .hasa('reference:839:C:G', kind='mutation') \
+        .hasa('lmonocytogenes:cat:12', kind='mlst')
     assert 1 == len(query_result)
     assert {sample1.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)
@@ -214,7 +214,7 @@ def test_query_single_mutation_dataframe(loaded_database_connection: DataIndexCo
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
     sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
 
-    df = query(loaded_database_connection).has('reference:839:C:G', kind='mutation').toframe()
+    df = query(loaded_database_connection).hasa('reference:839:C:G', kind='mutation').toframe()
 
     assert 2 == len(df)
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
@@ -226,7 +226,7 @@ def test_query_single_mutation_dataframe(loaded_database_connection: DataIndexCo
 
 
 def test_query_single_mutation_dataframe_include_all(loaded_database_connection: DataIndexConnection):
-    df = query(loaded_database_connection).has(
+    df = query(loaded_database_connection).hasa(
         'reference:839:C:G', kind='mutation').toframe(exclude_absent=False)
 
     assert 9 == len(df)
@@ -247,8 +247,8 @@ def test_query_chained_allele_dataframe(loaded_database_connection: DataIndexCon
     sample1 = db.get_session().query(Sample).filter(Sample.name == 'CFSAN002349').one()
 
     df = query(loaded_database_connection) \
-        .has('lmonocytogenes:abcZ:1', kind='mlst') \
-        .has('lmonocytogenes:lhkA:4', kind='mlst').toframe()
+        .hasa('lmonocytogenes:abcZ:1', kind='mlst') \
+        .hasa('lmonocytogenes:lhkA:4', kind='mlst').toframe()
 
     assert 1 == len(df)
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
@@ -260,13 +260,13 @@ def test_query_chained_allele_dataframe(loaded_database_connection: DataIndexCon
 
 
 def test_query_single_mutation_no_results_toframe(loaded_database_connection: DataIndexConnection):
-    df = query(loaded_database_connection).has('reference:1:1:A', kind='mutation').toframe()
+    df = query(loaded_database_connection).hasa('reference:1:1:A', kind='mutation').toframe()
     assert 0 == len(df)
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
 
 
 def test_query_single_mutation_no_results_summary(loaded_database_connection: DataIndexConnection):
-    df = query(loaded_database_connection).has('reference:1:1:A', kind='mutation').summary()
+    df = query(loaded_database_connection).hasa('reference:1:1:A', kind='mutation').summary()
     assert 1 == len(df)
     assert ['Query', 'Present', 'Absent', 'Unknown', 'Total',
             '% Present', '% Absent', '% Unknown'] == df.columns.tolist()
@@ -335,7 +335,7 @@ def test_join_custom_dataframe_single_query(loaded_database_connection: DataInde
     assert 3 == len(query_result)
     assert 3 == len(query_result.universe_set)
 
-    query_result = query_result.has('reference:839:C:G', kind='mutation')
+    query_result = query_result.hasa('reference:839:C:G', kind='mutation')
     assert 2 == len(query_result)
     assert 3 == len(query_result.universe_set)
     assert {sampleB.id, sampleC.id} == set(query_result.sample_set)
@@ -370,7 +370,7 @@ def test_join_custom_dataframe_single_query_sample_names(loaded_database_connect
     assert 3 == len(query_result)
     assert 3 == len(query_result.universe_set)
 
-    query_result = query_result.has('reference:839:C:G', kind='mutation')
+    query_result = query_result.hasa('reference:839:C:G', kind='mutation')
 
     assert 2 == len(query_result)
     assert 3 == len(query_result.universe_set)
@@ -407,7 +407,7 @@ def test_join_custom_dataframe_extra_sample_names(loaded_database_connection: Da
     assert 3 == len(query_result)
     assert 3 == len(query_result.universe_set)
 
-    query_result = query_result.has('reference:839:C:G', kind='mutation')
+    query_result = query_result.hasa('reference:839:C:G', kind='mutation')
     df = query_result.toframe()
 
     assert 2 == len(df)
@@ -438,7 +438,7 @@ def test_join_custom_dataframe_missing_sample_names(loaded_database_connection: 
     assert 2 == len(df)
     assert 2 == len(query_result.universe_set)
 
-    df = query_result.has('reference:839:C:G', kind='mutation').toframe()
+    df = query_result.hasa('reference:839:C:G', kind='mutation').toframe()
 
     assert 1 == len(df)
     assert 2 == len(query_result.universe_set)
@@ -468,7 +468,7 @@ def test_query_then_join_dataframe_single_query(loaded_database_connection: Data
     assert 9 == len(query_result)
     assert 9 == len(query_result.universe_set)
 
-    query_result = query_result.has('reference:839:C:G', kind='mutation')
+    query_result = query_result.hasa('reference:839:C:G', kind='mutation')
     assert 2 == len(query_result)
     assert 9 == len(query_result.universe_set)
     assert {sampleB.id, sampleC.id} == set(query_result.sample_set)
@@ -513,7 +513,7 @@ def test_query_join_dataframe_has_dataframe_column(loaded_database_connection: D
     assert 3 == len(query_result)
     assert 3 == len(query_result.universe_set)
 
-    query_result = query_result.has(property=(metadata_df['Color'] == 'red'), kind='dataframe')
+    query_result = query_result.hasa(property=(metadata_df['Color'] == 'red'), kind='dataframe')
 
     assert 1 == len(query_result)
     assert 3 == len(query_result.universe_set)
@@ -521,7 +521,7 @@ def test_query_join_dataframe_has_dataframe_column(loaded_database_connection: D
     df = query_result.toframe()
 
     assert ['SampleA'] == df['Sample Name'].tolist()
-    assert {'dataframe(ids_col=[Sample ID]) AND has(subset from series)'} == set(df['Query'].tolist())
+    assert {'dataframe(ids_col=[Sample ID]) AND hasa(subset from series)'} == set(df['Query'].tolist())
 
 
 def test_query_join_dataframe_has_dataframe_column_select_two_samples(loaded_database_connection: DataIndexConnection):
@@ -541,7 +541,7 @@ def test_query_join_dataframe_has_dataframe_column_select_two_samples(loaded_dat
     assert 3 == len(query_result)
     assert 3 == len(query_result.universe_set)
 
-    query_result = query_result.has(property=(metadata_df['Color'] == 'red'), kind='dataframe')
+    query_result = query_result.hasa(property=(metadata_df['Color'] == 'red'), kind='dataframe')
 
     assert 2 == len(query_result)
     assert 3 == len(query_result.universe_set)
@@ -550,7 +550,7 @@ def test_query_join_dataframe_has_dataframe_column_select_two_samples(loaded_dat
 
     df = df.sort_values(['Sample Name'])
     assert ['SampleA', 'SampleB'] == df['Sample Name'].tolist()
-    assert {'dataframe(ids_col=[Sample ID]) AND has(subset from series)'} == set(df['Query'].tolist())
+    assert {'dataframe(ids_col=[Sample ID]) AND hasa(subset from series)'} == set(df['Query'].tolist())
 
 
 def test_query_join_dataframe_has_dataframe_column_invalid_series_index(
@@ -571,12 +571,12 @@ def test_query_join_dataframe_has_dataframe_column_invalid_series_index(
     query_result = query(loaded_database_connection).join(data_frame=metadata_df, sample_ids_column='Sample ID')
 
     with pytest.raises(Exception) as execinfo:
-        query_result.has(property=invalid_series_select, kind='dataframe')
+        query_result.hasa(property=invalid_series_select, kind='dataframe')
     assert 'does not have same index as internal data frame' in str(execinfo.value)
 
 
 def test_query_and_build_mutation_tree(loaded_database_connection: DataIndexConnection):
-    query_result = query(loaded_database_connection).has('reference:839:C:G', kind='mutation')
+    query_result = query(loaded_database_connection).hasa('reference:839:C:G', kind='mutation')
     assert 2 == len(query_result)
     assert 9 == len(query_result.universe_set)
 
@@ -591,7 +591,7 @@ def test_query_and_build_mutation_tree(loaded_database_connection: DataIndexConn
 
 
 def test_query_build_tree_and_query(loaded_database_connection: DataIndexConnection):
-    query_result = query(loaded_database_connection).has('reference:839:C:G', kind='mutation')
+    query_result = query(loaded_database_connection).hasa('reference:839:C:G', kind='mutation')
     assert 2 == len(query_result)
     assert 9 == len(query_result.universe_set)
 
@@ -599,7 +599,7 @@ def test_query_build_tree_and_query(loaded_database_connection: DataIndexConnect
     assert 2 == len(query_result)
     assert 9 == len(query_result.universe_set)
 
-    query_result = query_result.has('reference:5061:G:A', kind='mutation')
+    query_result = query_result.hasa('reference:5061:G:A', kind='mutation')
     assert 1 == len(query_result)
     assert 9 == len(query_result.universe_set)
 
@@ -611,9 +611,9 @@ def test_query_build_tree_dataframe(loaded_database_connection: DataIndexConnect
     db = loaded_database_connection.database
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
 
-    df = query(loaded_database_connection).has(
+    df = query(loaded_database_connection).hasa(
         'reference:839:C:G', kind='mutation').build_tree(
-        kind='mutation', scope='genome', include_reference=True).has(
+        kind='mutation', scope='genome', include_reference=True).hasa(
         'reference:5061:G:A', kind='mutation').toframe()
 
     assert 1 == len(df)
@@ -637,7 +637,7 @@ def test_query_then_build_tree_then_join_dataframe(loaded_database_connection: D
         [sampleC.id, 'blue']
     ], columns=['Sample ID', 'Color'])
 
-    query_result = query(loaded_database_connection).has('reference:839:C:G', kind='mutation')
+    query_result = query(loaded_database_connection).hasa('reference:839:C:G', kind='mutation')
     assert 2 == len(query_result)
     assert 9 == len(query_result.universe_set)
 
@@ -679,7 +679,7 @@ def test_query_then_build_tree_then_join_dataframe(loaded_database_connection: D
 
 
 def test_within_constructed_tree(loaded_database_connection: DataIndexConnection):
-    query_result = query(loaded_database_connection).has(
+    query_result = query(loaded_database_connection).hasa(
         'reference:839:C:G', kind='mutation').build_tree(
         kind='mutation', scope='genome', include_reference=True, extra_params='--seed 42 -m GTR')
     assert 2 == len(query_result)
@@ -778,7 +778,7 @@ def test_summary_features_two(loaded_database_connection: DataIndexConnection):
         'Mutation': 'count',
     }).rename(columns={'Mutation': 'Count'}).sort_index()
 
-    mutations_df = query(loaded_database_connection).has(
+    mutations_df = query(loaded_database_connection).hasa(
         'reference:839:C:G', kind='mutation').summary_features()
     mutations_df = mutations_df.sort_index()
 

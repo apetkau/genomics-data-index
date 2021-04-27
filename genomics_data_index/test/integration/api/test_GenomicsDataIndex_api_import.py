@@ -46,17 +46,17 @@ def test_query_single_mutation(loaded_genomics_index: gdi.GenomicsDataIndex):
     sample1 = db.get_session().query(Sample).filter(Sample.name == 'CFSAN002349').one()
     sample2 = db.get_session().query(Sample).filter(Sample.name == 'CFSAN023463').one()
 
-    query_result = gi.samples_query().has(QueryFeatureMutation('reference:5061:G:A'))
+    query_result = gi.samples_query().hasa(QueryFeatureMutation('reference:5061:G:A'))
     assert 1 == len(query_result)
     assert {sampleB.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)
 
-    query_result = gi.samples_query().has(QueryFeatureMutation('reference:5061:G:A'))
+    query_result = gi.samples_query().hasa(QueryFeatureMutation('reference:5061:G:A'))
     assert 1 == len(query_result)
     assert {sampleB.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)
 
-    query_result = gi.samples_query().has(QueryFeatureMLST('lmonocytogenes:abcZ:1'))
+    query_result = gi.samples_query().hasa(QueryFeatureMLST('lmonocytogenes:abcZ:1'))
     assert 2 == len(query_result)
     assert {sample1.id, sample2.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)

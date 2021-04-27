@@ -176,7 +176,7 @@ class SamplesQueryIndex(SamplesQuery):
     def __repr__(self) -> str:
         return str(self)
 
-    def has(self, property: Union[QueryFeature, str, pd.Series], kind=None) -> SamplesQuery:
+    def hasa(self, property: Union[QueryFeature, str, pd.Series], kind=None) -> SamplesQuery:
         if isinstance(property, QueryFeature):
             query_feature = property
         elif isinstance(property, pd.Series):
