@@ -41,19 +41,24 @@ class SamplesQueryIndex(SamplesQuery):
         return self._sample_set
 
     def join(self, data_frame: pd.DataFrame, sample_ids_column: str = None,
-             sample_names_column: str = None) -> SamplesQuery:
+             sample_names_column: str = None, default_isa_kind: str = 'names',
+             default_isa_column: str = None) -> SamplesQuery:
         if sample_ids_column is None and sample_names_column is None:
             raise Exception('At least one of sample_ids_column or sample_names_column must be set.')
         elif sample_ids_column is not None:
             return DataFrameSamplesQuery.create_with_sample_ids_column(sample_ids_column=sample_ids_column,
                                                                        data_frame=data_frame,
                                                                        wrapped_query=self,
-                                                                       connection=self._query_connection)
+                                                                       connection=self._query_connection,
+                                                                       default_isa_kind=default_isa_kind,
+                                                                       default_isa_column=default_isa_column)
         else:
             return DataFrameSamplesQuery.create_with_sample_names_column(sample_names_column=sample_names_column,
                                                                          data_frame=data_frame,
                                                                          wrapped_query=self,
-                                                                         connection=self._query_connection)
+                                                                         connection=self._query_connection,
+                                                                         default_isa_kind=default_isa_kind,
+                                                                         default_isa_column=default_isa_column)
 
     def intersect(self, sample_set: SampleSet, query_message: str = None) -> SamplesQuery:
         intersected_set = self._intersect_sample_set(sample_set)

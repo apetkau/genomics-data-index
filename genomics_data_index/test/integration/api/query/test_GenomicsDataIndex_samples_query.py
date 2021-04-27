@@ -561,17 +561,40 @@ def test_query_join_dataframe_isa_dataframe_column(loaded_database_connection: D
     ], columns=['Sample ID', 'Color'])
 
     query_result = query(loaded_database_connection).join(data_frame=metadata_df, sample_ids_column='Sample ID')
-
     assert 3 == len(query_result)
     assert 3 == len(query_result.universe_set)
 
-    query_result = query_result.isa('red', isa_column='Color', kind='dataframe')
+    # By default, isa should select by 'name'
+    sub_result = query_result.isa('SampleB')
+    assert 1 == len(sub_result)
+    assert 3 == len(sub_result.universe_set)
+    assert {sampleB.id} == set(sub_result.sample_set)
 
-    assert 1 == len(query_result)
-    assert 3 == len(query_result.universe_set)
+    df = sub_result.toframe()
+    assert ['SampleB'] == df['Sample Name'].tolist()
+    assert {"dataframe(ids_col=[Sample ID]) AND isa('SampleB')"} == set(df['Query'].tolist())
 
-    df = query_result.toframe()
+    # If we explicitly pass kind='dataframe' should select by column in dataframe
+    sub_result = query_result.isa('red', isa_column='Color', kind='dataframe')
+    assert 1 == len(sub_result)
+    assert 3 == len(sub_result.universe_set)
+    assert {sampleA.id} == set(sub_result.sample_set)
 
+    df = sub_result.toframe()
+    assert ['SampleA'] == df['Sample Name'].tolist()
+    assert {"dataframe(ids_col=[Sample ID]) AND isa('Color' is 'red')"} == set(df['Query'].tolist())
+
+    # If we pass default_isa_kind when joining, should be able to override defaults
+    query_result = query(loaded_database_connection).join(
+        data_frame=metadata_df, sample_ids_column='Sample ID', default_isa_kind='dataframe',
+        default_isa_column='Color')
+
+    sub_result = query_result.isa('red')
+    assert 1 == len(sub_result)
+    assert 3 == len(sub_result.universe_set)
+    assert {sampleA.id} == set(sub_result.sample_set)
+
+    df = sub_result.toframe()
     assert ['SampleA'] == df['Sample Name'].tolist()
     assert {"dataframe(ids_col=[Sample ID]) AND isa('Color' is 'red')"} == set(df['Query'].tolist())
 
