@@ -55,15 +55,20 @@ class DataFrameSamplesQuery(WrappedSamplesQuery):
         else:
             return self._isa_internal(data=data, kind=kind, **kwargs)
 
-    def _isa_internal(self, data: Union[str, List[str]], kind: str, isa_column: str = None) -> SamplesQuery:
+    def _isa_internal(self, data: Union[str, List[str]], kind: str, isa_column: str = None,
+                      regex: bool = False) -> SamplesQuery:
         if kind == 'dataframe':
             if isa_column is None and self._default_isa_column is not None:
                 isa_column = self._default_isa_column
             elif isa_column is None:
                 raise Exception(f'No defined isa_column, cannot execute isa for kind={kind}')
 
-            return self._handle_select_by_series(self._data_frame[isa_column] == data,
-                                                 query_message=f"isa('{isa_column}' is '{data}')")
+            if regex:
+                return self._handle_select_by_series(self._data_frame[isa_column].str.contains(data),
+                                                     query_message=f"isa('{isa_column}' contains '{data}')")
+            else:
+                return self._handle_select_by_series(self._data_frame[isa_column] == data,
+                                                     query_message=f"isa('{isa_column}' is '{data}')")
         else:
             raise Exception(f'Invalid kind={kind}. Must be one of {self._isa_kinds()}')
 

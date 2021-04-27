@@ -598,6 +598,21 @@ def test_query_join_dataframe_isa_dataframe_column(loaded_database_connection: D
     assert ['SampleA'] == df['Sample Name'].tolist()
     assert {"dataframe(ids_col=[Sample ID]) AND isa('Color' is 'red')"} == set(df['Query'].tolist())
 
+    # Setting regex=True should let me pass regexes
+    sub_result = query_result.isa(r'^re', regex=True)
+    assert 1 == len(sub_result)
+    assert 3 == len(sub_result.universe_set)
+    assert {sampleA.id} == set(sub_result.sample_set)
+
+    df = sub_result.toframe()
+    assert ['SampleA'] == df['Sample Name'].tolist()
+    assert {"dataframe(ids_col=[Sample ID]) AND isa('Color' contains '^re')"} == set(df['Query'].tolist())
+
+    # Nothing should match this below regex
+    sub_result = query_result.isa(r'^ed', regex=True)
+    assert 0 == len(sub_result)
+    assert 3 == len(sub_result.universe_set)
+
 
 def test_query_join_dataframe_isin_dataframe_column(loaded_database_connection: DataIndexConnection):
     db = loaded_database_connection.database
