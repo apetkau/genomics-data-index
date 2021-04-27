@@ -38,7 +38,7 @@ class DataFrameSamplesQuery(WrappedSamplesQuery):
             return self._wrap_create(self._wrapped_query.hasa(property=property, kind=kind))
 
     def _isin_internal(self, data: Union[str, List[str]], kind, **kwargs) -> SamplesQuery:
-        return super()._isin_internal(data=data, kind=kind, **kwargs)
+        return self._wrap_create(self._wrapped_query.isin(data))
 
     def _isin_kinds(self) -> List[str]:
         return super()._isin_kinds()

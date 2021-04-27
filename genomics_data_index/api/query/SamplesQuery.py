@@ -74,15 +74,25 @@ class SamplesQuery(abc.ABC):
         pass
 
     def has(self, property: Union[QueryFeature, str, pd.Series], kind=None) -> SamplesQuery:
+        """
+        Queries for samples that have a particular property. Synonym for hasa().
+        """
         return self.hasa(property=property, kind=kind)
 
     @abc.abstractmethod
     def complement(self):
         pass
-    #
-    # @abc.abstractmethod
-    # def within(self, sample_names: Union[str, List[str]], kind: str = 'distance', **kwargs) -> SamplesQuery:
-    #     return self.isin(sample_names=sample_names, kind='distance')
+
+    def within(self, data: Union[str, List[str]], **kwargs) -> SamplesQuery:
+        """
+        Queries for samples within a particular distance. This is identical to calling
+        isin(data, kind='distance', ...). Used to help make code easier to read.
+
+        :param data: The data to use for selecting samples by.
+        :param **kwargs: Other arguments for the the internal implementations.
+        :return: A SamplesQuery which selects only those samples matching the given criteria from the current query.
+        """
+        return self.isin(data=data, kind='distance', **kwargs)
 
     @abc.abstractmethod
     def isin(self, data: Union[str, List[str]], kind: str = 'names', **kwargs) -> SamplesQuery:

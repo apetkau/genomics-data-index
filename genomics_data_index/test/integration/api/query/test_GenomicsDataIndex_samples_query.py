@@ -734,6 +734,14 @@ def test_within_constructed_tree(loaded_database_connection: DataIndexConnection
     assert {'reference:839:C:G AND mutation_tree(genome) AND within(0.005 substitutions/site of SampleC)'
             } == set(df['Query'].tolist())
 
+    # subs/site using within
+    df = query_result.within('SampleC', distance=0.005, units='substitutions/site').toframe().sort_values('Sample Name')
+    assert 2 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert {'reference:839:C:G AND mutation_tree(genome) AND within(0.005 substitutions/site of SampleC)'
+            } == set(df['Query'].tolist())
+
     # subs
     df = query_result.isin('SampleC', kind='distance', distance=26, units='substitutions').toframe().sort_values('Sample Name')
     assert 2 == len(df)
