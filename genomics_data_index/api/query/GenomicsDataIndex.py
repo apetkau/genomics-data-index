@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import os
 from pathlib import Path
-from typing import List
+from typing import List, Union
 
 import pandas as pd
 
@@ -128,12 +128,15 @@ class GenomicsDataIndex:
                                                                          connection=connection)
 
     @classmethod
-    def connect(cls, project_dir: Path = None, project: Project = None) -> GenomicsDataIndex:
+    def connect(cls, project_dir: Union[Path, str] = None, project: Project = None) -> GenomicsDataIndex:
         if project_dir is None and project is None:
             project_dir = os.getcwd()
             logger.warning(f'No project_dir or project specified. Assuming project is current dir [{project_dir}]')
             data_store_project = Project(project_dir)
         elif project_dir is not None and project is None:
+            if isinstance(project_dir, str):
+                project_dir = Path(project_dir)
+
             if not project_dir.exists():
                 raise Exception(f'project_dir=[{project_dir}] does not exist')
             data_store_project = Project(root_dir=project_dir)
