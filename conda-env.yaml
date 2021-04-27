@@ -1,0 +1,14 @@
+name: gdi
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python=3.8
+  - pyqt
+  - bedtools
+  - fasttree
+  - iqtree
+  - bcftools
+  - htslib
+  - jupyterlab
