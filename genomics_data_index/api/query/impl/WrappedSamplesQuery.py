@@ -30,6 +30,9 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
     def sample_set(self) -> SampleSet:
         return self._wrapped_query.sample_set
 
+    def reset_universe(self) -> SamplesQuery:
+        return self._wrap_create(self._wrapped_query.reset_universe())
+
     def intersect(self, sample_set: SampleSet, query_message: str = None) -> SamplesQuery:
         intersected_query = self._wrapped_query.intersect(sample_set=sample_set, query_message=query_message)
         return self._wrap_create(intersected_query)
@@ -43,7 +46,7 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
                                                           default_isa_column=default_isa_column))
 
     @abc.abstractmethod
-    def _wrap_create(self, wrapped_query: SamplesQuery) -> WrappedSamplesQuery:
+    def _wrap_create(self, wrapped_query: SamplesQuery, universe_set: SampleSet = None) -> WrappedSamplesQuery:
         pass
 
     def toframe(self, exclude_absent: bool = True) -> pd.DataFrame:

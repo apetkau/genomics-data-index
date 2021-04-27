@@ -52,6 +52,16 @@ def test_query_isin_sample_names(loaded_database_connection: DataIndexConnection
     assert 9 == len(query_result.universe_set)
 
 
+def test_query_reset_universe(loaded_database_connection: DataIndexConnection):
+    query_result = query(loaded_database_connection).isin('SampleB')
+    assert 1 == len(query_result)
+    assert 9 == len(query_result.universe_set)
+
+    query_result = query_result.reset_universe()
+    assert 1 == len(query_result)
+    assert 1 == len(query_result.universe_set)
+
+
 def test_query_isin_sample_names_multilple(loaded_database_connection: DataIndexConnection):
     db = loaded_database_connection.database
     sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
@@ -402,6 +412,33 @@ def test_join_custom_dataframe_single_query(loaded_database_connection: DataInde
     assert [sampleB.id, sampleC.id] == df['Sample ID'].tolist()
     assert ['green', 'blue'] == df['Color'].tolist()
     assert {'dataframe(ids_col=[Sample ID]) AND reference:839:C:G'} == set(df['Query'].tolist())
+
+
+def test_join_custom_dataframe_query_reset_universe(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+
+    df = pd.DataFrame([
+        [sampleA.id, 'red'],
+        [sampleB.id, 'green'],
+        [sampleC.id, 'blue']
+    ], columns=['Sample ID', 'Color'])
+
+    query_result = query(loaded_database_connection,
+                         universe='dataframe',
+                         data_frame=df,
+                         sample_ids_column='Sample ID')
+
+    query_result = query_result.hasa('reference:839:C:G', kind='mutation')
+    assert 2 == len(query_result)
+    assert 3 == len(query_result.universe_set)
+    assert {sampleB.id, sampleC.id} == set(query_result.sample_set)
+
+    query_result = query_result.reset_universe()
+    assert 2 == len(query_result)
+    assert 2 == len(query_result.universe_set)
 
 
 def test_join_custom_dataframe_single_query_sample_names(loaded_database_connection: DataIndexConnection):
@@ -794,6 +831,11 @@ def test_query_then_build_tree_then_join_dataframe(loaded_database_connection: D
     assert 1 == len(query_result)
     assert 3 == len(query_result.universe_set)
     assert ['SampleB'] == query_result.tolist()
+
+    # Resetting universe should work propertly
+    query_result = query_result.reset_universe()
+    assert 1 == len(query_result)
+    assert 1 == len(query_result.universe_set)
 
 
 def test_within_constructed_tree(loaded_database_connection: DataIndexConnection):

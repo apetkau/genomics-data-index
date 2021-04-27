@@ -25,7 +25,7 @@ class TreeSamplesQuery(WrappedSamplesQuery):
         self._tree = tree
         self._alignment_length = alignment_length
 
-    def _wrap_create(self, wrapped_query: SamplesQuery) -> WrappedSamplesQuery:
+    def _wrap_create(self, wrapped_query: SamplesQuery, universe_set: SampleSet = None) -> WrappedSamplesQuery:
         return TreeSamplesQuery(connection=self._query_connection,
                                 wrapped_query=wrapped_query,
                                 tree=self._tree,
