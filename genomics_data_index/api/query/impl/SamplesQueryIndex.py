@@ -16,7 +16,7 @@ from genomics_data_index.storage.model.QueryFeatureMutation import QueryFeatureM
 
 
 class SamplesQueryIndex(SamplesQuery):
-    HAS_KINDS = ['mutation', 'mlst']
+    HAS_KINDS = ['mutation', 'mutations', 'mlst']
     SUMMARY_FEATURES_KINDS = ['mutations']
     FEATURES_SELECTIONS = ['all', 'unique']
     ISIN_TYPES = ['names']
@@ -186,7 +186,7 @@ class SamplesQueryIndex(SamplesQuery):
     def __repr__(self) -> str:
         return str(self)
 
-    def hasa(self, property: Union[QueryFeature, str, pd.Series], kind=None) -> SamplesQuery:
+    def hasa(self, property: Union[QueryFeature, str, pd.Series], kind='mutation') -> SamplesQuery:
         if isinstance(property, QueryFeature):
             query_feature = property
         elif isinstance(property, pd.Series):
@@ -194,7 +194,7 @@ class SamplesQueryIndex(SamplesQuery):
                             f'dataframe. Perhaps you could try attaching a dataframe with join() first before querying.')
         elif kind is None:
             raise Exception(f'property=[{property}] is not of type QueryFeature so must set "kind" parameter')
-        elif kind == 'mutation':
+        elif kind == 'mutation' or kind == 'mutations':
             query_feature = QueryFeatureMutation(property)
         elif kind == 'mlst':
             query_feature = QueryFeatureMLST(property)

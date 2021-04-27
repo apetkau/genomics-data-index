@@ -84,10 +84,10 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def hasa(self, property: Union[QueryFeature, str, pd.Series], kind=None) -> SamplesQuery:
+    def hasa(self, property: Union[QueryFeature, str, pd.Series], kind='mutation') -> SamplesQuery:
         pass
 
-    def has(self, property: Union[QueryFeature, str, pd.Series], kind=None) -> SamplesQuery:
+    def has(self, property: Union[QueryFeature, str, pd.Series], kind='mutation') -> SamplesQuery:
         """
         Queries for samples that have a particular property. Synonym for hasa().
         """
