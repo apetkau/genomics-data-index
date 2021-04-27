@@ -12,3 +12,4 @@ dependencies:
   - bcftools
   - htslib
   - jupyterlab
+  - matplotlib
