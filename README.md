@@ -1,6 +1,5 @@
-[![Build Status](https://github.com/apetkau/thesis-index/workflows/Integration%20Tests/badge.svg?branch=development)](https://github.com/apetkau/thesis-index/actions?query=branch/development)
-
 # Genomics data index
+[![Build Status](https://github.com/apetkau/thesis-index/workflows/Integration%20Tests/badge.svg?branch=development)](https://github.com/apetkau/thesis-index/actions?query=branch/development)
 
 This project is to design a system which can index large amounts of genomics data and enable rapid querying of this
 data. This is an ongoing (in-development) project and so not all (or even most) of the ideas below are implemented yet.
