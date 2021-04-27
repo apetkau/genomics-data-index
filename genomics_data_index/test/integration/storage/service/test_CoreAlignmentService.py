@@ -70,7 +70,7 @@ def expected_alignment_core() -> MultipleSeqAlignment:
     includes some complex events in the alignment which I do not include.
     I modify this expected alignment (from snippy) by subtracting 2 SNVs/SNPs introduced
     by complex events. That way I can compare the alignments for equality.
-    :return: The exepcted alignment as a MultipleSeqAlignment object.
+    :return: The expected alignment as a MultipleSeqAlignment object.
     '''
     with open(data_dir / 'snippy.core.aln', 'r') as f:
         alignments = list(AlignIO.parse(f, 'fasta'))

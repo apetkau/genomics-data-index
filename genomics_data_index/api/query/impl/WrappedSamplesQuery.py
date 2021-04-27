@@ -30,17 +30,23 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
     def sample_set(self) -> SampleSet:
         return self._wrapped_query.sample_set
 
+    def reset_universe(self) -> SamplesQuery:
+        return self._wrap_create(self._wrapped_query.reset_universe())
+
     def intersect(self, sample_set: SampleSet, query_message: str = None) -> SamplesQuery:
         intersected_query = self._wrapped_query.intersect(sample_set=sample_set, query_message=query_message)
         return self._wrap_create(intersected_query)
 
     def join(self, data_frame: pd.DataFrame, sample_ids_column: str = None,
-             sample_names_column: str = None) -> SamplesQuery:
+             sample_names_column: str = None, default_isa_kind: str = 'names',
+             default_isa_column: str = None) -> SamplesQuery:
         return self._wrap_create(self._wrapped_query.join(data_frame=data_frame, sample_ids_column=sample_ids_column,
-                                                          sample_names_column=sample_names_column))
+                                                          sample_names_column=sample_names_column,
+                                                          default_isa_kind=default_isa_kind,
+                                                          default_isa_column=default_isa_column))
 
     @abc.abstractmethod
-    def _wrap_create(self, wrapped_query: SamplesQuery) -> WrappedSamplesQuery:
+    def _wrap_create(self, wrapped_query: SamplesQuery, universe_set: SampleSet = None) -> WrappedSamplesQuery:
         pass
 
     def toframe(self, exclude_absent: bool = True) -> pd.DataFrame:
@@ -58,8 +64,8 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
     def and_(self, other: SamplesQuery) -> SamplesQuery:
         return self._wrap_create(self._wrapped_query.and_(other))
 
-    def has(self, property: Union[QueryFeature, str, pd.Series], kind=None) -> SamplesQuery:
-        return self._wrap_create(self._wrapped_query.has(property=property, kind=kind))
+    def hasa(self, property: Union[QueryFeature, str, pd.Series], kind=None) -> SamplesQuery:
+        return self._wrap_create(self._wrapped_query.hasa(property=property, kind=kind))
 
     def _get_has_kinds(self) -> List[str]:
         return self._wrapped_query._get_has_kinds()
@@ -77,9 +83,6 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
         sample_service = self._query_connection.sample_service
         return {s.name: s.id for s in sample_service.find_samples_by_ids(self._wrapped_query.sample_set)}
 
-    def is_type(self, sample_type) -> SamplesQuery:
-        return self._wrap_create(self._wrapped_query.is_type(sample_type))
-
     def is_empty(self):
         return self._wrapped_query.is_empty()
 
@@ -88,9 +91,29 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
         raise Exception(f'No tree exists for {self.__class__}.'
                         f' Perhaps you should try to run build_tree() first to build a tree.')
 
-    def within(self, sample_names: Union[str, List[str]], kind: str = 'distance', **kwargs) -> SamplesQuery:
-        raise Exception(f'Cannot query within a distance without a tree.'
-                        f' Perhaps you want to run build_tree() first to build a tree.')
+    def _isin_internal(self, data: Union[str, List[str], pd.Series], kind: str, **kwargs) -> SamplesQuery:
+        raise Exception(f'Invalid kind={kind}. Must be one of {self._isin_kinds()}')
+
+    def _isa_internal(self, data: Union[str, List[str]], kind: str, **kwargs) -> SamplesQuery:
+        raise Exception(f'Invalid kind={kind}. Must be one of {self._isa_kinds()}')
+
+    def _isin_kinds(self) -> List[str]:
+        return ['names']
+
+    def isin(self, data: Union[str, List[str], pd.Series], kind: str = 'names', **kwargs) -> SamplesQuery:
+        if kind == 'names':
+            return self._wrap_create(self._wrapped_query.isin(data=data, kind=kind, **kwargs))
+        else:
+            return self._isin_internal(data=data, kind=kind, **kwargs)
+
+    def _isa_kinds(self) -> List[str]:
+        return ['names']
+
+    def isa(self, data: Union[str, List[str]], kind: str = 'names', **kwargs) -> SamplesQuery:
+        if kind == 'names':
+            return self._wrap_create(self._wrapped_query.isa(data=data, kind=kind, **kwargs))
+        else:
+            return self._isa_internal(data=data, kind=kind, **kwargs)
 
     def __and__(self, other):
         return self.and_(other)
