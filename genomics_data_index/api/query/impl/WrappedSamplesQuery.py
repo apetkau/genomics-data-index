@@ -88,7 +88,7 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
         raise Exception(f'No tree exists for {self.__class__}.'
                         f' Perhaps you should try to run build_tree() first to build a tree.')
 
-    def within(self, sample_names: Union[str, List[str]], kind: str = 'distance', **kwargs) -> SamplesQuery:
+    def isin(self, sample_names: Union[str, List[str]], kind: str = 'distance', **kwargs) -> SamplesQuery:
         raise Exception(f'Cannot query within a distance without a tree.'
                         f' Perhaps you want to run build_tree() first to build a tree.')
 

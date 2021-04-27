@@ -73,16 +73,19 @@ class SamplesQuery(abc.ABC):
     def hasa(self, property: Union[QueryFeature, str, pd.Series], kind=None) -> SamplesQuery:
         pass
 
+    def has(self, property: Union[QueryFeature, str, pd.Series], kind=None) -> SamplesQuery:
+        return self.hasa(property=property, kind=kind)
+
     @abc.abstractmethod
     def complement(self):
         pass
+    #
+    # @abc.abstractmethod
+    # def within(self, sample_names: Union[str, List[str]], kind: str = 'distance', **kwargs) -> SamplesQuery:
+    #     return self.isin(sample_names=sample_names, kind='distance')
 
     @abc.abstractmethod
-    def within(self, sample_names: Union[str, List[str]], kind: str = 'distance', **kwargs) -> SamplesQuery:
-        pass
-
-    @abc.abstractmethod
-    def is_type(self, sample_type) -> SamplesQuery:
+    def isin(self, sample_names: Union[str, List[str]], kind: str = 'distance', **kwargs) -> SamplesQuery:
         pass
 
     @abc.abstractmethod

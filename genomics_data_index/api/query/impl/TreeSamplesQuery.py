@@ -100,7 +100,7 @@ class TreeSamplesQuery(WrappedSamplesQuery):
         found_samples = SampleSet(found_samples_list)
         return self.intersect(found_samples, f'within(mrca of {sample_names})')
 
-    def within(self, sample_names: Union[str, List[str]], kind: str = 'distance', **kwargs) -> SamplesQuery:
+    def isin(self, sample_names: Union[str, List[str]], kind: str = 'distance', **kwargs) -> SamplesQuery:
         if kind == 'distance':
             return self._within_distance(sample_names=sample_names, kind=kind, **kwargs)
         elif kind == 'mrca':
