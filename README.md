@@ -1,9 +1,13 @@
 [![Build Status](https://github.com/apetkau/thesis-index/workflows/Integration%20Tests/badge.svg?branch=development)](https://github.com/apetkau/thesis-index/actions?query=branch/development)
 
-# A framework for the indexing and clustering of pathogen genomes
+# Genomics data index
 
 This project is to design a system which can index large amounts of genomics data and enable rapid querying of this
 data. This is an ongoing (in-development) project and so not all (or even most) of the ideas below are implemented yet.
+
+A short tutorial and example of this software is available at [Tutorial 1: Salmonella dataset][tutorial1].
+
+## Background
 
 The type of genomic features that I will index are:
 
@@ -45,8 +49,8 @@ This project requires Python, MariaDB (or some other relational database) and th
 It's best to install everything in a conda environment:
 
 ```bash
-conda create --name index python=3.8 htslib bcftools==1.12 bedtools fasttree iqtree
-conda activate index
+conda env create -f conda-env.yaml
+conda activate gdi
 ```
 
 This is an on-going project which will undergo a lot of changes and so the exact conda dependnecies are probably best
@@ -58,62 +62,61 @@ Once these are installed you can setup the Python package with:
 pip install .
 ```
 
-In addition, you will also have to setup a relational database (I've been using MariaDB).
-
-Data is stored in two separate locations: in the database and in a directory on the filesystem. To configure both and
-not have to pass command-line arguments all the time you can define a file `config.yaml`.
-
-```yaml
-database_connection: mysql+pymysql://test:test@localhost/thesis?charset=utf8mb4
-database_dir: /home/apetkau/workspace/thesis-index/tmp/data
-```
-
 # Usage
 
-The main command is called `variants`:
+The main command is called `gdi`:
 
-```bash
-variants --config config.yaml --help
-Usage: variants [OPTIONS] COMMAND [ARGS]...
+```
+Usage: gdi [OPTIONS] COMMAND [ARGS]...
 
 Options:
-  --database-connection TEXT  A connection string for the database.
-  --database-dir PATH         The root directory for the database files.
-  --verbose / --no-verbose    Turn up verbosity of command
-  --config FILE               Read configuration from FILE.
-  --help                      Show this message and exit.
+  --project-dir TEXT              A project directory containing the data and
+                                  connection information.
+
+  --ncores INTEGER RANGE          Number of cores for any parallel processing
+                                  [default: 8]
+
+  --log-level [DEBUG|INFO|WARNING|ERROR|CRITICAL]
+                                  Sets the log level  [default: INFO]
+  --config FILE                   Read configuration from FILE.
+  --help                          Show this message and exit.
 
 Commands:
-  alignment
+  build
+  db
   export
+  init
   list
-  load-kmer
-  load-snippy
-  load-vcf
+  load
   query
-  tree
+  rebuild
 ```
 
 If you've previously ran [snippy][] you can load up this data (i.e., the SNPs in VCF format) as follows:
 
 ```bash
-variants --config config.yaml load-snippy --build-tree --align-type full --reference-file reference.fasta snippy-dir/
+# Initialize and cd to project
+gdi init proj1
+cd proj1
+
+# Load data
+gdi load snippy --reference-file reference.fasta snippy-analysis/
 ```
 
-You can then query like:
+Where `snippy-analysis/` contains directories like `SampleA`, `SampleB`, etc.
 
-```bash
- variants query --type mutation reference:528:C:CAG | column -s $'\t' -t
-Type      Feature              Sample Name  Sample ID  Status
-mutation  reference:528:C:CAG  SampleB      2          Present
-```
+# Tutorial
+
+A tutorial and demonstration of the software is available at:
+
+1. [Tutorial 1: Salmonella dataset][tutorial1]
+
 
 [thesis-proposal]: https://drive.google.com/file/d/1sd0WjmwO_KU5wacfpUiPGT20xVOwBc8i/view?usp=sharing
-
 [BIGSI]: https://bigsi.readme.io/
-
 [COBS]: https://github.com/bingmann/cobs
-
-[ci-dependencies]: https://github.com/apetkau/thesis-index/blob/development/.github/workflows/ci-test.yml#L37
-
+[ci-dependencies]: .github/workflows/ci-test.yml#L37
+[tutorial1]: docs/tutorial/tutorial-1-salmonella.ipynb
 [snippy]: https://github.com/tseemann/snippy
+
+
