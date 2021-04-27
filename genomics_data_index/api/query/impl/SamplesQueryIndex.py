@@ -19,6 +19,8 @@ class SamplesQueryIndex(SamplesQuery):
     HAS_KINDS = ['mutation', 'mlst']
     SUMMARY_FEATURES_KINDS = ['mutations']
     FEATURES_SELECTIONS = ['all', 'unique']
+    ISIN_TYPES = ['names']
+    ISA_TYPES = ['names']
 
     def __init__(self, connection: DataIndexConnection,
                  universe_set: SampleSet,
@@ -39,19 +41,24 @@ class SamplesQueryIndex(SamplesQuery):
         return self._sample_set
 
     def join(self, data_frame: pd.DataFrame, sample_ids_column: str = None,
-             sample_names_column: str = None) -> SamplesQuery:
+             sample_names_column: str = None, default_isa_kind: str = 'names',
+             default_isa_column: str = None) -> SamplesQuery:
         if sample_ids_column is None and sample_names_column is None:
             raise Exception('At least one of sample_ids_column or sample_names_column must be set.')
         elif sample_ids_column is not None:
             return DataFrameSamplesQuery.create_with_sample_ids_column(sample_ids_column=sample_ids_column,
                                                                        data_frame=data_frame,
                                                                        wrapped_query=self,
-                                                                       connection=self._query_connection)
+                                                                       connection=self._query_connection,
+                                                                       default_isa_kind=default_isa_kind,
+                                                                       default_isa_column=default_isa_column)
         else:
             return DataFrameSamplesQuery.create_with_sample_names_column(sample_names_column=sample_names_column,
                                                                          data_frame=data_frame,
                                                                          wrapped_query=self,
-                                                                         connection=self._query_connection)
+                                                                         connection=self._query_connection,
+                                                                         default_isa_kind=default_isa_kind,
+                                                                         default_isa_column=default_isa_column)
 
     def intersect(self, sample_set: SampleSet, query_message: str = None) -> SamplesQuery:
         intersected_set = self._intersect_sample_set(sample_set)
@@ -60,8 +67,7 @@ class SamplesQueryIndex(SamplesQuery):
             query_message = f'intersect(samples={len(sample_set)}'
 
         queries_collection = self._queries_collection.append(query_message)
-        return self._create_from(connection=self._query_connection, sample_set=intersected_set,
-                                 queries_collection=queries_collection)
+        return self._create_from(sample_set=intersected_set, queries_collection=queries_collection)
 
     def _intersect_sample_set(self, other: SampleSet) -> SampleSet:
         return self.sample_set.intersection(other)
@@ -135,8 +141,7 @@ class SamplesQueryIndex(SamplesQuery):
         if isinstance(other, SamplesQuery):
             intersect_set = self._intersect_sample_set(other.sample_set)
             queries_collection = self._queries_collection.append(str(other))
-            return self._create_from(self._query_connection, intersect_set,
-                                     queries_collection=queries_collection)
+            return self._create_from(intersect_set, queries_collection=queries_collection)
         else:
             raise Exception(f'Cannot perform an "and" on object {other}')
 
@@ -146,9 +151,7 @@ class SamplesQueryIndex(SamplesQuery):
     def complement(self):
         complement_set = self.universe_set.minus(self.sample_set)
         query_collection = self._queries_collection.append('complement')
-        return self._create_from(connection=self._query_connection,
-                                 sample_set=complement_set,
-                                 queries_collection=query_collection)
+        return self._create_from(sample_set=complement_set, queries_collection=query_collection)
 
     @property
     def tree(self):
@@ -176,7 +179,7 @@ class SamplesQueryIndex(SamplesQuery):
     def __repr__(self) -> str:
         return str(self)
 
-    def has(self, property: Union[QueryFeature, str, pd.Series], kind=None) -> SamplesQuery:
+    def hasa(self, property: Union[QueryFeature, str, pd.Series], kind=None) -> SamplesQuery:
         if isinstance(property, QueryFeature):
             query_feature = property
         elif isinstance(property, pd.Series):
@@ -200,18 +203,36 @@ class SamplesQueryIndex(SamplesQuery):
             intersect_found = SampleSet.create_empty()
 
         queries_collection = self._queries_collection.append(query_feature)
-        return self._create_from(self._query_connection, intersect_found,
-                                 queries_collection=queries_collection)
+        return self._create_from(intersect_found, queries_collection=queries_collection)
 
-    def within(self, sample_names: Union[str, List[str]], kind: str = 'distance', **kwargs) -> SamplesQuery:
-        raise Exception(f'Cannot query within a distance without a tree.'
-                        f' Perhaps you want to run build_tree() first to build a tree.')
+    def _isin_names(self, sample_names: Union[str, List[str]], query_message_prefix: str) -> SamplesQuery:
+        if isinstance(sample_names, str):
+            query_message = f"{query_message_prefix}('{sample_names}')"
+            sample_names = [sample_names]
+        elif isinstance(sample_names, list):
+            query_message = f"{query_message_prefix}({sample_names})"
+        else:
+            raise Exception(f'Unrecognized input type sample_names={sample_names}. Can only be a str or list')
 
-    def is_type(self, sample_type) -> SamplesQuery:
-        raise Exception('Not implemented')
+        samples = self._query_connection.sample_service.get_existing_samples_by_names(sample_names)
+        sample_ids = {s.id for s in samples}
+        sample_set = SampleSet(sample_ids)
+        queries_collection = self._queries_collection.append(query_message)
+        return self._create_from(sample_set=sample_set, queries_collection=queries_collection)
 
-    def _create_from(self, connection: DataIndexConnection, sample_set: SampleSet,
-                     queries_collection: QueriesCollection) -> SamplesQuery:
+    def isin(self, data: Union[str, List[str]], kind: str = 'names', **kwargs) -> SamplesQuery:
+        if kind == 'names':
+            return self._isin_names(sample_names=data, query_message_prefix='isin')
+        else:
+            raise Exception(f'kind=[{kind}] is not supported. Must be one of {self.ISIN_TYPES}')
+
+    def isa(self, data: Union[str, List[str]], kind: str = 'names', **kwargs) -> SamplesQuery:
+        if kind == 'names':
+            return self._isin_names(sample_names=data, query_message_prefix='isa')
+        else:
+            raise Exception(f'kind=[{kind}] is not supported. Must be one of {self.ISA_TYPES}')
+
+    def _create_from(self, sample_set: SampleSet, queries_collection: QueriesCollection) -> SamplesQuery:
         return SamplesQueryIndex(connection=self._query_connection,
                                  universe_set=self.universe_set,
                                  sample_set=sample_set,

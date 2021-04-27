@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 from typing import Union, List
+import pandas as pd
 
 from ete3 import Tree, TreeStyle
 
@@ -16,7 +17,7 @@ from genomics_data_index.storage.SampleSet import SampleSet
 class TreeSamplesQuery(WrappedSamplesQuery):
     BUILD_TREE_KINDS = ['mutation']
     DISTANCE_UNITS = ['substitutions', 'substitutions/site']
-    WITHIN_TYPES = ['distance', 'mrca']
+    ISIN_TREE_TYPES = ['distance', 'mrca']
 
     def __init__(self, connection: DataIndexConnection, wrapped_query: SamplesQuery, tree: Tree,
                  alignment_length: int):
@@ -100,13 +101,16 @@ class TreeSamplesQuery(WrappedSamplesQuery):
         found_samples = SampleSet(found_samples_list)
         return self.intersect(found_samples, f'within(mrca of {sample_names})')
 
-    def within(self, sample_names: Union[str, List[str]], kind: str = 'distance', **kwargs) -> SamplesQuery:
+    def _isin_internal(self, data: Union[str, List[str], pd.Series], kind: str, **kwargs) -> SamplesQuery:
         if kind == 'distance':
-            return self._within_distance(sample_names=sample_names, kind=kind, **kwargs)
+            return self._within_distance(sample_names=data, kind=kind, **kwargs)
         elif kind == 'mrca':
-            return self._within_mrca(sample_names=sample_names)
+            return self._within_mrca(sample_names=data)
         else:
-            raise Exception(f'kind=[{kind}] is not supported. Must be one of {self.WITHIN_TYPES}')
+            raise Exception(f'kind=[{kind}] is not supported. Must be one of {self._isin_kinds()}')
+
+    def _isin_kinds(self) -> List[str]:
+        return super()._isin_kinds() + self.ISIN_TREE_TYPES
 
     def tree_styler(self, initial_style: TreeStyle = TreeStyle()) -> TreeStyler:
         return TreeStyler(tree=copy.deepcopy(self._tree),
