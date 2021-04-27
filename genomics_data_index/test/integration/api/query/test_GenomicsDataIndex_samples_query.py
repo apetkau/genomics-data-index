@@ -42,6 +42,27 @@ def test_initialized_query_mutations(loaded_database_connection_with_built_tree:
     assert initial_query.tree is not None
 
 
+def test_query_isin_sample_names(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+
+    query_result = query(loaded_database_connection).isin('SampleB')
+    assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+    assert 9 == len(query_result.universe_set)
+
+
+def test_query_isin_sample_names_multilple(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+
+    query_result = query(loaded_database_connection).isin(['SampleA', 'SampleB'])
+    assert 2 == len(query_result)
+    assert {sampleA.id, sampleB.id} == set(query_result.sample_set)
+    assert 9 == len(query_result.universe_set)
+
+
 def test_query_single_mutation(loaded_database_connection: DataIndexConnection):
     db = loaded_database_connection.database
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
@@ -313,6 +334,27 @@ def test_join_custom_dataframe_no_query(loaded_database_connection: DataIndexCon
     assert 3 == len(query_result.universe_set)
     assert {sampleA.id, sampleB.id, sampleC.id} == set(query_result.sample_set)
     assert {'dataframe(ids_col=[Sample ID])'} == set(query_result.toframe()['Query'].tolist())
+
+
+def test_query_custom_dataframe_isin_sample_names(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+
+    df = pd.DataFrame([
+        [sampleA.id, 'red'],
+        [sampleB.id, 'green'],
+        [sampleC.id, 'blue']
+    ], columns=['Sample ID', 'Color'])
+
+    query_result = query(loaded_database_connection, universe='dataframe',
+                         data_frame=df, sample_ids_column='Sample ID')
+    query_result = query_result.isin(['SampleA', 'SampleC'])
+    assert 2 == len(query_result)
+    assert 3 == len(query_result.universe_set)
+    assert {sampleA.id, sampleC.id} == set(query_result.sample_set)
+    assert {"dataframe(ids_col=[Sample ID]) AND isin(['SampleA', 'SampleC'])"} == set(query_result.toframe()['Query'].tolist())
 
 
 def test_join_custom_dataframe_single_query(loaded_database_connection: DataIndexConnection):
@@ -685,7 +727,7 @@ def test_within_constructed_tree(loaded_database_connection: DataIndexConnection
     assert 2 == len(query_result)
 
     # subs/site
-    df = query_result.isin('SampleC', distance=0.005, units='substitutions/site').toframe().sort_values('Sample Name')
+    df = query_result.isin('SampleC', kind='distance', distance=0.005, units='substitutions/site').toframe().sort_values('Sample Name')
     assert 2 == len(df)
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
     assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
@@ -693,21 +735,21 @@ def test_within_constructed_tree(loaded_database_connection: DataIndexConnection
             } == set(df['Query'].tolist())
 
     # subs
-    df = query_result.isin('SampleC', distance=26, units='substitutions').toframe().sort_values('Sample Name')
+    df = query_result.isin('SampleC', kind='distance', distance=26, units='substitutions').toframe().sort_values('Sample Name')
     assert 2 == len(df)
     assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
     assert {'reference:839:C:G AND mutation_tree(genome) AND within(26 substitutions of SampleC)'
             } == set(df['Query'].tolist())
 
     # should not include reference genome
-    df = query_result.isin('SampleC', distance=100, units='substitutions').toframe().sort_values('Sample Name')
+    df = query_result.isin('SampleC', kind='distance', distance=100, units='substitutions').toframe().sort_values('Sample Name')
     assert 2 == len(df)
     assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
     assert {'reference:839:C:G AND mutation_tree(genome) AND within(100 substitutions of SampleC)'
             } == set(df['Query'].tolist())
 
     # should have only query sample
-    df = query_result.isin('SampleC', distance=1, units='substitutions').toframe().sort_values('Sample Name')
+    df = query_result.isin('SampleC', kind='distance', distance=1, units='substitutions').toframe().sort_values('Sample Name')
     assert 1 == len(df)
     assert ['SampleC'] == df['Sample Name'].tolist()
     assert {'reference:839:C:G AND mutation_tree(genome) AND within(1 substitutions of SampleC)'
@@ -719,6 +761,14 @@ def test_within_constructed_tree(loaded_database_connection: DataIndexConnection
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
     assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
     assert {"reference:839:C:G AND mutation_tree(genome) AND within(mrca of ['SampleB', 'SampleC'])"
+            } == set(df['Query'].tolist())
+
+    # Sample Names
+    df = query_result.isin(['SampleA', 'SampleC']).toframe().sort_values('Sample Name')
+    assert 2 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    assert ['SampleA', 'SampleC'] == df['Sample Name'].tolist()
+    assert {"reference:839:C:G AND mutation_tree(genome) AND isin(['SampleA', 'SampleC'])"
             } == set(df['Query'].tolist())
 
 

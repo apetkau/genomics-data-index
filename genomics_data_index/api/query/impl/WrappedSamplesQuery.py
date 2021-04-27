@@ -77,9 +77,6 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
         sample_service = self._query_connection.sample_service
         return {s.name: s.id for s in sample_service.find_samples_by_ids(self._wrapped_query.sample_set)}
 
-    def is_type(self, sample_type) -> SamplesQuery:
-        return self._wrap_create(self._wrapped_query.is_type(sample_type))
-
     def is_empty(self):
         return self._wrapped_query.is_empty()
 
@@ -88,9 +85,18 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
         raise Exception(f'No tree exists for {self.__class__}.'
                         f' Perhaps you should try to run build_tree() first to build a tree.')
 
-    def isin(self, sample_names: Union[str, List[str]], kind: str = 'distance', **kwargs) -> SamplesQuery:
-        raise Exception(f'Cannot query within a distance without a tree.'
-                        f' Perhaps you want to run build_tree() first to build a tree.')
+    @abc.abstractmethod
+    def _isin_internal(self, data: Union[str, List[str]], kind, **kwargs) -> SamplesQuery:
+        pass
+
+    def _isin_kinds(self) -> List[str]:
+        return ['names']
+
+    def isin(self, data: Union[str, List[str]], kind: str = 'names', **kwargs) -> SamplesQuery:
+        if kind == 'names':
+            return self._wrap_create(self._wrapped_query.isin(data))
+        else:
+            return self._isin_internal(data=data, kind=kind, **kwargs)
 
     def __and__(self, other):
         return self.and_(other)
