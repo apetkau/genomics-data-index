@@ -63,6 +63,16 @@ def test_query_isin_sample_names_multilple(loaded_database_connection: DataIndex
     assert 9 == len(query_result.universe_set)
 
 
+def test_query_isa_sample_name(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+
+    query_result = query(loaded_database_connection).isa('SampleB')
+    assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+    assert 9 == len(query_result.universe_set)
+
+
 def test_query_single_mutation(loaded_database_connection: DataIndexConnection):
     db = loaded_database_connection.database
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
@@ -538,6 +548,34 @@ def test_query_then_join_dataframe_single_query(loaded_database_connection: Data
     assert ['green', 'blue'] == df['Color'].tolist()
 
 
+def test_query_join_dataframe_isa_dataframe_column(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+
+    metadata_df = pd.DataFrame([
+        [sampleA.id, 'red'],
+        [sampleB.id, 'green'],
+        [sampleC.id, 'blue']
+    ], columns=['Sample ID', 'Color'])
+
+    query_result = query(loaded_database_connection).join(data_frame=metadata_df, sample_ids_column='Sample ID')
+
+    assert 3 == len(query_result)
+    assert 3 == len(query_result.universe_set)
+
+    query_result = query_result.isa('red', isa_column='Color', kind='dataframe')
+
+    assert 1 == len(query_result)
+    assert 3 == len(query_result.universe_set)
+
+    df = query_result.toframe()
+
+    assert ['SampleA'] == df['Sample Name'].tolist()
+    assert {"dataframe(ids_col=[Sample ID]) AND isa('Color' is 'red')"} == set(df['Query'].tolist())
+
+
 def test_query_join_dataframe_isin_dataframe_column(loaded_database_connection: DataIndexConnection):
     db = loaded_database_connection.database
     sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
@@ -566,7 +604,7 @@ def test_query_join_dataframe_isin_dataframe_column(loaded_database_connection: 
     assert {'dataframe(ids_col=[Sample ID]) AND isin(subset from series)'} == set(df['Query'].tolist())
 
 
-def test_query_join_dataframe_has_dataframe_column_select_two_samples(loaded_database_connection: DataIndexConnection):
+def test_query_join_dataframe_isin_dataframe_column_select_two_samples(loaded_database_connection: DataIndexConnection):
     db = loaded_database_connection.database
     sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
@@ -595,7 +633,7 @@ def test_query_join_dataframe_has_dataframe_column_select_two_samples(loaded_dat
     assert {'dataframe(ids_col=[Sample ID]) AND isin(subset from series)'} == set(df['Query'].tolist())
 
 
-def test_query_join_dataframe_has_dataframe_column_invalid_series_index(
+def test_query_join_dataframe_isin_dataframe_column_invalid_series_index(
         loaded_database_connection: DataIndexConnection):
     db = loaded_database_connection.database
     sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
@@ -771,12 +809,20 @@ def test_within_constructed_tree(loaded_database_connection: DataIndexConnection
     assert {"reference:839:C:G AND mutation_tree(genome) AND within(mrca of ['SampleB', 'SampleC'])"
             } == set(df['Query'].tolist())
 
-    # Sample Names
+    # Sample Names isin()
     df = query_result.isin(['SampleA', 'SampleC']).toframe().sort_values('Sample Name')
     assert 2 == len(df)
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
     assert ['SampleA', 'SampleC'] == df['Sample Name'].tolist()
     assert {"reference:839:C:G AND mutation_tree(genome) AND isin(['SampleA', 'SampleC'])"
+            } == set(df['Query'].tolist())
+
+    # Sample Names isa()
+    df = query_result.isa('SampleA').toframe().sort_values('Sample Name')
+    assert 1 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    assert ['SampleA'] == df['Sample Name'].tolist()
+    assert {"reference:839:C:G AND mutation_tree(genome) AND isa('SampleA')"
             } == set(df['Query'].tolist())
 
 

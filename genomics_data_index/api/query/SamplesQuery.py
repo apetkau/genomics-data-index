@@ -90,9 +90,31 @@ class SamplesQuery(abc.ABC):
 
         :param data: The data to use for selecting samples by.
         :param **kwargs: Other arguments for the the internal implementations.
-        :return: A SamplesQuery which selects only those samples matching the given criteria from the current query.
+        :return: A SamplesQuery with the matched samples.
         """
         return self.isin(data=data, kind='distance', **kwargs)
+
+    @abc.abstractmethod
+    def isa(self, data: Union[str, List[str]], kind: str = 'names', **kwargs) -> SamplesQuery:
+        """
+        Queries for samples which are a particular type/belong to a particular category.
+        Read as "subset samples which are a (isa) particular type defined by 'data'".
+        The default implementation will select samples by sample name but this is useful when used
+        with an attached dataframe (at which point it selects based on matches to a column,
+        see documentation for DataFrameSamplesQuery).
+
+        :param data: The data to match.
+        :param kind: The particular kind of data passed.
+        :**kwargs: Arguments for the underlying implementation.
+        :return: A SamplesQuery with the matched samples.
+        """
+        pass
+
+    def isan(self, data: Union[str, List[str]], kind: str = 'names', **kwargs) -> SamplesQuery:
+        """
+        Synonym for isa()
+        """
+        return self.isa(data=data, kind=kind, **kwargs)
 
     @abc.abstractmethod
     def isin(self, data: Union[str, List[str], pd.Series], kind: str = 'names', **kwargs) -> SamplesQuery:

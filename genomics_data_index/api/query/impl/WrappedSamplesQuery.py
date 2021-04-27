@@ -85,18 +85,29 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
         raise Exception(f'No tree exists for {self.__class__}.'
                         f' Perhaps you should try to run build_tree() first to build a tree.')
 
-    @abc.abstractmethod
-    def _isin_internal(self, data: Union[str, List[str], pd.Series], kind, **kwargs) -> SamplesQuery:
-        pass
+    def _isin_internal(self, data: Union[str, List[str], pd.Series], kind: str, **kwargs) -> SamplesQuery:
+        raise Exception(f'Invalid kind={kind}. Must be one of {self._isin_kinds()}')
+
+    def _isa_internal(self, data: Union[str, List[str]], kind: str, **kwargs) -> SamplesQuery:
+        raise Exception(f'Invalid kind={kind}. Must be one of {self._isa_kinds()}')
 
     def _isin_kinds(self) -> List[str]:
         return ['names']
 
     def isin(self, data: Union[str, List[str], pd.Series], kind: str = 'names', **kwargs) -> SamplesQuery:
         if kind == 'names':
-            return self._wrap_create(self._wrapped_query.isin(data))
+            return self._wrap_create(self._wrapped_query.isin(data=data, kind=kind, **kwargs))
         else:
             return self._isin_internal(data=data, kind=kind, **kwargs)
+
+    def _isa_kinds(self) -> List[str]:
+        return ['names']
+
+    def isa(self, data: Union[str, List[str]], kind: str = 'names', **kwargs) -> SamplesQuery:
+        if kind == 'names':
+            return self._wrap_create(self._wrapped_query.isa(data=data, kind=kind, **kwargs))
+        else:
+            return self._isa_internal(data=data, kind=kind, **kwargs)
 
     def __and__(self, other):
         return self.and_(other)

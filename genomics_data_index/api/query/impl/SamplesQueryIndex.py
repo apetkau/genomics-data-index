@@ -20,6 +20,7 @@ class SamplesQueryIndex(SamplesQuery):
     SUMMARY_FEATURES_KINDS = ['mutations']
     FEATURES_SELECTIONS = ['all', 'unique']
     ISIN_TYPES = ['names']
+    ISA_TYPES = ['names']
 
     def __init__(self, connection: DataIndexConnection,
                  universe_set: SampleSet,
@@ -199,23 +200,32 @@ class SamplesQueryIndex(SamplesQuery):
         queries_collection = self._queries_collection.append(query_feature)
         return self._create_from(intersect_found, queries_collection=queries_collection)
 
-    def _isin_names(self, sample_names: Union[str, List[str]]) -> SamplesQuery:
+    def _isin_names(self, sample_names: Union[str, List[str]], query_message_prefix: str) -> SamplesQuery:
         if isinstance(sample_names, str):
+            query_message = f"{query_message_prefix}('{sample_names}')"
             sample_names = [sample_names]
-        elif not isinstance(sample_names, list):
+        elif isinstance(sample_names, list):
+            query_message = f"{query_message_prefix}({sample_names})"
+        else:
             raise Exception(f'Unrecognized input type sample_names={sample_names}. Can only be a str or list')
 
         samples = self._query_connection.sample_service.get_existing_samples_by_names(sample_names)
         sample_ids = {s.id for s in samples}
         sample_set = SampleSet(sample_ids)
-        queries_collection = self._queries_collection.append(f'isin({sample_names})')
+        queries_collection = self._queries_collection.append(query_message)
         return self._create_from(sample_set=sample_set, queries_collection=queries_collection)
 
     def isin(self, data: Union[str, List[str]], kind: str = 'names', **kwargs) -> SamplesQuery:
         if kind == 'names':
-            return self._isin_names(sample_names=data)
+            return self._isin_names(sample_names=data, query_message_prefix='isin')
         else:
             raise Exception(f'kind=[{kind}] is not supported. Must be one of {self.ISIN_TYPES}')
+
+    def isa(self, data: Union[str, List[str]], kind: str = 'names', **kwargs) -> SamplesQuery:
+        if kind == 'names':
+            return self._isin_names(sample_names=data, query_message_prefix='isa')
+        else:
+            raise Exception(f'kind=[{kind}] is not supported. Must be one of {self.ISA_TYPES}')
 
     def _create_from(self, sample_set: SampleSet, queries_collection: QueriesCollection) -> SamplesQuery:
         return SamplesQueryIndex(connection=self._query_connection,
