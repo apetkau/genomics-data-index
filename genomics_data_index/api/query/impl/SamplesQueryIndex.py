@@ -40,6 +40,10 @@ class SamplesQueryIndex(SamplesQuery):
     def sample_set(self) -> SampleSet:
         return self._sample_set
 
+    def reset_universe(self) -> SamplesQuery:
+        return self._create_from(sample_set=self._sample_set, universe_set=self._sample_set,
+                                 queries_collection=self._queries_collection)
+
     def join(self, data_frame: pd.DataFrame, sample_ids_column: str = None,
              sample_names_column: str = None, default_isa_kind: str = 'names',
              default_isa_column: str = None) -> SamplesQuery:
@@ -67,7 +71,8 @@ class SamplesQueryIndex(SamplesQuery):
             query_message = f'intersect(samples={len(sample_set)}'
 
         queries_collection = self._queries_collection.append(query_message)
-        return self._create_from(sample_set=intersected_set, queries_collection=queries_collection)
+        return self._create_from(sample_set=intersected_set, universe_set=self._universe_set,
+                                 queries_collection=queries_collection)
 
     def _intersect_sample_set(self, other: SampleSet) -> SampleSet:
         return self.sample_set.intersection(other)
@@ -141,7 +146,8 @@ class SamplesQueryIndex(SamplesQuery):
         if isinstance(other, SamplesQuery):
             intersect_set = self._intersect_sample_set(other.sample_set)
             queries_collection = self._queries_collection.append(str(other))
-            return self._create_from(intersect_set, queries_collection=queries_collection)
+            return self._create_from(intersect_set, universe_set=self._universe_set,
+                                     queries_collection=queries_collection)
         else:
             raise Exception(f'Cannot perform an "and" on object {other}')
 
@@ -151,7 +157,8 @@ class SamplesQueryIndex(SamplesQuery):
     def complement(self):
         complement_set = self.universe_set.minus(self.sample_set)
         query_collection = self._queries_collection.append('complement')
-        return self._create_from(sample_set=complement_set, queries_collection=query_collection)
+        return self._create_from(sample_set=complement_set, universe_set=self._universe_set,
+                                 queries_collection=query_collection)
 
     @property
     def tree(self):
@@ -203,7 +210,8 @@ class SamplesQueryIndex(SamplesQuery):
             intersect_found = SampleSet.create_empty()
 
         queries_collection = self._queries_collection.append(query_feature)
-        return self._create_from(intersect_found, queries_collection=queries_collection)
+        return self._create_from(intersect_found, universe_set=self._universe_set,
+                                 queries_collection=queries_collection)
 
     def _isin_names(self, sample_names: Union[str, List[str]], query_message_prefix: str) -> SamplesQuery:
         if isinstance(sample_names, str):
@@ -218,7 +226,8 @@ class SamplesQueryIndex(SamplesQuery):
         sample_ids = {s.id for s in samples}
         sample_set = SampleSet(sample_ids)
         queries_collection = self._queries_collection.append(query_message)
-        return self._create_from(sample_set=sample_set, queries_collection=queries_collection)
+        return self._create_from(sample_set=sample_set, universe_set=self._universe_set,
+                                 queries_collection=queries_collection)
 
     def isin(self, data: Union[str, List[str]], kind: str = 'names', **kwargs) -> SamplesQuery:
         if kind == 'names':
@@ -232,8 +241,8 @@ class SamplesQueryIndex(SamplesQuery):
         else:
             raise Exception(f'kind=[{kind}] is not supported. Must be one of {self.ISA_TYPES}')
 
-    def _create_from(self, sample_set: SampleSet, queries_collection: QueriesCollection) -> SamplesQuery:
+    def _create_from(self, sample_set: SampleSet, universe_set: SampleSet, queries_collection: QueriesCollection) -> SamplesQuery:
         return SamplesQueryIndex(connection=self._query_connection,
-                                 universe_set=self.universe_set,
+                                 universe_set=universe_set,
                                  sample_set=sample_set,
                                  queries_collection=queries_collection)

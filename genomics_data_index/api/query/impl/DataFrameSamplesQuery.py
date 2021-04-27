@@ -89,12 +89,19 @@ class DataFrameSamplesQuery(WrappedSamplesQuery):
         new_col_order = samples_df_cols + [col for col in list(merged_df.columns) if col not in samples_df_cols]
         return merged_df[new_col_order]
 
-    def _wrap_create(self, wrapped_query: SamplesQuery) -> WrappedSamplesQuery:
+    def reset_universe(self) -> SamplesQuery:
+        new_wrapped_query = self._wrapped_query.reset_universe()
+        return self._wrap_create(new_wrapped_query, universe_set=new_wrapped_query.universe_set)
+
+    def _wrap_create(self, wrapped_query: SamplesQuery, universe_set: SampleSet = None) -> WrappedSamplesQuery:
+        if universe_set is None:
+            universe_set = self.universe_set
+
         return DataFrameSamplesQuery(connection=self._query_connection,
                                      wrapped_query=wrapped_query,
                                      data_frame=self._data_frame,
                                      sample_ids_col=self._sample_ids_col,
-                                     universe_set=self.universe_set,
+                                     universe_set=universe_set,
                                      default_isa_kind=self._default_isa_kind,
                                      default_isa_column=self._default_isa_column)
 

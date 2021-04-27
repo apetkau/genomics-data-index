@@ -76,6 +76,14 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
+    def reset_universe(self) -> SamplesQuery:
+        """
+        Resets the 'universe' set to be the set of currently selected samples.
+        :return: A SamplesQuery with the universe reset to whatever is selected.
+        """
+        pass
+
+    @abc.abstractmethod
     def hasa(self, property: Union[QueryFeature, str, pd.Series], kind=None) -> SamplesQuery:
         pass
 
