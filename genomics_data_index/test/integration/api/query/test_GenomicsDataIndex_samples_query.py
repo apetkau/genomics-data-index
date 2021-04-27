@@ -850,6 +850,35 @@ def test_query_then_build_tree_then_join_dataframe(loaded_database_connection: D
     assert 1 == len(query_result.universe_set)
 
 
+def test_query_tree_join_dataframe_isa_dataframe_column(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+
+    metadata_df = pd.DataFrame([
+        [sampleA.id, 'red'],
+        [sampleB.id, 'green'],
+        [sampleC.id, 'blue']
+    ], columns=['Sample ID', 'Color'])
+
+    query_result = query(loaded_database_connection).hasa('reference:839:C:G', kind='mutation')
+    assert 2 == len(query_result)
+    assert {sampleB.id, sampleC.id} == set(query_result.sample_set)
+
+    query_result = query_result.build_tree(kind='mutation', scope='genome', include_reference=True)
+    assert 2 == len(query_result)
+    assert isinstance(query_result, TreeSamplesQuery)
+
+    query_result = query_result.join(data_frame=metadata_df, sample_ids_column='Sample ID')
+    assert 2 == len(query_result)
+
+    # Now try to do isa on tree + dataframe query
+    query_result = query_result.isa('green', kind='dataframe', isa_column='Color')
+    assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+
+
 def test_within_constructed_tree(loaded_database_connection: DataIndexConnection):
     query_result = query(loaded_database_connection).hasa(
         'reference:839:C:G', kind='mutation').build_tree(
