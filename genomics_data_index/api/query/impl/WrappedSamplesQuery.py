@@ -92,10 +92,10 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
                         f' Perhaps you should try to run build_tree() first to build a tree.')
 
     def _isin_internal(self, data: Union[str, List[str], pd.Series], kind: str, **kwargs) -> SamplesQuery:
-        raise Exception(f'Invalid kind={kind}. Must be one of {self._isin_kinds()}')
+        return self._wrap_create(self._wrapped_query.isin(data=data, kind=kind, **kwargs))
 
     def _isa_internal(self, data: Union[str, List[str]], kind: str, **kwargs) -> SamplesQuery:
-        raise Exception(f'Invalid kind={kind}. Must be one of {self._isa_kinds()}')
+        return self._wrap_create(self._wrapped_query.isa(data=data, kind=kind, **kwargs))
 
     def _isin_kinds(self) -> List[str]:
         return ['names']
