@@ -86,13 +86,13 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
                         f' Perhaps you should try to run build_tree() first to build a tree.')
 
     @abc.abstractmethod
-    def _isin_internal(self, data: Union[str, List[str]], kind, **kwargs) -> SamplesQuery:
+    def _isin_internal(self, data: Union[str, List[str], pd.Series], kind, **kwargs) -> SamplesQuery:
         pass
 
     def _isin_kinds(self) -> List[str]:
         return ['names']
 
-    def isin(self, data: Union[str, List[str]], kind: str = 'names', **kwargs) -> SamplesQuery:
+    def isin(self, data: Union[str, List[str], pd.Series], kind: str = 'names', **kwargs) -> SamplesQuery:
         if kind == 'names':
             return self._wrap_create(self._wrapped_query.isin(data))
         else:

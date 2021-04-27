@@ -13,7 +13,7 @@ from genomics_data_index.storage.model.QueryFeature import QueryFeature
 
 
 class DataFrameSamplesQuery(WrappedSamplesQuery):
-    HAS_KINDS = ['dataframe']
+    ISIN_KINDS = ['dataframe']
 
     def __init__(self, connection: DataIndexConnection, wrapped_query: SamplesQuery,
                  universe_set: SampleSet,
@@ -23,33 +23,25 @@ class DataFrameSamplesQuery(WrappedSamplesQuery):
         self._sample_ids_col = sample_ids_col
         self._data_frame = data_frame
 
-    def hasa(self, property: Union[QueryFeature, str, pd.Series], kind=None) -> SamplesQuery:
+    def _isin_internal(self, data: Union[str, List[str], pd.Series], kind, **kwargs) -> SamplesQuery:
         if kind == 'dataframe':
-            if isinstance(property, pd.Series) and property.dtype == bool:
-                if property.index.equals(self._data_frame.index):
-                    return self._handle_select_by_series(property)
+            if isinstance(data, pd.Series) and data.dtype == bool:
+                if data.index.equals(self._data_frame.index):
+                    return self._handle_select_by_series(data)
                 else:
-                    raise Exception(f'Passed property=[series with length {len(property)}] '
+                    raise Exception(f'Passed data=[series with length {len(data)}] '
                                     f'does not have same index as internal data frame (length={len(self._data_frame)})')
             else:
-                raise Exception(f'property=[{property}] is wrong type for kind=[{kind}]. '
+                raise Exception(f'data=[{data}] is wrong type for kind=[{kind}]. '
                                 f'Must be a boolean pandas.Series')
-        else:
-            return self._wrap_create(self._wrapped_query.hasa(property=property, kind=kind))
-
-    def _isin_internal(self, data: Union[str, List[str]], kind, **kwargs) -> SamplesQuery:
-        return self._wrap_create(self._wrapped_query.isin(data))
 
     def _isin_kinds(self) -> List[str]:
-        return super()._isin_kinds()
-
-    def _get_has_kinds(self) -> List[str]:
-        return self._wrapped_query._get_has_kinds() + self.HAS_KINDS
+        return super()._isin_kinds() + self.ISIN_KINDS
 
     def _handle_select_by_series(self, series_selection: pd.Series) -> SamplesQuery:
         subset_df = self._data_frame[series_selection]
         subset_sample_set = SampleSet(subset_df[self._sample_ids_col].tolist())
-        query_message = 'hasa(subset from series)'
+        query_message = 'isin(subset from series)'
         subset_query = self._wrapped_query.intersect(sample_set=subset_sample_set, query_message=query_message)
         return self._wrap_create(subset_query)
 

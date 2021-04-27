@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 from typing import Union, List
+import pandas as pd
 
 from ete3 import Tree, TreeStyle
 
@@ -100,7 +101,7 @@ class TreeSamplesQuery(WrappedSamplesQuery):
         found_samples = SampleSet(found_samples_list)
         return self.intersect(found_samples, f'within(mrca of {sample_names})')
 
-    def _isin_internal(self, data: Union[str, List[str]], kind, **kwargs) -> SamplesQuery:
+    def _isin_internal(self, data: Union[str, List[str], pd.Series], kind, **kwargs) -> SamplesQuery:
         if kind == 'distance':
             return self._within_distance(sample_names=data, kind=kind, **kwargs)
         elif kind == 'mrca':

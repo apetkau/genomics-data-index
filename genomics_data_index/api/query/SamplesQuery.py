@@ -95,7 +95,7 @@ class SamplesQuery(abc.ABC):
         return self.isin(data=data, kind='distance', **kwargs)
 
     @abc.abstractmethod
-    def isin(self, data: Union[str, List[str]], kind: str = 'names', **kwargs) -> SamplesQuery:
+    def isin(self, data: Union[str, List[str], pd.Series], kind: str = 'names', **kwargs) -> SamplesQuery:
         pass
 
     @abc.abstractmethod
