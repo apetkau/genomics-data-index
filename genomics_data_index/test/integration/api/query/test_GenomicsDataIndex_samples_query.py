@@ -859,7 +859,7 @@ def test_query_tree_join_dataframe_isa_dataframe_column(loaded_database_connecti
     metadata_df = pd.DataFrame([
         [sampleA.id, 'red'],
         [sampleB.id, 'green'],
-        [sampleC.id, 'blue']
+        [sampleC.id, pd.NA]
     ], columns=['Sample ID', 'Color'])
 
     query_result = query(loaded_database_connection).hasa('reference:839:C:G', kind='mutation')
@@ -875,6 +875,11 @@ def test_query_tree_join_dataframe_isa_dataframe_column(loaded_database_connecti
 
     # Now try to do isa on tree + dataframe query
     query_result = query_result.isa('green', kind='dataframe', isa_column='Color')
+    assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+
+    # Do isa with regex and an NA in the dataframe
+    query_result = query_result.isa(r'^gr', kind='dataframe', isa_column='Color', regex=True)
     assert 1 == len(query_result)
     assert {sampleB.id} == set(query_result.sample_set)
 

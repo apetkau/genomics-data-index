@@ -64,7 +64,8 @@ class DataFrameSamplesQuery(WrappedSamplesQuery):
                 raise Exception(f'No defined isa_column, cannot execute isa for kind={kind}')
 
             if regex:
-                return self._handle_select_by_series(self._data_frame[isa_column].str.contains(data),
+                no_na_select = (~self._data_frame[isa_column].isna()) & (self._data_frame[isa_column].str.contains(data))
+                return self._handle_select_by_series(no_na_select,
                                                      query_message=f"isa('{isa_column}' contains '{data}')")
             else:
                 return self._handle_select_by_series(self._data_frame[isa_column] == data,
