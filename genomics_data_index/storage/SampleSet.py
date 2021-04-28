@@ -27,7 +27,7 @@ class SampleSet:
         elif isinstance(other, set):
             return SampleSet(self._bitmap.intersection(BitMap(other)))
         else:
-            raise Exception(f'Cannot intersect other of type [{type(other)}]')
+            raise Exception(f'Cannot union other of type [{type(other)}]')
 
     def union(self, other: Union[Set[int], SampleSet]) -> SampleSet:
         if other is None:
