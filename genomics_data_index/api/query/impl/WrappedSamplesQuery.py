@@ -64,6 +64,9 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
     def and_(self, other: SamplesQuery) -> SamplesQuery:
         return self._wrap_create(self._wrapped_query.and_(other))
 
+    def or_(self, other: SamplesQuery) -> SamplesQuery:
+        return self._wrap_create(self._wrapped_query.or_(other))
+
     def hasa(self, property: Union[QueryFeature, str, pd.Series], kind='mutation') -> SamplesQuery:
         return self._wrap_create(self._wrapped_query.hasa(property=property, kind=kind))
 
@@ -117,6 +120,9 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
 
     def __and__(self, other):
         return self.and_(other)
+
+    def __or__(self, other):
+        return self.or_(other)
 
     def __len__(self):
         return len(self._wrapped_query)
