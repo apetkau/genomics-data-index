@@ -5,11 +5,10 @@ from typing import Union, List
 import pandas as pd
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
-from genomics_data_index.api.query.impl.TreeSamplesQuery import TreeSamplesQuery
+from genomics_data_index.api.query.impl.TreeSamplesQueryFactory import TreeSamplesQueryFactory
 from genomics_data_index.api.query.impl.WrappedSamplesQuery import WrappedSamplesQuery
 from genomics_data_index.configuration.connector import DataIndexConnection
 from genomics_data_index.storage.SampleSet import SampleSet
-from genomics_data_index.storage.model.QueryFeature import QueryFeature
 
 
 class DataFrameSamplesQuery(WrappedSamplesQuery):
@@ -108,8 +107,9 @@ class DataFrameSamplesQuery(WrappedSamplesQuery):
                                      default_isa_column=self._default_isa_column)
 
     def build_tree(self, kind: str, scope: str, **kwargs) -> SamplesQuery:
-        return TreeSamplesQuery.create(kind=kind, scope=scope, database_connection=self._query_connection,
-                                       wrapped_query=self, **kwargs)
+        return TreeSamplesQueryFactory.instance().build_tree(kind=kind, scope=scope,
+                                                             database_connection=self._query_connection,
+                                                             wrapped_query=self, **kwargs)
 
     def join(self, data_frame: pd.DataFrame, sample_ids_column: str = None,
              sample_names_column: str = None, default_isa_kind: str = 'names',
