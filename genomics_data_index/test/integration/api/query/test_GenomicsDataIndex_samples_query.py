@@ -6,6 +6,7 @@ import pytest
 from genomics_data_index.api.query.GenomicsDataIndex import GenomicsDataIndex
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.api.query.impl.TreeSamplesQuery import TreeSamplesQuery
+from genomics_data_index.api.query.impl.ExperimentalTreeSamplesQuery import ExperimentalTreeSamplesQuery
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
@@ -844,7 +845,7 @@ def test_query_then_build_tree_then_join_dataframe(loaded_database_connection: D
     assert 3 == len(query_result.universe_set)
     assert ['SampleB'] == query_result.tolist()
 
-    # Resetting universe should work propertly
+    # Resetting universe should work properly
     query_result = query_result.reset_universe()
     assert 1 == len(query_result)
     assert 1 == len(query_result.universe_set)
@@ -950,6 +951,18 @@ def test_within_constructed_tree(loaded_database_connection: DataIndexConnection
     assert ['SampleA'] == df['Sample Name'].tolist()
     assert {"reference:839:C:G AND mutation_tree(genome) AND isa('SampleA')"
             } == set(df['Query'].tolist())
+
+
+def test_build_tree_experimental(loaded_database_connection: DataIndexConnection):
+    query_result = query(loaded_database_connection).hasa(
+        'reference:839:C:G', kind='mutation').build_tree(
+        kind='mutation_experimental', scope='genome', include_reference=True, extra_params='--seed 42 -m GTR')
+    assert 2 == len(query_result)
+    assert isinstance(query_result, ExperimentalTreeSamplesQuery)
+
+    # isin should still work with ExperimentalTreeSamplesQuery
+    df = query_result.isin('SampleC', kind='distance', distance=0.005, units='substitutions/site').toframe().sort_values('Sample Name')
+    assert 2 == len(df)
 
 
 def test_within_constructed_tree_larger_tree(loaded_database_connection: DataIndexConnection):

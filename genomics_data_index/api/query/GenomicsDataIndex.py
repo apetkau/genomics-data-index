@@ -80,9 +80,9 @@ class GenomicsDataIndex:
         if universe == 'all':
             return self._query_all_samples(self._connection)
         elif universe == 'mutations':
-            return self._query_reference(kind='regular', connection=self._connection, **kwargs)
+            return self._query_reference(kind=universe, connection=self._connection, **kwargs)
         elif universe == 'mutations_experimental':
-            return self._query_reference(kind='experimental', connection=self._connection, **kwargs)
+            return self._query_reference(kind=universe, connection=self._connection, **kwargs)
         elif universe == 'dataframe':
             return self._query_data_frame(connection=self._connection, **kwargs)
         else:
