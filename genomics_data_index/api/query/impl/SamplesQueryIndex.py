@@ -162,7 +162,7 @@ class SamplesQueryIndex(SamplesQuery):
             return self._create_from(union_set, universe_set=self._universe_set,
                                      queries_collection=queries_collection)
         else:
-            raise Exception(f'Cannot perform an "and" on object {other}')
+            raise Exception(f'Cannot perform an "or" on object {other}')
 
     def is_empty(self) -> bool:
         return self.sample_set.is_empty()
