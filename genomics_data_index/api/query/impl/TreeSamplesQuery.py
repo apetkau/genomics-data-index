@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import copy
 from typing import Union, List
-import pandas as pd
 
+import pandas as pd
 from ete3 import Tree, TreeStyle
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery

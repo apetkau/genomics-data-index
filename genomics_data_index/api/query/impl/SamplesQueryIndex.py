@@ -7,7 +7,7 @@ import pandas as pd
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.api.query.impl.DataFrameSamplesQuery import DataFrameSamplesQuery
 from genomics_data_index.api.query.impl.QueriesCollection import QueriesCollection
-from genomics_data_index.api.query.impl.TreeSamplesQuery import TreeSamplesQuery
+from genomics_data_index.api.query.impl.TreeSamplesQueryFactory import TreeSamplesQueryFactory
 from genomics_data_index.configuration.connector import DataIndexConnection
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.QueryFeature import QueryFeature
@@ -84,8 +84,9 @@ class SamplesQueryIndex(SamplesQuery):
         return self._queries_collection.query_expression()
 
     def build_tree(self, kind: str, scope: str, **kwargs) -> SamplesQuery:
-        return TreeSamplesQuery.create(kind=kind, scope=scope, database_connection=self._query_connection,
-                                       wrapped_query=self, **kwargs)
+        return TreeSamplesQueryFactory.instance().build_tree(kind=kind, scope=scope,
+                                                             database_connection=self._query_connection,
+                                                             wrapped_query=self, **kwargs)
 
     def toframe(self, exclude_absent: bool = True) -> pd.DataFrame:
         sample_service = self._query_connection.sample_service
@@ -241,7 +242,8 @@ class SamplesQueryIndex(SamplesQuery):
         else:
             raise Exception(f'kind=[{kind}] is not supported. Must be one of {self.ISA_TYPES}')
 
-    def _create_from(self, sample_set: SampleSet, universe_set: SampleSet, queries_collection: QueriesCollection) -> SamplesQuery:
+    def _create_from(self, sample_set: SampleSet, universe_set: SampleSet,
+                     queries_collection: QueriesCollection) -> SamplesQuery:
         return SamplesQueryIndex(connection=self._query_connection,
                                  universe_set=universe_set,
                                  sample_set=sample_set,
