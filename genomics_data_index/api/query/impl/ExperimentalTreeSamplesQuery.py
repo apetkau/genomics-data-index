@@ -25,6 +25,11 @@ class ExperimentalTreeSamplesQuery(TreeSamplesQuery):
         super().__init__(connection=connection, wrapped_query=wrapped_query,
                          tree=tree, alignment_length=alignment_length)
 
+    def set_outgroup(self, sample_name: str) -> SamplesQuery:
+        tree = copy.deepcopy(self._tree)
+        tree.set_outgroup(sample_name)
+        return self._create_from_tree_internal(tree)
+
     def relabel_samples(self, rename_func: Callable[[str], str]) -> SamplesQuery:
         tree = copy.deepcopy(self._tree)
         for node in tree.traverse("postorder"):
