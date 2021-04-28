@@ -77,6 +77,9 @@ class SamplesQueryIndex(SamplesQuery):
     def _intersect_sample_set(self, other: SampleSet) -> SampleSet:
         return self.sample_set.intersection(other)
 
+    def _union_sample_set(self, other: SampleSet) -> SampleSet:
+        return self.sample_set.union(other)
+
     def _get_has_kinds(self) -> List[str]:
         return self.HAS_KINDS
 
@@ -152,6 +155,15 @@ class SamplesQueryIndex(SamplesQuery):
         else:
             raise Exception(f'Cannot perform an "and" on object {other}')
 
+    def or_(self, other: SamplesQuery) -> SamplesQuery:
+        if isinstance(other, SamplesQuery):
+            union_set = self._union_sample_set(other.sample_set)
+            queries_collection = self._queries_collection.append(f'OR({str(other)}')
+            return self._create_from(union_set, universe_set=self._universe_set,
+                                     queries_collection=queries_collection)
+        else:
+            raise Exception(f'Cannot perform an "and" on object {other}')
+
     def is_empty(self) -> bool:
         return self.sample_set.is_empty()
 
@@ -168,6 +180,9 @@ class SamplesQueryIndex(SamplesQuery):
 
     def __and__(self, other):
         return self.and_(other)
+
+    def __or__(self, other):
+        return self.or_(other)
 
     def __len__(self):
         return len(self.sample_set)

@@ -46,10 +46,47 @@ def test_serialize_deserialize():
 def test_intersect_sample_set():
     sample_set1 = SampleSet(sample_ids=[1, 3, 10])
     sample_set2 = SampleSet(sample_ids=[3, 10, 20])
+    sample_set_empty = SampleSet(sample_ids=[])
+    sample_set_non_overlap = SampleSet(sample_ids=[50, 100])
 
     intersection = sample_set1.intersection(sample_set2)
     assert isinstance(intersection, SampleSet)
     assert {3, 10} == set(intersection)
+
+    intersection = sample_set2.intersection(sample_set1)
+    assert isinstance(intersection, SampleSet)
+    assert {3, 10} == set(intersection)
+
+    intersection = sample_set1.intersection(sample_set_empty)
+    assert isinstance(intersection, SampleSet)
+    assert set() == set(intersection)
+
+    intersection = sample_set1.intersection(sample_set_non_overlap)
+    assert isinstance(intersection, SampleSet)
+    assert set() == set(intersection)
+
+
+def test_union_sample_set():
+    sample_set1 = SampleSet(sample_ids=[1, 3, 10])
+    sample_set2 = SampleSet(sample_ids=[3, 10, 20])
+    sample_set_empty = SampleSet(sample_ids=[])
+    sample_set_non_overlap = SampleSet(sample_ids=[50, 100])
+
+    union = sample_set1.union(sample_set2)
+    assert isinstance(union, SampleSet)
+    assert {1, 3, 10, 20} == set(union)
+
+    union = sample_set2.union(sample_set1)
+    assert isinstance(union, SampleSet)
+    assert {1, 3, 10, 20} == set(union)
+
+    union = sample_set1.union(sample_set_empty)
+    assert isinstance(union, SampleSet)
+    assert {1, 3, 10} == set(union)
+
+    union = sample_set1.union(sample_set_non_overlap)
+    assert isinstance(union, SampleSet)
+    assert {1, 3, 10, 50, 100} == set(union)
 
 
 def test_complement_sample_set():
@@ -69,6 +106,14 @@ def test_intersect_python_set():
     sample_set1 = SampleSet(sample_ids=[1, 3, 10])
 
     assert {3, 10} == set(sample_set1.intersection({3, 10, 20}))
+
+
+def test_union_python_set():
+    sample_set1 = SampleSet(sample_ids=[1, 3, 10])
+
+    assert {1, 3, 10, 20} == set(sample_set1.union({3, 10, 20}))
+    assert {1, 3, 10} == set(sample_set1.union(set()))
+    assert {1, 3, 10, 50, 100} == set(sample_set1.union({50, 100}))
 
 
 def test_create_empty_sample_set():

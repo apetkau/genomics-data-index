@@ -72,6 +72,10 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
+    def or_(self, other: SamplesQuery) -> SamplesQuery:
+        pass
+
+    @abc.abstractmethod
     def build_tree(self, kind: str, scope: str, **kwargs) -> SamplesQuery:
         pass
 
@@ -157,6 +161,10 @@ class SamplesQuery(abc.ABC):
 
     @abc.abstractmethod
     def __and__(self, other):
+        pass
+
+    @abc.abstractmethod
+    def __or__(self, other):
         pass
 
     @abc.abstractmethod

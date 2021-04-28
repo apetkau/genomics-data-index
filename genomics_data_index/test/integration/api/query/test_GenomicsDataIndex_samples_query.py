@@ -53,6 +53,69 @@ def test_query_isin_sample_names(loaded_database_connection: DataIndexConnection
     assert 9 == len(query_result.universe_set)
 
 
+def test_query_and_or(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+
+    query_resultA = query(loaded_database_connection).isa('SampleA')
+    assert 1 == len(query_resultA)
+    assert {sampleA.id} == set(query_resultA.sample_set)
+    assert 9 == len(query_resultA.universe_set)
+
+    query_resultB = query(loaded_database_connection).isa('SampleB')
+    assert 1 == len(query_resultB)
+    assert {sampleB.id} == set(query_resultB.sample_set)
+    assert 9 == len(query_resultB.universe_set)
+
+    query_resultC = query(loaded_database_connection).isa('SampleC')
+    assert 1 == len(query_resultC)
+    assert {sampleC.id} == set(query_resultC.sample_set)
+    assert 9 == len(query_resultC.universe_set)
+
+    query_resultAB = query(loaded_database_connection).isin(['SampleA', 'SampleB'])
+    assert 2 == len(query_resultAB)
+    assert {sampleA.id, sampleB.id} == set(query_resultAB.sample_set)
+    assert 9 == len(query_resultAB.universe_set)
+
+    # Test AND
+    query_resultA_and_AB = query_resultA.and_(query_resultAB)
+    assert 1 == len(query_resultA_and_AB)
+    assert {sampleA.id} == set(query_resultA_and_AB.sample_set)
+    assert 9 == len(query_resultA_and_AB.universe_set)
+
+    query_resultAB_and_A = query_resultAB.and_(query_resultA)
+    assert 1 == len(query_resultAB_and_A)
+    assert {sampleA.id} == set(query_resultAB_and_A.sample_set)
+    assert 9 == len(query_resultAB_and_A.universe_set)
+
+    query_resultA_and_B = query_resultA.and_(query_resultB)
+    assert 0 == len(query_resultA_and_B)
+    assert 9 == len(query_resultA_and_B.universe_set)
+
+    # Test OR
+    query_resultA_or_AB = query_resultA.or_(query_resultAB)
+    assert 2 == len(query_resultA_or_AB)
+    assert {sampleA.id, sampleB.id} == set(query_resultA_or_AB.sample_set)
+    assert 9 == len(query_resultA_or_AB.universe_set)
+
+    query_resultAB_or_A = query_resultAB.or_(query_resultA)
+    assert 2 == len(query_resultAB_or_A)
+    assert {sampleA.id, sampleB.id} == set(query_resultAB_or_A.sample_set)
+    assert 9 == len(query_resultAB_or_A.universe_set)
+
+    query_resultA_or_B = query_resultA.or_(query_resultB)
+    assert 2 == len(query_resultA_or_B)
+    assert {sampleA.id, sampleB.id} == set(query_resultA_or_B.sample_set)
+    assert 9 == len(query_resultA_or_B.universe_set)
+
+    query_resultA_or_B_or_C = query_resultA.or_(query_resultB).or_(query_resultC)
+    assert 3 == len(query_resultA_or_B_or_C)
+    assert {sampleA.id, sampleB.id, sampleC.id} == set(query_resultA_or_B_or_C.sample_set)
+    assert 9 == len(query_resultA_or_B_or_C.universe_set)
+
+
 def test_query_reset_universe(loaded_database_connection: DataIndexConnection):
     query_result = query(loaded_database_connection).isin('SampleB')
     assert 1 == len(query_result)
