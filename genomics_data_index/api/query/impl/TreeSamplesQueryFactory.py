@@ -4,6 +4,7 @@ from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.api.query.impl.TreeBuilderReferenceMutations import TreeBuilderReferenceMutations
 from genomics_data_index.api.query.impl.TreeSamplesQuery import TreeSamplesQuery
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
+from genomics_data_index.storage.model.db import Reference
 
 
 class TreeSamplesQueryFactory:
@@ -34,6 +35,13 @@ class TreeSamplesQueryFactory:
             return tree_samples_query
         else:
             raise Exception(f'Got kind=[{kind}], only the following kinds are supported: {self.BUILD_TREE_KINDS}')
+
+    def create_from_reference_genome(self, kind: str, reference_genome: Reference,
+                                     connection: DataIndexConnection,
+                                     wrapped_query: SamplesQuery):
+        return TreeSamplesQuery(connection=connection, wrapped_query=wrapped_query,
+                                tree=reference_genome.tree,
+                                alignment_length=reference_genome.tree_alignment_length)
 
     @classmethod
     def instance(cls) -> TreeSamplesQueryFactory:

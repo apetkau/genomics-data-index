@@ -11,6 +11,7 @@ from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.api.query.impl.DataFrameSamplesQuery import DataFrameSamplesQuery
 from genomics_data_index.api.query.impl.SamplesQueryIndex import SamplesQueryIndex
 from genomics_data_index.api.query.impl.TreeSamplesQuery import TreeSamplesQuery
+from genomics_data_index.api.query.impl.TreeSamplesQueryFactory import TreeSamplesQueryFactory
 from genomics_data_index.configuration.Project import Project
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
 from genomics_data_index.storage.model.NucleotideMutationTranslater import NucleotideMutationTranslater
@@ -19,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 class GenomicsDataIndex:
-    QUERY_UNIVERSE = ['all', 'mutations', 'dataframe']
+    QUERY_UNIVERSE = ['all', 'mutations', 'mutations_experimental', 'dataframe']
     MUTATION_ID_TYPES = ['spdi_ref', 'spdi']
 
     def __init__(self, connection: DataIndexConnection):
@@ -79,7 +80,9 @@ class GenomicsDataIndex:
         if universe == 'all':
             return self._query_all_samples(self._connection)
         elif universe == 'mutations':
-            return self._query_reference(connection=self._connection, **kwargs)
+            return self._query_reference(kind='regular', connection=self._connection, **kwargs)
+        elif universe == 'mutations_experimental':
+            return self._query_reference(kind='experimental', connection=self._connection, **kwargs)
         elif universe == 'dataframe':
             return self._query_data_frame(connection=self._connection, **kwargs)
         else:
@@ -89,7 +92,7 @@ class GenomicsDataIndex:
         all_samples = connection.sample_service.get_all_sample_ids()
         return SamplesQueryIndex(connection=connection, sample_set=all_samples, universe_set=all_samples)
 
-    def _query_reference(self, connection: DataIndexConnection, reference_name: str):
+    def _query_reference(self, kind: str, connection: DataIndexConnection, reference_name: str):
         reference_samples = connection.sample_service.get_samples_set_associated_with_reference(reference_name)
         reference_genome = connection.reference_service.find_reference_genome(reference_name)
 
@@ -97,9 +100,10 @@ class GenomicsDataIndex:
                                          universe_set=reference_samples)
 
         if reference_genome.has_tree():
-            sample_query = TreeSamplesQuery(connection=connection, wrapped_query=sample_query,
-                                            tree=reference_genome.tree,
-                                            alignment_length=reference_genome.tree_alignment_length)
+            sample_query = TreeSamplesQueryFactory.instance().create_from_reference_genome(kind=kind,
+                                                                                           reference_genome=reference_genome,
+                                                                                           connection=connection,
+                                                                                           wrapped_query=sample_query)
 
         return sample_query
 
