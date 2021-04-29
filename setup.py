@@ -2,8 +2,6 @@ from distutils.core import setup
 
 from setuptools import find_packages
 
-from genomics_data_index import __version__
-
 classifiers = """
 Development Status :: 4 - Beta
 Environment :: Console
@@ -16,7 +14,7 @@ Operating System :: POSIX :: Linux
 """.strip().split('\n')
 
 setup(name='genomics-data-index',
-      version=__version__,
+        version='0.1.0.dev1',
       description='Indexes genomics data (mutations, kmers, MLST) for fast querying of features.',
       author='Aaron Petkau',
       author_email='aaron.petkau@gmail.com',
