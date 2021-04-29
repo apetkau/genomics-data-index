@@ -1,0 +1,12 @@
+SAMPLES = ["SampleA", "SampleB"]
+
+
+rule assembly_align:
+    input:
+        reference="data/reference.fasta",
+        sample="data/sample.fasta",
+    output:
+        "align/sample.sam",
+    conda: "env.yaml"
+    shell:
+        "minimap2 -a -x asm5 {input.reference} {input.sample} > {output}"
