@@ -1,17 +1,14 @@
-SAMPLES = ["SampleA", "SampleB"]
-
 rule all:
     input:
-        "variant/sample.vcf.gz",
-        "consensus/sample.fasta.gz"
-
+        "variant/{sample}.vcf.gz",
+        "consensus/{sample}.fasta.gz"
 
 rule assembly_align:
     input:
         reference="data/reference.fasta",
-        sample="data/sample.fasta",
+        sample="data/{sample}.fasta",
     output:
-        "align/sample.bam",
+        "align/{sample}.bam",
     conda:
         "env.yaml"
     shell:
@@ -21,9 +18,9 @@ rule assembly_align:
 rule assembly_variant:
     input:
         reference="data/reference.fasta",
-        bam="align/sample.bam"
+        bam="align/{sample}.bam"
     output:
-        "variant/sample.vcf.gz"
+        "variant/{sample}.vcf.gz"
     conda:
         "env.yaml"
     shell:
@@ -32,9 +29,9 @@ rule assembly_variant:
 rule assembly_consensus:
     input:
         reference="data/reference.fasta",
-        bam="align/sample.bam"
+        bam="align/{sample}.bam"
     output:
-        "consensus/sample.fasta.gz"
+        "consensus/{sample}.fasta.gz"
     conda:
         "env.yaml"
     shell:
