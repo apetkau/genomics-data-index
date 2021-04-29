@@ -10,7 +10,7 @@ rule assembly_align:
     output:
         "align/{sample}.bam",
     conda:
-        "env.yaml"
+        "envs/main.yaml"
     log:
         mm2="logs/assembly_align.{sample}.minimap2.log",
 	sv="logs/assembly_align.{sample}.sv.log"
@@ -25,7 +25,7 @@ rule assembly_variant:
     output:
         "variant/{sample}.vcf.gz"
     conda:
-        "env.yaml"
+        "envs/main.yaml"
     log:
         pileup="logs/assembly_variant.{sample}.pileup.log",
     shell:
@@ -38,7 +38,7 @@ rule assembly_consensus:
     output:
         "consensus/{sample}.fasta.gz"
     conda:
-        "env.yaml"
+        "envs/main.yaml"
     log:
         pileup="logs/assembly_consensus.{sample}.pileup.log",
     shell:
