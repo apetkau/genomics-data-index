@@ -49,14 +49,16 @@ DEFAULT_HIGHLIGHT_STYLES = [style1, style2, style3]
 
 class TreeStyler:
 
-    def __init__(self, tree: Tree, default_highlight_styles: List[Dict[str, Any]], tree_style: TreeStyle):
+    def __init__(self, tree: Tree, default_highlight_styles: List[Dict[str, Any]], tree_style: TreeStyle, legend_nsize: int = 10, legend_fsize: int = 11):
         self._tree = tree
         self._default_highlight_styles = default_highlight_styles
         self._tree_style = tree_style
+        self._legend_nsize = legend_nsize
+        self._legend_fsize = legend_fsize
 
     def highlight(self, samples: Union[SamplesQuery, Iterable[str]],
                   nstyle: NodeStyle = None, legend_color: str = None,
-                  include_legend=False) -> TreeStyler:
+                  legend_label: str = None) -> TreeStyler:
         if nstyle is None and legend_color is None:
             nstyle = self._default_highlight_styles[0]['nstyle']
             legend_color = self._default_highlight_styles[0]['legend_color']
@@ -76,11 +78,9 @@ class TreeStyler:
 
         # Add legend item
         ts = copy.deepcopy(self._tree_style)
-        if include_legend:
-            nsize = 10
-            lfsize = 11
-            ts.legend.add_face(CircleFace(radius=nsize / 2, color=legend_color), column=0)
-            ts.legend.add_face(TextFace(f' {query_expression}', fsize=lfsize), column=1)
+        if legend_label is not None:
+            ts.legend.add_face(CircleFace(radius=self._legend_nsize / 2, color=legend_color), column=0)
+            ts.legend.add_face(TextFace(legend_label, fsize=self._legend_fsize), column=1)
 
         # Highlight nodes
         tree = copy.deepcopy(self._tree)
@@ -95,7 +95,7 @@ class TreeStyler:
                 node.set_style(nstyle)
 
         return TreeStyler(tree, default_highlight_styles=new_default_styles,
-                          tree_style=ts)
+                          tree_style=ts, legend_fsize=self._legend_fsize, legend_nsize=self._legend_nsize)
 
     def render(self, file_name: str = '%%inline', w: int = 400, h: int = 300,
                tree_style: TreeStyle = None):
