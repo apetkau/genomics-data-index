@@ -6,7 +6,21 @@ rule assembly_align:
         reference="data/reference.fasta",
         sample="data/sample.fasta",
     output:
-        "align/sample.sam",
-    conda: "env.yaml"
+        "align/sample.bam",
+    conda:
+        "env.yaml"
     shell:
-        "minimap2 -a -x asm5 {input.reference} {input.sample} > {output}"
+        "minimap2 -a -x asm5 {input.reference} {input.sample} | "
+        "samtools view -b > {output}"
+
+rule assembly_variant:
+    input:
+        reference="data/reference.fasta",
+        bam="align/sample.bam"
+    output:
+        "variant/sample.vcf.gz"
+    conda:
+        "env.yaml"
+    shell:
+        "htsbox pileup -f {input.reference} -d -c {input.bam} | bgzip -c > {output}"
+
