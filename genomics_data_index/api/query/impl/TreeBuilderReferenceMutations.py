@@ -22,16 +22,17 @@ class TreeBuilderReferenceMutations(TreeBuilder):
             raise Exception(f'Reference genome [{reference_name}] does not exist.')
 
     def build(self, samples_set: Union[SampleSet, Iterable[str]],
-              method: str = 'iqtree', **kwargs) -> Tuple[Tree, int, SampleSet]:
+              method: str = 'iqtree', include_reference=True, **kwargs) -> Tuple[Tree, int, SampleSet]:
         if method == 'iqtree':
-            return self._build_iqtree(samples_set=samples_set, **kwargs)
+            return self._build_iqtree(samples_set=samples_set, include_reference=include_reference,
+                                      **kwargs)
         else:
             raise Exception(f'Invalid method={method}, only support: {self.TREE_METHODS}')
 
     def _build_iqtree(self, samples_set: Union[SampleSet, Iterable[str]],
                       maxcores: int = 1,
                       align_type: str = 'full',
-                      include_reference: bool = False,
+                      include_reference: bool = True,
                       extra_params: str = None) -> Tuple[Tree, int, SampleSet]:
         sample_service = self._database_connection.sample_service
         alignment_service = self._database_connection.alignment_service

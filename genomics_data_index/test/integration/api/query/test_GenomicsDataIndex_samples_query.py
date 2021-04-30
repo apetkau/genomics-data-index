@@ -1,4 +1,5 @@
 import math
+from typing import cast
 
 import pandas as pd
 import pytest
@@ -816,9 +817,48 @@ def test_query_and_build_mutation_tree(loaded_database_connection: DataIndexConn
     assert 9 == len(query_result.universe_set)
 
     assert isinstance(query_result, TreeSamplesQuery)
-    assert query_result.tree is not None
+    query_result = cast(TreeSamplesQuery, query_result)
+    assert query_result.reference_included
+    assert 'genome' == query_result.reference_name
 
+    assert query_result.tree is not None
     assert {'SampleB', 'SampleC', 'genome'} == set(query_result.tree.get_leaf_names())
+
+
+def test_build_mutation_tree_include_reference(loaded_database_connection: DataIndexConnection):
+    query_result = query(loaded_database_connection)
+    assert 9 == len(query_result)
+    assert 9 == len(query_result.universe_set)
+
+    query_result = query_result.build_tree(kind='mutation', scope='genome', include_reference=True)
+    assert 3 == len(query_result)
+    assert 9 == len(query_result.universe_set)
+
+    assert isinstance(query_result, TreeSamplesQuery)
+    query_result = cast(TreeSamplesQuery, query_result)
+    assert query_result.reference_included
+    assert 'genome' == query_result.reference_name
+
+    assert query_result.tree is not None
+    assert {'SampleA', 'SampleB', 'SampleC', 'genome'} == set(query_result.tree.get_leaf_names())
+
+
+def test_build_mutation_tree_no_include_reference(loaded_database_connection: DataIndexConnection):
+    query_result = query(loaded_database_connection)
+    assert 9 == len(query_result)
+    assert 9 == len(query_result.universe_set)
+
+    query_result = query_result.build_tree(kind='mutation', scope='genome', include_reference=False)
+    assert 3 == len(query_result)
+    assert 9 == len(query_result.universe_set)
+
+    assert isinstance(query_result, TreeSamplesQuery)
+    query_result = cast(TreeSamplesQuery, query_result)
+    assert not query_result.reference_included
+    assert 'genome' == query_result.reference_name
+
+    assert query_result.tree is not None
+    assert {'SampleA', 'SampleB', 'SampleC'} == set(query_result.tree.get_leaf_names())
 
 
 def test_query_build_tree_and_query(loaded_database_connection: DataIndexConnection):
