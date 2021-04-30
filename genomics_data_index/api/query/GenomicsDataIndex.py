@@ -102,7 +102,8 @@ class GenomicsDataIndex:
             sample_query = TreeSamplesQueryFactory.instance().create_from_reference_genome(kind=kind,
                                                                                            reference_genome=reference_genome,
                                                                                            connection=connection,
-                                                                                           wrapped_query=sample_query)
+                                                                                           wrapped_query=sample_query,
+                                                                                           include_reference=True)
 
         return sample_query
 
