@@ -28,12 +28,17 @@ class ExperimentalTreeSamplesQuery(TreeSamplesQuery):
     def _tree_copy(self) -> Tree:
         return self._tree.copy(method='deepcopy')
 
-    def _tree_copy_prune(self, preserve_branch_length: bool) -> Tree:
+    def _tree_copy_prune(self, from_query: SamplesQuery = None, preserve_branch_length: bool = True) -> Tree:
         tree = self._tree_copy()
-        if self.reference_included:
-            nodes_to_keep = self.tolist() + [self.reference_name]
+        if from_query is None:
+            query = from_query
         else:
-            nodes_to_keep = self.tolist()
+            query = self
+
+        if self.reference_included:
+            nodes_to_keep = query.tolist() + [self.reference_name]
+        else:
+            nodes_to_keep = query.tolist()
         tree.prune(nodes_to_keep, preserve_branch_length=preserve_branch_length)
         return tree
 
@@ -74,7 +79,7 @@ class ExperimentalTreeSamplesQuery(TreeSamplesQuery):
             return children_names
 
     def _wrap_create(self, wrapped_query: SamplesQuery, universe_set: SampleSet = None) -> WrappedSamplesQuery:
-        tree = self._tree_copy_prune(preserve_branch_length=True)
+        tree = self._tree_copy_prune(from_query=wrapped_query, preserve_branch_length=True)
         return ExperimentalTreeSamplesQuery(connection=self._query_connection,
                                             wrapped_query=wrapped_query,
                                             tree=tree,
