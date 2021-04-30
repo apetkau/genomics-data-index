@@ -1,12 +1,13 @@
 import math
+from typing import cast
 
 import pandas as pd
 import pytest
 
 from genomics_data_index.api.query.GenomicsDataIndex import GenomicsDataIndex
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
-from genomics_data_index.api.query.impl.TreeSamplesQuery import TreeSamplesQuery
 from genomics_data_index.api.query.impl.ExperimentalTreeSamplesQuery import ExperimentalTreeSamplesQuery
+from genomics_data_index.api.query.impl.TreeSamplesQuery import TreeSamplesQuery
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
@@ -450,7 +451,8 @@ def test_query_custom_dataframe_isin_sample_names(loaded_database_connection: Da
     assert 2 == len(query_result)
     assert 3 == len(query_result.universe_set)
     assert {sampleA.id, sampleC.id} == set(query_result.sample_set)
-    assert {"dataframe(ids_col=[Sample ID]) AND isin(['SampleA', 'SampleC'])"} == set(query_result.toframe()['Query'].tolist())
+    assert {"dataframe(ids_col=[Sample ID]) AND isin(['SampleA', 'SampleC'])"} == set(
+        query_result.toframe()['Query'].tolist())
 
 
 def test_join_custom_dataframe_single_query(loaded_database_connection: DataIndexConnection):
@@ -816,9 +818,48 @@ def test_query_and_build_mutation_tree(loaded_database_connection: DataIndexConn
     assert 9 == len(query_result.universe_set)
 
     assert isinstance(query_result, TreeSamplesQuery)
-    assert query_result.tree is not None
+    query_result = cast(TreeSamplesQuery, query_result)
+    assert query_result.reference_included
+    assert 'genome' == query_result.reference_name
 
+    assert query_result.tree is not None
     assert {'SampleB', 'SampleC', 'genome'} == set(query_result.tree.get_leaf_names())
+
+
+def test_build_mutation_tree_include_reference(loaded_database_connection: DataIndexConnection):
+    query_result = query(loaded_database_connection)
+    assert 9 == len(query_result)
+    assert 9 == len(query_result.universe_set)
+
+    query_result = query_result.build_tree(kind='mutation', scope='genome', include_reference=True)
+    assert 3 == len(query_result)
+    assert 9 == len(query_result.universe_set)
+
+    assert isinstance(query_result, TreeSamplesQuery)
+    query_result = cast(TreeSamplesQuery, query_result)
+    assert query_result.reference_included
+    assert 'genome' == query_result.reference_name
+
+    assert query_result.tree is not None
+    assert {'SampleA', 'SampleB', 'SampleC', 'genome'} == set(query_result.tree.get_leaf_names())
+
+
+def test_build_mutation_tree_no_include_reference(loaded_database_connection: DataIndexConnection):
+    query_result = query(loaded_database_connection)
+    assert 9 == len(query_result)
+    assert 9 == len(query_result.universe_set)
+
+    query_result = query_result.build_tree(kind='mutation', scope='genome', include_reference=False)
+    assert 3 == len(query_result)
+    assert 9 == len(query_result.universe_set)
+
+    assert isinstance(query_result, TreeSamplesQuery)
+    query_result = cast(TreeSamplesQuery, query_result)
+    assert not query_result.reference_included
+    assert 'genome' == query_result.reference_name
+
+    assert query_result.tree is not None
+    assert {'SampleA', 'SampleB', 'SampleC'} == set(query_result.tree.get_leaf_names())
 
 
 def test_query_build_tree_and_query(loaded_database_connection: DataIndexConnection):
@@ -955,7 +996,8 @@ def test_within_constructed_tree(loaded_database_connection: DataIndexConnection
     assert 2 == len(query_result)
 
     # subs/site
-    df = query_result.isin('SampleC', kind='distance', distance=0.005, units='substitutions/site').toframe().sort_values('Sample Name')
+    df = query_result.isin('SampleC', kind='distance', distance=0.005,
+                           units='substitutions/site').toframe().sort_values('Sample Name')
     assert 2 == len(df)
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
     assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
@@ -971,21 +1013,24 @@ def test_within_constructed_tree(loaded_database_connection: DataIndexConnection
             } == set(df['Query'].tolist())
 
     # subs
-    df = query_result.isin('SampleC', kind='distance', distance=26, units='substitutions').toframe().sort_values('Sample Name')
+    df = query_result.isin('SampleC', kind='distance', distance=26, units='substitutions').toframe().sort_values(
+        'Sample Name')
     assert 2 == len(df)
     assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
     assert {'reference:839:C:G AND mutation_tree(genome) AND within(26 substitutions of SampleC)'
             } == set(df['Query'].tolist())
 
     # should not include reference genome
-    df = query_result.isin('SampleC', kind='distance', distance=100, units='substitutions').toframe().sort_values('Sample Name')
+    df = query_result.isin('SampleC', kind='distance', distance=100, units='substitutions').toframe().sort_values(
+        'Sample Name')
     assert 2 == len(df)
     assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
     assert {'reference:839:C:G AND mutation_tree(genome) AND within(100 substitutions of SampleC)'
             } == set(df['Query'].tolist())
 
     # should have only query sample
-    df = query_result.isin('SampleC', kind='distance', distance=1, units='substitutions').toframe().sort_values('Sample Name')
+    df = query_result.isin('SampleC', kind='distance', distance=1, units='substitutions').toframe().sort_values(
+        'Sample Name')
     assert 1 == len(df)
     assert ['SampleC'] == df['Sample Name'].tolist()
     assert {'reference:839:C:G AND mutation_tree(genome) AND within(1 substitutions of SampleC)'
@@ -1024,7 +1069,8 @@ def test_build_tree_experimental(loaded_database_connection: DataIndexConnection
     assert isinstance(query_result, ExperimentalTreeSamplesQuery)
 
     # isin should still work with ExperimentalTreeSamplesQuery
-    df = query_result.isin('SampleC', kind='distance', distance=0.005, units='substitutions/site').toframe().sort_values('Sample Name')
+    df = query_result.isin('SampleC', kind='distance', distance=0.005,
+                           units='substitutions/site').toframe().sort_values('Sample Name')
     assert 2 == len(df)
 
 

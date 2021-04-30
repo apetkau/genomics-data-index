@@ -49,7 +49,8 @@ DEFAULT_HIGHLIGHT_STYLES = [style1, style2, style3]
 
 class TreeStyler:
 
-    def __init__(self, tree: Tree, default_highlight_styles: List[Dict[str, Any]], tree_style: TreeStyle, legend_nsize: int = 10, legend_fsize: int = 11):
+    def __init__(self, tree: Tree, default_highlight_styles: List[Dict[str, Any]], tree_style: TreeStyle,
+                 legend_nsize: int = 10, legend_fsize: int = 11):
         self._tree = tree
         self._default_highlight_styles = default_highlight_styles
         self._tree_style = tree_style

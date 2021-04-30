@@ -64,6 +64,7 @@ def get_project_exit_on_error(ctx) -> Project:
         logger.debug(e, exc_info=True)
         sys.exit(1)
 
+
 @click.group()
 @click.pass_context
 @click.option('--project-dir', help='A project directory containing the data and connection information.')

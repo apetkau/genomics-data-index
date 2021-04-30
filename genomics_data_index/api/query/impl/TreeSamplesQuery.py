@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import copy
 from typing import Union, List
 
 import pandas as pd
@@ -20,16 +19,28 @@ class TreeSamplesQuery(WrappedSamplesQuery):
     ISIN_TREE_TYPES = ['distance', 'mrca']
 
     def __init__(self, connection: DataIndexConnection, wrapped_query: SamplesQuery, tree: Tree,
-                 alignment_length: int):
+                 alignment_length: int, reference_name: str, reference_included: bool):
         super().__init__(connection=connection, wrapped_query=wrapped_query)
         self._tree = tree
         self._alignment_length = alignment_length
+        self._reference_name = reference_name
+        self._reference_included = reference_included
 
     def _wrap_create(self, wrapped_query: SamplesQuery, universe_set: SampleSet = None) -> WrappedSamplesQuery:
         return TreeSamplesQuery(connection=self._query_connection,
                                 wrapped_query=wrapped_query,
                                 tree=self._tree,
-                                alignment_length=self._alignment_length)
+                                alignment_length=self._alignment_length,
+                                reference_name=self._reference_name,
+                                reference_included=self._reference_included)
+
+    @property
+    def reference_name(self):
+        return self._reference_name
+
+    @property
+    def reference_included(self):
+        return self._reference_included
 
     def build_tree(self, kind: str, scope: str, **kwargs):
         return TreeSamplesQuery.create(kind=kind, scope=scope, database_connection=self._query_connection,
@@ -112,8 +123,9 @@ class TreeSamplesQuery(WrappedSamplesQuery):
     def _isin_kinds(self) -> List[str]:
         return super()._isin_kinds() + self.ISIN_TREE_TYPES
 
-    def tree_styler(self, initial_style: TreeStyle = TreeStyle(), highlight_styles = DEFAULT_HIGHLIGHT_STYLES, legend_nsize: int = 10, legend_fsize: int = 11) -> TreeStyler:
-        return TreeStyler(tree=copy.deepcopy(self._tree),
+    def tree_styler(self, initial_style: TreeStyle = TreeStyle(), highlight_styles=DEFAULT_HIGHLIGHT_STYLES,
+                    legend_nsize: int = 10, legend_fsize: int = 11) -> TreeStyler:
+        return TreeStyler(tree=self._tree.copy(method='deepcopy'),
                           default_highlight_styles=highlight_styles,
                           tree_style=initial_style,
                           legend_nsize=legend_nsize,
@@ -125,18 +137,22 @@ class TreeSamplesQuery(WrappedSamplesQuery):
 
     @classmethod
     def create(cls, kind: str, scope: str, database_connection: DataIndexConnection,
-               wrapped_query: SamplesQuery, **kwargs) -> TreeSamplesQuery:
+               wrapped_query: SamplesQuery, include_reference=True, **kwargs) -> TreeSamplesQuery:
         if kind == 'mutation':
             tree_builder = TreeBuilderReferenceMutations(database_connection,
                                                          reference_name=scope)
-            tree, alignment_length, tree_samples_set = tree_builder.build(wrapped_query.sample_set, **kwargs)
+            tree, alignment_length, tree_samples_set = tree_builder.build(wrapped_query.sample_set,
+                                                                          include_reference=include_reference,
+                                                                          **kwargs)
 
             wrapped_query_tree_set = wrapped_query.intersect(sample_set=tree_samples_set,
                                                              query_message=f'mutation_tree({scope})')
             tree_samples_query = TreeSamplesQuery(connection=database_connection,
                                                   wrapped_query=wrapped_query_tree_set,
                                                   tree=tree,
-                                                  alignment_length=alignment_length)
+                                                  alignment_length=alignment_length,
+                                                  reference_name=scope,
+                                                  reference_included=include_reference)
             return tree_samples_query
         else:
             raise Exception(f'Got kind=[{kind}], only the following kinds are supported: {cls.BUILD_TREE_KINDS}')

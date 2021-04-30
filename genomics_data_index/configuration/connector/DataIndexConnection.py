@@ -6,6 +6,7 @@ from pathlib import Path
 import pandas as pd
 
 from genomics_data_index.configuration.connector.FilesystemStorage import FilesystemStorage
+from genomics_data_index.storage.model.db.DatabasePathTranslator import DatabasePathTranslator
 from genomics_data_index.storage.service import DatabaseConnection
 from genomics_data_index.storage.service.CoreAlignmentService import CoreAlignmentService
 from genomics_data_index.storage.service.KmerQueryService import KmerQueryService
@@ -17,7 +18,6 @@ from genomics_data_index.storage.service.ReferenceService import ReferenceServic
 from genomics_data_index.storage.service.SampleService import SampleService
 from genomics_data_index.storage.service.TreeService import TreeService
 from genomics_data_index.storage.service.VariationService import VariationService
-from genomics_data_index.storage.model.db.DatabasePathTranslator import DatabasePathTranslator
 
 logger = logging.getLogger(__name__)
 

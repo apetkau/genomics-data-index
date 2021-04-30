@@ -1,8 +1,8 @@
-import pytest
-
-from tempfile import TemporaryDirectory
-from pathlib import Path
 from os import mkdir
+from pathlib import Path
+from tempfile import TemporaryDirectory
+
+import pytest
 
 from genomics_data_index.storage.model.db.DatabasePathTranslator import DatabasePathTranslator
 
