@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
+from genomics_data_index.api.query.impl.ExperimentalTreeSamplesQuery import ExperimentalTreeSamplesQuery
 from genomics_data_index.api.query.impl.TreeBuilderReferenceMutations import TreeBuilderReferenceMutations
 from genomics_data_index.api.query.impl.TreeSamplesQuery import TreeSamplesQuery
-from genomics_data_index.api.query.impl.ExperimentalTreeSamplesQuery import ExperimentalTreeSamplesQuery
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
 from genomics_data_index.storage.model.db import Reference
 

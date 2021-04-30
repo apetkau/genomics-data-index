@@ -1,19 +1,19 @@
-from tempfile import TemporaryDirectory
-from pathlib import Path
-from typing import Dict, Any
 import shutil
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from typing import Dict, Any
 
-from genomics_data_index.storage.service.KmerService import KmerService
-from genomics_data_index.test.integration import reference_file
-from genomics_data_index.test.integration import sourmash_signatures
 from genomics_data_index.configuration.connector.FilesystemStorage import FilesystemStorage
 from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
 from genomics_data_index.storage.model.db import DatabasePathTranslator, SampleNucleotideVariation, Sample, \
     SampleKmerIndex
 from genomics_data_index.storage.service import DatabaseConnection
+from genomics_data_index.storage.service.KmerService import KmerService
 from genomics_data_index.storage.service.ReferenceService import ReferenceService
 from genomics_data_index.storage.service.SampleService import SampleService
 from genomics_data_index.storage.service.VariationService import VariationService
+from genomics_data_index.test.integration import reference_file
+from genomics_data_index.test.integration import sourmash_signatures
 
 
 def setup_services(root_dir: Path, database_file: Path) -> Dict[str, Any]:
@@ -82,7 +82,7 @@ def test_path_translation_nucleotide_data(snippy_nucleotide_data_package: Nucleo
             sampleA_nv_2 = database_connection_2.get_session().query(SampleNucleotideVariation) \
                 .join(SampleNucleotideVariation.sample) \
                 .filter(Sample.name == 'SampleA').one()
-            nvf_2 : Path = sampleA_nv_2.nucleotide_variants_file
+            nvf_2: Path = sampleA_nv_2.nucleotide_variants_file
             bf_2: Path = sampleA_nv_2.masked_regions_file
 
             assert nvf_2.exists(), 'Path from database should now correspond to moved path'
@@ -96,8 +96,6 @@ def test_path_translation_kmer_data(snippy_nucleotide_data_package: NucleotideSa
         root_dir_1 = Path(root_dir_1_str)
         data_dir_1 = root_dir_1 / 'data'
         database_file = root_dir_1 / 'db.sqlite'
-
-
 
         services = setup_services(data_dir_1, database_file)
         kmer_service = services['kmer_service']
@@ -133,7 +131,7 @@ def test_path_translation_kmer_data(snippy_nucleotide_data_package: NucleotideSa
             sampleA_kmer_2 = database_connection_2.get_session().query(SampleKmerIndex) \
                 .join(SampleKmerIndex.sample) \
                 .filter(Sample.name == 'SampleA').one()
-            kf_2 : Path = sampleA_kmer_2.kmer_index_path
+            kf_2: Path = sampleA_kmer_2.kmer_index_path
 
             assert kf_2.exists(), 'Path from database should now correspond to moved path'
             assert kf_2.parent.parent == data_dir_2

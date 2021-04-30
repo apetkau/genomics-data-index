@@ -10,7 +10,6 @@ import pandas as pd
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.api.query.impl.DataFrameSamplesQuery import DataFrameSamplesQuery
 from genomics_data_index.api.query.impl.SamplesQueryIndex import SamplesQueryIndex
-from genomics_data_index.api.query.impl.TreeSamplesQuery import TreeSamplesQuery
 from genomics_data_index.api.query.impl.TreeSamplesQueryFactory import TreeSamplesQueryFactory
 from genomics_data_index.configuration.Project import Project
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection

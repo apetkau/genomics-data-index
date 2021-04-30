@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import copy
 from typing import Union, List
 
 import pandas as pd
@@ -124,7 +123,8 @@ class TreeSamplesQuery(WrappedSamplesQuery):
     def _isin_kinds(self) -> List[str]:
         return super()._isin_kinds() + self.ISIN_TREE_TYPES
 
-    def tree_styler(self, initial_style: TreeStyle = TreeStyle(), highlight_styles = DEFAULT_HIGHLIGHT_STYLES, legend_nsize: int = 10, legend_fsize: int = 11) -> TreeStyler:
+    def tree_styler(self, initial_style: TreeStyle = TreeStyle(), highlight_styles=DEFAULT_HIGHLIGHT_STYLES,
+                    legend_nsize: int = 10, legend_fsize: int = 11) -> TreeStyler:
         return TreeStyler(tree=self._tree.copy(method='deepcopy'),
                           default_highlight_styles=highlight_styles,
                           tree_style=initial_style,

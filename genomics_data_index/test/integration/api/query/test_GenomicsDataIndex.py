@@ -1,13 +1,13 @@
+import shutil
+import tempfile
 from pathlib import Path
 from tempfile import TemporaryDirectory
-import tempfile
-import shutil
 
+from genomics_data_index.api.query.GenomicsDataIndex import GenomicsDataIndex
+from genomics_data_index.configuration.Project import Project
 from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
 from genomics_data_index.storage.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor
 from genomics_data_index.test.integration import sample_dirs, reference_file
-from genomics_data_index.api.query.GenomicsDataIndex import GenomicsDataIndex
-from genomics_data_index.configuration.Project import Project
 
 
 def test_summaries_loaded_data(loaded_database_genomic_data_store: GenomicsDataIndex):
