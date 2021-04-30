@@ -30,7 +30,7 @@ class ExperimentalTreeSamplesQuery(TreeSamplesQuery):
 
     def _tree_copy_prune(self, from_query: SamplesQuery = None, preserve_branch_length: bool = True) -> Tree:
         tree = self._tree_copy()
-        if from_query is None:
+        if from_query is not None:
             query = from_query
         else:
             query = self
