@@ -25,8 +25,17 @@ class ExperimentalTreeSamplesQuery(TreeSamplesQuery):
                          reference_name=reference_name,
                          reference_included=reference_included)
 
-    def _tree_copy(self):
+    def _tree_copy(self) -> Tree:
         return self._tree.copy(method='deepcopy')
+
+    def _tree_copy_prune(self, preserve_branch_length: bool) -> Tree:
+        tree = self._tree_copy()
+        if self.reference_included:
+            nodes_to_keep = self.tolist() + [self.reference_name]
+        else:
+            nodes_to_keep = self.tolist()
+        tree.prune(nodes_to_keep, preserve_branch_length=preserve_branch_length)
+        return tree
 
     def set_outgroup(self, sample_name: str) -> SamplesQuery:
         tree = self._tree_copy()
@@ -44,8 +53,7 @@ class ExperimentalTreeSamplesQuery(TreeSamplesQuery):
         """
         Prunes tree down to whatever the current query is.
         """
-        tree = self._tree_copy()
-        tree.prune(self.tolist(), preserve_branch_length=preserve_branch_length)
+        tree = self._tree_copy_prune(preserve_branch_length=preserve_branch_length)
         return self._create_from_tree_internal(tree)
 
     def label_internal_nodes(self) -> SamplesQuery:
@@ -66,8 +74,7 @@ class ExperimentalTreeSamplesQuery(TreeSamplesQuery):
             return children_names
 
     def _wrap_create(self, wrapped_query: SamplesQuery, universe_set: SampleSet = None) -> WrappedSamplesQuery:
-        tree = self._tree_copy()
-        tree.prune(wrapped_query.tolist(), preserve_branch_length=True)
+        tree = self._tree_copy_prune(preserve_branch_length=True)
         return ExperimentalTreeSamplesQuery(connection=self._query_connection,
                                             wrapped_query=wrapped_query,
                                             tree=tree,
