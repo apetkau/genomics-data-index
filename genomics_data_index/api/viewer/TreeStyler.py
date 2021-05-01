@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import copy
 import logging
-from typing import List, Dict, Any, Union, Iterable
+from typing import List, Dict, Any, Union, Iterable, Tuple
 
 from ete3 import Tree, NodeStyle, TreeStyle, CircleFace, TextFace, RectFace, Face
 
@@ -79,6 +79,14 @@ class TreeStyler:
             raise Exception(f'Invalid value for annotate_kind={annotate_kind}.'
                             f' Must be one of {self.ANNOTATE_KINDS}')
         self._annotate_kind = annotate_kind
+
+    def _build_legend_item(self, color: str, legend_label: str) -> Tuple[Face, Face]:
+        cf = CircleFace(radius=self._legend_nsize / 2, color=color)
+        cf.hz_align=2
+        tf = TextFace(legend_label, fsize=self._legend_fsize)
+        tf.margin_left = 10
+        tf.margin_right = 10
+        return cf, tf
 
     def _build_annotate_face(self, width: int, height: int, border_color: str, bgcolor: str,
                              label: Union[str, Dict[str, Any]] = None) -> Face:
@@ -165,11 +173,9 @@ class TreeStyler:
         # Add legend item
         if legend_label is not None:
             ts = copy.deepcopy(self._tree_style)
-            ts.legend.add_face(CircleFace(radius=self._legend_nsize / 2, color=color_present), column=0)
-            tf = TextFace(legend_label, fsize=self._legend_fsize)
-            tf.margin_left = 10
-            tf.margin_right = 10
-            ts.legend.add_face(tf, column=1)
+            color_face, text_face = self._build_legend_item(color=color_present, legend_label=legend_label)
+            ts.legend.add_face(color_face, column=0)
+            ts.legend.add_face(text_face, column=1)
         else:
             ts = self._tree_style
 
@@ -206,13 +212,13 @@ class TreeStyler:
             query_expression = f'set({len(sample_names)} samples)'
 
         # Add legend item
-        ts = copy.deepcopy(self._tree_style)
         if legend_label is not None:
-            ts.legend.add_face(CircleFace(radius=self._legend_nsize / 2, color=legend_color), column=0)
-            tf = TextFace(legend_label, fsize=self._legend_fsize)
-            tf.margin_left = 10
-            tf.margin_left = 10
-            ts.legend.add_face(tf, column=1)
+            ts = copy.deepcopy(self._tree_style)
+            color_face, text_face = self._build_legend_item(color=legend_color, legend_label=legend_label)
+            ts.legend.add_face(color_face, column=0)
+            ts.legend.add_face(text_face, column=1)
+        else:
+            ts = self._tree_style
 
         # Highlight nodes
         tree = copy.deepcopy(self._tree)
@@ -267,7 +273,7 @@ class TreeStyler:
                mode='r',
                highlight_styles=None,
                legend_nsize: int = 10, legend_fsize: int = 11,
-               annotate_color_present: str = '#66c2a4',
+               annotate_color_present: str = 'black',
                annotate_color_absent: str = 'white',
                annotate_border_color: str = 'black',
                annotate_kind: str = 'rect',
@@ -278,13 +284,19 @@ class TreeStyler:
                annotate_guiding_lines: bool = True,
                annotate_guiding_lines_color: str = 'gray',
                figure_margin: int = None,
-               show_border: bool = True) -> TreeStyler:
+               show_border: bool = True,
+               title: str = None,
+               title_fsize: int = 16,
+               legend_title: str = None) -> TreeStyler:
         if initial_style is not None:
-            if mode is not None or annotate_guiding_lines is not None or figure_margin is not None or show_border:
-                logger.warning(f'Both initial_style=[{initial_style}] and mode=[{mode}] or'
-                               f' annotate_guiding_lines=[{annotate_guiding_lines}] '
-                               f'or figure_margin=[{figure_margin}] are set.'
-                               f' Will ignore mode and annotate_guiding_lines and figure_margin.')
+            tree_style_elements = {'mode': mode, 'annotate_guiding_lines': annotate_guiding_lines,
+                                   'figure_margin': figure_margin, 'show_border': show_border,
+                                   'title': title, 'legend_title': legend_title, 'title_fsize': title_fsize}
+            tree_style_elements_none = [tree_style_elements[k] is None for k in tree_style_elements]
+
+            if any(tree_style_elements_none):
+                logger.warning(f'Both initial_style=[{initial_style}] and one of parameters {tree_style_elements.keys()}'
+                               f' are set. Will ignore these listed parameters.')
             ts = initial_style
         else:
             ts = TreeStyle()
@@ -317,6 +329,19 @@ class TreeStyler:
 
         if highlight_styles is None:
             highlight_styles = cls.DEFAULT_HIGHLIGHT_STYLES
+
+        if legend_title is not None:
+            margin_bottom = 10
+            cf = RectFace(width=10, height=10, fgcolor=None, bgcolor=None)
+            cf.margin_bottom = margin_bottom
+            ts.legend.add_face(cf, column=0)
+            tf = TextFace(legend_title, fsize=legend_fsize + 3)
+            tf.margin_bottom = margin_bottom
+            ts.legend.add_face(tf, column=1)
+
+        if title is not None:
+            tf = TextFace(title, fsize=title_fsize)
+            ts.title.add_face(tf, column=0)
 
         return TreeStyler(tree=tree,
                           default_highlight_styles=highlight_styles,

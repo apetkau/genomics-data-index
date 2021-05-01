@@ -131,7 +131,7 @@ class TreeSamplesQuery(WrappedSamplesQuery):
                     mode='r',
                     highlight_styles=None,
                     legend_nsize: int = 10, legend_fsize: int = 11,
-                    annotate_color_present: str = '#66c2a4',
+                    annotate_color_present: str = 'black',
                     annotate_color_absent: str = 'white',
                     annotate_border_color: str = 'black',
                     annotate_kind: str = 'rect',
@@ -142,7 +142,10 @@ class TreeSamplesQuery(WrappedSamplesQuery):
                     annotate_guiding_lines: bool = True,
                     annotate_guiding_lines_color: str = 'gray',
                     figure_margin: int = None,
-                    show_border: bool = True) -> TreeStyler:
+                    show_border: bool = True,
+                    title: str = None,
+                    title_fsize: int = 16,
+                    legend_title: str = None) -> TreeStyler:
 
         return TreeStyler.create(tree=self._tree.copy(method='deepcopy'),
                                  initial_style=initial_style,
@@ -161,7 +164,10 @@ class TreeSamplesQuery(WrappedSamplesQuery):
                                  annotate_guiding_lines=annotate_guiding_lines,
                                  annotate_guiding_lines_color=annotate_guiding_lines_color,
                                  figure_margin=figure_margin,
-                                 show_border=show_border)
+                                 show_border=show_border,
+                                 title=title,
+                                 title_fsize=title_fsize,
+                                 legend_title=legend_title)
 
     @property
     def tree(self):
