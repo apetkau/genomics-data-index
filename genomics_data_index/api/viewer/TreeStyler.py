@@ -56,38 +56,56 @@ class TreeStyler:
                  legend_nsize: int = 10, legend_fsize: int = 11,
                  annotate_color_present: str = '#41ae76',
                  annotate_color_absent: str = 'white',
-                 annotate_outline_color: str = 'black',
+                 annotate_border_color: str = 'black',
                  annotate_kind: str = 'rect',
                  annotate_box_width: int = 30,
-                 annotate_box_height: int = 30):
+                 annotate_box_height: int = 30,
+                 annotate_border_width: int = 2,
+                 annotate_margin: int = 0):
         self._tree = tree
         self._default_highlight_styles = default_highlight_styles
         self._tree_style = tree_style
         self._legend_nsize = legend_nsize
         self._legend_fsize = legend_fsize
-        self._annotate_outline_color = annotate_outline_color
+        self._annotate_border_color = annotate_border_color
         self._annotate_color_present = annotate_color_present
         self._annotate_color_absent = annotate_color_absent
         self._annotate_column = annotate_column
         self._annotate_box_width = annotate_box_width
         self._annotate_box_height = annotate_box_height
+        self._annotate_border_width = annotate_border_width
+        self._annotate_margin = annotate_margin
 
         if annotate_kind not in self.ANNOTATE_KINDS:
             raise Exception(f'Invalid value for annotate_kind={annotate_kind}.'
                             f' Must be one of {self.ANNOTATE_KINDS}')
         self._annotate_kind = annotate_kind
 
-    def _build_annotate_face(self, width: int, height: int, fgcolor: str, bgcolor: str,
+    def _build_annotate_face(self, width: int, height: int, border_color: str, bgcolor: str,
                              label: Union[str, Dict[str, Any]] = None) -> Face:
         if self._annotate_kind == 'rect' or self._annotate_kind == 'rectangle':
-            return RectFace(width=width, height=height, fgcolor=fgcolor, bgcolor=bgcolor, label=label)
+            rf = RectFace(width=width, height=height, fgcolor=None, bgcolor=bgcolor, label=label)
+            rf.border.width = self._annotate_border_width
+            rf.margin_top = self._annotate_margin
+            rf.margin_bottom = self._annotate_margin
+            rf.margin_left = self._annotate_margin
+            rf.margin_right = self._annotate_margin
+            rf.border.color = border_color
+            return rf
         elif self._annotate_kind == 'circle':
             # Make circle radius such that it fits in bounding box defined by width and height
             # Shrink a bit since I noticed it was being clipped slightly
-            min_dimension = 0.8 * min(width, height)
+            min_dimension = min(width, height)
             radius = min_dimension/2
 
-            return CircleFace(radius=radius, color=bgcolor, label=label)
+            cf = CircleFace(radius=radius, color=bgcolor, label=label)
+            cf.border.width = self._annotate_border_width
+            cf.margin_top = self._annotate_margin
+            cf.margin_bottom = self._annotate_margin
+            cf.margin_left = self._annotate_margin
+            cf.margin_right = self._annotate_margin
+            cf.border.color = border_color
+            return cf
         else:
             raise Exception(f'Invalid value for annotate_kind={self._annotate_kind}.'
                             f' Must be one of {self.ANNOTATE_KINDS}')
@@ -125,11 +143,11 @@ class TreeStyler:
         for leaf in tree.iter_leaves():
             if leaf.name in sample_names:
                 annotate_face = self._build_annotate_face(width=face_width, height=face_height,
-                                                          fgcolor=self._annotate_outline_color,
+                                                          border_color=self._annotate_border_color,
                                                           bgcolor=annotate_color_present)
             else:
                 annotate_face = self._build_annotate_face(width=face_width, height=face_height,
-                                                          fgcolor=self._annotate_outline_color,
+                                                          border_color=self._annotate_border_color,
                                                           bgcolor=annotate_color_absent)
 
             leaf.add_face(annotate_face, column=self._annotate_column, position='aligned')
@@ -139,10 +157,12 @@ class TreeStyler:
                           annotate_column=self._annotate_column + 1,
                           annotate_color_present=self._annotate_color_present,
                           annotate_color_absent=self._annotate_color_absent,
-                          annotate_outline_color=self._annotate_outline_color,
+                          annotate_border_color=self._annotate_border_color,
                           annotate_kind=self._annotate_kind,
                           annotate_box_width=self._annotate_box_width,
-                          annotate_box_height=self._annotate_box_height)
+                          annotate_box_height=self._annotate_box_height,
+                          annotate_border_width=self._annotate_border_width,
+                          annotate_margin=self._annotate_margin)
 
 
     def highlight(self, samples: Union[SamplesQuery, Iterable[str]],
@@ -188,10 +208,12 @@ class TreeStyler:
                           annotate_column=self._annotate_column,
                           annotate_color_present=self._annotate_color_present,
                           annotate_color_absent=self._annotate_color_absent,
-                          annotate_outline_color=self._annotate_outline_color,
+                          annotate_border_color=self._annotate_border_color,
                           annotate_kind=self._annotate_kind,
                           annotate_box_height=self._annotate_box_height,
-                          annotate_box_width=self._annotate_box_width)
+                          annotate_box_width=self._annotate_box_width,
+                          annotate_border_width=self._annotate_border_width,
+                          annotate_margin=self._annotate_margin)
 
     def render(self, file_name: str = '%%inline', w: int = None, h: int = None,
                tree_style: TreeStyle = None, units: str = 'px', dpi: int = 90):
