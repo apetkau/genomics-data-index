@@ -4,7 +4,7 @@ import copy
 import logging
 from typing import List, Dict, Any, Union, Iterable
 
-from ete3 import Tree, NodeStyle, TreeStyle, CircleFace, TextFace
+from ete3 import Tree, NodeStyle, TreeStyle, CircleFace, TextFace, RectFace
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 
@@ -50,12 +50,48 @@ DEFAULT_HIGHLIGHT_STYLES = [style1, style2, style3]
 class TreeStyler:
 
     def __init__(self, tree: Tree, default_highlight_styles: List[Dict[str, Any]], tree_style: TreeStyle,
-                 legend_nsize: int = 10, legend_fsize: int = 11):
+                 legend_nsize: int = 10, legend_fsize: int = 11, annotate_column: int = 1):
         self._tree = tree
         self._default_highlight_styles = default_highlight_styles
         self._tree_style = tree_style
         self._legend_nsize = legend_nsize
         self._legend_fsize = legend_fsize
+        self._annotate_outline_color = 'black'
+        self._annotate_color_present = 'red'
+        self._annotate_color_absent = 'white'
+        self._annotate_column = annotate_column
+
+    def annotate(self, samples: Union[SamplesQuery, Iterable[str]]) -> TreeStyler:
+        # Add legend item
+        # ts = copy.deepcopy(self._tree_style)
+        # if legend_label is not None:
+        #     ts.legend.add_face(CircleFace(radius=self._legend_nsize / 2, color=legend_color), column=0)
+        #     ts.legend.add_face(TextFace(legend_label, fsize=self._legend_fsize), column=1)
+
+        if isinstance(samples, SamplesQuery):
+            sample_names = set(samples.tolist(names=True))
+        else:
+            sample_names = set(samples)
+
+        face_width = 10
+        face_height = 30
+
+        # Annotate nodes
+        tree = self._tree.copy(method='deepcopy')
+        for leaf in tree.iter_leaves():
+            if leaf.name in sample_names:
+                annotate_face = RectFace(width=face_width, height=face_height,
+                                         fgcolor=self._annotate_outline_color, bgcolor=self._annotate_color_present)
+            else:
+                annotate_face = RectFace(width=face_width, height=face_height,
+                                         fgcolor=self._annotate_outline_color, bgcolor=self._annotate_color_absent)
+
+            leaf.add_face(annotate_face, column=self._annotate_column, position='aligned')
+
+        return TreeStyler(tree, default_highlight_styles=self._default_highlight_styles,
+                          tree_style=self._tree_style, legend_fsize=self._legend_fsize, legend_nsize=self._legend_nsize,
+                          annotate_column=self._annotate_column + 1)
+
 
     def highlight(self, samples: Union[SamplesQuery, Iterable[str]],
                   nstyle: NodeStyle = None, legend_color: str = None,
@@ -96,7 +132,8 @@ class TreeStyler:
                 node.set_style(nstyle)
 
         return TreeStyler(tree, default_highlight_styles=new_default_styles,
-                          tree_style=ts, legend_fsize=self._legend_fsize, legend_nsize=self._legend_nsize)
+                          tree_style=ts, legend_fsize=self._legend_fsize, legend_nsize=self._legend_nsize,
+                          annotate_column=self._annotate_column)
 
     def render(self, file_name: str = '%%inline', w: int = 400, h: int = 300,
                tree_style: TreeStyle = None):

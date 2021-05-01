@@ -129,7 +129,8 @@ class TreeSamplesQuery(WrappedSamplesQuery):
                           default_highlight_styles=highlight_styles,
                           tree_style=initial_style,
                           legend_nsize=legend_nsize,
-                          legend_fsize=legend_fsize)
+                          legend_fsize=legend_fsize,
+                          annotate_column=1)
 
     @property
     def tree(self):
