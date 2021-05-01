@@ -142,9 +142,10 @@ class TreeSamplesQuery(WrappedSamplesQuery):
                     annotate_margin: int = 0,
                     annotate_guiding_lines: bool = True,
                     annotate_guiding_lines_color: str = 'gray',
-                    figure_margin: int = None) -> TreeStyler:
+                    figure_margin: int = None,
+                    show_border: bool = True) -> TreeStyler:
         if initial_style is not None:
-            if mode is not None or annotate_guiding_lines is not None or figure_margin is not None:
+            if mode is not None or annotate_guiding_lines is not None or figure_margin is not None or show_border:
                 logger.warning(f'Both initial_style=[{initial_style}] and mode=[{mode}] or'
                                f' annotate_guiding_lines=[{annotate_guiding_lines}] '
                                f'or figure_margin=[{figure_margin}] are set.'
@@ -160,7 +161,7 @@ class TreeSamplesQuery(WrappedSamplesQuery):
 
             ts.draw_guiding_lines = annotate_guiding_lines
             ts.guiding_lines_color = annotate_guiding_lines_color
-            ts.show_border = True
+            ts.show_border = show_border
 
             if figure_margin is None:
                 figure_margin = 10
