@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Union, List
+import logging
 
 import pandas as pd
 from ete3 import Tree, TreeStyle
@@ -13,10 +14,14 @@ from genomics_data_index.configuration.connector import DataIndexConnection
 from genomics_data_index.storage.SampleSet import SampleSet
 
 
+logger = logging.getLogger(__name__)
+
+
 class TreeSamplesQuery(WrappedSamplesQuery):
     BUILD_TREE_KINDS = ['mutation']
     DISTANCE_UNITS = ['substitutions', 'substitutions/site']
     ISIN_TREE_TYPES = ['distance', 'mrca']
+    MODES = ['r', 'c']
 
     def __init__(self, connection: DataIndexConnection, wrapped_query: SamplesQuery, tree: Tree,
                  alignment_length: int, reference_name: str, reference_included: bool):
@@ -123,22 +128,49 @@ class TreeSamplesQuery(WrappedSamplesQuery):
     def _isin_kinds(self) -> List[str]:
         return super()._isin_kinds() + self.ISIN_TREE_TYPES
 
-    def tree_styler(self, initial_style: TreeStyle = TreeStyle(), highlight_styles=DEFAULT_HIGHLIGHT_STYLES,
+    def tree_styler(self, mode = 'r',
+                    initial_style: TreeStyle = None,
+                    highlight_styles=DEFAULT_HIGHLIGHT_STYLES,
                     legend_nsize: int = 10, legend_fsize: int = 11,
                     annotate_color_present: str = '#41ae76',
                     annotate_color_absent: str = 'white',
                     annotate_outline_color: str = 'black',
-                    annotation_kind: str = 'rect') -> TreeStyler:
+                    annotate_kind: str = 'rect',
+                    annotate_box_width: int = None,
+                    annotate_box_height: int = None) -> TreeStyler:
+        if initial_style is not None and mode is not None:
+            logger.warning(f'Both initial_style=[{initial_style}] and mode=[{mode}] are set. Will ignore mode.')
+            ts = initial_style
+        elif mode is not None:
+            ts = TreeStyle()
+            if mode not in self.MODES:
+                raise Exception(f'Invalid value mode=[{mode}]. Must be one of {self.MODES}')
+            else:
+                ts.mode = mode
+        else:
+            ts = TreeStyle()
+
+        # Setup default box width/height here
+        if annotate_box_height is None and annotate_box_width is None:
+            annotate_box_height = 30
+            annotate_box_width = 30
+        elif annotate_box_height is None:
+            annotate_box_height = annotate_box_width
+        elif annotate_box_width is None:
+            annotate_box_width = annotate_box_height
+
         return TreeStyler(tree=self._tree.copy(method='deepcopy'),
                           default_highlight_styles=highlight_styles,
-                          tree_style=initial_style,
+                          tree_style=ts,
                           legend_nsize=legend_nsize,
                           legend_fsize=legend_fsize,
                           annotate_column=1,
                           annotate_color_present=annotate_color_present,
                           annotate_color_absent=annotate_color_absent,
                           annotate_outline_color=annotate_outline_color,
-                          annotate_kind=annotation_kind)
+                          annotate_kind=annotate_kind,
+                          annotate_box_width=annotate_box_width,
+                          annotate_box_height=annotate_box_height)
 
     @property
     def tree(self):
