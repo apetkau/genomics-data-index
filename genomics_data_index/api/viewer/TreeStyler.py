@@ -111,7 +111,7 @@ class TreeStyler:
                             f' Must be one of {self.ANNOTATE_KINDS}')
 
     def annotate(self, samples: Union[SamplesQuery, Iterable[str]],
-                 label_present: Union[str, Dict[str, Any]] = None,
+                 label_present: Union[str, Dict[str, Any]] = None, legend_label: str = None,
                  box_width: int = None, box_height: int = None,
                  color_present: str = None, color_absent: str = None) -> TreeStyler:
         """
@@ -119,18 +119,13 @@ class TreeStyler:
         :param samples: The samples to show as being present.
         :param label_present: An optional label to display for any present items. Can be text or dict
                               with  attributes text, font, color, and fontsize (this is passed to the underlying ete3 Face)
+        :param legend_label: A label to use for a legend item. The color should match the color for this annotated set.
         :param box_width: The width of the bounding box (defaults to class variable annotate_box_width).
         :param box_height: The height of the bounding box (defaults to class variable annotate_box_height).
         :param color_present: The color to use when a sample is present in this set (defaults class-defined color).
         :param color_absent: The color to use when a sample is absent (defaults to class-defined color).
         :return: A new TreeStyler object which contains the completed annotation column.
         """
-        # Add legend item
-        # ts = copy.deepcopy(self._tree_style)
-        # if legend_label is not None:
-        #     ts.legend.add_face(CircleFace(radius=self._legend_nsize / 2, color=legend_color), column=0)
-        #     ts.legend.add_face(TextFace(legend_label, fsize=self._legend_fsize), column=1)
-
         if color_absent is None:
             color_absent = self._annotate_color_absent
         if color_present is None:
@@ -168,8 +163,19 @@ class TreeStyler:
 
             leaf.add_face(annotate_face, column=self._annotate_column, position='aligned')
 
+        # Add legend item
+        if legend_label is not None:
+            ts = copy.deepcopy(self._tree_style)
+            ts.legend.add_face(CircleFace(radius=self._legend_nsize / 2, color=color_present), column=0)
+            tf = TextFace(legend_label, fsize=self._legend_fsize)
+            tf.margin_left = 10
+            tf.margin_right = 10
+            ts.legend.add_face(tf, column=1)
+        else:
+            ts = self._tree_style
+
         return TreeStyler(tree, default_highlight_styles=self._default_highlight_styles,
-                          tree_style=self._tree_style, legend_fsize=self._legend_fsize, legend_nsize=self._legend_nsize,
+                          tree_style=ts, legend_fsize=self._legend_fsize, legend_nsize=self._legend_nsize,
                           annotate_column=self._annotate_column + 1,
                           annotate_color_present=self._annotate_color_present,
                           annotate_color_absent=self._annotate_color_absent,
@@ -205,7 +211,10 @@ class TreeStyler:
         ts = copy.deepcopy(self._tree_style)
         if legend_label is not None:
             ts.legend.add_face(CircleFace(radius=self._legend_nsize / 2, color=legend_color), column=0)
-            ts.legend.add_face(TextFace(legend_label, fsize=self._legend_fsize), column=1)
+            tf = TextFace(legend_label, fsize=self._legend_fsize)
+            tf.margin_left = 10
+            tf.margin_left = 10
+            ts.legend.add_face(tf, column=1)
 
         # Highlight nodes
         tree = copy.deepcopy(self._tree)
