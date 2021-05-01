@@ -4,7 +4,7 @@ import copy
 import logging
 from typing import List, Dict, Any, Union, Iterable
 
-from ete3 import Tree, NodeStyle, TreeStyle, CircleFace, TextFace, RectFace
+from ete3 import Tree, NodeStyle, TreeStyle, CircleFace, TextFace, RectFace, Face
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 
@@ -49,12 +49,15 @@ DEFAULT_HIGHLIGHT_STYLES = [style1, style2, style3]
 
 class TreeStyler:
 
+    ANNOTATE_KINDS = ['circle', 'rect', 'rectangle']
+
     def __init__(self, tree: Tree, default_highlight_styles: List[Dict[str, Any]],  annotate_column: int,
                  tree_style: TreeStyle,
                  legend_nsize: int = 10, legend_fsize: int = 11,
                  annotate_color_present: str = '#41ae76',
                  annotate_color_absent: str = 'white',
-                 annotate_outline_color: str = 'black'):
+                 annotate_outline_color: str = 'black',
+                 annotate_kind: str = 'rect'):
         self._tree = tree
         self._default_highlight_styles = default_highlight_styles
         self._tree_style = tree_style
@@ -64,6 +67,24 @@ class TreeStyler:
         self._annotate_color_present = annotate_color_present
         self._annotate_color_absent = annotate_color_absent
         self._annotate_column = annotate_column
+
+        if annotate_kind not in self.ANNOTATE_KINDS:
+            raise Exception(f'Invalid value for annotate_kind={annotate_kind}.'
+                            f' Must be one of {self.ANNOTATE_KINDS}')
+        self._annotate_kind = annotate_kind
+
+    def _build_annotate_face(self, width: int, height: int, fgcolor: str, bgcolor: str) -> Face:
+        if self._annotate_kind == 'rect' or self._annotate_kind == 'rectangle':
+            return RectFace(width=width, height=height, fgcolor=fgcolor, bgcolor=bgcolor)
+        elif self._annotate_kind == 'circle':
+            # Make circle radius such that it fits in bounding box defined by width and height
+            min_dimension = min(width, height)
+            radius = min_dimension/2
+
+            return CircleFace(radius=radius, color=bgcolor)
+        else:
+            raise Exception(f'Invalid value for annotate_kind={self._annotate_kind}.'
+                            f' Must be one of {self.ANNOTATE_KINDS}')
 
     def annotate(self, samples: Union[SamplesQuery, Iterable[str]],
                  annotate_color_present: str = None, annotate_color_absent: str = None) -> TreeStyler:
@@ -97,13 +118,13 @@ class TreeStyler:
         tree = self._tree.copy(method='deepcopy')
         for leaf in tree.iter_leaves():
             if leaf.name in sample_names:
-                annotate_face = RectFace(width=face_width, height=face_height,
-                                         fgcolor=self._annotate_outline_color,
-                                         bgcolor=annotate_color_present)
+                annotate_face = self._build_annotate_face(width=face_width, height=face_height,
+                                                          fgcolor=self._annotate_outline_color,
+                                                          bgcolor=annotate_color_present)
             else:
-                annotate_face = RectFace(width=face_width, height=face_height,
-                                         fgcolor=self._annotate_outline_color,
-                                         bgcolor=annotate_color_absent)
+                annotate_face = self._build_annotate_face(width=face_width, height=face_height,
+                                                          fgcolor=self._annotate_outline_color,
+                                                          bgcolor=annotate_color_absent)
 
             leaf.add_face(annotate_face, column=self._annotate_column, position='aligned')
 
@@ -112,7 +133,8 @@ class TreeStyler:
                           annotate_column=self._annotate_column + 1,
                           annotate_color_present=self._annotate_color_present,
                           annotate_color_absent=self._annotate_color_absent,
-                          annotate_outline_color=self._annotate_outline_color)
+                          annotate_outline_color=self._annotate_outline_color,
+                          annotate_kind=self._annotate_kind)
 
 
     def highlight(self, samples: Union[SamplesQuery, Iterable[str]],
@@ -158,13 +180,23 @@ class TreeStyler:
                           annotate_column=self._annotate_column,
                           annotate_color_present=self._annotate_color_present,
                           annotate_color_absent=self._annotate_color_absent,
-                          annotate_outline_color=self._annotate_outline_color)
+                          annotate_outline_color=self._annotate_outline_color,
+                          annotate_kind=self._annotate_kind)
 
-    def render(self, file_name: str = '%%inline', w: int = 400, h: int = 300,
-               tree_style: TreeStyle = None):
+    def render(self, file_name: str = '%%inline', w: int = None, h: int = None,
+               tree_style: TreeStyle = None, units: str = 'px', dpi: int = 90):
         if tree_style is None:
             tree_style = self._tree_style
-        return self._tree.render(file_name=file_name, w=w, tree_style=tree_style)
+
+        # Set default width if no width or height specified
+        # Do this here instead of as a default method value since at least one of
+        # width or height must be None to preserve the correct aspect ratio (so I only
+        # want a default value for width if neither width nor height are set.
+        if w is None and h is None:
+            w = 400
+
+        return self._tree.render(file_name=file_name, w=w, h=h, tree_style=tree_style,
+                                 units=units, dpi=dpi)
 
     @property
     def tree(self) -> Tree:
