@@ -112,7 +112,7 @@ class TreeStyler:
 
     def annotate(self, samples: Union[SamplesQuery, Iterable[str]],
                  label_present: Union[str, Dict[str, Any]] = None,
-                 box_width: int = None,
+                 box_width: int = None, box_height: int = None,
                  color_present: str = None, color_absent: str = None) -> TreeStyler:
         """
         Adds an annotation column beside the tree showing the which samples are in the passed set.
@@ -120,6 +120,7 @@ class TreeStyler:
         :param label_present: An optional label to display for any present items. Can be text or dict
                               with  attributes text, font, color, and fontsize (this is passed to the underlying ete3 Face)
         :param box_width: The width of the bounding box (defaults to class variable annotate_box_width).
+        :param box_height: The height of the bounding box (defaults to class variable annotate_box_height).
         :param color_present: The color to use when a sample is present in this set (defaults class-defined color).
         :param color_absent: The color to use when a sample is absent (defaults to class-defined color).
         :return: A new TreeStyler object which contains the completed annotation column.
@@ -147,7 +148,11 @@ class TreeStyler:
             face_width = self._annotate_box_width
         else:
             face_width = box_width
-        face_height = self._annotate_box_height
+
+        if box_height is None:
+            face_height = self._annotate_box_height
+        else:
+            face_height = box_height
 
         # Annotate nodes
         tree = self._tree.copy(method='deepcopy')
