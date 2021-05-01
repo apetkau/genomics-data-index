@@ -44,14 +44,13 @@ style3 = {
     'legend_color': fg_color3
 }
 
-DEFAULT_HIGHLIGHT_STYLES = [style1, style2, style3]
-
 
 class TreeStyler:
-
+    MODES = ['r', 'c']
+    DEFAULT_HIGHLIGHT_STYLES = [style1, style2, style3]
     ANNOTATE_KINDS = ['circle', 'rect', 'rectangle']
 
-    def __init__(self, tree: Tree, default_highlight_styles: List[Dict[str, Any]],  annotate_column: int,
+    def __init__(self, tree: Tree, default_highlight_styles: List[Dict[str, Any]], annotate_column: int,
                  tree_style: TreeStyle,
                  legend_nsize: int = 10, legend_fsize: int = 11,
                  annotate_color_present: str = '#66c2a4',
@@ -96,7 +95,7 @@ class TreeStyler:
             # Make circle radius such that it fits in bounding box defined by width and height
             # Shrink a bit since I noticed it was being clipped slightly
             min_dimension = min(width, height)
-            radius = min_dimension/2
+            radius = min_dimension / 2
 
             cf = CircleFace(radius=radius, color=bgcolor, label=label)
             cf.border.width = self._annotate_border_width
@@ -186,7 +185,6 @@ class TreeStyler:
                           annotate_border_width=self._annotate_border_width,
                           annotate_margin=self._annotate_margin)
 
-
     def highlight(self, samples: Union[SamplesQuery, Iterable[str]],
                   nstyle: NodeStyle = None, legend_color: str = None,
                   legend_label: str = None) -> TreeStyler:
@@ -262,3 +260,75 @@ class TreeStyler:
     @property
     def tree_style(self) -> TreeStyle:
         return copy.deepcopy(self._tree_style)
+
+    @classmethod
+    def create(cls, tree: Tree,
+               initial_style: TreeStyle = None,
+               mode='r',
+               highlight_styles=None,
+               legend_nsize: int = 10, legend_fsize: int = 11,
+               annotate_color_present: str = '#66c2a4',
+               annotate_color_absent: str = 'white',
+               annotate_border_color: str = 'black',
+               annotate_kind: str = 'rect',
+               annotate_box_width: int = None,
+               annotate_box_height: int = None,
+               annotate_border_width: int = 1,
+               annotate_margin: int = 0,
+               annotate_guiding_lines: bool = True,
+               annotate_guiding_lines_color: str = 'gray',
+               figure_margin: int = None,
+               show_border: bool = True) -> TreeStyler:
+        if initial_style is not None:
+            if mode is not None or annotate_guiding_lines is not None or figure_margin is not None or show_border:
+                logger.warning(f'Both initial_style=[{initial_style}] and mode=[{mode}] or'
+                               f' annotate_guiding_lines=[{annotate_guiding_lines}] '
+                               f'or figure_margin=[{figure_margin}] are set.'
+                               f' Will ignore mode and annotate_guiding_lines and figure_margin.')
+            ts = initial_style
+        else:
+            ts = TreeStyle()
+
+            if mode is not None and mode not in cls.MODES:
+                raise Exception(f'Invalid value mode=[{mode}]. Must be one of {cls.MODES}')
+            elif mode is not None:
+                ts.mode = mode
+
+            ts.draw_guiding_lines = annotate_guiding_lines
+            ts.guiding_lines_color = annotate_guiding_lines_color
+            ts.show_border = show_border
+
+            if figure_margin is None:
+                figure_margin = 10
+
+            ts.margin_top = figure_margin
+            ts.margin_bottom = figure_margin
+            ts.margin_left = figure_margin
+            ts.margin_right = figure_margin
+
+        # Setup default box width/height here
+        if annotate_box_height is None and annotate_box_width is None:
+            annotate_box_height = 30
+            annotate_box_width = 30
+        elif annotate_box_height is None:
+            annotate_box_height = annotate_box_width
+        elif annotate_box_width is None:
+            annotate_box_width = annotate_box_height
+
+        if highlight_styles is None:
+            highlight_styles = cls.DEFAULT_HIGHLIGHT_STYLES
+
+        return TreeStyler(tree=tree,
+                          default_highlight_styles=highlight_styles,
+                          tree_style=ts,
+                          legend_nsize=legend_nsize,
+                          legend_fsize=legend_fsize,
+                          annotate_column=1,
+                          annotate_color_present=annotate_color_present,
+                          annotate_color_absent=annotate_color_absent,
+                          annotate_border_color=annotate_border_color,
+                          annotate_kind=annotate_kind,
+                          annotate_box_width=annotate_box_width,
+                          annotate_box_height=annotate_box_height,
+                          annotate_border_width=annotate_border_width,
+                          annotate_margin=annotate_margin)
