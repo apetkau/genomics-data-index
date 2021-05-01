@@ -54,13 +54,13 @@ class TreeStyler:
     def __init__(self, tree: Tree, default_highlight_styles: List[Dict[str, Any]],  annotate_column: int,
                  tree_style: TreeStyle,
                  legend_nsize: int = 10, legend_fsize: int = 11,
-                 annotate_color_present: str = '#41ae76',
+                 annotate_color_present: str = '#66c2a4',
                  annotate_color_absent: str = 'white',
                  annotate_border_color: str = 'black',
                  annotate_kind: str = 'rect',
                  annotate_box_width: int = 30,
                  annotate_box_height: int = 30,
-                 annotate_border_width: int = 2,
+                 annotate_border_width: int = 1,
                  annotate_margin: int = 0):
         self._tree = tree
         self._default_highlight_styles = default_highlight_styles
@@ -111,12 +111,17 @@ class TreeStyler:
                             f' Must be one of {self.ANNOTATE_KINDS}')
 
     def annotate(self, samples: Union[SamplesQuery, Iterable[str]],
-                 annotate_color_present: str = None, annotate_color_absent: str = None) -> TreeStyler:
+                 label_present: Union[str, Dict[str, Any]] = None,
+                 box_width: int = None,
+                 color_present: str = None, color_absent: str = None) -> TreeStyler:
         """
         Adds an annotation column beside the tree showing the which samples are in the passed set.
         :param samples: The samples to show as being present.
-        :param annotate_color_present: The color to use when a sample is present in this set (defaults class-defined color).
-        :param annotate_color_absent: The color to use when a sample is absent (defaults to class-defined color).
+        :param label_present: An optional label to display for any present items. Can be text or dict
+                              with  attributes text, font, color, and fontsize (this is passed to the underlying ete3 Face)
+        :param box_width: The width of the bounding box (defaults to class variable annotate_box_width).
+        :param color_present: The color to use when a sample is present in this set (defaults class-defined color).
+        :param color_absent: The color to use when a sample is absent (defaults to class-defined color).
         :return: A new TreeStyler object which contains the completed annotation column.
         """
         # Add legend item
@@ -125,17 +130,23 @@ class TreeStyler:
         #     ts.legend.add_face(CircleFace(radius=self._legend_nsize / 2, color=legend_color), column=0)
         #     ts.legend.add_face(TextFace(legend_label, fsize=self._legend_fsize), column=1)
 
-        if annotate_color_absent is None:
-            annotate_color_absent = self._annotate_color_absent
-        if annotate_color_present is None:
-            annotate_color_present = self._annotate_color_present
+        if color_absent is None:
+            color_absent = self._annotate_color_absent
+        if color_present is None:
+            color_present = self._annotate_color_present
+        if isinstance(label_present, str):
+            # Pick default color since ete3 by default colors the same as what I'm using for the fill color
+            label_present = {'text': label_present, 'color': 'black'}
 
         if isinstance(samples, SamplesQuery):
             sample_names = set(samples.tolist(names=True))
         else:
             sample_names = set(samples)
 
-        face_width = self._annotate_box_width
+        if box_width is None:
+            face_width = self._annotate_box_width
+        else:
+            face_width = box_width
         face_height = self._annotate_box_height
 
         # Annotate nodes
@@ -144,11 +155,11 @@ class TreeStyler:
             if leaf.name in sample_names:
                 annotate_face = self._build_annotate_face(width=face_width, height=face_height,
                                                           border_color=self._annotate_border_color,
-                                                          bgcolor=annotate_color_present)
+                                                          bgcolor=color_present, label=label_present)
             else:
                 annotate_face = self._build_annotate_face(width=face_width, height=face_height,
                                                           border_color=self._annotate_border_color,
-                                                          bgcolor=annotate_color_absent)
+                                                          bgcolor=color_absent, label=None)
 
             leaf.add_face(annotate_face, column=self._annotate_column, position='aligned')
 

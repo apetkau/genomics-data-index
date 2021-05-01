@@ -132,13 +132,13 @@ class TreeSamplesQuery(WrappedSamplesQuery):
                     initial_style: TreeStyle = None,
                     highlight_styles=DEFAULT_HIGHLIGHT_STYLES,
                     legend_nsize: int = 10, legend_fsize: int = 11,
-                    annotate_color_present: str = '#41ae76',
+                    annotate_color_present: str = '#66c2a4',
                     annotate_color_absent: str = 'white',
                     annotate_border_color: str = 'black',
                     annotate_kind: str = 'rect',
                     annotate_box_width: int = None,
                     annotate_box_height: int = None,
-                    annotate_border_width: int = 2,
+                    annotate_border_width: int = 1,
                     annotate_margin: int = 0) -> TreeStyler:
         if initial_style is not None and mode is not None:
             logger.warning(f'Both initial_style=[{initial_style}] and mode=[{mode}] are set. Will ignore mode.')
