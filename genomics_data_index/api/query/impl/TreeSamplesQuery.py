@@ -124,13 +124,19 @@ class TreeSamplesQuery(WrappedSamplesQuery):
         return super()._isin_kinds() + self.ISIN_TREE_TYPES
 
     def tree_styler(self, initial_style: TreeStyle = TreeStyle(), highlight_styles=DEFAULT_HIGHLIGHT_STYLES,
-                    legend_nsize: int = 10, legend_fsize: int = 11) -> TreeStyler:
+                    legend_nsize: int = 10, legend_fsize: int = 11,
+                    annotate_color_present: str = '#41ae76',
+                    annotate_color_absent: str = 'white',
+                    annotate_outline_color: str = 'black') -> TreeStyler:
         return TreeStyler(tree=self._tree.copy(method='deepcopy'),
                           default_highlight_styles=highlight_styles,
                           tree_style=initial_style,
                           legend_nsize=legend_nsize,
                           legend_fsize=legend_fsize,
-                          annotate_column=1)
+                          annotate_column=1,
+                          annotate_color_present=annotate_color_present,
+                          annotate_color_absent=annotate_color_absent,
+                          annotate_outline_color=annotate_outline_color)
 
     @property
     def tree(self):

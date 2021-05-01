@@ -49,31 +49,48 @@ DEFAULT_HIGHLIGHT_STYLES = [style1, style2, style3]
 
 class TreeStyler:
 
-    def __init__(self, tree: Tree, default_highlight_styles: List[Dict[str, Any]], tree_style: TreeStyle,
-                 legend_nsize: int = 10, legend_fsize: int = 11, annotate_column: int = 1):
+    def __init__(self, tree: Tree, default_highlight_styles: List[Dict[str, Any]],  annotate_column: int,
+                 tree_style: TreeStyle,
+                 legend_nsize: int = 10, legend_fsize: int = 11,
+                 annotate_color_present: str = '#41ae76',
+                 annotate_color_absent: str = 'white',
+                 annotate_outline_color: str = 'black'):
         self._tree = tree
         self._default_highlight_styles = default_highlight_styles
         self._tree_style = tree_style
         self._legend_nsize = legend_nsize
         self._legend_fsize = legend_fsize
-        self._annotate_outline_color = 'black'
-        self._annotate_color_present = 'red'
-        self._annotate_color_absent = 'white'
+        self._annotate_outline_color = annotate_outline_color
+        self._annotate_color_present = annotate_color_present
+        self._annotate_color_absent = annotate_color_absent
         self._annotate_column = annotate_column
 
-    def annotate(self, samples: Union[SamplesQuery, Iterable[str]]) -> TreeStyler:
+    def annotate(self, samples: Union[SamplesQuery, Iterable[str]],
+                 annotate_color_present: str = None, annotate_color_absent: str = None) -> TreeStyler:
+        """
+        Adds an annotation column beside the tree showing the which samples are in the passed set.
+        :param samples: The samples to show as being present.
+        :param annotate_color_present: The color to use when a sample is present in this set (defaults class-defined color).
+        :param annotate_color_absent: The color to use when a sample is absent (defaults to class-defined color).
+        :return: A new TreeStyler object which contains the completed annotation column.
+        """
         # Add legend item
         # ts = copy.deepcopy(self._tree_style)
         # if legend_label is not None:
         #     ts.legend.add_face(CircleFace(radius=self._legend_nsize / 2, color=legend_color), column=0)
         #     ts.legend.add_face(TextFace(legend_label, fsize=self._legend_fsize), column=1)
 
+        if annotate_color_absent is None:
+            annotate_color_absent = self._annotate_color_absent
+        if annotate_color_present is None:
+            annotate_color_present = self._annotate_color_present
+
         if isinstance(samples, SamplesQuery):
             sample_names = set(samples.tolist(names=True))
         else:
             sample_names = set(samples)
 
-        face_width = 10
+        face_width = 40
         face_height = 30
 
         # Annotate nodes
@@ -81,16 +98,21 @@ class TreeStyler:
         for leaf in tree.iter_leaves():
             if leaf.name in sample_names:
                 annotate_face = RectFace(width=face_width, height=face_height,
-                                         fgcolor=self._annotate_outline_color, bgcolor=self._annotate_color_present)
+                                         fgcolor=self._annotate_outline_color,
+                                         bgcolor=annotate_color_present)
             else:
                 annotate_face = RectFace(width=face_width, height=face_height,
-                                         fgcolor=self._annotate_outline_color, bgcolor=self._annotate_color_absent)
+                                         fgcolor=self._annotate_outline_color,
+                                         bgcolor=annotate_color_absent)
 
             leaf.add_face(annotate_face, column=self._annotate_column, position='aligned')
 
         return TreeStyler(tree, default_highlight_styles=self._default_highlight_styles,
                           tree_style=self._tree_style, legend_fsize=self._legend_fsize, legend_nsize=self._legend_nsize,
-                          annotate_column=self._annotate_column + 1)
+                          annotate_column=self._annotate_column + 1,
+                          annotate_color_present=self._annotate_color_present,
+                          annotate_color_absent=self._annotate_color_absent,
+                          annotate_outline_color=self._annotate_outline_color)
 
 
     def highlight(self, samples: Union[SamplesQuery, Iterable[str]],
@@ -133,7 +155,10 @@ class TreeStyler:
 
         return TreeStyler(tree, default_highlight_styles=new_default_styles,
                           tree_style=ts, legend_fsize=self._legend_fsize, legend_nsize=self._legend_nsize,
-                          annotate_column=self._annotate_column)
+                          annotate_column=self._annotate_column,
+                          annotate_color_present=self._annotate_color_present,
+                          annotate_color_absent=self._annotate_color_absent,
+                          annotate_outline_color=self._annotate_outline_color)
 
     def render(self, file_name: str = '%%inline', w: int = 400, h: int = 300,
                tree_style: TreeStyle = None):
