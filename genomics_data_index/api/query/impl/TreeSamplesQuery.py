@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from typing import Union, List
 import logging
+from typing import Union, List
 
 import pandas as pd
 from ete3 import Tree, TreeStyle
