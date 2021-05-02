@@ -130,7 +130,7 @@ class TreeSamplesQuery(WrappedSamplesQuery):
                     initial_style: TreeStyle = None,
                     mode='r',
                     highlight_style: Union[str, HighlightStyle] = 'light',
-                    legend_nsize: int = 10, legend_fsize: int = 11,
+                    legend_nsize: int = 20, legend_fsize: int = 11,
                     annotate_color_present: str = 'black',
                     annotate_color_absent: str = 'white',
                     annotate_opacity_present: float = 1.0,

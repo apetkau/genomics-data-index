@@ -17,7 +17,7 @@ class TreeStyler:
 
     def __init__(self, tree: Tree, default_highlight_styles: HighlightStyle, annotate_column: int,
                  tree_style: TreeStyle,
-                 legend_nsize: int = 10, legend_fsize: int = 11,
+                 legend_nsize: int = 20, legend_fsize: int = 11,
                  annotate_color_present: str = '#66c2a4',
                  annotate_color_absent: str = 'white',
                  annotate_opacity_present: float = 1.0,
@@ -55,9 +55,19 @@ class TreeStyler:
                             f' Must be one of {self.ANNOTATE_KINDS}')
         self._annotate_kind = annotate_kind
 
-    def _build_legend_item(self, color: str, legend_label: str) -> Tuple[Face, Face]:
-        cf = CircleFace(radius=self._legend_nsize / 2, color=color)
+    def _build_legend_item(self, color: str, legend_label: str, kind: str) -> Tuple[Face, Face]:
+        if kind == 'rect' or kind == 'rectangle':
+            cf = RectFace(width=self._legend_nsize, height=self._legend_nsize, bgcolor=color,
+                          fgcolor='black')
+        elif kind == 'circle':
+            cf = CircleFace(radius=self._legend_nsize/2, color=color)
+        else:
+            raise Exception(f'kind=[{kind}] must be one of {self.ANNOTATE_KINDS}')
         cf.hz_align = 2
+        cf.margin_left = 3
+        cf.margin_right = 3
+        cf.margin_top = 3
+        cf.margin_bottom = 3
         tf = TextFace(legend_label, fsize=self._legend_fsize)
         tf.margin_left = 10
         tf.margin_right = 10
@@ -184,7 +194,8 @@ class TreeStyler:
 
         # Add legend item
         if legend_label is not None:
-            color_face, text_face = self._build_legend_item(color=color_present, legend_label=legend_label)
+            color_face, text_face = self._build_legend_item(color=color_present, legend_label=legend_label,
+                                                            kind=self._annotate_kind)
             ts.legend.add_face(color_face, column=0)
             ts.legend.add_face(text_face, column=1)
 
@@ -225,7 +236,8 @@ class TreeStyler:
         # Add legend item
         if legend_label is not None:
             ts = copy.deepcopy(self._tree_style)
-            color_face, text_face = self._build_legend_item(color=legend_color, legend_label=legend_label)
+            color_face, text_face = self._build_legend_item(color=legend_color, legend_label=legend_label,
+                                                            kind='rect')
             ts.legend.add_face(color_face, column=0)
             ts.legend.add_face(text_face, column=1)
         else:
@@ -288,7 +300,7 @@ class TreeStyler:
                initial_style: TreeStyle = None,
                mode='r',
                highlight_style: Union[str, HighlightStyle] = 'light',
-               legend_nsize: int = 10, legend_fsize: int = 11,
+               legend_nsize: int = 20, legend_fsize: int = 11,
                annotate_color_present: str = 'black',
                annotate_color_absent: str = 'white',
                annotate_opacity_present: float = 1.0,
@@ -385,7 +397,7 @@ class TreeStyler:
 
 
 class HighlightStyle:
-    THEMES = ['light', 'dark']
+    THEMES = ['light', 'light_hn', 'dark']
 
     def __init__(self, node_styles:  List[Dict[str, Union[str, NodeStyle]]],
                  index: int):
@@ -408,9 +420,13 @@ class HighlightStyle:
     @classmethod
     def create(cls, kind: str) -> HighlightStyle:
         if kind == 'light':
-            fg_colors = ['#41ae76', '#ef6548', '#8c6bb1', '#4292c6']
+            fg_colors = ['#e5f5f9', '#fee8c8', '#e0ecf4', '#deebf7']
             bg_colors = ['#e5f5f9', '#fee8c8', '#e0ecf4', '#deebf7']
             return cls._create_highlights(fg_colors=fg_colors, bg_colors=bg_colors)
+        elif kind == 'light_hn':
+            fg_colors = ['#41ae76', '#ef6548', '#8c6bb1', '#4292c6']
+            bg_colors = ['#e5f5f9', '#fee8c8', '#e0ecf4', '#deebf7']
+            return cls._create_highlights(fg_colors=fg_colors, bg_colors=bg_colors, nsize=20)
         elif kind == 'dark':
             fg_colors = ['#1b9e77', '#d95f02', '#7570b3', '#7570b3', '#e7298a']
             bg_colors = ['#1b9e77', '#d95f02', '#7570b3', '#7570b3', '#e7298a']
@@ -419,7 +435,7 @@ class HighlightStyle:
             raise Exception(f'kind=[{kind}] must be one of {cls.THEMES}')
 
     @classmethod
-    def _create_highlights(cls, fg_colors: List[str], bg_colors: List[str]) -> HighlightStyle:
+    def _create_highlights(cls, fg_colors: List[str], bg_colors: List[str], nsize: int = None) -> HighlightStyle:
         if len(fg_colors) != len(bg_colors):
             raise Exception(f'fg_colors={fg_colors} and bg_colors={bg_colors} do not have the same length')
 
@@ -428,7 +444,8 @@ class HighlightStyle:
             nstyle = NodeStyle()
             nstyle['fgcolor'] = fg_colors[i]
             nstyle['bgcolor'] = bg_colors[i]
-            nstyle['size'] = 20
+            if nsize is not None:
+                nstyle['size'] = nsize
 
             styles.append({
                 'nstyle': nstyle,
