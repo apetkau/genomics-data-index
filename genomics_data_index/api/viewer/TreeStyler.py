@@ -309,8 +309,8 @@ class TreeStyler:
                annotate_color_absent: str = 'white',
                annotate_border_color: str = 'black',
                annotate_kind: str = 'rect',
-               annotate_box_width: int = None,
-               annotate_box_height: int = None,
+               annotate_box_width: int = 30,
+               annotate_box_height: int = 30,
                annotate_border_width: int = 1,
                annotate_margin: int = 0,
                annotate_guiding_lines: bool = True,
@@ -351,15 +351,6 @@ class TreeStyler:
             ts.margin_bottom = figure_margin
             ts.margin_left = figure_margin
             ts.margin_right = figure_margin
-
-        # Setup default box width/height here
-        if annotate_box_height is None and annotate_box_width is None:
-            annotate_box_height = 30
-            annotate_box_width = 30
-        elif annotate_box_height is None:
-            annotate_box_height = annotate_box_width
-        elif annotate_box_width is None:
-            annotate_box_width = annotate_box_height
 
         if highlight_styles is None:
             highlight_styles = cls.DEFAULT_HIGHLIGHT_STYLES
