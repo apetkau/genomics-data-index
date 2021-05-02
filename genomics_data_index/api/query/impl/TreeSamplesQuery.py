@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import copy
+import logging
 from typing import Union, List
 
 import pandas as pd
@@ -9,9 +9,11 @@ from ete3 import Tree, TreeStyle
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.api.query.impl.TreeBuilderReferenceMutations import TreeBuilderReferenceMutations
 from genomics_data_index.api.query.impl.WrappedSamplesQuery import WrappedSamplesQuery
-from genomics_data_index.api.viewer.TreeStyler import TreeStyler, DEFAULT_HIGHLIGHT_STYLES
+from genomics_data_index.api.viewer.TreeStyler import TreeStyler, HighlightStyle
 from genomics_data_index.configuration.connector import DataIndexConnection
 from genomics_data_index.storage.SampleSet import SampleSet
+
+logger = logging.getLogger(__name__)
 
 
 class TreeSamplesQuery(WrappedSamplesQuery):
@@ -20,16 +22,28 @@ class TreeSamplesQuery(WrappedSamplesQuery):
     ISIN_TREE_TYPES = ['distance', 'mrca']
 
     def __init__(self, connection: DataIndexConnection, wrapped_query: SamplesQuery, tree: Tree,
-                 alignment_length: int):
+                 alignment_length: int, reference_name: str, reference_included: bool):
         super().__init__(connection=connection, wrapped_query=wrapped_query)
         self._tree = tree
         self._alignment_length = alignment_length
+        self._reference_name = reference_name
+        self._reference_included = reference_included
 
     def _wrap_create(self, wrapped_query: SamplesQuery, universe_set: SampleSet = None) -> WrappedSamplesQuery:
         return TreeSamplesQuery(connection=self._query_connection,
                                 wrapped_query=wrapped_query,
                                 tree=self._tree,
-                                alignment_length=self._alignment_length)
+                                alignment_length=self._alignment_length,
+                                reference_name=self._reference_name,
+                                reference_included=self._reference_included)
+
+    @property
+    def reference_name(self):
+        return self._reference_name
+
+    @property
+    def reference_included(self):
+        return self._reference_included
 
     def build_tree(self, kind: str, scope: str, **kwargs):
         return TreeSamplesQuery.create(kind=kind, scope=scope, database_connection=self._query_connection,
@@ -112,10 +126,62 @@ class TreeSamplesQuery(WrappedSamplesQuery):
     def _isin_kinds(self) -> List[str]:
         return super()._isin_kinds() + self.ISIN_TREE_TYPES
 
-    def tree_styler(self, initial_style: TreeStyle = TreeStyle()) -> TreeStyler:
-        return TreeStyler(tree=copy.deepcopy(self._tree),
-                          default_highlight_styles=DEFAULT_HIGHLIGHT_STYLES,
-                          tree_style=initial_style)
+    def tree_styler(self,
+                    initial_style: TreeStyle = None,
+                    mode='r',
+                    highlight_style: Union[str, HighlightStyle] = 'light',
+                    legend_nsize: int = 20, legend_fsize: int = 11,
+                    annotate_color_present: str = 'black',
+                    annotate_color_absent: str = 'white',
+                    annotate_opacity_present: float = 1.0,
+                    annotate_opacity_absent: float = 0.0,
+                    annotate_border_color: str = 'black',
+                    annotate_kind: str = 'rect',
+                    annotate_box_width: int = 30,
+                    annotate_box_height: int = 30,
+                    annotate_border_width: int = 1,
+                    annotate_margin: int = 0,
+                    annotate_guiding_lines: bool = True,
+                    annotate_guiding_lines_color: str = 'gray',
+                    figure_margin: int = None,
+                    show_border: bool = True,
+                    title: str = None,
+                    title_fsize: int = 16,
+                    legend_title: str = None,
+                    annotate_show_box_label: bool = False,
+                    annotate_box_label_color: str = 'white',
+                    annotate_arc_span: int = 350,
+                    annotate_label_fontsize: int = 12,
+                    show_leaf_names: bool = True) -> TreeStyler:
+
+        return TreeStyler.create(tree=self._tree.copy(method='deepcopy'),
+                                 initial_style=initial_style,
+                                 mode=mode,
+                                 highlight_style=highlight_style,
+                                 legend_nsize=legend_nsize,
+                                 legend_fsize=legend_fsize,
+                                 annotate_color_present=annotate_color_present,
+                                 annotate_color_absent=annotate_color_absent,
+                                 annotate_opacity_present=annotate_opacity_present,
+                                 annotate_opacity_absent=annotate_opacity_absent,
+                                 annotate_border_color=annotate_border_color,
+                                 annotate_kind=annotate_kind,
+                                 annotate_box_width=annotate_box_width,
+                                 annotate_box_height=annotate_box_height,
+                                 annotate_border_width=annotate_border_width,
+                                 annotate_margin=annotate_margin,
+                                 annotate_guiding_lines=annotate_guiding_lines,
+                                 annotate_guiding_lines_color=annotate_guiding_lines_color,
+                                 figure_margin=figure_margin,
+                                 show_border=show_border,
+                                 title=title,
+                                 title_fsize=title_fsize,
+                                 legend_title=legend_title,
+                                 annotate_show_box_label=annotate_show_box_label,
+                                 annotate_box_label_color=annotate_box_label_color,
+                                 annotate_arc_span=annotate_arc_span,
+                                 annotate_label_fontsize=annotate_label_fontsize,
+                                 show_leaf_names=show_leaf_names)
 
     @property
     def tree(self):
@@ -123,18 +189,22 @@ class TreeSamplesQuery(WrappedSamplesQuery):
 
     @classmethod
     def create(cls, kind: str, scope: str, database_connection: DataIndexConnection,
-               wrapped_query: SamplesQuery, **kwargs) -> TreeSamplesQuery:
+               wrapped_query: SamplesQuery, include_reference=True, **kwargs) -> TreeSamplesQuery:
         if kind == 'mutation':
             tree_builder = TreeBuilderReferenceMutations(database_connection,
                                                          reference_name=scope)
-            tree, alignment_length, tree_samples_set = tree_builder.build(wrapped_query.sample_set, **kwargs)
+            tree, alignment_length, tree_samples_set = tree_builder.build(wrapped_query.sample_set,
+                                                                          include_reference=include_reference,
+                                                                          **kwargs)
 
             wrapped_query_tree_set = wrapped_query.intersect(sample_set=tree_samples_set,
                                                              query_message=f'mutation_tree({scope})')
             tree_samples_query = TreeSamplesQuery(connection=database_connection,
                                                   wrapped_query=wrapped_query_tree_set,
                                                   tree=tree,
-                                                  alignment_length=alignment_length)
+                                                  alignment_length=alignment_length,
+                                                  reference_name=scope,
+                                                  reference_included=include_reference)
             return tree_samples_query
         else:
             raise Exception(f'Got kind=[{kind}], only the following kinds are supported: {cls.BUILD_TREE_KINDS}')

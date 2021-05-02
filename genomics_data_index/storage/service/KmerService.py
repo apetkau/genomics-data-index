@@ -1,5 +1,5 @@
-from pathlib import Path
 import shutil
+from pathlib import Path
 
 from genomics_data_index.storage.model.db import Sample, SampleKmerIndex
 from genomics_data_index.storage.service import DatabaseConnection

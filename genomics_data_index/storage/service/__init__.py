@@ -1,10 +1,11 @@
+import logging
+
 import pandas as pd
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-import logging
 
-from genomics_data_index.storage.model.db import Base
 import genomics_data_index.storage.model.db
+from genomics_data_index.storage.model.db import Base
 from genomics_data_index.storage.model.db.DatabasePathTranslator import DatabasePathTranslator
 
 logger = logging.getLogger(__name__)

@@ -1,15 +1,13 @@
 from __future__ import annotations
-import copy
 
 from typing import Callable, Set
 
 from ete3 import Tree, TreeNode
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
+from genomics_data_index.api.query.impl.TreeSamplesQuery import TreeSamplesQuery
 from genomics_data_index.api.query.impl.WrappedSamplesQuery import WrappedSamplesQuery
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
-
-from genomics_data_index.api.query.impl.TreeSamplesQuery import TreeSamplesQuery
 from genomics_data_index.storage.SampleSet import SampleSet
 
 
@@ -21,17 +19,36 @@ class ExperimentalTreeSamplesQuery(TreeSamplesQuery):
     """
 
     def __init__(self, connection: DataIndexConnection, wrapped_query: SamplesQuery, tree: Tree,
-                 alignment_length: int):
+                 alignment_length: int, reference_name: str, reference_included: bool):
         super().__init__(connection=connection, wrapped_query=wrapped_query,
-                         tree=tree, alignment_length=alignment_length)
+                         tree=tree, alignment_length=alignment_length,
+                         reference_name=reference_name,
+                         reference_included=reference_included)
+
+    def _tree_copy(self) -> Tree:
+        return self._tree.copy(method='deepcopy')
+
+    def _tree_copy_prune(self, from_query: SamplesQuery = None, preserve_branch_length: bool = True) -> Tree:
+        tree = self._tree_copy()
+        if from_query is not None:
+            query = from_query
+        else:
+            query = self
+
+        if self.reference_included:
+            nodes_to_keep = query.tolist() + [self.reference_name]
+        else:
+            nodes_to_keep = query.tolist()
+        tree.prune(nodes_to_keep, preserve_branch_length=preserve_branch_length)
+        return tree
 
     def set_outgroup(self, sample_name: str) -> SamplesQuery:
-        tree = copy.deepcopy(self._tree)
+        tree = self._tree_copy()
         tree.set_outgroup(sample_name)
         return self._create_from_tree_internal(tree)
 
     def relabel_samples(self, rename_func: Callable[[str], str]) -> SamplesQuery:
-        tree = copy.deepcopy(self._tree)
+        tree = self._tree_copy()
         for node in tree.traverse("postorder"):
             if node.is_leaf():
                 node.name = rename_func(node.name)
@@ -41,12 +58,11 @@ class ExperimentalTreeSamplesQuery(TreeSamplesQuery):
         """
         Prunes tree down to whatever the current query is.
         """
-        tree = copy.deepcopy(self._tree)
-        tree.prune(self.tolist(), preserve_branch_length=preserve_branch_length)
+        tree = self._tree_copy_prune(preserve_branch_length=preserve_branch_length)
         return self._create_from_tree_internal(tree)
 
     def label_internal_nodes(self) -> SamplesQuery:
-        tree = copy.deepcopy(self._tree)
+        tree = self._tree_copy()
         self._label_internal_nodes_recursive(tree)
         return self._create_from_tree_internal(tree)
 
@@ -63,18 +79,21 @@ class ExperimentalTreeSamplesQuery(TreeSamplesQuery):
             return children_names
 
     def _wrap_create(self, wrapped_query: SamplesQuery, universe_set: SampleSet = None) -> WrappedSamplesQuery:
-        tree = copy.deepcopy(self._tree)
-        tree.prune(wrapped_query.tolist(), preserve_branch_length=True)
+        tree = self._tree_copy_prune(from_query=wrapped_query, preserve_branch_length=True)
         return ExperimentalTreeSamplesQuery(connection=self._query_connection,
-                                wrapped_query=wrapped_query,
-                                tree=tree,
-                                alignment_length=self._alignment_length)
+                                            wrapped_query=wrapped_query,
+                                            tree=tree,
+                                            alignment_length=self._alignment_length,
+                                            reference_name=self.reference_name,
+                                            reference_included=self.reference_included)
 
     def _create_from_tree_internal(self, tree: Tree) -> SamplesQuery:
         return ExperimentalTreeSamplesQuery(connection=self._query_connection,
                                             wrapped_query=self._wrapped_query,
                                             tree=tree,
-                                            alignment_length=self._alignment_length)
+                                            alignment_length=self._alignment_length,
+                                            reference_name=self.reference_name,
+                                            reference_included=self.reference_included)
 
     @classmethod
     def from_tree_query(self, query: TreeSamplesQuery) -> ExperimentalTreeSamplesQuery:
@@ -86,4 +105,6 @@ class ExperimentalTreeSamplesQuery(TreeSamplesQuery):
         return ExperimentalTreeSamplesQuery(connection=query._query_connection,
                                             wrapped_query=query._wrapped_query,
                                             tree=query.tree,
-                                            alignment_length=query._alignment_length)
+                                            alignment_length=query._alignment_length,
+                                            reference_name=query.reference_name,
+                                            reference_included=query.reference_included)
