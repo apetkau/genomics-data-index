@@ -145,7 +145,9 @@ class TreeSamplesQuery(WrappedSamplesQuery):
                     show_border: bool = True,
                     title: str = None,
                     title_fsize: int = 16,
-                    legend_title: str = None) -> TreeStyler:
+                    legend_title: str = None,
+                    annotate_show_box_label: bool = False,
+                    annotate_box_label_color: str = 'white') -> TreeStyler:
 
         return TreeStyler.create(tree=self._tree.copy(method='deepcopy'),
                                  initial_style=initial_style,
@@ -167,7 +169,9 @@ class TreeSamplesQuery(WrappedSamplesQuery):
                                  show_border=show_border,
                                  title=title,
                                  title_fsize=title_fsize,
-                                 legend_title=legend_title)
+                                 legend_title=legend_title,
+                                 annotate_show_box_label=annotate_show_box_label,
+                                 annotate_box_label_color=annotate_box_label_color)
 
     @property
     def tree(self):
