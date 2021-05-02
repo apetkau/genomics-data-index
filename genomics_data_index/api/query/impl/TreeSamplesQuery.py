@@ -9,7 +9,7 @@ from ete3 import Tree, TreeStyle
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.api.query.impl.TreeBuilderReferenceMutations import TreeBuilderReferenceMutations
 from genomics_data_index.api.query.impl.WrappedSamplesQuery import WrappedSamplesQuery
-from genomics_data_index.api.viewer.TreeStyler import TreeStyler
+from genomics_data_index.api.viewer.TreeStyler import TreeStyler, HighlightStyle
 from genomics_data_index.configuration.connector import DataIndexConnection
 from genomics_data_index.storage.SampleSet import SampleSet
 
@@ -129,7 +129,7 @@ class TreeSamplesQuery(WrappedSamplesQuery):
     def tree_styler(self,
                     initial_style: TreeStyle = None,
                     mode='r',
-                    highlight_styles=None,
+                    highlight_style: Union[str, HighlightStyle] = 'light',
                     legend_nsize: int = 10, legend_fsize: int = 11,
                     annotate_color_present: str = 'black',
                     annotate_color_absent: str = 'white',
@@ -155,7 +155,7 @@ class TreeSamplesQuery(WrappedSamplesQuery):
         return TreeStyler.create(tree=self._tree.copy(method='deepcopy'),
                                  initial_style=initial_style,
                                  mode=mode,
-                                 highlight_styles=highlight_styles,
+                                 highlight_style=highlight_style,
                                  legend_nsize=legend_nsize,
                                  legend_fsize=legend_fsize,
                                  annotate_color_present=annotate_color_present,
