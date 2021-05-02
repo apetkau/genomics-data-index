@@ -172,6 +172,9 @@ class TreeStyler:
             color = label.get('color', 'black')
             tf = TextFace(text, fsize=fsize, ftype=ftype, fgcolor=color)
             tf.margin_bottom = 10
+            tf.margin_left = 10
+            tf.margin_right = 10
+            tf.margin_top = 10
             tf.hz_align = 1
             ts.aligned_header.add_face(tf, self._annotate_column)
             ts.aligned_foot.add_face(tf, self._annotate_column)
