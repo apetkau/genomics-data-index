@@ -338,11 +338,13 @@ class TreeStyler:
                title_fsize: int = 16,
                legend_title: str = None,
                annotate_show_box_label: bool = False,
-               annotate_box_label_color: str = 'white') -> TreeStyler:
+               annotate_box_label_color: str = 'white',
+               annotate_arc_span: int = 350) -> TreeStyler:
         if initial_style is not None:
             tree_style_elements = {'mode': mode, 'annotate_guiding_lines': annotate_guiding_lines,
                                    'figure_margin': figure_margin, 'show_border': show_border,
-                                   'title': title, 'legend_title': legend_title, 'title_fsize': title_fsize}
+                                   'title': title, 'legend_title': legend_title, 'title_fsize': title_fsize,
+                                   'annotate_arc_span': annotate_arc_span}
             tree_style_elements_none = [tree_style_elements[k] is None for k in tree_style_elements]
 
             if any(tree_style_elements_none):
@@ -351,6 +353,7 @@ class TreeStyler:
             ts = initial_style
         else:
             ts = TreeStyle()
+            ts.arc_span=annotate_arc_span
 
             if mode is not None and mode not in cls.MODES:
                 raise Exception(f'Invalid value mode=[{mode}]. Must be one of {cls.MODES}')
