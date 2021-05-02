@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from typing import Union, List
 
 import pandas as pd
@@ -8,9 +9,11 @@ from ete3 import Tree, TreeStyle
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.api.query.impl.TreeBuilderReferenceMutations import TreeBuilderReferenceMutations
 from genomics_data_index.api.query.impl.WrappedSamplesQuery import WrappedSamplesQuery
-from genomics_data_index.api.viewer.TreeStyler import TreeStyler, DEFAULT_HIGHLIGHT_STYLES
+from genomics_data_index.api.viewer.TreeStyler import TreeStyler, HighlightStyle
 from genomics_data_index.configuration.connector import DataIndexConnection
 from genomics_data_index.storage.SampleSet import SampleSet
+
+logger = logging.getLogger(__name__)
 
 
 class TreeSamplesQuery(WrappedSamplesQuery):
@@ -123,13 +126,62 @@ class TreeSamplesQuery(WrappedSamplesQuery):
     def _isin_kinds(self) -> List[str]:
         return super()._isin_kinds() + self.ISIN_TREE_TYPES
 
-    def tree_styler(self, initial_style: TreeStyle = TreeStyle(), highlight_styles=DEFAULT_HIGHLIGHT_STYLES,
-                    legend_nsize: int = 10, legend_fsize: int = 11) -> TreeStyler:
-        return TreeStyler(tree=self._tree.copy(method='deepcopy'),
-                          default_highlight_styles=highlight_styles,
-                          tree_style=initial_style,
-                          legend_nsize=legend_nsize,
-                          legend_fsize=legend_fsize)
+    def tree_styler(self,
+                    initial_style: TreeStyle = None,
+                    mode='r',
+                    highlight_style: Union[str, HighlightStyle] = 'light',
+                    legend_nsize: int = 20, legend_fsize: int = 11,
+                    annotate_color_present: str = 'black',
+                    annotate_color_absent: str = 'white',
+                    annotate_opacity_present: float = 1.0,
+                    annotate_opacity_absent: float = 0.0,
+                    annotate_border_color: str = 'black',
+                    annotate_kind: str = 'rect',
+                    annotate_box_width: int = 30,
+                    annotate_box_height: int = 30,
+                    annotate_border_width: int = 1,
+                    annotate_margin: int = 0,
+                    annotate_guiding_lines: bool = True,
+                    annotate_guiding_lines_color: str = 'gray',
+                    figure_margin: int = None,
+                    show_border: bool = True,
+                    title: str = None,
+                    title_fsize: int = 16,
+                    legend_title: str = None,
+                    annotate_show_box_label: bool = False,
+                    annotate_box_label_color: str = 'white',
+                    annotate_arc_span: int = 350,
+                    annotate_label_fontsize: int = 12,
+                    show_leaf_names: bool = True) -> TreeStyler:
+
+        return TreeStyler.create(tree=self._tree.copy(method='deepcopy'),
+                                 initial_style=initial_style,
+                                 mode=mode,
+                                 highlight_style=highlight_style,
+                                 legend_nsize=legend_nsize,
+                                 legend_fsize=legend_fsize,
+                                 annotate_color_present=annotate_color_present,
+                                 annotate_color_absent=annotate_color_absent,
+                                 annotate_opacity_present=annotate_opacity_present,
+                                 annotate_opacity_absent=annotate_opacity_absent,
+                                 annotate_border_color=annotate_border_color,
+                                 annotate_kind=annotate_kind,
+                                 annotate_box_width=annotate_box_width,
+                                 annotate_box_height=annotate_box_height,
+                                 annotate_border_width=annotate_border_width,
+                                 annotate_margin=annotate_margin,
+                                 annotate_guiding_lines=annotate_guiding_lines,
+                                 annotate_guiding_lines_color=annotate_guiding_lines_color,
+                                 figure_margin=figure_margin,
+                                 show_border=show_border,
+                                 title=title,
+                                 title_fsize=title_fsize,
+                                 legend_title=legend_title,
+                                 annotate_show_box_label=annotate_show_box_label,
+                                 annotate_box_label_color=annotate_box_label_color,
+                                 annotate_arc_span=annotate_arc_span,
+                                 annotate_label_fontsize=annotate_label_fontsize,
+                                 show_leaf_names=show_leaf_names)
 
     @property
     def tree(self):
