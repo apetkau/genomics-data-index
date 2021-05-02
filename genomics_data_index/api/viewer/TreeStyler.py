@@ -400,7 +400,7 @@ class TreeStyler:
 
 
 class HighlightStyle:
-    THEMES = ['light', 'light_hn', 'dark']
+    THEMES = ['light', 'light_hn', 'pastel', 'medium', 'dark']
 
     def __init__(self, node_styles:  List[Dict[str, Union[str, NodeStyle]]],
                  index: int):
@@ -424,15 +424,23 @@ class HighlightStyle:
     def create(cls, kind: str) -> HighlightStyle:
         if kind == 'light':
             fg_colors = ['#e5f5f9', '#fee8c8', '#e0ecf4', '#deebf7']
-            bg_colors = ['#e5f5f9', '#fee8c8', '#e0ecf4', '#deebf7']
+            bg_colors = fg_colors
             return cls._create_highlights(fg_colors=fg_colors, bg_colors=bg_colors)
         elif kind == 'light_hn':
             fg_colors = ['#41ae76', '#ef6548', '#8c6bb1', '#4292c6']
             bg_colors = ['#e5f5f9', '#fee8c8', '#e0ecf4', '#deebf7']
             return cls._create_highlights(fg_colors=fg_colors, bg_colors=bg_colors, nsize=20)
+        elif kind == 'pastel':
+            fg_colors = ['#fbb4ae', '#b3cde3', '#ccebc5', '#decbe4', '#fed9a6']
+            bg_colors = fg_colors
+            return cls._create_highlights(fg_colors=fg_colors, bg_colors=bg_colors)
+        elif kind == 'medium':
+            fg_colors = ['#66c2a5', '#fc8d62', '#8da0cb', '#e78ac3', '#a6d854']
+            bg_colors = fg_colors
+            return cls._create_highlights(fg_colors=fg_colors, bg_colors=bg_colors)
         elif kind == 'dark':
-            fg_colors = ['#1b9e77', '#d95f02', '#7570b3', '#7570b3', '#e7298a']
-            bg_colors = ['#1b9e77', '#d95f02', '#7570b3', '#7570b3', '#e7298a']
+            fg_colors = ['#1b9e77', '#d95f02', '#7570b3', '#e7298a', '#66a61e']
+            bg_colors = fg_colors
             return cls._create_highlights(fg_colors=fg_colors, bg_colors=bg_colors)
         else:
             raise Exception(f'kind=[{kind}] must be one of {cls.THEMES}')
