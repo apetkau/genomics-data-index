@@ -55,6 +55,8 @@ class TreeStyler:
                  legend_nsize: int = 10, legend_fsize: int = 11,
                  annotate_color_present: str = '#66c2a4',
                  annotate_color_absent: str = 'white',
+                 annotate_opacity_present: float = 1.0,
+                 annotate_opacity_absent: float = 0.0,
                  annotate_border_color: str = 'black',
                  annotate_kind: str = 'rect',
                  annotate_box_width: int = 30,
@@ -71,6 +73,8 @@ class TreeStyler:
         self._annotate_border_color = annotate_border_color
         self._annotate_color_present = annotate_color_present
         self._annotate_color_absent = annotate_color_absent
+        self._annotate_opacity_present = annotate_opacity_present
+        self._annotate_opacity_absent = annotate_opacity_absent
         self._annotate_column = annotate_column
         self._annotate_box_width = annotate_box_width
         self._annotate_box_height = annotate_box_height
@@ -93,7 +97,7 @@ class TreeStyler:
         return cf, tf
 
     def _build_annotate_face(self, width: int, height: int, border_color: str, bgcolor: str,
-                             label: Union[str, Dict[str, Any]] = None) -> Face:
+                             opacity: float, label: Union[str, Dict[str, Any]] = None) -> Face:
         if self._annotate_kind == 'rect' or self._annotate_kind == 'rectangle':
             rf = RectFace(width=width, height=height, fgcolor=None, bgcolor=bgcolor, label=label)
             rf.border.width = self._annotate_border_width
@@ -102,6 +106,8 @@ class TreeStyler:
             rf.margin_left = self._annotate_margin
             rf.margin_right = self._annotate_margin
             rf.border.color = border_color
+            rf.background.color = bgcolor
+            rf.opacity = opacity
             rf.hz_align = 1
             rf.vt_align = 1
             return rf
@@ -118,6 +124,9 @@ class TreeStyler:
             cf.margin_left = self._annotate_margin
             cf.margin_right = self._annotate_margin
             cf.border.color = border_color
+            cf.opacity = opacity
+            cf.hz_align = 1
+            cf.vt_align = 1
             return cf
         else:
             raise Exception(f'Invalid value for annotate_kind={self._annotate_kind}.'
@@ -193,11 +202,13 @@ class TreeStyler:
             if leaf.name in sample_names:
                 annotate_face = self._build_annotate_face(width=face_width, height=face_height,
                                                           border_color=self._annotate_border_color,
-                                                          bgcolor=color_present, label=label_present)
+                                                          bgcolor=color_present, opacity=self._annotate_opacity_present,
+                                                          label=label_present)
             else:
                 annotate_face = self._build_annotate_face(width=face_width, height=face_height,
                                                           border_color=self._annotate_border_color,
-                                                          bgcolor=color_absent, label=None)
+                                                          bgcolor=color_absent, opacity=self._annotate_opacity_absent,
+                                                          label=None)
 
             leaf.add_face(annotate_face, column=self._annotate_column, position='aligned')
 
@@ -212,6 +223,8 @@ class TreeStyler:
                           annotate_column=self._annotate_column + 1,
                           annotate_color_present=self._annotate_color_present,
                           annotate_color_absent=self._annotate_color_absent,
+                          annotate_opacity_present=self._annotate_opacity_present,
+                          annotate_opacity_absent=self._annotate_opacity_absent,
                           annotate_border_color=self._annotate_border_color,
                           annotate_kind=self._annotate_kind,
                           annotate_box_width=self._annotate_box_width,
@@ -267,6 +280,8 @@ class TreeStyler:
                           annotate_column=self._annotate_column,
                           annotate_color_present=self._annotate_color_present,
                           annotate_color_absent=self._annotate_color_absent,
+                          annotate_opacity_present=self._annotate_opacity_present,
+                          annotate_opacity_absent=self._annotate_opacity_absent,
                           annotate_border_color=self._annotate_border_color,
                           annotate_kind=self._annotate_kind,
                           annotate_box_height=self._annotate_box_height,
@@ -307,6 +322,8 @@ class TreeStyler:
                legend_nsize: int = 10, legend_fsize: int = 11,
                annotate_color_present: str = 'black',
                annotate_color_absent: str = 'white',
+               annotate_opacity_present: float = 1.0,
+               annotate_opacity_absent: float = 0.0,
                annotate_border_color: str = 'black',
                annotate_kind: str = 'rect',
                annotate_box_width: int = 30,
@@ -376,6 +393,8 @@ class TreeStyler:
                           annotate_column=1,
                           annotate_color_present=annotate_color_present,
                           annotate_color_absent=annotate_color_absent,
+                          annotate_opacity_present=annotate_opacity_present,
+                          annotate_opacity_absent=annotate_opacity_absent,
                           annotate_border_color=annotate_border_color,
                           annotate_kind=annotate_kind,
                           annotate_box_width=annotate_box_width,
