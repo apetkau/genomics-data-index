@@ -1,7 +1,11 @@
+configfile: "config/config.yaml"
+
+
 rule all:
     input:
         "variant/{sample}.vcf.gz",
-        "consensus/{sample}.fasta.gz"
+        "consensus/{sample}.fasta.gz",
+
 
 rule assembly_align:
     input:
@@ -13,17 +17,18 @@ rule assembly_align:
         "envs/main.yaml"
     log:
         mm2="logs/assembly_align.{sample}.minimap2.log",
-	sv="logs/assembly_align.{sample}.sv.log"
+        sv="logs/assembly_align.{sample}.sv.log",
     shell:
         "minimap2 -a -x asm5 {input.reference} {input.sample} 2> {log.mm2} | "
         "samtools view -b > {output} 2> {log.sv}"
 
+
 rule assembly_variant:
     input:
         reference="data/reference.fasta",
-        bam="align/{sample}.bam"
+        bam="align/{sample}.bam",
     output:
-        "variant/{sample}.vcf.gz"
+        "variant/{sample}.vcf.gz",
     conda:
         "envs/main.yaml"
     log:
@@ -31,15 +36,20 @@ rule assembly_variant:
     shell:
         "htsbox pileup -f {input.reference} -d -c {input.bam} 2> {log.pileup} | bgzip -c > {output}"
 
+
 rule assembly_consensus:
     input:
         reference="data/reference.fasta",
-        bam="align/{sample}.bam"
+        bam="align/{sample}.bam",
     output:
-        "consensus/{sample}.fasta.gz"
+        "consensus/{sample}.fasta.gz",
     conda:
         "envs/main.yaml"
     log:
         pileup="logs/assembly_consensus.{sample}.pileup.log",
     shell:
         "htsbox pileup -f {input.reference} -d -F {input.bam} 2> {log.pileup} | gzip -c - > {output}"
+
+
+# rule fofn_gdi_input:
+#    input:
