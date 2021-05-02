@@ -29,7 +29,8 @@ class TreeStyler:
                  annotate_border_width: int = 1,
                  annotate_margin: int = 0,
                  annotate_show_box_label: bool = False,
-                 annotate_box_label_color: str = 'white'):
+                 annotate_box_label_color: str = 'white',
+                 annotate_label_fontsize: int = 12):
         self._tree = tree
         self._default_highlight_styles = default_highlight_styles
         self._tree_style = tree_style
@@ -47,6 +48,7 @@ class TreeStyler:
         self._annotate_margin = annotate_margin
         self._annotate_show_box_label = annotate_show_box_label
         self._annotate_box_label_color = annotate_box_label_color
+        self._annotate_label_fontsize = annotate_label_fontsize
 
         if annotate_kind not in self.ANNOTATE_KINDS:
             raise Exception(f'Invalid value for annotate_kind={annotate_kind}.'
@@ -123,10 +125,12 @@ class TreeStyler:
             color_present = self._annotate_color_present
         if isinstance(label, str):
             # Pick default color since ete3 by default colors the same as what I'm using for the fill color
-            label = {'text': label, 'color': 'black', 'font': 'Verdana', 'fontsize': 14}
+            label = {'text': label, 'color': 'black', 'font': 'Verdana', 'fontsize': self._annotate_label_fontsize}
 
         if (label is not None) and (self._annotate_show_box_label or annotate_show_box_label):
             label_present = copy.deepcopy(label)
+            if 'fontsize' not in label_present:
+                label_present['fontsize'] = self._annotate_label_fontsize
 
             if annotate_box_label_color is not None:
                 label_present['color'] = annotate_box_label_color
@@ -153,13 +157,14 @@ class TreeStyler:
         ts = copy.deepcopy(self._tree_style)
         if label is not None:
             text = label.get('text', None)
-            fsize = label.get('fontsize', 12)
+            fsize = label.get('fontsize', self._annotate_label_fontsize)
             ftype = label.get('font', 'Verdana')
             color = label.get('color', 'black')
             tf = TextFace(text, fsize=fsize, ftype=ftype, fgcolor=color)
             tf.margin_bottom = 10
             tf.hz_align = 1
             ts.aligned_header.add_face(tf, self._annotate_column)
+            ts.aligned_foot.add_face(tf, self._annotate_column)
 
         # Annotate nodes
         tree = self._tree.copy(method='deepcopy')
@@ -197,7 +202,8 @@ class TreeStyler:
                           annotate_border_width=self._annotate_border_width,
                           annotate_margin=self._annotate_margin,
                           annotate_show_box_label=self._annotate_show_box_label,
-                          annotate_box_label_color=self._annotate_box_label_color)
+                          annotate_box_label_color=self._annotate_box_label_color,
+                          annotate_label_fontsize=self._annotate_label_fontsize)
 
     def highlight(self, samples: Union[SamplesQuery, Iterable[str]],
                   nstyle: NodeStyle = None, legend_color: str = None,
@@ -251,7 +257,8 @@ class TreeStyler:
                           annotate_border_width=self._annotate_border_width,
                           annotate_margin=self._annotate_margin,
                           annotate_show_box_label=self._annotate_show_box_label,
-                          annotate_box_label_color=self._annotate_box_label_color)
+                          annotate_box_label_color=self._annotate_box_label_color,
+                          annotate_label_fontsize=self._annotate_label_fontsize)
 
     def render(self, file_name: str = '%%inline', w: int = None, h: int = None,
                tree_style: TreeStyle = None, units: str = 'px', dpi: int = 90):
@@ -301,12 +308,14 @@ class TreeStyler:
                legend_title: str = None,
                annotate_show_box_label: bool = False,
                annotate_box_label_color: str = 'white',
-               annotate_arc_span: int = 350) -> TreeStyler:
+               annotate_arc_span: int = 350,
+               annotate_label_fontsize: int = 12,
+               show_leaf_names: bool = True) -> TreeStyler:
         if initial_style is not None:
             tree_style_elements = {'mode': mode, 'annotate_guiding_lines': annotate_guiding_lines,
                                    'figure_margin': figure_margin, 'show_border': show_border,
                                    'title': title, 'legend_title': legend_title, 'title_fsize': title_fsize,
-                                   'annotate_arc_span': annotate_arc_span}
+                                   'annotate_arc_span': annotate_arc_span, 'show_leaf_names': show_leaf_names}
             tree_style_elements_none = [tree_style_elements[k] is None for k in tree_style_elements]
 
             if any(tree_style_elements_none):
@@ -317,6 +326,7 @@ class TreeStyler:
         else:
             ts = TreeStyle()
             ts.arc_span = annotate_arc_span
+            ts.show_leaf_name = show_leaf_names
 
             if mode is not None and mode not in cls.MODES:
                 raise Exception(f'Invalid value mode=[{mode}]. Must be one of {cls.MODES}')
@@ -370,7 +380,8 @@ class TreeStyler:
                           annotate_border_width=annotate_border_width,
                           annotate_margin=annotate_margin,
                           annotate_show_box_label=annotate_show_box_label,
-                          annotate_box_label_color=annotate_box_label_color)
+                          annotate_box_label_color=annotate_box_label_color,
+                          annotate_label_fontsize=annotate_label_fontsize)
 
 
 class HighlightStyle:
