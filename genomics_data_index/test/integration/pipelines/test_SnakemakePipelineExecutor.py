@@ -5,8 +5,12 @@ import vcf
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+from Bio import SeqIO
+from Bio.SeqRecord import SeqRecord
+
 from genomics_data_index.test.integration.pipelines import assemblies_samples, assemblies_reference, expected_mutations
 from genomics_data_index.pipelines.SnakemakePipelineExecutor import SnakemakePipelineExecutor
+from genomics_data_index.storage.util import parse_sequence_file
 
 
 def vcf_to_mutations_list(vcf_file: Path) -> List[str]:
@@ -23,6 +27,9 @@ def read_expected_mutations(file: Path) -> List[str]:
         mutations = [l.strip() for l in fh.readlines()]
         return mutations
 
+def get_consensus_sequences(file: Path) -> List[SeqRecord]:
+    ref_name, sequences = parse_sequence_file(file)
+    return sequences
 
 def test_create_fofn_file_single_sample():
     with TemporaryDirectory() as tmp_dir_str:
@@ -45,6 +52,14 @@ def test_create_fofn_file_single_sample():
         assert actual_consensus_file.exists()
 
         sampleA_actual_mutations = vcf_to_mutations_list(actual_mutations_file)
-
         assert len(sampleA_actual_mutations) == len(sampleA_expected_mutations)
         assert sampleA_actual_mutations == sampleA_expected_mutations
+
+        sampleA_consensus_records = get_consensus_sequences(actual_consensus_file)
+        assert 1 == len(sampleA_consensus_records)
+
+        sampleA_consensus_record = sampleA_consensus_records[0]
+        assert 5180 == len(sampleA_consensus_record)
+        assert 'reference' == sampleA_consensus_record.id
+        assert 0 == sampleA_consensus_record.upper().seq.count('N')
+        assert 0 == sampleA_consensus_record.upper().seq.count('-')
