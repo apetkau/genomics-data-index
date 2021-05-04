@@ -16,16 +16,16 @@ snakemake_file = Path(path.dirname(__file__), 'assembly_input', 'workflow', 'Sna
 
 class SnakemakePipelineExecutor(PipelineExecutor):
 
-    def __init__(self, snakemake_directory: Path):
+    def __init__(self, working_directory: Path):
         super().__init__()
-        self._snakemake_directory = snakemake_directory
+        self._working_directory = working_directory
 
     def _sample_name_from_file(self, sample_file: Path) -> str:
         return sample_file.stem
 
-    def _prepare_working_directory(self, working_directory: Path, reference_file: Path,
+    def _prepare_working_directory(self, reference_file: Path,
                                    input_files: List[Path]) -> Path:
-        config_dir = working_directory / 'config'
+        config_dir = self._working_directory / 'config'
         config_dir.mkdir()
 
         config_file = config_dir / 'config.yaml'
@@ -50,11 +50,10 @@ class SnakemakePipelineExecutor(PipelineExecutor):
 
         return config_file
 
-    def execute(self, input_files: List[Path], reference_file: Path,
-                working_directory: Path, ncores: int = 1) -> Path:
+    def execute(self, input_files: List[Path], reference_file: Path, ncores: int = 1) -> Path:
+        working_directory = self._working_directory
         logger.debug(f'Preparing working directory [{working_directory}] for snakemake')
-        config_file = self._prepare_working_directory(working_directory=working_directory,
-                                                      reference_file=reference_file,
+        config_file = self._prepare_working_directory(reference_file=reference_file,
                                                       input_files=input_files)
 
         logger.debug(f'Executing snakemake on {len(input_files)} files with reference_file=[{reference_file}]'

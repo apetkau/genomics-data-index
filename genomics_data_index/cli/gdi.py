@@ -321,11 +321,10 @@ def analysis(ctx):
 @click.argument('assembled_genomes', type=click.Path(exists=True), nargs=-1)
 def assembly(ctx, reference_file: str, assembled_genomes: List[str]):
     snakemake_directory = Path(getcwd())
-    pipeline_executor = SnakemakePipelineExecutor(snakemake_directory)
+    pipeline_executor = SnakemakePipelineExecutor(working_directory=snakemake_directory)
     genome_paths = [Path(f) for f in assembled_genomes]
     processed_files_fofn = pipeline_executor.execute(input_files=genome_paths,
                                                      reference_file=Path(reference_file),
-                                                     working_directory=snakemake_directory,
                                                      ncores=ctx.obj['ncores'])
     print(processed_files_fofn)
 
