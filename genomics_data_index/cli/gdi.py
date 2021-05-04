@@ -14,6 +14,7 @@ import pandas as pd
 from Bio import AlignIO
 
 import genomics_data_index.storage.service.FeatureService as FeatureService
+from genomics_data_index.pipelines.SnakemakePipelineExecutor import SnakemakePipelineExecutor
 from genomics_data_index.cli import yaml_config_provider
 from genomics_data_index.configuration.Project import Project, ProjectConfigurationError
 from genomics_data_index.storage.index.KmerIndexer import KmerIndexerSourmash, KmerIndexManager
@@ -305,6 +306,28 @@ def list_genomes(ctx):
 def list_samples(ctx):
     items = [sample.name for sample in ctx.obj['data_index_connection'].sample_service.get_samples()]
     click.echo('\n'.join(items))
+
+
+@main.group()
+@click.pass_context
+def analysis(ctx):
+    project = get_project_exit_on_error(ctx)
+    ctx.obj['data_index_connection'] = project.create_connection()
+
+
+@analysis.command()
+@click.pass_context
+@click.option('--reference-file', help='Reference genome', required=True, type=click.Path(exists=True))
+@click.argument('assembled_genomes', type=click.Path(exists=True), nargs=-1)
+def assembly(ctx, reference_file: str, assembled_genomes: List[str]):
+    snakemake_directory = Path(getcwd())
+    pipeline_executor = SnakemakePipelineExecutor(snakemake_directory)
+    genome_paths = [Path(f) for f in assembled_genomes]
+    processed_files_fofn = pipeline_executor.execute(input_files=genome_paths,
+                                                     reference_file=Path(reference_file),
+                                                     working_directory=snakemake_directory,
+                                                     ncores=ctx.obj['ncores'])
+    print(processed_files_fofn)
 
 
 @main.group()
