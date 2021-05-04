@@ -14,8 +14,7 @@ samples = sample_files.index.tolist()
 
 rule all:
     input:
-        expand("variant/{sample}.vcf.gz", sample=samples),
-        expand("consensus/{sample}.fasta.gz", sample=samples)
+        "gdi-input.fofn"
 
 
 rule assembly_align:
@@ -67,5 +66,11 @@ rule assembly_consensus:
         "gzip -c - > {output}"
 
 
-# rule fofn_gdi_input:
-#    input:
+rule gdi_input_fofn:
+    input:
+        sample_vcfs=expand("variant/{sample}.vcf.gz",sample=samples),
+        sample_consensus=expand("consensus/{sample}.fasta.gz",sample=samples)
+    output:
+        "gdi-input.fofn"
+    script:
+        "scripts/gdi-create-fofn.py"
