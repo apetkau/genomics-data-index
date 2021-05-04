@@ -1,1 +1,5 @@
 .snakemake
+/test-data
+/workflow/logs
+/workflow/align
+/workflow/variant
