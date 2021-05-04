@@ -1,11 +1,15 @@
 from typing import List
 from pathlib import Path
+from os import path
 import logging
 
 from genomics_data_index.pipelines.PipelineExecutor import PipelineExecutor
 from genomics_data_index.storage.util import execute_commands
 
 logger = logging.getLogger(__name__)
+
+
+snakemake_file = Path(path.dirname(__file__), 'assembly_input', 'workflow', 'Snakefile')
 
 
 class SnakemakePipelineExecutor(PipelineExecutor):
@@ -19,7 +23,8 @@ class SnakemakePipelineExecutor(PipelineExecutor):
         logger.debug(f'Executing snakemake on {len(input_files)} files with reference_file=[{reference_file}]'
                      f' using {ncores} cores in [{working_directory}]')
         snakemake_output = working_directory / 'gdi-input.fofn'
-        command = ['snakemake', '--use-conda', '-j', str(ncores), '--directory', str(working_directory)]
+        command = ['snakemake', '--use-conda', '-j', str(ncores), '--directory', str(working_directory),
+                   '--snakefile', str(snakemake_file)]
         execute_commands([command])
         logger.debug(f'Finished executing snakemake. Output file [{snakemake_output}]')
 
