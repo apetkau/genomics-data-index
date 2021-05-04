@@ -16,9 +16,10 @@ snakemake_file = Path(path.dirname(__file__), 'assembly_input', 'workflow', 'Sna
 
 class SnakemakePipelineExecutor(PipelineExecutor):
 
-    def __init__(self, working_directory: Path):
+    def __init__(self, working_directory: Path, use_conda: bool = True):
         super().__init__()
         self._working_directory = working_directory
+        self._use_conda = use_conda
 
     def _sample_name_from_file(self, sample_file: Path) -> str:
         return sample_file.stem
@@ -50,6 +51,12 @@ class SnakemakePipelineExecutor(PipelineExecutor):
 
         return config_file
 
+    def _apply_use_conda(self, command: List[str]) -> List[str]:
+        if self._use_conda:
+            return command + ['--use-conda']
+        else:
+            return command
+
     def execute(self, input_files: List[Path], reference_file: Path, ncores: int = 1) -> Path:
         working_directory = self._working_directory
         logger.debug(f'Preparing working directory [{working_directory}] for snakemake')
@@ -59,9 +66,14 @@ class SnakemakePipelineExecutor(PipelineExecutor):
         logger.debug(f'Executing snakemake on {len(input_files)} files with reference_file=[{reference_file}]'
                      f' using {ncores} cores in [{working_directory}]')
         snakemake_output = working_directory / 'gdi-input.fofn'
-        command = ['snakemake', '--configfile', str(config_file), '--use-conda', '-j', str(ncores), '--directory', str(working_directory),
-                   '--snakefile', str(snakemake_file)]
+
+        command = ['snakemake', '--configfile', str(config_file)]
+        command = self._apply_use_conda(command)
+        command = command + ['-j', str(ncores), '--directory', str(working_directory),
+                             '--snakefile', str(snakemake_file)]
+
         execute_commands([command])
+
         logger.debug(f'Finished executing snakemake. Output file [{snakemake_output}]')
 
         return snakemake_output

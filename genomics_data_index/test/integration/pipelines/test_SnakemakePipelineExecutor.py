@@ -11,7 +11,7 @@ def test_create_fofn_file_single_sample():
         actual_consensus_file = tmp_dir / 'consensus' / 'SampleA.fasta.gz'
         input_samples = [assemblies_samples['SampleA']]
 
-        pipeline_executor = SnakemakePipelineExecutor(working_directory=tmp_dir)
+        pipeline_executor = SnakemakePipelineExecutor(working_directory=tmp_dir, use_conda=False)
 
         input_fofn = pipeline_executor.execute(input_files=input_samples,
                                                reference_file=assemblies_reference,
