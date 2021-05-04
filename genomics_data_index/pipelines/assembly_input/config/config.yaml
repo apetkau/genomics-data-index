@@ -1,4 +1,3 @@
 # An example configuration file defining the reference genome and samples
 reference: test-data/reference.fasta
-samples:
-    SampleA: test-data/SampleA.fasta
+samples: config/samples.tsv

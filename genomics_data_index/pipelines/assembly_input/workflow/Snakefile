@@ -1,16 +1,27 @@
+import pandas as pd
+from snakemake.utils import min_version
+
+# Configuration
+
+min_version("5.1.2")
+
 configfile: "config/config.yaml"
 
+sample_files = pd.read_csv(config["samples"], sep='\t').set_index("Sample", drop=False)
+samples = sample_files.index.tolist()
+
+# Workflow
 
 rule all:
     input:
-        expand("variant/{sample}.vcf.gz", sample=config["samples"]),
-        expand("consensus/{sample}.fasta.gz", sample = config["samples"])
+        expand("variant/{sample}.vcf.gz", sample=samples),
+        expand("consensus/{sample}.fasta.gz", sample=samples)
 
 
 rule assembly_align:
     input:
         reference=config["reference"],
-        sample="data/{sample}.fasta",
+        sample=lambda wildcards: sample_files.loc[wildcards.sample]['File'],
     output:
         "align/{sample}.bam",
     conda:
