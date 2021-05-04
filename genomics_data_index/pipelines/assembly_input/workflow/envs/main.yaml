@@ -5,5 +5,7 @@ channels:
 dependencies:
   - minimap2
   - samtools
+  - bamtools
+  - bcftools
   - htsbox
   - htslib

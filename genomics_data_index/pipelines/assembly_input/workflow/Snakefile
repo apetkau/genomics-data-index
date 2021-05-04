@@ -17,10 +17,12 @@ rule assembly_align:
         "envs/main.yaml"
     log:
         mm2="logs/assembly_align.{sample}.minimap2.log",
-        sv="logs/assembly_align.{sample}.sv.log",
+        samview="logs/assembly_align.{sample}.samview.log",
+        bamsort="logs/assembly_align.{sample}.bamsort.log",
     shell:
         "minimap2 -a -x asm5 {input.reference} {input.sample} 2> {log.mm2} | "
-        "samtools view -b > {output} 2> {log.sv}"
+        "samtools view -b 2> {log.samview} | "
+        "bamtools sort 1> {output} 2> {log.bamsort}"
 
 
 rule assembly_variant:
@@ -32,9 +34,11 @@ rule assembly_variant:
     conda:
         "envs/main.yaml"
     log:
-        pileup="logs/assembly_variant.{sample}.pileup.log",
+        mpileup="logs/assembly_variant.{sample}.mpileup.log",
+        call="logs/assembly_variant.{sample}.call.log",
     shell:
-        "htsbox pileup -f {input.reference} -d -c {input.bam} 2> {log.pileup} | bgzip -c > {output}"
+        "bcftools mpileup -Ou -f {input.reference} {input.bam} 2> {log.mpileup} | "
+        "bcftools call --ploidy 1 -Oz -mv 1> {output}"
 
 
 rule assembly_consensus:
@@ -46,9 +50,10 @@ rule assembly_consensus:
     conda:
         "envs/main.yaml"
     log:
-        pileup="logs/assembly_consensus.{sample}.pileup.log",
+        consensus="logs/assembly_consensus.{sample}.consensus.log",
     shell:
-        "htsbox pileup -f {input.reference} -d -F {input.bam} 2> {log.pileup} | gzip -c - > {output}"
+        "htsbox pileup -f {input.reference} -d -F {input.bam} 2> {log.consensus} | "
+        "gzip -c - > {output}"
 
 
 # rule fofn_gdi_input:
