@@ -1,10 +1,10 @@
-configfile: "config/config.yaml"
+configfile: "../config/config.yaml"
 
 
 rule all:
     input:
-        "variant/{sample}.vcf.gz",
-        "consensus/{sample}.fasta.gz",
+        expand("variant/{sample}.vcf.gz", sample=config["samples"]),
+        expand("consensus/{sample}.fasta.gz", sample = config["samples"])
 
 
 rule assembly_align:
