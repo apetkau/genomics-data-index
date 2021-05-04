@@ -9,7 +9,7 @@ rule all:
 
 rule assembly_align:
     input:
-        reference="data/reference.fasta",
+        reference=config["reference"],
         sample="data/{sample}.fasta",
     output:
         "align/{sample}.bam",
@@ -25,7 +25,7 @@ rule assembly_align:
 
 rule assembly_variant:
     input:
-        reference="data/reference.fasta",
+        reference=config["reference"],
         bam="align/{sample}.bam",
     output:
         "variant/{sample}.vcf.gz",
@@ -39,7 +39,7 @@ rule assembly_variant:
 
 rule assembly_consensus:
     input:
-        reference="data/reference.fasta",
+        reference=config["reference"],
         bam="align/{sample}.bam",
     output:
         "consensus/{sample}.fasta.gz",
