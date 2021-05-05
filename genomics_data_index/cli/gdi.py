@@ -331,7 +331,7 @@ def analysis(ctx):
 @click.option('--extra-tree-params', help='Extra parameters to tree-building software',
               default=None)
 @click.option('--use-conda/--no-use-conda', help="Use (or don't use) conda for dependency management for pipeline.",
-              default=True)
+              default=False)
 @click.option('--assembly-input-file',
               help='A file listing the genome assemblies to process, one per line. This is an alternative'
                    ' to passing assemblies as arguments on the command-line',
