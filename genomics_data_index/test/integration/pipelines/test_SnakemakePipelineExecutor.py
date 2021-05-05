@@ -122,3 +122,32 @@ def test_create_fofn_file_multiple_samples():
         actual_consensus_C = Path(fofn_df[fofn_df['Sample'] == 'SampleC']['Mask File'].tolist()[0])
         assert_vcf(actual_mutations_C, expected_mutations['SampleC'])
         assert_consensus(actual_consensus_C, expected_length=5180, expected_Ns=0, expected_gaps=0)
+
+
+def test_create_fofn_file_multiple_samples_with_ns():
+    with TemporaryDirectory() as tmp_dir_str:
+        tmp_dir = Path(tmp_dir_str)
+        samples = ['SampleD']
+
+        input_samples = [assemblies_samples[s] for s in samples]
+
+        pipeline_executor = SnakemakePipelineExecutor(working_directory=tmp_dir, use_conda=False)
+
+        input_fofn = pipeline_executor.execute(input_files=input_samples,
+                                               reference_file=assemblies_reference,
+                                               ncores=1)
+
+        assert input_fofn.exists()
+
+        # Verify input file of file names for rest of gdi software (used as input to the indexing component)
+        fofn_df = pd.read_csv(input_fofn, sep='\t')
+        print(fofn_df)
+        assert ['Sample', 'VCF', 'Mask File'] == fofn_df.columns.tolist()
+
+        assert 1 == len(fofn_df)
+        assert ['SampleD'] == fofn_df['Sample'].tolist()
+
+        actual_mutations_D = Path(fofn_df[fofn_df['Sample'] == 'SampleD']['VCF'].tolist()[0])
+        actual_consensus_D = Path(fofn_df[fofn_df['Sample'] == 'SampleD']['Mask File'].tolist()[0])
+        assert_vcf(actual_mutations_D, expected_mutations['SampleD'])
+        assert_consensus(actual_consensus_D, expected_length=5180, expected_Ns=480, expected_gaps=0)
