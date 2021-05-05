@@ -127,7 +127,7 @@ def test_create_fofn_file_multiple_samples():
 def test_create_fofn_file_multiple_samples_with_ns():
     with TemporaryDirectory() as tmp_dir_str:
         tmp_dir = Path(tmp_dir_str)
-        samples = ['SampleD']
+        samples = ['SampleD', 'SampleE']
 
         input_samples = [assemblies_samples[s] for s in samples]
 
@@ -144,10 +144,15 @@ def test_create_fofn_file_multiple_samples_with_ns():
         print(fofn_df)
         assert ['Sample', 'VCF', 'Mask File'] == fofn_df.columns.tolist()
 
-        assert 1 == len(fofn_df)
-        assert ['SampleD'] == fofn_df['Sample'].tolist()
+        assert 2 == len(fofn_df)
+        assert ['SampleD', 'SampleE'] == fofn_df['Sample'].tolist()
 
         actual_mutations_D = Path(fofn_df[fofn_df['Sample'] == 'SampleD']['VCF'].tolist()[0])
         actual_consensus_D = Path(fofn_df[fofn_df['Sample'] == 'SampleD']['Mask File'].tolist()[0])
         assert_vcf(actual_mutations_D, expected_mutations['SampleD'])
         assert_consensus(actual_consensus_D, expected_length=5180, expected_Ns=480, expected_gaps=0)
+
+        actual_mutations_E = Path(fofn_df[fofn_df['Sample'] == 'SampleE']['VCF'].tolist()[0])
+        actual_consensus_E = Path(fofn_df[fofn_df['Sample'] == 'SampleE']['Mask File'].tolist()[0])
+        assert_vcf(actual_mutations_E, expected_mutations['SampleE'])
+        assert_consensus(actual_consensus_E, expected_length=5180, expected_Ns=960, expected_gaps=0)
