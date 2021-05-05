@@ -368,8 +368,13 @@ def assembly(ctx, reference_file: str, index: bool, clean: bool, build_tree: boo
 
     if index:
         logger.info(f'Indexing processed files defined in [{processed_files_fofn}]')
-        ctx.invoke(load_vcf, vcf_fofns=str(processed_files_fofn), reference_file=reference_file,
-                   build_tree=build_tree, align_type=align_type, extra_tree_params=extra_tree_params)
+        try:
+            ctx.invoke(load_vcf, vcf_fofns=str(processed_files_fofn), reference_file=reference_file,
+                       build_tree=build_tree, align_type=align_type, extra_tree_params=extra_tree_params)
+        except Exception as e:
+            logger.exception(e)
+            logger.error(f"Error while indexing. Please verify files in [{snakemake_directory}] are correct.")
+            clean = False
 
         if clean:
             logger.info(f'--clean is enabled so deleting [{snakemake_directory}]')

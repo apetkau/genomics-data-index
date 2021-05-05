@@ -21,7 +21,7 @@ if (len(sample_vcfs) != len(sample_consensus)) and (len(sample_vcfs) != len(samp
                     f'sample_sketches length [{len(sample_sketches)}]')
 
 with open(snakemake.output[0], 'w') as fh:
-    fh.write('Sample\tVCF\tMask File\tSourmash Sketch\n')
+    fh.write('Sample\tVCF\tMask File\tSketch File\n')
     for idx in range(0, len(sample_consensus)):
         vcf = os.path.abspath(sample_vcfs[idx])
         consensus = os.path.abspath(sample_consensus[idx])
