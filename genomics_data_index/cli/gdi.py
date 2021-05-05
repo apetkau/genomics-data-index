@@ -7,6 +7,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import List, cast
 import time
+import shutil
 
 import click
 import click_config_file
@@ -322,14 +323,20 @@ def analysis(ctx):
 @click.option('--reference-file', help='Reference genome', required=True, type=click.Path(exists=True))
 @click.option('--index/--no-index', help='Whether or not to load the processed files into the index or'
                                          ' just produce the VCFs from assemblies', default=True)
+@click.option('--clean/--no-clean', help='Clean up intermediate files when finished. '
+                                         'Only useful when --index is enabled (default).', default=True)
 @click.option('--build-tree/--no-build-tree', default=False, help='Builds tree of all samples after loading')
 @click.option('--align-type', help=f'The type of alignment to generate', default='core',
               type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
 @click.option('--extra-tree-params', help='Extra parameters to tree-building software',
               default=None)
 @click.argument('assembled_genomes', type=click.Path(exists=True), nargs=-1)
-def assembly(ctx, reference_file: str, index: bool, build_tree: bool, align_type: str, extra_tree_params: str,
+def assembly(ctx, reference_file: str, index: bool, clean: bool, build_tree: bool, align_type: str, extra_tree_params: str,
              assembled_genomes: List[str]):
+    if clean and not index:
+        click.echo('Both --no-index and --clean cannot be enabled as this would delete all the final results')
+        sys.exit(1)
+
     timestamp = time.time()
     snakemake_directory = Path(getcwd(), f'snakemake-assemblies.{timestamp}')
     if not snakemake_directory.exists():
@@ -349,6 +356,10 @@ def assembly(ctx, reference_file: str, index: bool, build_tree: bool, align_type
         logger.info(f'Indexing processed files defined in [{processed_files_fofn}]')
         ctx.invoke(load_vcf, vcf_fofns=str(processed_files_fofn), reference_file=reference_file,
                  build_tree=build_tree, align_type=align_type, extra_tree_params=extra_tree_params)
+
+        if clean:
+            logger.info(f'--clean is enabled so deleting [{snakemake_directory}]')
+            shutil.rmtree(snakemake_directory)
     else:
         logger.debug(f'Not indexing processed files defined in [{processed_files_fofn}]')
         click.echo(f'Processed VCFs/consensus sequences found in: {processed_files_fofn}')
