@@ -21,19 +21,23 @@ rule prepare_reference:
     input:
         reference=config["reference"],
     output:
-        "reference/reference.fasta"
+        reference="reference/reference.fasta",
+        reference_mm2_index="reference/reference.fasta.mmi"
     conda:
         "envs/main.yaml"
+    threads: 1
     log:
-        faidx="logs/prepare_reference.faidx.log"
+        faidx="logs/prepare_reference.faidx.log",
+        mm2_index="logs/prepare_reference.mm2_index.log"
     shell:
-        "ln -s {input.reference} {output} && "
-        "samtools faidx {output} 2>&1 1>{log.faidx}"
+        "ln -s {input.reference} {output.reference} && "
+        "samtools faidx {output.reference} 2>&1 1>{log.faidx} && "
+        "minimap2 -t {threads} -d {output.reference_mm2_index} {output.reference} 2>&1 1>{log.mm2_index}"
 
 
 rule assembly_align:
     input:
-        reference="reference/reference.fasta",
+        reference_mm2_index="reference/reference.fasta.mmi",
         sample=lambda wildcards: sample_files.loc[wildcards.sample]['File'],
     output:
         "align/{sample}.bam",
@@ -45,7 +49,7 @@ rule assembly_align:
         samview="logs/assembly_align.{sample}.samview.log",
         bamsort="logs/assembly_align.{sample}.bamsort.log",
     shell:
-        "minimap2 -t {threads} -a -x asm5 {input.reference} {input.sample} 2> {log.mm2} | "
+        "minimap2 -t {threads} -a -x asm5 {input.reference_mm2_index} {input.sample} 2> {log.mm2} | "
         "samtools view --threads {threads} -b 2> {log.samview} | "
         "bamtools sort 1> {output} 2> {log.bamsort}"
 
