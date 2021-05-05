@@ -17,9 +17,23 @@ rule all:
         "gdi-input.fofn"
 
 
-rule assembly_align:
+rule prepare_reference:
     input:
         reference=config["reference"],
+    output:
+        "reference/reference.fasta"
+    conda:
+        "envs/main.yaml"
+    log:
+        faidx="logs/prepare_reference.faidx.log"
+    shell:
+        "ln -s {input.reference} {output} && "
+        "samtools faidx {output} 2>&1 1>{log.faidx}"
+
+
+rule assembly_align:
+    input:
+        reference="reference/reference.fasta",
         sample=lambda wildcards: sample_files.loc[wildcards.sample]['File'],
     output:
         "align/{sample}.bam",
@@ -37,7 +51,7 @@ rule assembly_align:
 
 rule assembly_variant:
     input:
-        reference=config["reference"],
+        reference="reference/reference.fasta",
         bam="align/{sample}.bam",
     output:
         "variant/{sample}.vcf.gz",
@@ -53,7 +67,7 @@ rule assembly_variant:
 
 rule assembly_consensus:
     input:
-        reference=config["reference"],
+        reference="reference/reference.fasta",
         bam="align/{sample}.bam",
     output:
         "consensus/{sample}.fasta.gz",
