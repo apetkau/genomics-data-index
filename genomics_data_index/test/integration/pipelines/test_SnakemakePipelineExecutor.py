@@ -27,9 +27,11 @@ def read_expected_mutations(file: Path) -> List[str]:
         mutations = [l.strip() for l in fh.readlines()]
         return mutations
 
+
 def get_consensus_sequences(file: Path) -> List[SeqRecord]:
     ref_name, sequences = parse_sequence_file(file)
     return sequences
+
 
 def test_create_fofn_file_single_sample():
     with TemporaryDirectory() as tmp_dir_str:
@@ -51,10 +53,25 @@ def test_create_fofn_file_single_sample():
         assert actual_mutations_file.exists()
         assert actual_consensus_file.exists()
 
+        # Verify input file of file names for rest of gdi software (used as input to the indexing component)
+        fofn_df = pd.read_csv(input_fofn, sep='\t')
+        print(fofn_df)
+        assert ['Sample', 'VCF', 'Mask File'] == fofn_df.columns.tolist()
+
+        assert 1 == len(fofn_df)
+        assert ['SampleA'] == fofn_df['Sample'].tolist()
+        actual_mutations_file_from_df = Path(fofn_df[fofn_df['Sample'] == 'SampleA']['VCF'].tolist()[0])
+        actual_consensus_file_from_df = Path(fofn_df[fofn_df['Sample'] == 'SampleA']['Mask File'].tolist()[0])
+
+        assert actual_mutations_file == actual_mutations_file_from_df
+        assert actual_consensus_file == actual_consensus_file_from_df
+
+        # Verify mutations
         sampleA_actual_mutations = vcf_to_mutations_list(actual_mutations_file)
         assert len(sampleA_actual_mutations) == len(sampleA_expected_mutations)
         assert sampleA_actual_mutations == sampleA_expected_mutations
 
+        # Verify consensus/mask sequence (position of Ns and -s are positions that should be masked out
         sampleA_consensus_records = get_consensus_sequences(actual_consensus_file)
         assert 1 == len(sampleA_consensus_records)
 

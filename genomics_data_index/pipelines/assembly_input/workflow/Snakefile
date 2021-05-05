@@ -68,8 +68,8 @@ rule assembly_consensus:
 
 rule gdi_input_fofn:
     input:
-        sample_vcfs=expand("variant/{sample}.vcf.gz",sample=samples),
-        sample_consensus=expand("consensus/{sample}.fasta.gz",sample=samples)
+        sample_vcfs=expand("variant/{sample}.vcf.gz", sample=samples),
+        sample_consensus=expand("consensus/{sample}.fasta.gz", sample=samples)
     output:
         "gdi-input.fofn"
     script:
