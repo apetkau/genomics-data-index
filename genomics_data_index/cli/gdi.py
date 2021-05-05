@@ -330,12 +330,23 @@ def analysis(ctx):
               type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
 @click.option('--extra-tree-params', help='Extra parameters to tree-building software',
               default=None)
+@click.option('--assembly-input-file', help='A file listing the genome assemblies to process, one per line. This is an alternative'
+                                            ' to passing assemblies as arguments on the command-line',
+              type=click.Path(exists=True),
+              required=False)
 @click.argument('assembled_genomes', type=click.Path(exists=True), nargs=-1)
-def assembly(ctx, reference_file: str, index: bool, clean: bool, build_tree: bool, align_type: str, extra_tree_params: str,
+def assembly(ctx, reference_file: str, index: bool, clean: bool, build_tree: bool, align_type: str,
+             extra_tree_params: str, assembly_input_file: str,
              assembled_genomes: List[str]):
     if clean and not index:
         click.echo('Both --no-index and --clean cannot be enabled as this would delete all the final results')
         sys.exit(1)
+
+    if assembly_input_file is not None:
+        with open(assembly_input_file, 'r') as fh:
+            genome_paths = [Path(l.strip()) for l in fh.readlines()]
+    else:
+        genome_paths = [Path(f) for f in assembled_genomes]
 
     timestamp = time.time()
     snakemake_directory = Path(getcwd(), f'snakemake-assemblies.{timestamp}')
@@ -345,9 +356,8 @@ def assembly(ctx, reference_file: str, index: bool, clean: bool, build_tree: boo
         raise Exception(f'Snakemake working directory [{snakemake_directory}] already exists')
 
     pipeline_executor = SnakemakePipelineExecutor(working_directory=snakemake_directory)
-    genome_paths = [Path(f) for f in assembled_genomes]
 
-    logger.info(f'Processing {len(assembled_genomes)} genomes to identify mutations')
+    logger.info(f'Processing {len(genome_paths)} genomes to identify mutations')
     processed_files_fofn = pipeline_executor.execute(input_files=genome_paths,
                                                      reference_file=Path(reference_file),
                                                      ncores=ctx.obj['ncores'])
