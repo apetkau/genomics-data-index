@@ -53,6 +53,7 @@ class SnakemakePipelineExecutor(PipelineExecutor):
 
     def _apply_use_conda(self, command: List[str]) -> List[str]:
         if self._use_conda:
+            logger.debug('Enabling --use-conda for snakemake pipeline')
             return command + ['--use-conda']
         else:
             return command

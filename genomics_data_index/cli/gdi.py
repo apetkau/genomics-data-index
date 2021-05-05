@@ -322,25 +322,26 @@ def analysis(ctx):
 @click.pass_context
 @click.option('--reference-file', help='Reference genome', required=True, type=click.Path(exists=True))
 @click.option('--index/--no-index', help='Whether or not to load the processed files into the index or'
-                                         ' just produce the VCFs from assemblies', default=True)
-@click.option('--clean/--no-clean', help='Clean up intermediate files when finished. '
-                                         'Only useful when --index is enabled (default).', default=True)
+                                         ' just produce the VCFs from assemblies. --no-index implies --no-clean.', default=True)
+@click.option('--clean/--no-clean', help='Clean up intermediate files when finished.', default=True)
 @click.option('--build-tree/--no-build-tree', default=False, help='Builds tree of all samples after loading')
 @click.option('--align-type', help=f'The type of alignment to generate', default='core',
               type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
 @click.option('--extra-tree-params', help='Extra parameters to tree-building software',
               default=None)
+@click.option('--use-conda/--no-use-conda', help="Use (or don't use) conda for dependency management for pipeline.",
+              default=True)
 @click.option('--assembly-input-file', help='A file listing the genome assemblies to process, one per line. This is an alternative'
                                             ' to passing assemblies as arguments on the command-line',
               type=click.Path(exists=True),
               required=False)
 @click.argument('assembled_genomes', type=click.Path(exists=True), nargs=-1)
 def assembly(ctx, reference_file: str, index: bool, clean: bool, build_tree: bool, align_type: str,
-             extra_tree_params: str, assembly_input_file: str,
-             assembled_genomes: List[str]):
-    if clean and not index:
-        click.echo('Both --no-index and --clean cannot be enabled as this would delete all the final results')
-        sys.exit(1)
+             extra_tree_params: str, use_conda: bool,
+             assembly_input_file: str, assembled_genomes: List[str]):
+    if not index:
+        logger.debug('--no-index is enabled so setting --no-clean')
+        clean = False
 
     if assembly_input_file is not None:
         with open(assembly_input_file, 'r') as fh:
@@ -355,7 +356,8 @@ def assembly(ctx, reference_file: str, index: bool, clean: bool, build_tree: boo
     else:
         raise Exception(f'Snakemake working directory [{snakemake_directory}] already exists')
 
-    pipeline_executor = SnakemakePipelineExecutor(working_directory=snakemake_directory)
+    pipeline_executor = SnakemakePipelineExecutor(working_directory=snakemake_directory,
+                                                  use_conda=use_conda)
 
     logger.info(f'Processing {len(genome_paths)} genomes to identify mutations')
     processed_files_fofn = pipeline_executor.execute(input_files=genome_paths,
