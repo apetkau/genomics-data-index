@@ -2,7 +2,7 @@ import logging
 import multiprocessing
 import sys
 from functools import partial
-from os import path, listdir, getcwd
+from os import path, listdir, getcwd, mkdir
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import List, cast
@@ -173,7 +173,8 @@ def load_snippy(ctx, snippy_dir: Path, reference_file: Path, build_tree: bool, a
               type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
 @click.option('--extra-tree-params', help='Extra parameters to tree-building software',
               default=None)
-def load_vcf(ctx, vcf_fofns: Path, reference_file: Path, build_tree: bool, align_type: str, extra_tree_params: str):
+def load_vcf(ctx, vcf_fofns: str, reference_file: str, build_tree: bool, align_type: str, extra_tree_params: str):
+    vcf_fofns = Path(vcf_fofns)
     reference_file = Path(reference_file)
     ncores = ctx.obj['ncores']
 
@@ -318,15 +319,33 @@ def analysis(ctx):
 @analysis.command()
 @click.pass_context
 @click.option('--reference-file', help='Reference genome', required=True, type=click.Path(exists=True))
+@click.option('--index/--no-index', help='Whether or not to load the processed files into the index or'
+                                         ' just produce the VCFs from assemblies', default=True)
+@click.option('--build-tree/--no-build-tree', default=False, help='Builds tree of all samples after loading')
+@click.option('--align-type', help=f'The type of alignment to generate', default='core',
+              type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
+@click.option('--extra-tree-params', help='Extra parameters to tree-building software',
+              default=None)
 @click.argument('assembled_genomes', type=click.Path(exists=True), nargs=-1)
-def assembly(ctx, reference_file: str, assembled_genomes: List[str]):
-    snakemake_directory = Path(getcwd())
+def assembly(ctx, reference_file: str, index: bool, build_tree: bool, align_type: str, extra_tree_params: str,
+             assembled_genomes: List[str]):
+    snakemake_directory = Path(getcwd(), 'snakemake-assemblies')
+    if not snakemake_directory.exists():
+        mkdir(snakemake_directory)
+
     pipeline_executor = SnakemakePipelineExecutor(working_directory=snakemake_directory)
     genome_paths = [Path(f) for f in assembled_genomes]
     processed_files_fofn = pipeline_executor.execute(input_files=genome_paths,
                                                      reference_file=Path(reference_file),
                                                      ncores=ctx.obj['ncores'])
-    print(processed_files_fofn)
+
+    if index:
+        logger.info(f'Indexing processed files defined in [{processed_files_fofn}]')
+        load_vcf(ctx=ctx, vcf_fofns=str(processed_files_fofn), reference_file=reference_file,
+                 build_tree=build_tree, align_type=align_type, extra_tree_params=extra_tree_params)
+    else:
+        logger.debug(f'Not indexing processed files defined in [{processed_files_fofn}]')
+        click.echo(f'Processed VCFs/consensus sequences found in: {processed_files_fofn}')
 
 
 @main.group()

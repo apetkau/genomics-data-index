@@ -35,8 +35,8 @@ class SnakemakePipelineExecutor(PipelineExecutor):
         logger.debug(f'Writing snakemake config [{config_file}]')
         with open(config_file, 'w') as fh:
             config = {
-                'reference': str(reference_file),
-                'samples': str(samples_file)
+                'reference': str(reference_file.absolute()),
+                'samples': str(samples_file.absolute())
             }
             yaml.dump(config, fh)
 
@@ -44,7 +44,7 @@ class SnakemakePipelineExecutor(PipelineExecutor):
 
         sample_names = []
         for file in input_files:
-            sample_names.append([self._sample_name_from_file(file), str(file)])
+            sample_names.append([self._sample_name_from_file(file), str(file.absolute())])
 
         sample_names_df = pd.DataFrame(sample_names, columns=['Sample', 'File'])
         sample_names_df.to_csv(samples_file, sep='\t', index=False)
