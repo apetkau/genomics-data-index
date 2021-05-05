@@ -6,6 +6,7 @@ from os import path, listdir, getcwd, mkdir
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import List, cast
+import time
 
 import click
 import click_config_file
@@ -329,19 +330,24 @@ def analysis(ctx):
 @click.argument('assembled_genomes', type=click.Path(exists=True), nargs=-1)
 def assembly(ctx, reference_file: str, index: bool, build_tree: bool, align_type: str, extra_tree_params: str,
              assembled_genomes: List[str]):
-    snakemake_directory = Path(getcwd(), 'snakemake-assemblies')
+    timestamp = time.time()
+    snakemake_directory = Path(getcwd(), f'snakemake-assemblies.{timestamp}')
     if not snakemake_directory.exists():
         mkdir(snakemake_directory)
+    else:
+        raise Exception(f'Snakemake working directory [{snakemake_directory}] already exists')
 
     pipeline_executor = SnakemakePipelineExecutor(working_directory=snakemake_directory)
     genome_paths = [Path(f) for f in assembled_genomes]
+
+    logger.info(f'Processing {len(assembled_genomes)} genomes to identify mutations')
     processed_files_fofn = pipeline_executor.execute(input_files=genome_paths,
                                                      reference_file=Path(reference_file),
                                                      ncores=ctx.obj['ncores'])
 
     if index:
         logger.info(f'Indexing processed files defined in [{processed_files_fofn}]')
-        load_vcf(ctx=ctx, vcf_fofns=str(processed_files_fofn), reference_file=reference_file,
+        ctx.invoke(load_vcf, vcf_fofns=str(processed_files_fofn), reference_file=reference_file,
                  build_tree=build_tree, align_type=align_type, extra_tree_params=extra_tree_params)
     else:
         logger.debug(f'Not indexing processed files defined in [{processed_files_fofn}]')
