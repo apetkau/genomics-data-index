@@ -1,6 +1,7 @@
 # Assembly input
 
-This Snakemake workflow takes assembled genomes as input and generates VCF variant calls and a masked consenus sequences to be used as input for indexing. This works by:
+This Snakemake workflow takes assembled genomes as input and generates VCF variant calls and a masked consenus sequences
+to be used as input for indexing. This works by:
 
 1. Taking as input a config.yaml file defining the inputs (see `config/config.yaml` for an example)
     1. `reference`: The reference input file.

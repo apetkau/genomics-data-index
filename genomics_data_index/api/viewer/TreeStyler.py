@@ -60,7 +60,7 @@ class TreeStyler:
             cf = RectFace(width=self._legend_nsize, height=self._legend_nsize, bgcolor=color,
                           fgcolor='black')
         elif kind == 'circle':
-            cf = CircleFace(radius=self._legend_nsize/2, color=color)
+            cf = CircleFace(radius=self._legend_nsize / 2, color=color)
         else:
             raise Exception(f'kind=[{kind}] must be one of {self.ANNOTATE_KINDS}')
         cf.hz_align = 2
@@ -402,7 +402,7 @@ class TreeStyler:
 class HighlightStyle:
     THEMES = ['light', 'light_hn', 'pastel', 'medium', 'dark']
 
-    def __init__(self, node_styles:  List[Dict[str, Union[str, NodeStyle]]],
+    def __init__(self, node_styles: List[Dict[str, Union[str, NodeStyle]]],
                  index: int):
         self._node_styles = node_styles
         self._index = index

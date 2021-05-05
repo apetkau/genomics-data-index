@@ -1,6 +1,5 @@
-from pathlib import Path
 import os
-
+from pathlib import Path
 
 assemblies_dir = Path(__file__).parent / 'data' / 'assemblies'
 samples_dir = assemblies_dir / 'samples'

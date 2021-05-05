@@ -1,13 +1,13 @@
 import logging
 import multiprocessing
+import shutil
 import sys
+import time
 from functools import partial
 from os import path, listdir, getcwd, mkdir
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import List, cast
-import time
-import shutil
 
 import click
 import click_config_file
@@ -16,9 +16,9 @@ import pandas as pd
 from Bio import AlignIO
 
 import genomics_data_index.storage.service.FeatureService as FeatureService
-from genomics_data_index.pipelines.SnakemakePipelineExecutor import SnakemakePipelineExecutor
 from genomics_data_index.cli import yaml_config_provider
 from genomics_data_index.configuration.Project import Project, ProjectConfigurationError
+from genomics_data_index.pipelines.SnakemakePipelineExecutor import SnakemakePipelineExecutor
 from genomics_data_index.storage.index.KmerIndexer import KmerIndexerSourmash, KmerIndexManager
 from genomics_data_index.storage.io.mlst.MLSTChewbbacaReader import MLSTChewbbacaReader
 from genomics_data_index.storage.io.mlst.MLSTSampleDataPackage import MLSTSampleDataPackage
@@ -322,7 +322,8 @@ def analysis(ctx):
 @click.pass_context
 @click.option('--reference-file', help='Reference genome', required=True, type=click.Path(exists=True))
 @click.option('--index/--no-index', help='Whether or not to load the processed files into the index or'
-                                         ' just produce the VCFs from assemblies. --no-index implies --no-clean.', default=True)
+                                         ' just produce the VCFs from assemblies. --no-index implies --no-clean.',
+              default=True)
 @click.option('--clean/--no-clean', help='Clean up intermediate files when finished.', default=True)
 @click.option('--build-tree/--no-build-tree', default=False, help='Builds tree of all samples after loading')
 @click.option('--align-type', help=f'The type of alignment to generate', default='core',
@@ -331,8 +332,9 @@ def analysis(ctx):
               default=None)
 @click.option('--use-conda/--no-use-conda', help="Use (or don't use) conda for dependency management for pipeline.",
               default=True)
-@click.option('--assembly-input-file', help='A file listing the genome assemblies to process, one per line. This is an alternative'
-                                            ' to passing assemblies as arguments on the command-line',
+@click.option('--assembly-input-file',
+              help='A file listing the genome assemblies to process, one per line. This is an alternative'
+                   ' to passing assemblies as arguments on the command-line',
               type=click.Path(exists=True),
               required=False)
 @click.argument('assembled_genomes', type=click.Path(exists=True), nargs=-1)
@@ -367,7 +369,7 @@ def assembly(ctx, reference_file: str, index: bool, clean: bool, build_tree: boo
     if index:
         logger.info(f'Indexing processed files defined in [{processed_files_fofn}]')
         ctx.invoke(load_vcf, vcf_fofns=str(processed_files_fofn), reference_file=reference_file,
-                 build_tree=build_tree, align_type=align_type, extra_tree_params=extra_tree_params)
+                   build_tree=build_tree, align_type=align_type, extra_tree_params=extra_tree_params)
 
         if clean:
             logger.info(f'--clean is enabled so deleting [{snakemake_directory}]')

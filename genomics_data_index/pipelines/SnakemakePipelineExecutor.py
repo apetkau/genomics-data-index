@@ -1,15 +1,15 @@
-from typing import List
-from pathlib import Path
-from os import path
 import logging
-import yaml
+from os import path
+from pathlib import Path
+from typing import List
+
 import pandas as pd
+import yaml
 
 from genomics_data_index.pipelines.PipelineExecutor import PipelineExecutor
 from genomics_data_index.storage.util import execute_commands
 
 logger = logging.getLogger(__name__)
-
 
 snakemake_file = Path(path.dirname(__file__), 'assembly_input', 'workflow', 'Snakefile')
 

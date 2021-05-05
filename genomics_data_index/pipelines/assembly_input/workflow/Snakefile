@@ -7,7 +7,7 @@ min_version("5.1.2")
 
 configfile: "config/config.yaml"
 
-sample_files = pd.read_csv(config["samples"], sep='\t').set_index("Sample", drop=False)
+sample_files = pd.read_csv(config["samples"],sep='\t').set_index("Sample",drop=False)
 samples = sample_files.index.tolist()
 
 # Workflow
@@ -82,8 +82,8 @@ rule assembly_consensus:
 
 rule gdi_input_fofn:
     input:
-        sample_vcfs=expand("variant/{sample}.vcf.gz", sample=samples),
-        sample_consensus=expand("consensus/{sample}.fasta.gz", sample=samples)
+        sample_vcfs=expand("variant/{sample}.vcf.gz",sample=samples),
+        sample_consensus=expand("consensus/{sample}.fasta.gz",sample=samples)
     output:
         "gdi-input.fofn"
     script:

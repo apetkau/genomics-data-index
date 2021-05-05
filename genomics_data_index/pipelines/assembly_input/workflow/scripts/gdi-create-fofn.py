@@ -1,5 +1,6 @@
 import os
 
+
 # Generates a file of file names (fofn) from the given samples and VCF/consensus files
 # This file of file names is then used for input to the genomic indexer (gdi)
 

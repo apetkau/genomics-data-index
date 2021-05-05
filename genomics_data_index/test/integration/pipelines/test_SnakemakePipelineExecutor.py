@@ -1,16 +1,14 @@
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import List
 
 import pandas as pd
 import vcf
-from pathlib import Path
-from tempfile import TemporaryDirectory
-
-from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 
-from genomics_data_index.test.integration.pipelines import assemblies_samples, assemblies_reference, expected_mutations
 from genomics_data_index.pipelines.SnakemakePipelineExecutor import SnakemakePipelineExecutor
 from genomics_data_index.storage.util import parse_sequence_file
+from genomics_data_index.test.integration.pipelines import assemblies_samples, assemblies_reference, expected_mutations
 
 
 def vcf_to_mutations_list(vcf_file: Path) -> List[str]:
