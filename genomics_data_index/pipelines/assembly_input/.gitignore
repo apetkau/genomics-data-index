@@ -1,0 +1,4 @@
+.snakemake
+/workflow/logs
+/workflow/align
+/workflow/variant

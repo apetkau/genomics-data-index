@@ -1,0 +1,11 @@
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - minimap2
+  - samtools
+  - bamtools
+  - bcftools
+  - htsbox
+  - htslib

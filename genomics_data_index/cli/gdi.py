@@ -1,8 +1,10 @@
 import logging
 import multiprocessing
+import shutil
 import sys
+import time
 from functools import partial
-from os import path, listdir, getcwd
+from os import path, listdir, getcwd, mkdir
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import List, cast
@@ -16,6 +18,7 @@ from Bio import AlignIO
 import genomics_data_index.storage.service.FeatureService as FeatureService
 from genomics_data_index.cli import yaml_config_provider
 from genomics_data_index.configuration.Project import Project, ProjectConfigurationError
+from genomics_data_index.pipelines.SnakemakePipelineExecutor import SnakemakePipelineExecutor
 from genomics_data_index.storage.index.KmerIndexer import KmerIndexerSourmash, KmerIndexManager
 from genomics_data_index.storage.io.mlst.MLSTChewbbacaReader import MLSTChewbbacaReader
 from genomics_data_index.storage.io.mlst.MLSTSampleDataPackage import MLSTSampleDataPackage
@@ -172,7 +175,8 @@ def load_snippy(ctx, snippy_dir: Path, reference_file: Path, build_tree: bool, a
               type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
 @click.option('--extra-tree-params', help='Extra parameters to tree-building software',
               default=None)
-def load_vcf(ctx, vcf_fofns: Path, reference_file: Path, build_tree: bool, align_type: str, extra_tree_params: str):
+def load_vcf(ctx, vcf_fofns: str, reference_file: str, build_tree: bool, align_type: str, extra_tree_params: str):
+    vcf_fofns = Path(vcf_fofns)
     reference_file = Path(reference_file)
     ncores = ctx.obj['ncores']
 
@@ -305,6 +309,74 @@ def list_genomes(ctx):
 def list_samples(ctx):
     items = [sample.name for sample in ctx.obj['data_index_connection'].sample_service.get_samples()]
     click.echo('\n'.join(items))
+
+
+@main.group()
+@click.pass_context
+def analysis(ctx):
+    project = get_project_exit_on_error(ctx)
+    ctx.obj['data_index_connection'] = project.create_connection()
+
+
+@analysis.command()
+@click.pass_context
+@click.option('--reference-file', help='Reference genome', required=True, type=click.Path(exists=True))
+@click.option('--index/--no-index', help='Whether or not to load the processed files into the index or'
+                                         ' just produce the VCFs from assemblies. --no-index implies --no-clean.',
+              default=True)
+@click.option('--clean/--no-clean', help='Clean up intermediate files when finished.', default=True)
+@click.option('--build-tree/--no-build-tree', default=False, help='Builds tree of all samples after loading')
+@click.option('--align-type', help=f'The type of alignment to generate', default='core',
+              type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
+@click.option('--extra-tree-params', help='Extra parameters to tree-building software',
+              default=None)
+@click.option('--use-conda/--no-use-conda', help="Use (or don't use) conda for dependency management for pipeline.",
+              default=True)
+@click.option('--assembly-input-file',
+              help='A file listing the genome assemblies to process, one per line. This is an alternative'
+                   ' to passing assemblies as arguments on the command-line',
+              type=click.Path(exists=True),
+              required=False)
+@click.argument('assembled_genomes', type=click.Path(exists=True), nargs=-1)
+def assembly(ctx, reference_file: str, index: bool, clean: bool, build_tree: bool, align_type: str,
+             extra_tree_params: str, use_conda: bool,
+             assembly_input_file: str, assembled_genomes: List[str]):
+    if not index:
+        logger.debug('--no-index is enabled so setting --no-clean')
+        clean = False
+
+    if assembly_input_file is not None:
+        with open(assembly_input_file, 'r') as fh:
+            genome_paths = [Path(l.strip()) for l in fh.readlines()]
+    else:
+        genome_paths = [Path(f) for f in assembled_genomes]
+
+    timestamp = time.time()
+    snakemake_directory = Path(getcwd(), f'snakemake-assemblies.{timestamp}')
+    if not snakemake_directory.exists():
+        mkdir(snakemake_directory)
+    else:
+        raise Exception(f'Snakemake working directory [{snakemake_directory}] already exists')
+
+    pipeline_executor = SnakemakePipelineExecutor(working_directory=snakemake_directory,
+                                                  use_conda=use_conda)
+
+    logger.info(f'Processing {len(genome_paths)} genomes to identify mutations')
+    processed_files_fofn = pipeline_executor.execute(input_files=genome_paths,
+                                                     reference_file=Path(reference_file),
+                                                     ncores=ctx.obj['ncores'])
+
+    if index:
+        logger.info(f'Indexing processed files defined in [{processed_files_fofn}]')
+        ctx.invoke(load_vcf, vcf_fofns=str(processed_files_fofn), reference_file=reference_file,
+                   build_tree=build_tree, align_type=align_type, extra_tree_params=extra_tree_params)
+
+        if clean:
+            logger.info(f'--clean is enabled so deleting [{snakemake_directory}]')
+            shutil.rmtree(snakemake_directory)
+    else:
+        logger.debug(f'Not indexing processed files defined in [{processed_files_fofn}]')
+        click.echo(f'Processed VCFs/consensus sequences found in: {processed_files_fofn}')
 
 
 @main.group()
