@@ -46,12 +46,10 @@ rule assembly_align:
     threads: 1
     log:
         mm2="logs/assembly_align.{sample}.minimap2.log",
-        samview="logs/assembly_align.{sample}.samview.log",
-        bamsort="logs/assembly_align.{sample}.bamsort.log",
+        samsort="logs/assembly_align.{sample}.samsort.log",
     shell:
         "minimap2 -t {threads} -a -x asm5 {input.reference_mm2_index} {input.sample} 2> {log.mm2} | "
-        "samtools view --threads {threads} -b 2> {log.samview} | "
-        "bamtools sort 1> {output} 2> {log.bamsort}"
+        "samtools sort --threads {threads} --output-fmt BAM --write-index -o {output} 2> {log.samsort}"
 
 
 rule assembly_variant:
