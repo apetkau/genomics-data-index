@@ -191,6 +191,7 @@ def test_create_fofn_file_single_sketch_mlst():
         actual_mutations_file = tmp_dir / 'variant' / 'SampleA.vcf.gz'
         actual_consensus_file = tmp_dir / 'consensus' / 'SampleA.fasta.gz'
         actual_sketch_file = tmp_dir / 'sketch' / 'SampleA.sig.gz'
+        actual_mlst_file = tmp_dir / 'mlst.tsv'
         input_samples = [assemblies_samples['SampleA']]
 
         pipeline_executor = SnakemakePipelineExecutor(working_directory=tmp_dir, use_conda=False)
@@ -203,6 +204,7 @@ def test_create_fofn_file_single_sketch_mlst():
         assert actual_mutations_file.exists()
         assert actual_consensus_file.exists()
         assert actual_sketch_file.exists()
+        assert actual_mlst_file.exists()
 
         # Verify input file of file names for rest of gdi software (used as input to the indexing component)
         fofn_df = pd.read_csv(input_fofn, sep='\t')
