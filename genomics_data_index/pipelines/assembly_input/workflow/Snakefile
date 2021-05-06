@@ -1,5 +1,6 @@
 import pandas as pd
 from snakemake.utils import min_version
+from pathlib import Path
 
 # Configuration
 
@@ -9,6 +10,7 @@ configfile: "config/config.yaml"
 
 sample_files = pd.read_csv(config["samples"],sep='\t').set_index("Sample",drop=False)
 samples = sample_files.index.tolist()
+reference_abs = Path(config["reference"]).absolute()
 
 # Workflow
 
@@ -20,7 +22,7 @@ rule all:
 
 rule prepare_reference:
     input:
-        reference=config["reference"],
+        reference=reference_abs,
     output:
         reference="reference/reference.fasta",
         reference_mm2_index="reference/reference.fasta.mmi"

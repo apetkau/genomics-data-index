@@ -17,10 +17,13 @@ snakemake_file = Path(path.dirname(__file__), 'assembly_input', 'workflow', 'Sna
 
 class SnakemakePipelineExecutor(PipelineExecutor):
 
-    def __init__(self, working_directory: Path, use_conda: bool = True):
+    def __init__(self, working_directory: Path, use_conda: bool = True,
+                 include_sketches: bool = True, include_mlst: bool = True):
         super().__init__()
         self._working_directory = working_directory
         self._use_conda = use_conda
+        self._include_sketches = include_sketches
+        self._include_mlst = include_mlst
 
     def _sample_name_from_file(self, sample_file: Path) -> str:
         return sample_file.stem
