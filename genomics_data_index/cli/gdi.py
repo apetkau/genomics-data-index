@@ -332,6 +332,10 @@ def analysis(ctx):
               default=None)
 @click.option('--use-conda/--no-use-conda', help="Use (or don't use) conda for dependency management for pipeline.",
               default=False)
+@click.option('--include-mlst/--no-include-mlst', help="Enable/disable including basic MLST in results.",
+              default=False)
+@click.option('--include-kmer/--no-include-kmer', help="Enable/disable including kmer analysis in results.",
+              default=False)
 @click.option('--assembly-input-file',
               help='A file listing the genome assemblies to process, one per line. This is an alternative'
                    ' to passing assemblies as arguments on the command-line',
@@ -340,6 +344,7 @@ def analysis(ctx):
 @click.argument('assembled_genomes', type=click.Path(exists=True), nargs=-1)
 def assembly(ctx, reference_file: str, index: bool, clean: bool, build_tree: bool, align_type: str,
              extra_tree_params: str, use_conda: bool,
+             include_mlst: bool, include_kmer: bool,
              assembly_input_file: str, assembled_genomes: List[str]):
     if not index:
         logger.debug('--no-index is enabled so setting --no-clean')
@@ -359,24 +364,37 @@ def assembly(ctx, reference_file: str, index: bool, clean: bool, build_tree: boo
         raise Exception(f'Snakemake working directory [{snakemake_directory}] already exists')
 
     pipeline_executor = SnakemakePipelineExecutor(working_directory=snakemake_directory,
-                                                  use_conda=use_conda)
+                                                  use_conda=use_conda,
+                                                  include_mlst=include_mlst,
+                                                  include_kmer=include_kmer)
 
     logger.info(f'Processing {len(genome_paths)} genomes to identify mutations')
-    processed_files_fofn = pipeline_executor.execute(input_files=genome_paths,
-                                                     reference_file=Path(reference_file),
-                                                     ncores=ctx.obj['ncores'])
+    results = pipeline_executor.execute(input_files=genome_paths,
+                                        reference_file=Path(reference_file),
+                                        ncores=ctx.obj['ncores'])
+
+    processed_files_fofn = results.get_file('gdi-fofn')
 
     if index:
-        logger.info(f'Indexing processed files defined in [{processed_files_fofn}]')
-        ctx.invoke(load_vcf, vcf_fofns=str(processed_files_fofn), reference_file=reference_file,
-                   build_tree=build_tree, align_type=align_type, extra_tree_params=extra_tree_params)
+        try:
+            logger.info(f'Indexing processed VCF files defined in [{processed_files_fofn}]')
+            ctx.invoke(load_vcf, vcf_fofns=str(processed_files_fofn), reference_file=reference_file,
+                       build_tree=build_tree, align_type=align_type, extra_tree_params=extra_tree_params)
+        except Exception as e:
+            logger.exception(e)
+            logger.error(f"Error while indexing. Please verify files in [{snakemake_directory}] are correct.")
+            clean = False
 
         if clean:
             logger.info(f'--clean is enabled so deleting [{snakemake_directory}]')
             shutil.rmtree(snakemake_directory)
     else:
         logger.debug(f'Not indexing processed files defined in [{processed_files_fofn}]')
-        click.echo(f'Processed VCFs/consensus sequences found in: {processed_files_fofn}')
+        click.echo(f'Processed files found in: {processed_files_fofn}')
+
+        if include_mlst:
+            mlst_file = results.get_file('mlst')
+            click.echo(f'MLST results found in: {mlst_file}')
 
 
 @main.group()

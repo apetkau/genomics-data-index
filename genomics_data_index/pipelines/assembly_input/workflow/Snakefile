@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pandas as pd
 from snakemake.utils import min_version
 
@@ -9,17 +11,19 @@ configfile: "config/config.yaml"
 
 sample_files = pd.read_csv(config["samples"],sep='\t').set_index("Sample",drop=False)
 samples = sample_files.index.tolist()
+reference_abs = Path(config["reference"]).absolute()
 
 # Workflow
 
 rule all:
     input:
-        "gdi-input.fofn"
+        "gdi-input.fofn",
+        "mlst.tsv" if config["include_mlst"] else []
 
 
 rule prepare_reference:
     input:
-        reference=config["reference"],
+        reference=reference_abs,
     output:
         reference="reference/reference.fasta",
         reference_mm2_index="reference/reference.fasta.mmi"
@@ -84,11 +88,58 @@ rule assembly_consensus:
         "gzip -c - > {output}"
 
 
+rule sourmash_sketch:
+    input:
+        sample=lambda wildcards: sample_files.loc[wildcards.sample]['File'],
+    output:
+        "sketch/{sample}.sig.gz"
+    conda:
+        "envs/main.yaml"
+    threads: 1
+    params:
+        kmer_size=31,
+        scaled=1000,
+    log:
+        sketch="logs/sourmash_sketch.{sample}.sketch.log"
+    shell:
+        "sourmash sketch dna -p k={params.kmer_size},scaled={params.scaled} --name {wildcards.sample} "
+        "--output {output}.tmp {input.sample} 2>{log.sketch} && "
+        "gzip {output}.tmp && mv {output}.tmp.gz {output}"
+
+
+rule basic_mlst:
+    input:
+        sample=lambda wildcards: sample_files.loc[wildcards.sample]['File'],
+    output:
+        "mlst/{sample}.tsv"
+    conda:
+        "envs/mlst.yaml"
+    threads: 1
+    log:
+        mlst="logs/basic_mlst.{sample}.log"
+    shell:
+        "mlst --threads {threads} --nopath {input.sample} > {output} 2> {log.mlst}"
+
+
 rule gdi_input_fofn:
     input:
         sample_vcfs=expand("variant/{sample}.vcf.gz",sample=samples),
-        sample_consensus=expand("consensus/{sample}.fasta.gz",sample=samples)
+        sample_consensus=expand("consensus/{sample}.fasta.gz",sample=samples),
+        sample_sketches=expand("sketch/{sample}.sig.gz",sample=samples) if config["include_kmer"] else []
+    log:
+        "logs/gdi_input_fofn.log"
     output:
         "gdi-input.fofn"
     script:
         "scripts/gdi-create-fofn.py"
+
+
+rule mlst_full_table:
+    input:
+        sample_vcfs=expand("mlst/{sample}.tsv",sample=samples),
+    log:
+        "logs/mlst_full_table.log"
+    output:
+        "mlst.tsv"
+    shell:
+        "cat {input} > {output}"

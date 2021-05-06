@@ -2,6 +2,8 @@ import abc
 from pathlib import Path
 from typing import List
 
+from genomics_data_index.pipelines.ExecutorResults import ExecutorResults
+
 
 class PipelineExecutor(abc.ABC):
     """
@@ -12,7 +14,7 @@ class PipelineExecutor(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def execute(self, input_files: List[Path], reference_file: Path, ncores: int = 1) -> Path:
+    def execute(self, input_files: List[Path], reference_file: Path, ncores: int = 1) -> ExecutorResults:
         """
         Executes a pipeline and returns a file which can be used as input for GDI (a file of file names).
         """
