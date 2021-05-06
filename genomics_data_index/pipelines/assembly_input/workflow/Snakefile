@@ -1,6 +1,7 @@
+from pathlib import Path
+
 import pandas as pd
 from snakemake.utils import min_version
-from pathlib import Path
 
 # Configuration
 
@@ -89,7 +90,7 @@ rule assembly_consensus:
 
 rule sourmash_sketch:
     input:
-        sample = lambda wildcards: sample_files.loc[wildcards.sample]['File'],
+        sample=lambda wildcards: sample_files.loc[wildcards.sample]['File'],
     output:
         "sketch/{sample}.sig.gz"
     conda:
@@ -108,7 +109,7 @@ rule sourmash_sketch:
 
 rule basic_mlst:
     input:
-        sample = lambda wildcards: sample_files.loc[wildcards.sample]['File'],
+        sample=lambda wildcards: sample_files.loc[wildcards.sample]['File'],
     output:
         "mlst/{sample}.tsv"
     conda:

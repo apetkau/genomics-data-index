@@ -69,7 +69,7 @@ def test_create_fofn_file_single_sample():
         assert input_fofn.exists()
         assert actual_mutations_file.exists()
         assert actual_consensus_file.exists()
-        assert not unexpected_mlst_file.exists() # Make sure MLST file does not exist in this case
+        assert not unexpected_mlst_file.exists()  # Make sure MLST file does not exist in this case
 
         # Verify input file of file names for rest of gdi software (used as input to the indexing component)
         fofn_df = pd.read_csv(input_fofn, sep='\t')
