@@ -92,10 +92,15 @@ rule sourmash_sketch:
     conda:
         "envs/main.yaml"
     threads: 1
+    params:
+        kmer_size=31,
+        scaled=1000,
     log:
         sketch="logs/sourmash_sketch.{sample}.sketch.log"
     shell:
-        "sourmash sketch dna -p k=31,scaled=1000 --name {wildcards.sample} --output {output} {input.sample}"
+        "sourmash sketch dna -p k={params.kmer_size},scaled={params.scaled} --name {wildcards.sample} "
+        "--output {output}.tmp {input.sample} 2>{log.sketch} && "
+        "gzip {output}.tmp && mv {output}.tmp.gz {output}"
 
 
 rule gdi_input_fofn:
