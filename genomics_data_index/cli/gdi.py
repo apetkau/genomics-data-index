@@ -362,13 +362,16 @@ def assembly(ctx, reference_file: str, index: bool, clean: bool, build_tree: boo
                                                   use_conda=use_conda)
 
     logger.info(f'Processing {len(genome_paths)} genomes to identify mutations')
-    processed_files_fofn = pipeline_executor.execute(input_files=genome_paths,
-                                                     reference_file=Path(reference_file),
-                                                     ncores=ctx.obj['ncores'])
+    results = pipeline_executor.execute(input_files=genome_paths,
+                                        reference_file=Path(reference_file),
+                                        ncores=ctx.obj['ncores'])
+
+    processed_files_fofn = results.get_file('gdi-fofn')
+    mlst_file = results.get_file('mlst')
 
     if index:
-        logger.info(f'Indexing processed files defined in [{processed_files_fofn}]')
         try:
+            logger.info(f'Indexing processed VCF files defined in [{processed_files_fofn}]')
             ctx.invoke(load_vcf, vcf_fofns=str(processed_files_fofn), reference_file=reference_file,
                        build_tree=build_tree, align_type=align_type, extra_tree_params=extra_tree_params)
         except Exception as e:
@@ -381,7 +384,8 @@ def assembly(ctx, reference_file: str, index: bool, clean: bool, build_tree: boo
             shutil.rmtree(snakemake_directory)
     else:
         logger.debug(f'Not indexing processed files defined in [{processed_files_fofn}]')
-        click.echo(f'Processed VCFs/consensus sequences found in: {processed_files_fofn}')
+        click.echo(f'Processed files found in: {processed_files_fofn}')
+        click.echo(f'MLST results found in: {mlst_file}')
 
 
 @main.group()

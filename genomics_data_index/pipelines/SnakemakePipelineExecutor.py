@@ -7,6 +7,7 @@ import pandas as pd
 import yaml
 
 from genomics_data_index.pipelines.PipelineExecutor import PipelineExecutor
+from genomics_data_index.pipelines.ExecutorResults import ExecutorResults
 from genomics_data_index.storage.util import execute_commands
 
 logger = logging.getLogger(__name__)
@@ -58,7 +59,7 @@ class SnakemakePipelineExecutor(PipelineExecutor):
         else:
             return command
 
-    def execute(self, input_files: List[Path], reference_file: Path, ncores: int = 1) -> Path:
+    def execute(self, input_files: List[Path], reference_file: Path, ncores: int = 1) -> ExecutorResults:
         working_directory = self._working_directory
         logger.debug(f'Preparing working directory [{working_directory}] for snakemake')
         config_file = self._prepare_working_directory(reference_file=reference_file,
@@ -66,7 +67,8 @@ class SnakemakePipelineExecutor(PipelineExecutor):
 
         logger.debug(f'Executing snakemake on {len(input_files)} files with reference_file=[{reference_file}]'
                      f' using {ncores} cores in [{working_directory}]')
-        snakemake_output = working_directory / 'gdi-input.fofn'
+        snakemake_output_fofn = working_directory / 'gdi-input.fofn'
+        snakemake_output_mlst = working_directory / 'mlst.tsv'
 
         command = ['snakemake', '--configfile', str(config_file)]
         command = self._apply_use_conda(command)
@@ -75,6 +77,7 @@ class SnakemakePipelineExecutor(PipelineExecutor):
 
         execute_commands([command])
 
-        logger.debug(f'Finished executing snakemake. Output file [{snakemake_output}]')
+        logger.debug(f'Finished executing snakemake. Output file [{snakemake_output_fofn}]. '
+                     f'MLST file [{snakemake_output_mlst}]')
 
-        return snakemake_output
+        return ExecutorResults({'gdi-fofn': snakemake_output_fofn, 'mlst': snakemake_output_mlst})

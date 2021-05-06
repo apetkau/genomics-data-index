@@ -58,9 +58,11 @@ def test_create_fofn_file_single_sample():
 
         pipeline_executor = SnakemakePipelineExecutor(working_directory=tmp_dir, use_conda=False)
 
-        input_fofn = pipeline_executor.execute(input_files=input_samples,
-                                               reference_file=assemblies_reference,
-                                               ncores=1)
+        results = pipeline_executor.execute(input_files=input_samples,
+                                            reference_file=assemblies_reference,
+                                            ncores=1)
+
+        input_fofn = results.get_file('gdi-fofn')
 
         assert input_fofn.exists()
         assert actual_mutations_file.exists()
@@ -92,9 +94,11 @@ def test_create_fofn_file_multiple_samples():
 
         pipeline_executor = SnakemakePipelineExecutor(working_directory=tmp_dir, use_conda=False)
 
-        input_fofn = pipeline_executor.execute(input_files=input_samples,
-                                               reference_file=assemblies_reference,
-                                               ncores=1)
+        results = pipeline_executor.execute(input_files=input_samples,
+                                            reference_file=assemblies_reference,
+                                            ncores=1)
+
+        input_fofn = results.get_file('gdi-fofn')
 
         assert input_fofn.exists()
 
@@ -131,9 +135,11 @@ def test_create_fofn_file_multiple_samples_with_ns():
 
         pipeline_executor = SnakemakePipelineExecutor(working_directory=tmp_dir, use_conda=False)
 
-        input_fofn = pipeline_executor.execute(input_files=input_samples,
-                                               reference_file=assemblies_reference,
-                                               ncores=1)
+        results = pipeline_executor.execute(input_files=input_samples,
+                                            reference_file=assemblies_reference,
+                                            ncores=1)
+
+        input_fofn = results.get_file('gdi-fofn')
 
         assert input_fofn.exists()
 
@@ -170,9 +176,11 @@ def test_create_fofn_file_multiple_samples_multiple_cores_and_use_conda():
 
         pipeline_executor = SnakemakePipelineExecutor(working_directory=tmp_dir, use_conda=True)
 
-        input_fofn = pipeline_executor.execute(input_files=input_samples,
-                                               reference_file=assemblies_reference,
-                                               ncores=2)
+        results = pipeline_executor.execute(input_files=input_samples,
+                                            reference_file=assemblies_reference,
+                                            ncores=2)
+
+        input_fofn = results.get_file('gdi-fofn')
 
         assert input_fofn.exists()
 
@@ -196,9 +204,12 @@ def test_create_fofn_file_single_sketch_mlst():
 
         pipeline_executor = SnakemakePipelineExecutor(working_directory=tmp_dir, use_conda=False)
 
-        input_fofn = pipeline_executor.execute(input_files=input_samples,
-                                               reference_file=assemblies_reference,
-                                               ncores=1)
+        results = pipeline_executor.execute(input_files=input_samples,
+                                            reference_file=assemblies_reference,
+                                            ncores=1)
+
+        input_fofn = results.get_file('gdi-fofn')
+        mlst_file = results.get_file('mlst')
 
         assert input_fofn.exists()
         assert actual_mutations_file.exists()
@@ -220,3 +231,4 @@ def test_create_fofn_file_single_sketch_mlst():
         assert actual_mutations_file == actual_mutations_file_from_df
         assert actual_consensus_file == actual_consensus_file_from_df
         assert actual_sketch_file == actual_sketch_file_from_df
+        assert actual_mlst_file == mlst_file
