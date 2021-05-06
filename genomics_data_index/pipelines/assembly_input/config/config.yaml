@@ -1,5 +1,5 @@
 # An example configuration file defining the reference genome and samples
 reference: input-data/reference.fasta
 samples: config/samples.tsv
-include_sketches: True
+include_kmer: True
 include_mlst: True

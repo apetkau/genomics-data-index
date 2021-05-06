@@ -54,9 +54,11 @@ def test_create_fofn_file_single_sample():
         tmp_dir = Path(tmp_dir_str)
         actual_mutations_file = tmp_dir / 'variant' / 'SampleA.vcf.gz'
         actual_consensus_file = tmp_dir / 'consensus' / 'SampleA.fasta.gz'
+        actual_mlst_file = tmp_dir / 'mlst.tsv'
         input_samples = [assemblies_samples['SampleA']]
 
-        pipeline_executor = SnakemakePipelineExecutor(working_directory=tmp_dir, use_conda=False)
+        pipeline_executor = SnakemakePipelineExecutor(working_directory=tmp_dir, use_conda=False,
+                                                      include_mlst=False)
 
         results = pipeline_executor.execute(input_files=input_samples,
                                             reference_file=assemblies_reference,
@@ -67,6 +69,7 @@ def test_create_fofn_file_single_sample():
         assert input_fofn.exists()
         assert actual_mutations_file.exists()
         assert actual_consensus_file.exists()
+        assert not actual_mlst_file.exists() # Make sure MLST file does not exist in this case
 
         # Verify input file of file names for rest of gdi software (used as input to the indexing component)
         fofn_df = pd.read_csv(input_fofn, sep='\t')
@@ -92,7 +95,8 @@ def test_create_fofn_file_multiple_samples():
 
         input_samples = [assemblies_samples[s] for s in samples]
 
-        pipeline_executor = SnakemakePipelineExecutor(working_directory=tmp_dir, use_conda=False)
+        pipeline_executor = SnakemakePipelineExecutor(working_directory=tmp_dir, use_conda=False,
+                                                      include_mlst=False)
 
         results = pipeline_executor.execute(input_files=input_samples,
                                             reference_file=assemblies_reference,
@@ -133,7 +137,8 @@ def test_create_fofn_file_multiple_samples_with_ns():
 
         input_samples = [assemblies_samples[s] for s in samples]
 
-        pipeline_executor = SnakemakePipelineExecutor(working_directory=tmp_dir, use_conda=False)
+        pipeline_executor = SnakemakePipelineExecutor(working_directory=tmp_dir, use_conda=False,
+                                                      include_mlst=False)
 
         results = pipeline_executor.execute(input_files=input_samples,
                                             reference_file=assemblies_reference,
@@ -174,7 +179,8 @@ def test_create_fofn_file_multiple_samples_multiple_cores_and_use_conda():
 
         input_samples = [assemblies_samples[s] for s in samples]
 
-        pipeline_executor = SnakemakePipelineExecutor(working_directory=tmp_dir, use_conda=True)
+        pipeline_executor = SnakemakePipelineExecutor(working_directory=tmp_dir, use_conda=True,
+                                                      include_mlst=False)
 
         results = pipeline_executor.execute(input_files=input_samples,
                                             reference_file=assemblies_reference,
@@ -202,7 +208,8 @@ def test_create_fofn_file_single_sketch_mlst():
         actual_mlst_file = tmp_dir / 'mlst.tsv'
         input_samples = [assemblies_samples['SampleA']]
 
-        pipeline_executor = SnakemakePipelineExecutor(working_directory=tmp_dir, use_conda=False)
+        pipeline_executor = SnakemakePipelineExecutor(working_directory=tmp_dir, use_conda=False,
+                                                      include_mlst=True)
 
         results = pipeline_executor.execute(input_files=input_samples,
                                             reference_file=assemblies_reference,
