@@ -69,7 +69,7 @@ def test_create_fofn_file_single_sample():
         # Verify input file of file names for rest of gdi software (used as input to the indexing component)
         fofn_df = pd.read_csv(input_fofn, sep='\t')
         print(fofn_df)
-        assert ['Sample', 'VCF', 'Mask File'] == fofn_df.columns.tolist()
+        assert ['Sample', 'VCF', 'Mask File', 'Sketch File'] == fofn_df.columns.tolist()
 
         assert 1 == len(fofn_df)
         assert ['SampleA'] == fofn_df['Sample'].tolist()
@@ -101,7 +101,7 @@ def test_create_fofn_file_multiple_samples():
         # Verify input file of file names for rest of gdi software (used as input to the indexing component)
         fofn_df = pd.read_csv(input_fofn, sep='\t')
         print(fofn_df)
-        assert ['Sample', 'VCF', 'Mask File'] == fofn_df.columns.tolist()
+        assert ['Sample', 'VCF', 'Mask File', 'Sketch File'] == fofn_df.columns.tolist()
 
         assert 3 == len(fofn_df)
         assert ['SampleA', 'SampleB', 'SampleC'] == fofn_df['Sample'].tolist()
@@ -140,7 +140,7 @@ def test_create_fofn_file_multiple_samples_with_ns():
         # Verify input file of file names for rest of gdi software (used as input to the indexing component)
         fofn_df = pd.read_csv(input_fofn, sep='\t')
         print(fofn_df)
-        assert ['Sample', 'VCF', 'Mask File'] == fofn_df.columns.tolist()
+        assert ['Sample', 'VCF', 'Mask File', 'Sketch File'] == fofn_df.columns.tolist()
 
         assert 3 == len(fofn_df)
         assert ['SampleD', 'SampleE', 'SampleF'] == fofn_df['Sample'].tolist()
@@ -179,7 +179,7 @@ def test_create_fofn_file_multiple_samples_multiple_cores_and_use_conda():
         # Verify input file of file names for rest of gdi software (used as input to the indexing component)
         fofn_df = pd.read_csv(input_fofn, sep='\t')
         print(fofn_df)
-        assert ['Sample', 'VCF', 'Mask File'] == fofn_df.columns.tolist()
+        assert ['Sample', 'VCF', 'Mask File', 'Sketch File'] == fofn_df.columns.tolist()
 
         assert 6 == len(fofn_df)
         assert ['SampleA', 'SampleB', 'SampleC', 'SampleD', 'SampleE', 'SampleF'] == fofn_df['Sample'].tolist()
