@@ -17,7 +17,8 @@ reference_abs = Path(config["reference"]).absolute()
 rule all:
     input:
         "gdi-input.fofn",
-        "mlst.tsv"
+        # Makes "mlst.tsv" optional depending on "include_mlst" in config
+        lambda wildcards: "mlst.tsv" if config["include_mlst"] else []
 
 
 rule prepare_reference:

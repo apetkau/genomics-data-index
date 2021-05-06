@@ -40,7 +40,9 @@ class SnakemakePipelineExecutor(PipelineExecutor):
         with open(config_file, 'w') as fh:
             config = {
                 'reference': str(reference_file.absolute()),
-                'samples': str(samples_file.absolute())
+                'samples': str(samples_file.absolute()),
+                'include_mlst': self._include_mlst,
+                'include_sketches': self._include_sketches
             }
             yaml.dump(config, fh)
 
