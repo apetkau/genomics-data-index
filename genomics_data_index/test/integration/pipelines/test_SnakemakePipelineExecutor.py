@@ -54,7 +54,7 @@ def test_create_fofn_file_single_sample():
         tmp_dir = Path(tmp_dir_str)
         actual_mutations_file = tmp_dir / 'variant' / 'SampleA.vcf.gz'
         actual_consensus_file = tmp_dir / 'consensus' / 'SampleA.fasta.gz'
-        actual_mlst_file = tmp_dir / 'mlst.tsv'
+        unexpected_mlst_file = tmp_dir / 'mlst.tsv'
         input_samples = [assemblies_samples['SampleA']]
 
         pipeline_executor = SnakemakePipelineExecutor(working_directory=tmp_dir, use_conda=False,
@@ -69,7 +69,7 @@ def test_create_fofn_file_single_sample():
         assert input_fofn.exists()
         assert actual_mutations_file.exists()
         assert actual_consensus_file.exists()
-        assert not actual_mlst_file.exists() # Make sure MLST file does not exist in this case
+        assert not unexpected_mlst_file.exists() # Make sure MLST file does not exist in this case
 
         # Verify input file of file names for rest of gdi software (used as input to the indexing component)
         fofn_df = pd.read_csv(input_fofn, sep='\t')
@@ -238,4 +238,44 @@ def test_create_fofn_file_single_sketch_mlst():
         assert actual_mutations_file == actual_mutations_file_from_df
         assert actual_consensus_file == actual_consensus_file_from_df
         assert actual_sketch_file == actual_sketch_file_from_df
+        assert actual_mlst_file == mlst_file
+
+
+def test_create_fofn_file_single_no_sketch_with_mlst():
+    with TemporaryDirectory() as tmp_dir_str:
+        tmp_dir = Path(tmp_dir_str)
+        actual_mutations_file = tmp_dir / 'variant' / 'SampleA.vcf.gz'
+        actual_consensus_file = tmp_dir / 'consensus' / 'SampleA.fasta.gz'
+        unexpected_sketch_file = tmp_dir / 'sketch' / 'SampleA.sig.gz'
+        actual_mlst_file = tmp_dir / 'mlst.tsv'
+        input_samples = [assemblies_samples['SampleA']]
+
+        pipeline_executor = SnakemakePipelineExecutor(working_directory=tmp_dir, use_conda=False,
+                                                      include_mlst=True, include_kmer=False)
+
+        results = pipeline_executor.execute(input_files=input_samples,
+                                            reference_file=assemblies_reference,
+                                            ncores=1)
+
+        input_fofn = results.get_file('gdi-fofn')
+        mlst_file = results.get_file('mlst')
+
+        assert input_fofn.exists()
+        assert actual_mutations_file.exists()
+        assert actual_consensus_file.exists()
+        assert not unexpected_sketch_file.exists()
+        assert actual_mlst_file.exists()
+
+        # Verify input file of file names for rest of gdi software (used as input to the indexing component)
+        fofn_df = pd.read_csv(input_fofn, sep='\t')
+        print(fofn_df)
+        assert ['Sample', 'VCF', 'Mask File'] == fofn_df.columns.tolist()
+
+        assert 1 == len(fofn_df)
+        assert ['SampleA'] == fofn_df['Sample'].tolist()
+        actual_mutations_file_from_df = Path(fofn_df[fofn_df['Sample'] == 'SampleA']['VCF'].tolist()[0])
+        actual_consensus_file_from_df = Path(fofn_df[fofn_df['Sample'] == 'SampleA']['Mask File'].tolist()[0])
+
+        assert actual_mutations_file == actual_mutations_file_from_df
+        assert actual_consensus_file == actual_consensus_file_from_df
         assert actual_mlst_file == mlst_file
