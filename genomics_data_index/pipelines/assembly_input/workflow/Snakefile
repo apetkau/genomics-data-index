@@ -115,7 +115,7 @@ rule basic_mlst:
     log:
         mlst="logs/basic_mlst.{sample}.log"
     shell:
-        "mlst --nopath {input.sample} > {output} 2> {log.mlst}"
+        "mlst --threads {threads} --nopath {input.sample} > {output} 2> {log.mlst}"
 
 
 rule gdi_input_fofn:
