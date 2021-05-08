@@ -74,3 +74,39 @@ def test_distances_all():
     assert math.isclose(results_d[l['SampleC']][l['SampleA']], 0.5, rel_tol=1e-3)
     assert math.isclose(results_d[l['SampleC']][l['SampleB']], 0.3186, rel_tol=1e-3)
     assert math.isclose(results_d[l['SampleC']][l['SampleC']], 0, rel_tol=1e-3)
+
+
+def test_distances_pair():
+    search_manager = KmerSearchManagerSourmash()
+
+    results_d, labels = search_manager.distances(kmer_size=31,
+                                                 signature_files=[sigs['SampleA'], sigs['SampleC']])
+    print(type(results_d))
+    print(results_d)
+    print(labels)
+    assert (2, 2) == results_d.shape
+    assert ['SampleA', 'SampleC'] == labels
+
+    l = {element: idx for idx, element in enumerate(labels)}
+
+    assert math.isclose(results_d[l['SampleA']][l['SampleA']], 0, rel_tol=1e-3)
+    assert math.isclose(results_d[l['SampleA']][l['SampleC']], 0.5, rel_tol=1e-3)
+
+    assert math.isclose(results_d[l['SampleC']][l['SampleA']], 0.5, rel_tol=1e-3)
+    assert math.isclose(results_d[l['SampleC']][l['SampleC']], 0, rel_tol=1e-3)
+
+
+def test_distances_single():
+    search_manager = KmerSearchManagerSourmash()
+
+    results_d, labels = search_manager.distances(kmer_size=31,
+                                                 signature_files=[sigs['SampleA']])
+    print(type(results_d))
+    print(results_d)
+    print(labels)
+    assert (1, 1) == results_d.shape
+    assert ['SampleA'] == labels
+
+    l = {element: idx for idx, element in enumerate(labels)}
+
+    assert math.isclose(results_d[l['SampleA']][l['SampleA']], 0, rel_tol=1e-3)
