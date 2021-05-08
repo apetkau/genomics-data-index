@@ -165,7 +165,7 @@ def test_to_distances_kmer(loaded_database_connection: DataIndexConnection):
     results_d, labels = query_result.to_distances(kind='kmer')
 
     assert (3, 3) == results_d.shape
-    assert ['SampleA', 'SampleB', 'SampleC'] == labels
+    assert {'SampleA', 'SampleB', 'SampleC'} == set(labels)
 
     l = {element: idx for idx, element in enumerate(labels)}
 
@@ -572,7 +572,7 @@ def test_query_custom_dataframe_kmer_to_distances(loaded_database_connection: Da
     results_d, labels = query_result.to_distances(kind='kmer')
 
     assert (2, 2) == results_d.shape
-    assert ['SampleA', 'SampleC'] == labels
+    assert {'SampleA', 'SampleC'} == set(labels)
 
     l = {element: idx for idx, element in enumerate(labels)}
 
