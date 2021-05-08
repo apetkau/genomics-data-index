@@ -113,6 +113,13 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
     def _distance_units(self) -> List[str]:
         return self._wrapped_query._distance_units()
 
+    def _within_distance(self, sample_names: Union[str, List[str]], distance: float,
+                         units: str, **kwargs) -> SamplesQuery:
+        return self._wrap_create(self._wrapped_query._within_distance(sample_names=sample_names,
+                                                                      distance=distance,
+                                                                      units=units,
+                                                                      **kwargs))
+
     def _isa_kinds(self) -> List[str]:
         return ['names']
 
