@@ -114,6 +114,15 @@ class SamplesQuery(abc.ABC):
         return self.isin(data=data, kind='distance', **kwargs)
 
     @abc.abstractmethod
+    def _within_distance(self, sample_names: Union[str, List[str]], distance: float, units: str,
+                         **kwargs) -> SamplesQuery:
+        pass
+
+    @abc.abstractmethod
+    def _distance_units(self) -> List[str]:
+        pass
+
+    @abc.abstractmethod
     def isa(self, data: Union[str, List[str]], kind: str = 'names', **kwargs) -> SamplesQuery:
         """
         Queries for samples which are a particular type/belong to a particular category.

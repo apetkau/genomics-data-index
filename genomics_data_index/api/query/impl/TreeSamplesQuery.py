@@ -63,12 +63,15 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
             raise Exception(f'kind=[{kind}] is not supported. Must be one of {self.isin_kinds()}')
 
     def _within_distance(self, sample_names: Union[str, List[str]], distance: float,
-                         units: str) -> SamplesQuery:
+                         units: str, **kwargs) -> SamplesQuery:
         if self._can_handle_distance_units(units):
             return self._within_distance_internal(sample_names=sample_names,
                                                   distance=distance, units=units)
         else:
-            raise Exception(f'units=[{units}] is not supported. Must be one of {self._distance_units()}')
+            return self._wrap_create(self._wrapped_query._within_distance(sample_names=sample_names,
+                                                                          distance=distance,
+                                                                          units=units,
+                                                                          **kwargs))
 
     @abc.abstractmethod
     def _within_distance_internal(self, sample_names: Union[str, List[str]], distance: float,
@@ -77,10 +80,6 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
 
     @abc.abstractmethod
     def _can_handle_distance_units(self, units: str) -> bool:
-        pass
-
-    @abc.abstractmethod
-    def _distance_units(self) -> List[str]:
         pass
 
     def isin_kinds(self) -> List[str]:

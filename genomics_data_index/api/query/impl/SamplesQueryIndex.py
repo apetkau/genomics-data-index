@@ -21,9 +21,9 @@ class SamplesQueryIndex(SamplesQuery):
     HAS_KINDS = ['mutation', 'mutations', 'mlst']
     SUMMARY_FEATURES_KINDS = ['mutations']
     FEATURES_SELECTIONS = ['all', 'unique']
-    ISIN_TYPES = ['names', 'kmer', 'kmers']
+    ISIN_TYPES = ['names', 'distance', 'distances']
     ISA_TYPES = ['names']
-    DISTANCES_KINDS = ['kmer']
+    DISTANCES_UNITS = ['kmer_jaccard']
 
     def __init__(self, connection: DataIndexConnection,
                  universe_set: SampleSet,
@@ -257,10 +257,10 @@ class SamplesQueryIndex(SamplesQuery):
         return self._create_from(sample_set=sample_set, universe_set=self._universe_set,
                                  queries_collection=queries_collection)
 
-    def _isin_kmer(self, sample_names: Union[str, List[str]], distance: float, kmer_size: int = 31):
+    def _within_kmer_jaccard(self, sample_names: Union[str, List[str]], distance: float, kmer_size: int = 31):
         additional_messages = f', dist={distance}, k={kmer_size}'
         sample_names, query_message = self._prepare_sample_names_query_message(sample_names,
-                                                                               query_message_prefix='isin_kmer',
+                                                                               query_message_prefix='isin_kmer_jaccard',
                                                                                additional_messages=additional_messages)
         kmer_service: KmerService = self._query_connection.kmer_service
 
@@ -272,11 +272,20 @@ class SamplesQueryIndex(SamplesQuery):
         return self._create_from(sample_set=sample_set_matches, universe_set=self._universe_set,
                                  queries_collection=queries_collection)
 
+    def _within_distance(self, sample_names: Union[str, List[str]], distance: float,
+                       units: str = 'kmer_jaccard', **kwargs) -> SamplesQuery:
+        if units == 'kmer_jaccard':
+            return self._within_kmer_jaccard(sample_names=sample_names, distance=distance, **kwargs)
+        else:
+            raise Exception(f'units=[{units}] is not supported. Must be one of {self._distance_units()}. '
+                            f'For additional distance queries you perhaps need to build or attach a tree to '
+                            f'the query.')
+
     def isin(self, data: Union[str, List[str]], kind: str = 'names', **kwargs) -> SamplesQuery:
         if kind == 'names':
             return self._isin_names(sample_names=data, query_message_prefix='isin_names')
-        elif kind == 'kmer' or kind == 'kmers':
-            return self._isin_kmer(sample_names=data, **kwargs)
+        elif kind == 'distance' or kind == 'distances':
+            return self._within_distance(sample_names=data, **kwargs)
         else:
             raise Exception(f'kind=[{kind}] is not supported. Must be one of {self.ISIN_TYPES}')
 
@@ -285,6 +294,12 @@ class SamplesQueryIndex(SamplesQuery):
 
     def _can_handle_isin_kind(self, kind: str) -> bool:
         return kind in self.ISIN_TYPES
+
+    def _distance_units(self) -> List[str]:
+        return self.DISTANCES_UNITS
+
+    def _can_handle_distance_units(self, units: str) -> bool:
+        return units in self.DISTANCES_UNITS
 
     def isa(self, data: Union[str, List[str]], kind: str = 'names', **kwargs) -> SamplesQuery:
         if kind == 'names':
@@ -296,7 +311,7 @@ class SamplesQueryIndex(SamplesQuery):
         if kind == 'kmer':
             return self._to_distances_kmer(**kwargs)
         else:
-            raise Exception(f'kind=[{kind}] is not supported. Must be one of {self.DISTANCES_KINDS}')
+            raise Exception(f'kind=[{kind}] is not supported. Must be one of {self.DISTANCES_UNITS}')
 
     def _to_distances_kmer(self, kmer_size: int = 31) -> Tuple[np.ndarray, List[str]]:
         return self._query_connection.kmer_service.get_distance_matrix(sample_ids=self._sample_set,

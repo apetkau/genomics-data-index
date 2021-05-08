@@ -76,7 +76,7 @@ class MutationTreeSamplesQuery(TreeSamplesQuery):
         return units in self.DISTANCE_UNITS
 
     def _distance_units(self) -> List[str]:
-        return self.DISTANCE_UNITS
+        return self.DISTANCE_UNITS + self._wrapped_query._distance_units()
 
     def build_tree(self, kind: str, scope: str, **kwargs):
         return MutationTreeSamplesQuery.create(kind=kind, scope=scope, database_connection=self._query_connection,

@@ -110,6 +110,9 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
         else:
             return self._wrap_create(self._wrapped_query.isin(data=data, kind=kind, **kwargs))
 
+    def _distance_units(self) -> List[str]:
+        return self._wrapped_query._distance_units()
+
     def _isa_kinds(self) -> List[str]:
         return ['names']
 
