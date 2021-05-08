@@ -16,13 +16,15 @@ class KmerSearchManagerSourmash:
     def __init__(self):
         pass
 
-    def search(self, kmer_size: int, query_file: Path, search_files: List[Path]) -> pd.DataFrame:
+    def search(self, kmer_size: int, similarity_threshold: float, query_file: Path,
+               search_files: List[Path]) -> pd.DataFrame:
         start_time = time.time()
         logger.debug(f'Start search for matches to [{query_file}].')
 
         with tempfile.TemporaryDirectory() as tmp:
             out_file = Path(tmp, 'output.csv')
-            command = ['sourmash', 'search', '-k', str(kmer_size), '-o', str(out_file),
+            command = ['sourmash', 'search', '-k', str(kmer_size), '--threshold', str(similarity_threshold),
+                       '-o', str(out_file),
                        str(query_file)]
             command.extend([str(f) for f in search_files])
 
