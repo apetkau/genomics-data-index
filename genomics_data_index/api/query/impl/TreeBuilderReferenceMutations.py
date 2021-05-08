@@ -30,7 +30,7 @@ class TreeBuilderReferenceMutations(TreeBuilder):
             raise Exception(f'Invalid method={method}, only support: {self.TREE_METHODS}')
 
     def _build_iqtree(self, samples_set: Union[SampleSet, Iterable[str]],
-                      maxcores: int = 1,
+                      ncores: int = 1,
                       align_type: str = 'full',
                       include_reference: bool = True,
                       extra_params: str = None) -> Tuple[Tree, int, SampleSet]:
@@ -58,7 +58,7 @@ class TreeBuilderReferenceMutations(TreeBuilder):
                                                                align_type=align_type,
                                                                include_reference=include_reference)
         tree_data, out = tree_service.build_tree(alignment_data, tree_build_type='iqtree',
-                                                 num_cores=maxcores, align_type=align_type,
+                                                 num_cores=ncores, align_type=align_type,
                                                  extra_params=extra_params)
 
         return tree_data, alignment_data.get_alignment_length(), tree_samples_set
