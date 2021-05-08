@@ -29,7 +29,7 @@ class TreeBuilderKmers(TreeBuilder):
         linkage_matrix = sch.linkage(compressed_matrix, method=linkage_method)
 
         skb_tree = skbio.tree.TreeNode.from_linkage_matrix(linkage_matrix, id_list=labels)
-        skb_newick = str(skb_tree).strip()
+        skb_newick = str(skb_tree).strip().replace("'", "")
         ete_tree = ete3.ClusterNode(newick=skb_newick)
 
         return ete_tree, -1, samples_set
