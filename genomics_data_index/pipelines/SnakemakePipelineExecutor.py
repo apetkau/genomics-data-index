@@ -18,12 +18,23 @@ snakemake_file = Path(path.dirname(__file__), 'assembly_input', 'workflow', 'Sna
 class SnakemakePipelineExecutor(PipelineExecutor):
 
     def __init__(self, working_directory: Path, use_conda: bool = True,
-                 include_kmer: bool = True, include_mlst: bool = True):
+                 include_kmer: bool = True, include_mlst: bool = True,
+                 kmer_sizes: List[int] = None, kmer_scaled: int = 1000):
         super().__init__()
+        if kmer_sizes is None:
+            kmer_sizes = [31]
+
         self._working_directory = working_directory
         self._use_conda = use_conda
         self._include_kmer = include_kmer
         self._include_mlst = include_mlst
+        self._sourmash_params = self._prepare_sourmash_params(kmer_sizes=kmer_sizes, kmer_scaled=kmer_scaled)
+
+    def _prepare_sourmash_params(self, kmer_sizes: List[int], kmer_scaled: int) -> str:
+        params = ','.join([f'k={v}' for v in kmer_sizes])
+        params += f',scaled={kmer_scaled}'
+
+        return params
 
     def _sample_name_from_file(self, sample_file: Path) -> str:
         return sample_file.stem
@@ -42,7 +53,8 @@ class SnakemakePipelineExecutor(PipelineExecutor):
                 'reference': str(reference_file.absolute()),
                 'samples': str(samples_file.absolute()),
                 'include_mlst': self._include_mlst,
-                'include_kmer': self._include_kmer
+                'include_kmer': self._include_kmer,
+                'sourmash_params': self._sourmash_params,
             }
             yaml.dump(config, fh)
 
