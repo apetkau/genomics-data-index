@@ -25,6 +25,12 @@ class KmerTreeSamplesQuery(TreeSamplesQuery):
                                     wrapped_query=wrapped_query,
                                     tree=tree)
 
+    # Override primarily to specify a default value for 'units'
+    def _within_distance(self, sample_names: Union[str, List[str]], distance: float,
+                         units: str = 'kmer_jaccard', **kwargs) -> SamplesQuery:
+        return super()._within_distance(sample_names=sample_names, distance=distance,
+                                        units=units, **kwargs)
+
     def _within_distance_internal(self, sample_names: Union[str, List[str]], distance: float,
                                   units: str) -> SamplesQuery:
         raise NotImplementedError(f'Not implemented for {KmerTreeSamplesQuery.__class__}')
