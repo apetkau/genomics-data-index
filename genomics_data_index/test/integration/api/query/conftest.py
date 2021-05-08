@@ -12,6 +12,7 @@ from genomics_data_index.storage.io.mlst.MLSTTSeemannFeaturesReader import MLSTT
 from genomics_data_index.api.query.GenomicsDataIndex import GenomicsDataIndex
 
 from genomics_data_index.test.integration import sample_dirs, reference_file, basic_mlst_file
+from genomics_data_index.test.integration import sourmash_signatures
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
 from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
 from genomics_data_index.storage.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor
@@ -33,6 +34,12 @@ def loaded_database_connection() -> DataIndexConnection:
     # Load MLST
     mlst_package = MLSTSampleDataPackage(MLSTTSeemannFeaturesReader(mlst_file=basic_mlst_file))
     database_connection.mlst_service.insert(mlst_package)
+
+    # Load kmers
+    kmer_service = database_connection.kmer_service
+    for sample_name in sourmash_signatures:
+        kmer_service.insert_kmer_index(sample_name=sample_name,
+                                       kmer_index_path=sourmash_signatures[sample_name])
 
     # Load MLST results with overlapping samples with Nucleotide variation
     # mlst_package_snippy = MLSTSampleDataPackage(MLSTTSeemannFeaturesReader(mlst_file=mlst_snippy_file))

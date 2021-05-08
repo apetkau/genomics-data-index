@@ -148,6 +148,39 @@ def test_query_isa_sample_name(loaded_database_connection: DataIndexConnection):
     assert 9 == len(query_result.universe_set)
 
 
+def test_query_isin_kmer(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+
+    query_result = query(loaded_database_connection).isin('SampleA', kind='kmer', distance=1.0)
+    assert 3 == len(query_result)
+    assert {sampleA.id, sampleB.id, sampleC.id} == set(query_result.sample_set)
+    assert 9 == len(query_result.universe_set)
+
+
+def test_query_isin_kmer_2_matches(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+
+    query_result = query(loaded_database_connection).isin('SampleA', kind='kmer', distance=0.5)
+    assert 2 == len(query_result)
+    assert {sampleA.id, sampleC.id} == set(query_result.sample_set)
+    assert 9 == len(query_result.universe_set)
+
+
+def test_query_isin_kmer_1_match(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+
+    query_result = query(loaded_database_connection).isin('SampleA', kind='kmer', distance=0.49)
+    assert 1 == len(query_result)
+    assert {sampleA.id} == set(query_result.sample_set)
+    assert 9 == len(query_result.universe_set)
+
+
 def test_query_single_mutation(loaded_database_connection: DataIndexConnection):
     db = loaded_database_connection.database
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
@@ -210,6 +243,19 @@ def test_query_single_mutation_two_samples(loaded_database_connection: DataIndex
     assert 2 == len(query_result)
     assert {sampleB.id, sampleC.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)
+
+
+# def test_query_single_mutation_two_samples_kmer_one_sample(loaded_database_connection: DataIndexConnection):
+#     db = loaded_database_connection.database
+#     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+#     sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+#
+#     query_result = query(loaded_database_connection).hasa(QueryFeatureMutation('reference:839:C:G'))
+#     assert 2 == len(query_result)
+#     assert {sampleB.id, sampleC.id} == set(query_result.sample_set)
+#     assert 9 == len(query_result.universe_set)
+#
+#
 
 
 def test_query_single_mutation_default_kind(loaded_database_connection: DataIndexConnection):
