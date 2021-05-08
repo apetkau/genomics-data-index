@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Union, List, Set, Tuple
 
 import pandas as pd
+import numpy as np
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.api.query.impl.DataFrameSamplesQuery import DataFrameSamplesQuery
@@ -22,6 +23,7 @@ class SamplesQueryIndex(SamplesQuery):
     FEATURES_SELECTIONS = ['all', 'unique']
     ISIN_TYPES = ['names', 'kmer', 'kmers']
     ISA_TYPES = ['names']
+    DISTANCES_KINDS = ['kmer']
 
     def __init__(self, connection: DataIndexConnection,
                  universe_set: SampleSet,
@@ -289,6 +291,16 @@ class SamplesQueryIndex(SamplesQuery):
             return self._isin_names(sample_names=data, query_message_prefix='isa_name')
         else:
             raise Exception(f'kind=[{kind}] is not supported. Must be one of {self.ISA_TYPES}')
+
+    def to_distances(self, kind: str = 'kmer', **kwargs) -> Tuple[np.ndarray, List[str]]:
+        if kind == 'kmer':
+            return self._to_distances_kmer(**kwargs)
+        else:
+            raise Exception(f'kind=[{kind}] is not supported. Must be one of {self.DISTANCES_KINDS}')
+
+    def _to_distances_kmer(self, kmer_size: int = 31) -> Tuple[np.ndarray, List[str]]:
+        return self._query_connection.kmer_service.get_distance_matrix(sample_ids=self._sample_set,
+                                                                       kmer_size=kmer_size)
 
     def _create_from(self, sample_set: SampleSet, universe_set: SampleSet,
                      queries_collection: QueriesCollection) -> SamplesQuery:
