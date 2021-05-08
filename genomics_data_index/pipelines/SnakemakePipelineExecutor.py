@@ -98,12 +98,21 @@ class SnakemakePipelineExecutor(PipelineExecutor):
         command = command + ['-j', str(ncores), '--directory', str(working_directory),
                              '--snakefile', str(snakemake_file)]
 
+        # I found with very large numbers of input files snakemake would slow down significantly
+        # So I'm executing batches of files in snakemake if you pass too many input files.
         number_batches = self._get_number_batches(len(input_files))
-        for batch_number in range(1, number_batches + 1):
-            logger.info(f'Running snakemake batch: {batch_number}/{number_batches}')
-            batch_command = command + ['--batch', f'gdi_input_fofn={batch_number}/{number_batches}']
-            execute_commands([batch_command])
-        logger.info('Running final snakemake step to generate files.')
+        if number_batches > 1:
+            for batch_number in range(1, number_batches + 1):
+                logger.info(f'Running snakemake batch: {batch_number}/{number_batches}')
+                batch_command_gdi = command + ['--batch', f'gdi_input_fofn={batch_number}/{number_batches}']
+                execute_commands([batch_command_gdi])
+
+                # Also batch MLST results
+                if self._include_mlst:
+                    batch_command_mlst = command + ['--batch', f'mlst_full_table={batch_number}/{number_batches}']
+                    execute_commands([batch_command_mlst])
+
+        logger.info('Running Snakemake for rule all')
         execute_commands([command])
         logger.info('Finished running snakemake.')
         logger.debug(f'Output file [{snakemake_output_fofn}]. '
