@@ -179,6 +179,7 @@ def test_query_isin_kmer_1_match(loaded_database_connection: DataIndexConnection
     assert 1 == len(query_result)
     assert {sampleA.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)
+    assert "isin_kmer('SampleA', dist=0.49, k=31)" == query_result.query_expression()
 
 
 def test_query_single_mutation(loaded_database_connection: DataIndexConnection):
