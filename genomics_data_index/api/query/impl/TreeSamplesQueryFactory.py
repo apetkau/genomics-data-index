@@ -1,10 +1,13 @@
 from __future__ import annotations
+from typing import cast
 
-from ete3 import Tree
+from ete3 import Tree, ClusterTree
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.api.query.impl.ExperimentalTreeSamplesQuery import ExperimentalTreeSamplesQuery
+from genomics_data_index.api.query.impl.KmerTreeSamplesQuery import KmerTreeSamplesQuery
 from genomics_data_index.api.query.impl.TreeBuilderReferenceMutations import TreeBuilderReferenceMutations
+from genomics_data_index.api.query.impl.TreeBuilderKmers import TreeBuilderKmers
 from genomics_data_index.api.query.impl.TreeSamplesQuery import TreeSamplesQuery
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
 from genomics_data_index.storage.model.db import Reference
@@ -15,7 +18,8 @@ class TreeSamplesQueryFactory:
     Builds TreeSamplesQuery objects.
     Used mainly to switch between regular and experimental tree queries while avoiding circular dependencies.
     """
-    BUILD_TREE_KINDS = ['mutation', 'mutations', 'mutation_experimental', 'mutations_experimental']
+    BUILD_TREE_KINDS = ['mutation', 'mutations', 'mutation_experimental', 'mutations_experimental',
+                        'kmer', 'kmers']
 
     _instance = None
 
@@ -30,11 +34,15 @@ class TreeSamplesQueryFactory:
             tree, alignment_length, tree_samples_set = tree_builder.build(wrapped_query.sample_set,
                                                                           include_reference=include_reference,
                                                                           **kwargs)
-
-            wrapped_query_tree_set = wrapped_query.intersect(sample_set=tree_samples_set,
-                                                             query_message=f'mutation_tree({scope})')
+        elif kind == 'kmer' or kind == 'kmers':
+            tree_builder = TreeBuilderKmers(database_connection)
+            tree, alignment_length, tree_samples_set = tree_builder.build(wrapped_query.sample_set,
+                                                                          **kwargs)
         else:
             raise Exception(f'Got kind=[{kind}], only the following kinds are supported: {self.BUILD_TREE_KINDS}')
+
+        wrapped_query_tree_set = wrapped_query.intersect(sample_set=tree_samples_set,
+                                                         query_message=f'mutation_tree({scope})')
 
         return self._create_tree_samples_query_from_tree(kind=kind,
                                                          connection=database_connection,
@@ -64,6 +72,15 @@ class TreeSamplesQueryFactory:
                                                 alignment_length=alignment_length,
                                                 reference_name=reference_name,
                                                 reference_included=include_reference)
+        elif kind == 'kmer' or kind == 'kmers':
+            if isinstance(tree, ClusterTree):
+                tree = cast(ClusterTree, tree)
+            else:
+                raise Exception(f'Invalid type for tree=[{tree}]. Expected [{ClusterTree.__name__}], got [{type(tree)}]')
+
+            return KmerTreeSamplesQuery(connection=connection,
+                                        wrapped_query=wrapped_query,
+                                        tree=tree)
         else:
             raise Exception(f'Got kind=[{kind}], only the following kinds are supported: {self.BUILD_TREE_KINDS}')
 
