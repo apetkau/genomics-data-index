@@ -121,10 +121,10 @@ class TreeSamplesQuery(WrappedSamplesQuery):
         elif kind == 'mrca':
             return self._within_mrca(sample_names=data)
         else:
-            raise Exception(f'kind=[{kind}] is not supported. Must be one of {self._isin_kinds()}')
+            raise Exception(f'kind=[{kind}] is not supported. Must be one of {self.isin_kinds()}')
 
-    def _isin_kinds(self) -> List[str]:
-        return super()._isin_kinds() + self.ISIN_TREE_TYPES
+    def isin_kinds(self) -> List[str]:
+        return list(set(super().isin_kinds() + self.ISIN_TREE_TYPES))
 
     def _can_handle_isin_kind(self, kind: str) -> bool:
         return kind in self.ISIN_TREE_TYPES
