@@ -28,9 +28,13 @@ class TreeSamplesQueryFactory:
     def __init__(self):
         pass
 
-    def build_tree(self, kind: str, scope: str, database_connection: DataIndexConnection,
-                   wrapped_query: SamplesQuery, include_reference: bool = True, **kwargs) -> TreeSamplesQuery:
+    def build_tree(self, kind: str, database_connection: DataIndexConnection,
+                   wrapped_query: SamplesQuery, scope: str = None, include_reference: bool = True, **kwargs) -> TreeSamplesQuery:
         if kind == 'mutation' or kind == 'mutation_experimental':
+            if scope is None:
+                raise Exception(f'Invalid scope=[{scope}]. You must specify a scope (i.e., reference genome name) for '
+                                f'kind=[{kind}].')
+
             tree_builder = TreeBuilderReferenceMutations(database_connection,
                                                          reference_name=scope)
             tree, alignment_length, tree_samples_set = tree_builder.build(wrapped_query.sample_set,

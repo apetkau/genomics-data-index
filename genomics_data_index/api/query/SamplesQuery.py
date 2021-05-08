@@ -77,7 +77,7 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def build_tree(self, kind: str, scope: str, **kwargs) -> SamplesQuery:
+    def build_tree(self, kind: str, **kwargs) -> SamplesQuery:
         pass
 
     @abc.abstractmethod

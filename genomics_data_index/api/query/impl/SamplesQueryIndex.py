@@ -89,8 +89,8 @@ class SamplesQueryIndex(SamplesQuery):
     def query_expression(self) -> str:
         return self._queries_collection.query_expression()
 
-    def build_tree(self, kind: str, scope: str, **kwargs) -> SamplesQuery:
-        return TreeSamplesQueryFactory.instance().build_tree(kind=kind, scope=scope,
+    def build_tree(self, kind: str, **kwargs) -> SamplesQuery:
+        return TreeSamplesQueryFactory.instance().build_tree(kind=kind,
                                                              database_connection=self._query_connection,
                                                              wrapped_query=self, **kwargs)
 

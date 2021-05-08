@@ -111,8 +111,8 @@ class DataFrameSamplesQuery(WrappedSamplesQuery):
                                      default_isa_kind=self._default_isa_kind,
                                      default_isa_column=self._default_isa_column)
 
-    def build_tree(self, kind: str, scope: str, **kwargs) -> SamplesQuery:
-        return TreeSamplesQueryFactory.instance().build_tree(kind=kind, scope=scope,
+    def build_tree(self, kind: str, **kwargs) -> SamplesQuery:
+        return TreeSamplesQueryFactory.instance().build_tree(kind=kind,
                                                              database_connection=self._query_connection,
                                                              wrapped_query=self, **kwargs)
 

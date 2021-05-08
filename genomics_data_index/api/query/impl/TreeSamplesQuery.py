@@ -62,8 +62,8 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
         else:
             raise Exception(f'kind=[{kind}] is not supported. Must be one of {self.isin_kinds()}')
 
-    def build_tree(self, kind: str, scope: str, **kwargs) -> SamplesQuery:
-        samples_query = self._wrapped_query.build_tree(kind=kind, scope=scope, **kwargs)
+    def build_tree(self, kind: str, **kwargs) -> SamplesQuery:
+        samples_query = self._wrapped_query.build_tree(kind=kind, **kwargs)
 
         if isinstance(samples_query, TreeSamplesQuery):
             samples_query = cast(TreeSamplesQuery, samples_query)
