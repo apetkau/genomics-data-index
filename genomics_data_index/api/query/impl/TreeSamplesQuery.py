@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import abc
 import logging
-from typing import Union, List
+from typing import Union, List, cast
 
 import pandas as pd
 from ete3 import Tree, TreeStyle
@@ -61,6 +61,15 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
             return self._within_mrca(sample_names=data)
         else:
             raise Exception(f'kind=[{kind}] is not supported. Must be one of {self.isin_kinds()}')
+
+    def build_tree(self, kind: str, scope: str, **kwargs) -> SamplesQuery:
+        samples_query = self._wrapped_query.build_tree(kind=kind, scope=scope, **kwargs)
+
+        if isinstance(samples_query, TreeSamplesQuery):
+            samples_query = cast(TreeSamplesQuery, samples_query)
+            return samples_query._wrap_create(self, self.universe_set)
+        else:
+            raise Exception(f'Build tree is not of type {TreeSamplesQuery.__class__}')
 
     def _within_distance(self, sample_names: Union[str, List[str]], distance: float,
                          units: str, **kwargs) -> SamplesQuery:

@@ -3,7 +3,6 @@ from typing import Union, List
 from ete3 import Tree
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
-from genomics_data_index.api.query.impl.TreeBuilderReferenceMutations import TreeBuilderReferenceMutations
 from genomics_data_index.api.query.impl.TreeSamplesQuery import TreeSamplesQuery
 from genomics_data_index.api.query.impl.WrappedSamplesQuery import WrappedSamplesQuery
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
@@ -77,29 +76,3 @@ class MutationTreeSamplesQuery(TreeSamplesQuery):
 
     def _distance_units(self) -> List[str]:
         return self.DISTANCE_UNITS + self._wrapped_query._distance_units()
-
-    def build_tree(self, kind: str, scope: str, **kwargs):
-        return MutationTreeSamplesQuery.create(kind=kind, scope=scope, database_connection=self._query_connection,
-                                               wrapped_query=self, **kwargs)
-
-    @classmethod
-    def create(cls, kind: str, scope: str, database_connection: DataIndexConnection,
-               wrapped_query: SamplesQuery, include_reference=True, **kwargs) -> TreeSamplesQuery:
-        if kind == 'mutation':
-            tree_builder = TreeBuilderReferenceMutations(database_connection,
-                                                         reference_name=scope)
-            tree, alignment_length, tree_samples_set = tree_builder.build(wrapped_query.sample_set,
-                                                                          include_reference=include_reference,
-                                                                          **kwargs)
-
-            wrapped_query_tree_set = wrapped_query.intersect(sample_set=tree_samples_set,
-                                                             query_message=f'mutation_tree({scope})')
-            tree_samples_query = MutationTreeSamplesQuery(connection=database_connection,
-                                                          wrapped_query=wrapped_query_tree_set,
-                                                          tree=tree,
-                                                          alignment_length=alignment_length,
-                                                          reference_name=scope,
-                                                          reference_included=include_reference)
-            return tree_samples_query
-        else:
-            raise Exception(f'Got kind=[{kind}], only the following kinds are supported: {cls.BUILD_TREE_KINDS}')

@@ -40,6 +40,3 @@ class KmerTreeSamplesQuery(TreeSamplesQuery):
 
     def _distance_units(self) -> List[str]:
         return self._wrapped_query._distance_units()
-
-    def build_tree(self, kind: str, scope: str, **kwargs):
-        raise Exception('TODO: implement this')
