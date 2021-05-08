@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import Union, List, Set, Tuple
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.api.query.impl.DataFrameSamplesQuery import DataFrameSamplesQuery

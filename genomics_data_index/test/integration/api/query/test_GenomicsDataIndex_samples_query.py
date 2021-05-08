@@ -1012,7 +1012,7 @@ def test_query_build_tree_and_isin_kmer(loaded_database_connection: DataIndexCon
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
     sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
 
-    query_result = query(loaded_database_connection).hasa('reference:839:C:G', kind='mutation')\
+    query_result = query(loaded_database_connection).hasa('reference:839:C:G', kind='mutation') \
         .build_tree(kind='mutation', scope='genome', include_reference=True)
     assert 2 == len(query_result)
     assert 9 == len(query_result.universe_set)

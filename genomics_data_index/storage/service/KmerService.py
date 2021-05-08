@@ -1,9 +1,10 @@
+import logging
 import shutil
 from pathlib import Path
 from typing import List, Tuple, Union
-import pandas as pd
+
 import numpy as np
-import logging
+import pandas as pd
 
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.index.KmerSearchManager import KmerSearchManagerSourmash
@@ -91,7 +92,8 @@ class KmerService:
 
             return matches_set
 
-    def get_distance_matrix(self, sample_ids: Union[List[int], SampleSet], kmer_size: int) -> Tuple[np.ndarray, List[str]]:
+    def get_distance_matrix(self, sample_ids: Union[List[int], SampleSet], kmer_size: int) -> Tuple[
+        np.ndarray, List[str]]:
         if isinstance(sample_ids, list):
             sample_ids = SampleSet(sample_ids)
 

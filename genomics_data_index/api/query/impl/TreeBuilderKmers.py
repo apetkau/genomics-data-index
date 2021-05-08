@@ -1,9 +1,9 @@
 from typing import Tuple
 
 import ete3
-from ete3 import Tree
-import skbio.tree
 import scipy.cluster.hierarchy as sch
+import skbio.tree
+from ete3 import Tree
 from scipy.spatial.distance import squareform
 
 from genomics_data_index.api.query.TreeBuilder import TreeBuilder
@@ -12,14 +12,14 @@ from genomics_data_index.storage.SampleSet import SampleSet
 
 
 class TreeBuilderKmers(TreeBuilder):
-
     BUILD_METHODS = ['single-linkage']
 
     def __init__(self, database_connection: DataIndexConnection):
         super().__init__()
         self._database_connection = database_connection
 
-    def _build_kmer_tree(self, samples_set: SampleSet, linkage_method: str, kmer_size: int) -> Tuple[Tree, int, SampleSet]:
+    def _build_kmer_tree(self, samples_set: SampleSet, linkage_method: str, kmer_size: int) -> Tuple[
+        Tree, int, SampleSet]:
         distance_matrix, labels = self._database_connection.kmer_service.get_distance_matrix(
             sample_ids=samples_set,
             kmer_size=kmer_size

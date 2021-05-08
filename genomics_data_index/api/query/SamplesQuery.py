@@ -3,8 +3,8 @@ from __future__ import annotations
 import abc
 from typing import Union, List, Set, Tuple
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.QueryFeature import QueryFeature

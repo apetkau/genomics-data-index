@@ -1,6 +1,6 @@
 from __future__ import annotations
-import abc
 
+import abc
 import logging
 from typing import Union, List
 
@@ -72,7 +72,7 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
 
     @abc.abstractmethod
     def _within_distance_internal(self, sample_names: Union[str, List[str]], distance: float,
-                         units: str) -> SamplesQuery:
+                                  units: str) -> SamplesQuery:
         pass
 
     @abc.abstractmethod

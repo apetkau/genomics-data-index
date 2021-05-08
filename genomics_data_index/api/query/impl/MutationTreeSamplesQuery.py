@@ -4,15 +4,13 @@ from ete3 import Tree
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.api.query.impl.TreeBuilderReferenceMutations import TreeBuilderReferenceMutations
+from genomics_data_index.api.query.impl.TreeSamplesQuery import TreeSamplesQuery
 from genomics_data_index.api.query.impl.WrappedSamplesQuery import WrappedSamplesQuery
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
-
-from genomics_data_index.api.query.impl.TreeSamplesQuery import TreeSamplesQuery
 from genomics_data_index.storage.SampleSet import SampleSet
 
 
 class MutationTreeSamplesQuery(TreeSamplesQuery):
-
     DISTANCE_UNITS = ['substitutions', 'substitutions/site']
 
     def __init__(self, connection: DataIndexConnection, wrapped_query: SamplesQuery, tree: Tree,
@@ -39,7 +37,7 @@ class MutationTreeSamplesQuery(TreeSamplesQuery):
                                         reference_included=self._reference_included)
 
     def _within_distance_internal(self, sample_names: Union[str, List[str]], distance: float,
-                         units: str) -> SamplesQuery:
+                                  units: str) -> SamplesQuery:
         if units == 'substitutions':
             distance_multiplier = self._alignment_length
         elif units == 'substitutions/site':

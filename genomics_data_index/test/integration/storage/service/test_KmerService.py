@@ -1,5 +1,6 @@
-import pytest
 import math
+
+import pytest
 
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.db import Sample

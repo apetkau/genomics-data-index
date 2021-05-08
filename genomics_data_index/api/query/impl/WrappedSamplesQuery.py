@@ -3,8 +3,8 @@ from __future__ import annotations
 import abc
 from typing import Set, Union, Dict, List, Tuple
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.configuration.connector import DataIndexConnection

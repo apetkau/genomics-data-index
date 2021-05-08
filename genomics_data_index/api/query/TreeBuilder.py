@@ -1,5 +1,5 @@
-from typing import Tuple
 import abc
+from typing import Tuple
 
 from ete3 import Tree
 
