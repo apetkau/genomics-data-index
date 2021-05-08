@@ -148,6 +148,40 @@ def test_query_isa_sample_name(loaded_database_connection: DataIndexConnection):
     assert 9 == len(query_result.universe_set)
 
 
+def test_query_isin_kmer(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+
+    query_result = query(loaded_database_connection).isin('SampleA', kind='kmer', distance=1.0)
+    assert 3 == len(query_result)
+    assert {sampleA.id, sampleB.id, sampleC.id} == set(query_result.sample_set)
+    assert 9 == len(query_result.universe_set)
+
+
+def test_query_isin_kmer_2_matches(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+
+    query_result = query(loaded_database_connection).isin('SampleA', kind='kmer', distance=0.5)
+    assert 2 == len(query_result)
+    assert {sampleA.id, sampleC.id} == set(query_result.sample_set)
+    assert 9 == len(query_result.universe_set)
+
+
+def test_query_isin_kmer_1_match(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+
+    query_result = query(loaded_database_connection).isin('SampleA', kind='kmer', distance=0.49)
+    assert 1 == len(query_result)
+    assert {sampleA.id} == set(query_result.sample_set)
+    assert 9 == len(query_result.universe_set)
+    assert "isin_kmer('SampleA', dist=0.49, k=31)" == query_result.query_expression()
+
+
 def test_query_single_mutation(loaded_database_connection: DataIndexConnection):
     db = loaded_database_connection.database
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
@@ -209,6 +243,22 @@ def test_query_single_mutation_two_samples(loaded_database_connection: DataIndex
     query_result = query(loaded_database_connection).hasa(QueryFeatureMutation('reference:839:C:G'))
     assert 2 == len(query_result)
     assert {sampleB.id, sampleC.id} == set(query_result.sample_set)
+    assert 9 == len(query_result.universe_set)
+
+
+def test_query_single_mutation_two_samples_kmer_one_sample(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+
+    query_result = query(loaded_database_connection).hasa(QueryFeatureMutation('reference:839:C:G'))
+    assert 2 == len(query_result)
+    assert {sampleB.id, sampleC.id} == set(query_result.sample_set)
+    assert 9 == len(query_result.universe_set)
+
+    query_result = query_result.isin('SampleA', kind='kmer', distance=0.5)
+    assert 1 == len(query_result)
+    assert {sampleC.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)
 
 
@@ -451,8 +501,33 @@ def test_query_custom_dataframe_isin_sample_names(loaded_database_connection: Da
     assert 2 == len(query_result)
     assert 3 == len(query_result.universe_set)
     assert {sampleA.id, sampleC.id} == set(query_result.sample_set)
-    assert {"dataframe(ids_col=[Sample ID]) AND isin(['SampleA', 'SampleC'])"} == set(
+    assert {"dataframe(ids_col=[Sample ID]) AND isin_names(['SampleA', 'SampleC'])"} == set(
         query_result.toframe()['Query'].tolist())
+
+
+def test_query_custom_dataframe_isin_kmer_distance(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+
+    df = pd.DataFrame([
+        [sampleA.id, 'red'],
+        [sampleB.id, 'blue'],
+        [sampleC.id, 'blue']
+    ], columns=['Sample ID', 'Color'])
+
+    query_result = query(loaded_database_connection, universe='dataframe',
+                         data_frame=df, sample_ids_column='Sample ID')
+    query_result = query_result.isin('SampleA', kind='kmer', distance=0.5)
+    assert 2 == len(query_result)
+    assert 3 == len(query_result.universe_set)
+    assert {sampleA.id, sampleC.id} == set(query_result.sample_set)
+
+    query_result = query_result.isin(df['Color'] == 'blue', kind='dataframe')
+    assert 1 == len(query_result)
+    assert 3 == len(query_result.universe_set)
+    assert {sampleC.id} == set(query_result.sample_set)
 
 
 def test_join_custom_dataframe_single_query(loaded_database_connection: DataIndexConnection):
@@ -687,7 +762,7 @@ def test_query_join_dataframe_isa_dataframe_column(loaded_database_connection: D
 
     df = sub_result.toframe()
     assert ['SampleB'] == df['Sample Name'].tolist()
-    assert {"dataframe(ids_col=[Sample ID]) AND isa('SampleB')"} == set(df['Query'].tolist())
+    assert {"dataframe(ids_col=[Sample ID]) AND isa_name('SampleB')"} == set(df['Query'].tolist())
 
     # If we explicitly pass kind='dataframe' should select by column in dataframe
     sub_result = query_result.isa('red', isa_column='Color', kind='dataframe')
@@ -879,6 +954,23 @@ def test_query_build_tree_and_query(loaded_database_connection: DataIndexConnect
     assert {'SampleB', 'SampleC', 'genome'} == set(query_result.tree.get_leaf_names())
 
 
+def test_query_build_tree_and_isin_kmer(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+
+    query_result = query(loaded_database_connection).hasa('reference:839:C:G', kind='mutation')\
+        .build_tree(kind='mutation', scope='genome', include_reference=True)
+    assert 2 == len(query_result)
+    assert 9 == len(query_result.universe_set)
+    assert {sampleB.id, sampleC.id} == set(query_result.sample_set)
+
+    query_result = query_result.isin('SampleA', kind='kmer', distance=0.5)
+    assert 1 == len(query_result)
+    assert 9 == len(query_result.universe_set)
+    assert {sampleC.id} == set(query_result.sample_set)
+
+
 def test_query_build_tree_dataframe(loaded_database_connection: DataIndexConnection):
     db = loaded_database_connection.database
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
@@ -1049,7 +1141,7 @@ def test_within_constructed_tree(loaded_database_connection: DataIndexConnection
     assert 2 == len(df)
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
     assert ['SampleA', 'SampleC'] == df['Sample Name'].tolist()
-    assert {"reference:839:C:G AND mutation_tree(genome) AND isin(['SampleA', 'SampleC'])"
+    assert {"reference:839:C:G AND mutation_tree(genome) AND isin_names(['SampleA', 'SampleC'])"
             } == set(df['Query'].tolist())
 
     # Sample Names isa()
@@ -1057,7 +1149,7 @@ def test_within_constructed_tree(loaded_database_connection: DataIndexConnection
     assert 1 == len(df)
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
     assert ['SampleA'] == df['Sample Name'].tolist()
-    assert {"reference:839:C:G AND mutation_tree(genome) AND isa('SampleA')"
+    assert {"reference:839:C:G AND mutation_tree(genome) AND isa_name('SampleA')"
             } == set(df['Query'].tolist())
 
 

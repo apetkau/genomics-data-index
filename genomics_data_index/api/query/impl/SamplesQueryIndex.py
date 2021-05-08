@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Union, List, Set
+from typing import Union, List, Set, Tuple
 
 import pandas as pd
 
@@ -13,13 +13,14 @@ from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.QueryFeature import QueryFeature
 from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
 from genomics_data_index.storage.model.QueryFeatureMutation import QueryFeatureMutation
+from genomics_data_index.storage.service.KmerService import KmerService
 
 
 class SamplesQueryIndex(SamplesQuery):
     HAS_KINDS = ['mutation', 'mutations', 'mlst']
     SUMMARY_FEATURES_KINDS = ['mutations']
     FEATURES_SELECTIONS = ['all', 'unique']
-    ISIN_TYPES = ['names']
+    ISIN_TYPES = ['names', 'kmer', 'kmers']
     ISA_TYPES = ['names']
 
     def __init__(self, connection: DataIndexConnection,
@@ -229,14 +230,23 @@ class SamplesQueryIndex(SamplesQuery):
         return self._create_from(intersect_found, universe_set=self._universe_set,
                                  queries_collection=queries_collection)
 
-    def _isin_names(self, sample_names: Union[str, List[str]], query_message_prefix: str) -> SamplesQuery:
+    def _prepare_sample_names_query_message(self, sample_names: Union[str, List[str]],
+                                            query_message_prefix: str,
+                                            additional_messages: str) -> Tuple[List[str], str]:
         if isinstance(sample_names, str):
-            query_message = f"{query_message_prefix}('{sample_names}')"
+            query_message = f"{query_message_prefix}('{sample_names}'{additional_messages})"
             sample_names = [sample_names]
         elif isinstance(sample_names, list):
-            query_message = f"{query_message_prefix}({sample_names})"
+            query_message = f"{query_message_prefix}({sample_names}{additional_messages})"
         else:
             raise Exception(f'Unrecognized input type sample_names={sample_names}. Can only be a str or list')
+
+        return sample_names, query_message
+
+    def _isin_names(self, sample_names: Union[str, List[str]], query_message_prefix: str) -> SamplesQuery:
+        sample_names, query_message = self._prepare_sample_names_query_message(sample_names,
+                                                                               query_message_prefix=query_message_prefix,
+                                                                               additional_messages='')
 
         samples = self._query_connection.sample_service.get_existing_samples_by_names(sample_names)
         sample_ids = {s.id for s in samples}
@@ -245,15 +255,38 @@ class SamplesQueryIndex(SamplesQuery):
         return self._create_from(sample_set=sample_set, universe_set=self._universe_set,
                                  queries_collection=queries_collection)
 
+    def _isin_kmer(self, sample_names: Union[str, List[str]], distance: float, kmer_size: int = 31):
+        additional_messages = f', dist={distance}, k={kmer_size}'
+        sample_names, query_message = self._prepare_sample_names_query_message(sample_names,
+                                                                               query_message_prefix='isin_kmer',
+                                                                               additional_messages=additional_messages)
+        kmer_service: KmerService = self._query_connection.kmer_service
+
+        sample_set_matches = kmer_service.find_matches_within(sample_names=sample_names,
+                                                              distance_threshold=distance,
+                                                              kmer_size=kmer_size,
+                                                              samples_universe=self._sample_set)
+        queries_collection = self._queries_collection.append(query_message)
+        return self._create_from(sample_set=sample_set_matches, universe_set=self._universe_set,
+                                 queries_collection=queries_collection)
+
     def isin(self, data: Union[str, List[str]], kind: str = 'names', **kwargs) -> SamplesQuery:
         if kind == 'names':
-            return self._isin_names(sample_names=data, query_message_prefix='isin')
+            return self._isin_names(sample_names=data, query_message_prefix='isin_names')
+        elif kind == 'kmer' or kind == 'kmers':
+            return self._isin_kmer(sample_names=data, **kwargs)
         else:
             raise Exception(f'kind=[{kind}] is not supported. Must be one of {self.ISIN_TYPES}')
 
+    def isin_kinds(self) -> List[str]:
+        return self.ISIN_TYPES
+
+    def _can_handle_isin_kind(self, kind: str) -> bool:
+        return kind in self.ISIN_TYPES
+
     def isa(self, data: Union[str, List[str]], kind: str = 'names', **kwargs) -> SamplesQuery:
         if kind == 'names':
-            return self._isin_names(sample_names=data, query_message_prefix='isa')
+            return self._isin_names(sample_names=data, query_message_prefix='isa_name')
         else:
             raise Exception(f'kind=[{kind}] is not supported. Must be one of {self.ISA_TYPES}')
 

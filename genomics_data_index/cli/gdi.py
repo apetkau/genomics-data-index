@@ -346,6 +346,8 @@ def assembly(ctx, reference_file: str, index: bool, clean: bool, build_tree: boo
              extra_tree_params: str, use_conda: bool,
              include_mlst: bool, include_kmer: bool,
              assembly_input_file: str, assembled_genomes: List[str]):
+    kmer_service = ctx.obj['data_index_connection'].kmer_service
+
     if not index:
         logger.debug('--no-index is enabled so setting --no-clean')
         clean = False
@@ -384,6 +386,15 @@ def assembly(ctx, reference_file: str, index: bool, clean: bool, build_tree: boo
             logger.exception(e)
             logger.error(f"Error while indexing. Please verify files in [{snakemake_directory}] are correct.")
             clean = False
+
+        if include_kmer:
+            logger.info(f'Inserting kmer sketches for {len(assembled_genomes)} samples into the database')
+            files_df = pd.read_csv(processed_files_fofn, sep='\t', index_col=False)
+            for idx, row in files_df.iterrows():
+                sample_name = row['Sample']
+                kmer_sketch = row['Sketch File']
+                kmer_service.insert_kmer_index(sample_name=sample_name,
+                                               kmer_index_path=Path(kmer_sketch))
 
         if clean:
             logger.info(f'--clean is enabled so deleting [{snakemake_directory}]')
