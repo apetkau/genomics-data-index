@@ -24,6 +24,7 @@ setup(name='genomics-data-index',
       install_requires=[
           'biopython>=1.70',
           'pandas>=1.0.0',
+          'numpy',
           'pyvcf',
           'sqlalchemy',
           'pymysql',
