@@ -55,9 +55,6 @@ def test_distances_all():
 
     results_d, labels = search_manager.distances(kmer_size=31,
                                                  signature_files=[sigs['SampleA'], sigs['SampleB'], sigs['SampleC']])
-    print(type(results_d))
-    print(results_d)
-    print(labels)
     assert (3, 3) == results_d.shape
     assert ['SampleA', 'SampleB', 'SampleC'] == labels
 
@@ -81,9 +78,6 @@ def test_distances_pair():
 
     results_d, labels = search_manager.distances(kmer_size=31,
                                                  signature_files=[sigs['SampleA'], sigs['SampleC']])
-    print(type(results_d))
-    print(results_d)
-    print(labels)
     assert (2, 2) == results_d.shape
     assert ['SampleA', 'SampleC'] == labels
 
@@ -101,9 +95,6 @@ def test_distances_single():
 
     results_d, labels = search_manager.distances(kmer_size=31,
                                                  signature_files=[sigs['SampleA']])
-    print(type(results_d))
-    print(results_d)
-    print(labels)
     assert (1, 1) == results_d.shape
     assert ['SampleA'] == labels
 
