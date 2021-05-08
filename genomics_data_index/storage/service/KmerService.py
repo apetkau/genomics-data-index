@@ -18,10 +18,9 @@ class KmerService:
         self._features_dir = features_dir
         self._sourmash_search = KmerSearchManagerSourmash()
 
-    def find_matches_within(self, sample_names: List[str], distance_threshold: float) -> SampleSet:
+    def find_matches_within(self, sample_names: List[str], kmer_size: int, distance_threshold: float) -> SampleSet:
         all_samples = self._sample_service.get_samples()
         kmer_index_paths = [s.sample_kmer_index.kmer_index_path for s in all_samples if s.sample_kmer_index is not None]
-        kmer_size = 31
         similarity_threshold = 1 - distance_threshold
 
         matches_df = pd.DataFrame(data=[], columns=[
