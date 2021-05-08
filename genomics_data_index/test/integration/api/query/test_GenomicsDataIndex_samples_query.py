@@ -451,7 +451,7 @@ def test_query_custom_dataframe_isin_sample_names(loaded_database_connection: Da
     assert 2 == len(query_result)
     assert 3 == len(query_result.universe_set)
     assert {sampleA.id, sampleC.id} == set(query_result.sample_set)
-    assert {"dataframe(ids_col=[Sample ID]) AND isin(['SampleA', 'SampleC'])"} == set(
+    assert {"dataframe(ids_col=[Sample ID]) AND isin_names(['SampleA', 'SampleC'])"} == set(
         query_result.toframe()['Query'].tolist())
 
 
@@ -687,7 +687,7 @@ def test_query_join_dataframe_isa_dataframe_column(loaded_database_connection: D
 
     df = sub_result.toframe()
     assert ['SampleB'] == df['Sample Name'].tolist()
-    assert {"dataframe(ids_col=[Sample ID]) AND isa('SampleB')"} == set(df['Query'].tolist())
+    assert {"dataframe(ids_col=[Sample ID]) AND isa_name('SampleB')"} == set(df['Query'].tolist())
 
     # If we explicitly pass kind='dataframe' should select by column in dataframe
     sub_result = query_result.isa('red', isa_column='Color', kind='dataframe')
@@ -1049,7 +1049,7 @@ def test_within_constructed_tree(loaded_database_connection: DataIndexConnection
     assert 2 == len(df)
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
     assert ['SampleA', 'SampleC'] == df['Sample Name'].tolist()
-    assert {"reference:839:C:G AND mutation_tree(genome) AND isin(['SampleA', 'SampleC'])"
+    assert {"reference:839:C:G AND mutation_tree(genome) AND isin_names(['SampleA', 'SampleC'])"
             } == set(df['Query'].tolist())
 
     # Sample Names isa()
@@ -1057,7 +1057,7 @@ def test_within_constructed_tree(loaded_database_connection: DataIndexConnection
     assert 1 == len(df)
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
     assert ['SampleA'] == df['Sample Name'].tolist()
-    assert {"reference:839:C:G AND mutation_tree(genome) AND isa('SampleA')"
+    assert {"reference:839:C:G AND mutation_tree(genome) AND isa_name('SampleA')"
             } == set(df['Query'].tolist())
 
 
