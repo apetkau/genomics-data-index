@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import abc
-from typing import Set, Union, Dict, List
+from typing import Set, Union, Dict, List, Tuple
 
 import pandas as pd
+import numpy as np
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.configuration.connector import DataIndexConnection
@@ -117,6 +118,9 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
             return self._wrap_create(self._wrapped_query.isa(data=data, kind=kind, **kwargs))
         else:
             return self._isa_internal(data=data, kind=kind, **kwargs)
+
+    def to_distances(self, kind: str = 'kmer', **kwargs) -> Tuple[np.ndarray, List[str]]:
+        return self._wrapped_query.to_distances(kind=kind, **kwargs)
 
     def __and__(self, other):
         return self.and_(other)

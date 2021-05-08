@@ -160,6 +160,28 @@ def test_query_isin_kmer(loaded_database_connection: DataIndexConnection):
     assert 9 == len(query_result.universe_set)
 
 
+def test_to_distances_kmer(loaded_database_connection: DataIndexConnection):
+    query_result = query(loaded_database_connection).isin(['SampleA', 'SampleB', 'SampleC'], kind='names')
+    results_d, labels = query_result.to_distances(kind='kmer')
+
+    assert (3, 3) == results_d.shape
+    assert {'SampleA', 'SampleB', 'SampleC'} == set(labels)
+
+    l = {element: idx for idx, element in enumerate(labels)}
+
+    assert math.isclose(results_d[l['SampleA']][l['SampleA']], 0, rel_tol=1e-3)
+    assert math.isclose(results_d[l['SampleA']][l['SampleB']], 0.522, rel_tol=1e-3)
+    assert math.isclose(results_d[l['SampleA']][l['SampleC']], 0.5, rel_tol=1e-3)
+
+    assert math.isclose(results_d[l['SampleB']][l['SampleA']], 0.522, rel_tol=1e-3)
+    assert math.isclose(results_d[l['SampleB']][l['SampleB']], 0, rel_tol=1e-3)
+    assert math.isclose(results_d[l['SampleB']][l['SampleC']], 0.3186, rel_tol=1e-3)
+
+    assert math.isclose(results_d[l['SampleC']][l['SampleA']], 0.5, rel_tol=1e-3)
+    assert math.isclose(results_d[l['SampleC']][l['SampleB']], 0.3186, rel_tol=1e-3)
+    assert math.isclose(results_d[l['SampleC']][l['SampleC']], 0, rel_tol=1e-3)
+
+
 def test_query_isin_kmer_2_matches(loaded_database_connection: DataIndexConnection):
     db = loaded_database_connection.database
     sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
@@ -528,6 +550,37 @@ def test_query_custom_dataframe_isin_kmer_distance(loaded_database_connection: D
     assert 1 == len(query_result)
     assert 3 == len(query_result.universe_set)
     assert {sampleC.id} == set(query_result.sample_set)
+
+
+def test_query_custom_dataframe_kmer_to_distances(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+
+    df = pd.DataFrame([
+        [sampleA.id, 'red'],
+        [sampleB.id, 'blue'],
+        [sampleC.id, 'blue']
+    ], columns=['Sample ID', 'Color'])
+
+    query_result = query(loaded_database_connection, universe='dataframe',
+                         data_frame=df, sample_ids_column='Sample ID')
+    query_result = query_result.isin('SampleA', kind='kmer', distance=0.5)
+    assert {sampleA.id, sampleC.id} == set(query_result.sample_set)
+
+    results_d, labels = query_result.to_distances(kind='kmer')
+
+    assert (2, 2) == results_d.shape
+    assert {'SampleA', 'SampleC'} == set(labels)
+
+    l = {element: idx for idx, element in enumerate(labels)}
+
+    assert math.isclose(results_d[l['SampleA']][l['SampleA']], 0, rel_tol=1e-3)
+    assert math.isclose(results_d[l['SampleA']][l['SampleC']], 0.5, rel_tol=1e-3)
+
+    assert math.isclose(results_d[l['SampleC']][l['SampleA']], 0.5, rel_tol=1e-3)
+    assert math.isclose(results_d[l['SampleC']][l['SampleC']], 0, rel_tol=1e-3)
 
 
 def test_join_custom_dataframe_single_query(loaded_database_connection: DataIndexConnection):

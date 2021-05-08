@@ -1,4 +1,5 @@
 import pytest
+import math
 
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.db import Sample
@@ -114,3 +115,52 @@ def test_find_matches_nonindexed_kmer_size(database: DatabaseConnection, kmer_se
         kmer_service_with_data.find_matches_within(['SampleA'], kmer_size=11,
                                                    distance_threshold=1.0)
     assert 'Could not run' in str(execinfo.value)
+
+
+def test_distance_matrix_all(database: DatabaseConnection, kmer_service_with_data: KmerService):
+    sampleA = database.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = database.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+
+    sample_set = SampleSet([sampleA.id, sampleB.id, sampleC.id])
+
+    results_d, labels = kmer_service_with_data.get_distance_matrix(kmer_size=31,
+                                                                   sample_ids=sample_set)
+
+    assert (3, 3) == results_d.shape
+    assert ['SampleA', 'SampleB', 'SampleC'] == labels
+
+    l = {element: idx for idx, element in enumerate(labels)}
+
+    assert math.isclose(results_d[l['SampleA']][l['SampleA']], 0, rel_tol=1e-3)
+    assert math.isclose(results_d[l['SampleA']][l['SampleB']], 0.522, rel_tol=1e-3)
+    assert math.isclose(results_d[l['SampleA']][l['SampleC']], 0.5, rel_tol=1e-3)
+
+    assert math.isclose(results_d[l['SampleB']][l['SampleA']], 0.522, rel_tol=1e-3)
+    assert math.isclose(results_d[l['SampleB']][l['SampleB']], 0, rel_tol=1e-3)
+    assert math.isclose(results_d[l['SampleB']][l['SampleC']], 0.3186, rel_tol=1e-3)
+
+    assert math.isclose(results_d[l['SampleC']][l['SampleA']], 0.5, rel_tol=1e-3)
+    assert math.isclose(results_d[l['SampleC']][l['SampleB']], 0.3186, rel_tol=1e-3)
+    assert math.isclose(results_d[l['SampleC']][l['SampleC']], 0, rel_tol=1e-3)
+
+
+def test_distance_matrix_two(database: DatabaseConnection, kmer_service_with_data: KmerService):
+    sampleA = database.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+
+    sample_set = SampleSet([sampleA.id, sampleB.id])
+
+    results_d, labels = kmer_service_with_data.get_distance_matrix(kmer_size=31,
+                                                                   sample_ids=sample_set)
+
+    assert (2, 2) == results_d.shape
+    assert ['SampleA', 'SampleB'] == labels
+
+    l = {element: idx for idx, element in enumerate(labels)}
+
+    assert math.isclose(results_d[l['SampleA']][l['SampleA']], 0, rel_tol=1e-3)
+    assert math.isclose(results_d[l['SampleA']][l['SampleB']], 0.522, rel_tol=1e-3)
+
+    assert math.isclose(results_d[l['SampleB']][l['SampleA']], 0.522, rel_tol=1e-3)
+    assert math.isclose(results_d[l['SampleB']][l['SampleB']], 0, rel_tol=1e-3)

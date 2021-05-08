@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from ete3 import Tree
+
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.api.query.impl.ExperimentalTreeSamplesQuery import ExperimentalTreeSamplesQuery
 from genomics_data_index.api.query.impl.TreeBuilderReferenceMutations import TreeBuilderReferenceMutations
@@ -34,19 +36,33 @@ class TreeSamplesQueryFactory:
         else:
             raise Exception(f'Got kind=[{kind}], only the following kinds are supported: {self.BUILD_TREE_KINDS}')
 
+        return self._create_tree_samples_query_from_tree(kind=kind,
+                                                         connection=database_connection,
+                                                         wrapped_query=wrapped_query_tree_set,
+                                                         tree=tree,
+                                                         alignment_length=alignment_length,
+                                                         reference_name=scope,
+                                                         include_reference=include_reference)
+
+    def _create_tree_samples_query_from_tree(self, kind: str, tree: Tree,
+                                             alignment_length: int,
+                                             reference_name: str,
+                                             connection: DataIndexConnection,
+                                             wrapped_query: SamplesQuery,
+                                             include_reference: bool = True) -> TreeSamplesQuery:
         if kind == 'mutation' or kind == 'mutations':
-            return TreeSamplesQuery(connection=database_connection,
-                                    wrapped_query=wrapped_query_tree_set,
+            return TreeSamplesQuery(connection=connection,
+                                    wrapped_query=wrapped_query,
                                     tree=tree,
                                     alignment_length=alignment_length,
-                                    reference_name=scope,
+                                    reference_name=reference_name,
                                     reference_included=include_reference)
         elif kind == 'mutation_experimental' or kind == 'mutations_experimental':
-            return ExperimentalTreeSamplesQuery(connection=database_connection,
-                                                wrapped_query=wrapped_query_tree_set,
+            return ExperimentalTreeSamplesQuery(connection=connection,
+                                                wrapped_query=wrapped_query,
                                                 tree=tree,
                                                 alignment_length=alignment_length,
-                                                reference_name=scope,
+                                                reference_name=reference_name,
                                                 reference_included=include_reference)
         else:
             raise Exception(f'Got kind=[{kind}], only the following kinds are supported: {self.BUILD_TREE_KINDS}')
@@ -55,20 +71,12 @@ class TreeSamplesQueryFactory:
                                      connection: DataIndexConnection,
                                      wrapped_query: SamplesQuery,
                                      include_reference: bool = True):
-        if kind == 'mutation' or kind == 'mutations':
-            return TreeSamplesQuery(connection=connection, wrapped_query=wrapped_query,
-                                    tree=reference_genome.tree,
-                                    alignment_length=reference_genome.tree_alignment_length,
-                                    reference_name=reference_genome.name,
-                                    reference_included=include_reference)
-        elif kind == 'mutation_experimental' or kind == 'mutations_experimental':
-            return ExperimentalTreeSamplesQuery(connection=connection, wrapped_query=wrapped_query,
-                                                tree=reference_genome.tree,
-                                                alignment_length=reference_genome.tree_alignment_length,
-                                                reference_name=reference_genome.name,
-                                                reference_included=include_reference)
-        else:
-            raise Exception(f'Got kind=[{kind}], only the following kinds are supported: {self.BUILD_TREE_KINDS}')
+        return self._create_tree_samples_query_from_tree(kind=kind,
+                                                         connection=connection, wrapped_query=wrapped_query,
+                                                         tree=reference_genome.tree,
+                                                         alignment_length=reference_genome.tree_alignment_length,
+                                                         reference_name=reference_genome.name,
+                                                         include_reference=include_reference)
 
     @classmethod
     def instance(cls) -> TreeSamplesQueryFactory:

@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import abc
-from typing import Union, List, Set
+from typing import Union, List, Set, Tuple
 
 import pandas as pd
+import numpy as np
 
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.QueryFeature import QueryFeature
@@ -144,6 +145,10 @@ class SamplesQuery(abc.ABC):
 
     @abc.abstractmethod
     def isin_kinds(self) -> List[str]:
+        pass
+
+    @abc.abstractmethod
+    def to_distances(self, kind: str, **kwargs) -> Tuple[np.ndarray, List[str]]:
         pass
 
     @abc.abstractmethod
