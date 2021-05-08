@@ -273,7 +273,7 @@ class SamplesQueryIndex(SamplesQuery):
                                  queries_collection=queries_collection)
 
     def _within_distance(self, sample_names: Union[str, List[str]], distance: float,
-                       units: str = 'kmer_jaccard', **kwargs) -> SamplesQuery:
+                         units: str = 'kmer_jaccard', **kwargs) -> SamplesQuery:
         if units == 'kmer_jaccard':
             return self._within_kmer_jaccard(sample_names=sample_names, distance=distance, **kwargs)
         else:
