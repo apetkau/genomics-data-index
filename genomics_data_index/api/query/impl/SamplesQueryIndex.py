@@ -231,7 +231,8 @@ class SamplesQueryIndex(SamplesQuery):
                                  queries_collection=queries_collection)
 
     def _prepare_sample_names_query_message(self, sample_names: Union[str, List[str]],
-                                            query_message_prefix: str, additional_messages: str) -> Tuple[List[str], str]:
+                                            query_message_prefix: str,
+                                            additional_messages: str) -> Tuple[List[str], str]:
         if isinstance(sample_names, str):
             query_message = f"{query_message_prefix}('{sample_names}'{additional_messages})"
             sample_names = [sample_names]
