@@ -15,8 +15,7 @@ class TreeSamplesQueryFactory:
     Builds TreeSamplesQuery objects.
     Used mainly to switch between regular and experimental tree queries while avoiding circular dependencies.
     """
-    BUILD_TREE_KINDS = ['mutation', 'mutations', 'mutation_experimental', 'mutations_experimental',
-                        'kmer', 'kmers']
+    BUILD_TREE_KINDS = ['mutation', 'mutations', 'mutation_experimental', 'mutations_experimental']
 
     _instance = None
 
