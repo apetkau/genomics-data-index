@@ -313,9 +313,10 @@ class SamplesQueryIndex(SamplesQuery):
         else:
             raise Exception(f'kind=[{kind}] is not supported. Must be one of {self.DISTANCES_UNITS}')
 
-    def _to_distances_kmer(self, kmer_size: int = 31) -> Tuple[np.ndarray, List[str]]:
+    def _to_distances_kmer(self, kmer_size: int = 31, ncores: int = 1) -> Tuple[np.ndarray, List[str]]:
         return self._query_connection.kmer_service.get_distance_matrix(sample_ids=self._sample_set,
-                                                                       kmer_size=kmer_size)
+                                                                       kmer_size=kmer_size,
+                                                                       ncores=ncores)
 
     def _create_from(self, sample_set: SampleSet, universe_set: SampleSet,
                      queries_collection: QueriesCollection) -> SamplesQuery:
