@@ -8,7 +8,6 @@ import pandas as pd
 from ete3 import Tree, TreeStyle
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
-from genomics_data_index.api.query.impl.TreeBuilderReferenceMutations import TreeBuilderReferenceMutations
 from genomics_data_index.api.query.impl.WrappedSamplesQuery import WrappedSamplesQuery
 from genomics_data_index.api.viewer.TreeStyler import TreeStyler, HighlightStyle
 from genomics_data_index.configuration.connector import DataIndexConnection
@@ -19,7 +18,6 @@ logger = logging.getLogger(__name__)
 
 class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
     BUILD_TREE_KINDS = ['mutation']
-    DISTANCE_UNITS = ['substitutions', 'substitutions/site']
     ISIN_TREE_TYPES = ['distance', 'mrca']
 
     def __init__(self, connection: DataIndexConnection, wrapped_query: SamplesQuery, tree: Tree):
@@ -58,12 +56,32 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
 
     def _isin_internal(self, data: Union[str, List[str], pd.Series], kind: str, **kwargs) -> SamplesQuery:
         if kind == 'distance':
-            raise Exception('TODO: I need to properly fix this after refactoring')
-            # return self._within_distance(sample_names=data, kind=kind, **kwargs)
+            return self._within_distance(sample_names=data, **kwargs)
         elif kind == 'mrca':
             return self._within_mrca(sample_names=data)
         else:
             raise Exception(f'kind=[{kind}] is not supported. Must be one of {self.isin_kinds()}')
+
+    def _within_distance(self, sample_names: Union[str, List[str]], distance: float,
+                         units: str) -> SamplesQuery:
+        if self._can_handle_distance_units(units):
+            return self._within_distance_internal(sample_names=sample_names,
+                                                  distance=distance, units=units)
+        else:
+            raise Exception(f'units=[{units}] is not supported. Must be one of {self._distance_units()}')
+
+    @abc.abstractmethod
+    def _within_distance_internal(self, sample_names: Union[str, List[str]], distance: float,
+                         units: str) -> SamplesQuery:
+        pass
+
+    @abc.abstractmethod
+    def _can_handle_distance_units(self, units: str) -> bool:
+        pass
+
+    @abc.abstractmethod
+    def _distance_units(self) -> List[str]:
+        pass
 
     def isin_kinds(self) -> List[str]:
         return list(set(super().isin_kinds() + self.ISIN_TREE_TYPES))

@@ -13,6 +13,8 @@ from genomics_data_index.storage.SampleSet import SampleSet
 
 class MutationTreeSamplesQuery(TreeSamplesQuery):
 
+    DISTANCE_UNITS = ['substitutions', 'substitutions/site']
+
     def __init__(self, connection: DataIndexConnection, wrapped_query: SamplesQuery, tree: Tree,
                  alignment_length: int, reference_name: str, reference_included: bool):
         super().__init__(connection=connection, wrapped_query=wrapped_query, tree=tree)
@@ -36,7 +38,7 @@ class MutationTreeSamplesQuery(TreeSamplesQuery):
                                         reference_name=self._reference_name,
                                         reference_included=self._reference_included)
 
-    def _within_distance(self, sample_names: Union[str, List[str]], kind: str, distance: float,
+    def _within_distance_internal(self, sample_names: Union[str, List[str]], distance: float,
                          units: str) -> SamplesQuery:
         if units == 'substitutions':
             distance_multiplier = self._alignment_length
@@ -71,6 +73,12 @@ class MutationTreeSamplesQuery(TreeSamplesQuery):
 
         found_samples = SampleSet(found_samples_set)
         return self.intersect(found_samples, f'within({distance} {units} of {sample_names})')
+
+    def _can_handle_distance_units(self, units: str) -> bool:
+        return units in self.DISTANCE_UNITS
+
+    def _distance_units(self) -> List[str]:
+        return self.DISTANCE_UNITS
 
     def build_tree(self, kind: str, scope: str, **kwargs):
         return MutationTreeSamplesQuery.create(kind=kind, scope=scope, database_connection=self._query_connection,

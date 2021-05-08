@@ -1,4 +1,4 @@
-from typing import cast
+from typing import cast, List, Union
 from ete3 import ClusterTree
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
@@ -24,6 +24,16 @@ class KmerTreeSamplesQuery(TreeSamplesQuery):
         return KmerTreeSamplesQuery(connection=self._query_connection,
                                     wrapped_query=wrapped_query,
                                     tree=tree)
+
+    def _within_distance_internal(self, sample_names: Union[str, List[str]], distance: float,
+                                  units: str) -> SamplesQuery:
+        raise NotImplementedError(f'Not implemented for {KmerTreeSamplesQuery.__class__}')
+
+    def _can_handle_distance_units(self, units: str) -> bool:
+        return False
+
+    def _distance_units(self) -> List[str]:
+        return []
 
     def build_tree(self, kind: str, scope: str, **kwargs):
         raise Exception('TODO: implement this')

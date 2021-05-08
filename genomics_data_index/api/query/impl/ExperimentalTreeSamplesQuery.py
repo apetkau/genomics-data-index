@@ -97,7 +97,7 @@ class ExperimentalTreeSamplesQuery(MutationTreeSamplesQuery):
                                             reference_included=self.reference_included)
 
     @classmethod
-    def from_tree_query(self, query: TreeSamplesQuery) -> ExperimentalTreeSamplesQuery:
+    def from_tree_query(self, query: MutationTreeSamplesQuery) -> ExperimentalTreeSamplesQuery:
         """
         Creates new ExperimentalTreeSamplesQuery to match the same information as the passed query.
         :param query: The query to copy from.
