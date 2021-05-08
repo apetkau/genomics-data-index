@@ -18,11 +18,13 @@ class TreeBuilderKmers(TreeBuilder):
         super().__init__()
         self._database_connection = database_connection
 
-    def _build_kmer_tree(self, samples_set: SampleSet, linkage_method: str, kmer_size: int) -> Tuple[
+    def _build_kmer_tree(self, samples_set: SampleSet, linkage_method: str, kmer_size: int,
+                         ncores: int = 1) -> Tuple[
         Tree, int, SampleSet]:
         distance_matrix, labels = self._database_connection.kmer_service.get_distance_matrix(
             sample_ids=samples_set,
-            kmer_size=kmer_size
+            kmer_size=kmer_size,
+            ncores=ncores
         )
 
         compressed_matrix = squareform(distance_matrix)
