@@ -126,6 +126,9 @@ class TreeSamplesQuery(WrappedSamplesQuery):
     def _isin_kinds(self) -> List[str]:
         return super()._isin_kinds() + self.ISIN_TREE_TYPES
 
+    def _can_handle_isin_kind(self, kind: str) -> bool:
+        return kind in self.ISIN_TREE_TYPES
+
     def tree_styler(self,
                     initial_style: TreeStyle = None,
                     mode='r',

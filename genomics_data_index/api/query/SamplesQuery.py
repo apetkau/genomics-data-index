@@ -139,6 +139,10 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
+    def _can_handle_isin_kind(self, kind: str) -> bool:
+        pass
+
+    @abc.abstractmethod
     def _get_has_kinds(self) -> List[str]:
         pass
 

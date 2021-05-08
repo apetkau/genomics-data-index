@@ -277,6 +277,9 @@ class SamplesQueryIndex(SamplesQuery):
         else:
             raise Exception(f'kind=[{kind}] is not supported. Must be one of {self.ISIN_TYPES}')
 
+    def _can_handle_isin_kind(self, kind: str) -> bool:
+        return kind in self.ISIN_TYPES
+
     def isa(self, data: Union[str, List[str]], kind: str = 'names', **kwargs) -> SamplesQuery:
         if kind == 'names':
             return self._isin_names(sample_names=data, query_message_prefix='isa_name')

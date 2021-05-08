@@ -505,6 +505,31 @@ def test_query_custom_dataframe_isin_sample_names(loaded_database_connection: Da
         query_result.toframe()['Query'].tolist())
 
 
+def test_query_custom_dataframe_isin_kmer_distance(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+
+    df = pd.DataFrame([
+        [sampleA.id, 'red'],
+        [sampleB.id, 'blue'],
+        [sampleC.id, 'blue']
+    ], columns=['Sample ID', 'Color'])
+
+    query_result = query(loaded_database_connection, universe='dataframe',
+                         data_frame=df, sample_ids_column='Sample ID')
+    query_result = query_result.isin('SampleA', kind='kmer', distance=0.5)
+    assert 2 == len(query_result)
+    assert 3 == len(query_result.universe_set)
+    assert {sampleA.id, sampleC.id} == set(query_result.sample_set)
+
+    query_result = query_result.isin(df['Color'] == 'blue', kind='dataframe')
+    assert 1 == len(query_result)
+    assert 3 == len(query_result.universe_set)
+    assert {sampleC.id} == set(query_result.sample_set)
+
+
 def test_join_custom_dataframe_single_query(loaded_database_connection: DataIndexConnection):
     db = loaded_database_connection.database
     sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
@@ -927,6 +952,23 @@ def test_query_build_tree_and_query(loaded_database_connection: DataIndexConnect
 
     # Tree should still be complete
     assert {'SampleB', 'SampleC', 'genome'} == set(query_result.tree.get_leaf_names())
+
+
+def test_query_build_tree_and_isin_kmer(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+
+    query_result = query(loaded_database_connection).hasa('reference:839:C:G', kind='mutation')\
+        .build_tree(kind='mutation', scope='genome', include_reference=True)
+    assert 2 == len(query_result)
+    assert 9 == len(query_result.universe_set)
+    assert {sampleB.id, sampleC.id} == set(query_result.sample_set)
+
+    query_result = query_result.isin('SampleA', kind='kmer', distance=0.5)
+    assert 1 == len(query_result)
+    assert 9 == len(query_result.universe_set)
+    assert {sampleC.id} == set(query_result.sample_set)
 
 
 def test_query_build_tree_dataframe(loaded_database_connection: DataIndexConnection):
