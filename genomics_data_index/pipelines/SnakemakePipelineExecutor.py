@@ -2,6 +2,7 @@ import logging
 from os import path
 from pathlib import Path
 from typing import List
+import math
 
 import pandas as pd
 import yaml
@@ -19,7 +20,8 @@ class SnakemakePipelineExecutor(PipelineExecutor):
 
     def __init__(self, working_directory: Path, use_conda: bool = True,
                  include_kmer: bool = True, include_mlst: bool = True,
-                 kmer_sizes: List[int] = None, kmer_scaled: int = 1000):
+                 kmer_sizes: List[int] = None, kmer_scaled: int = 1000,
+                 snakemake_batch_size: int = 5000):
         super().__init__()
         if kmer_sizes is None:
             kmer_sizes = [31]
@@ -28,6 +30,7 @@ class SnakemakePipelineExecutor(PipelineExecutor):
         self._use_conda = use_conda
         self._include_kmer = include_kmer
         self._include_mlst = include_mlst
+        self._snakemake_batch_size = snakemake_batch_size
         self._sourmash_params = self._prepare_sourmash_params(kmer_sizes=kmer_sizes, kmer_scaled=kmer_scaled)
 
     def _prepare_sourmash_params(self, kmer_sizes: List[int], kmer_scaled: int) -> str:
@@ -76,6 +79,9 @@ class SnakemakePipelineExecutor(PipelineExecutor):
         else:
             return command
 
+    def _get_number_batches(self, number_input_files: int) -> int:
+        return int(math.ceil(number_input_files / self._snakemake_batch_size))
+
     def execute(self, input_files: List[Path], reference_file: Path, ncores: int = 1) -> ExecutorResults:
         working_directory = self._working_directory
         logger.debug(f'Preparing working directory [{working_directory}] for snakemake')
@@ -92,9 +98,15 @@ class SnakemakePipelineExecutor(PipelineExecutor):
         command = command + ['-j', str(ncores), '--directory', str(working_directory),
                              '--snakefile', str(snakemake_file)]
 
+        number_batches = self._get_number_batches(len(input_files))
+        for batch_number in range(1, number_batches + 1):
+            logger.info(f'Running snakemake batch: {batch_number}/{number_batches}')
+            batch_command = command + ['--batch', f'gdi_input_fofn={batch_number}/{number_batches}']
+            execute_commands([batch_command])
+        logger.info('Running final snakemake step to generate files.')
         execute_commands([command])
-
-        logger.debug(f'Finished executing snakemake. Output file [{snakemake_output_fofn}]. '
+        logger.info('Finished running snakemake.')
+        logger.debug(f'Output file [{snakemake_output_fofn}]. '
                      f'MLST file [{snakemake_output_mlst}]')
 
         return ExecutorResults({'gdi-fofn': snakemake_output_fofn, 'mlst': snakemake_output_mlst})
