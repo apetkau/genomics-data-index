@@ -1234,6 +1234,14 @@ def test_within_constructed_tree(loaded_database_connection: DataIndexConnection
     assert {"reference:839:C:G AND mutation_tree(genome) AND isa_name('SampleA')"
             } == set(df['Query'].tolist())
 
+    # kmer jaccard still works
+    df = query_result.within('SampleA', distance=0.5, units='kmer_jaccard').toframe().sort_values('Sample Name')
+    assert 1 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    assert ['SampleC'] == df['Sample Name'].tolist()
+    assert {"reference:839:C:G AND mutation_tree(genome) AND isin_kmer_jaccard('SampleA', dist=0.5, k=31)"
+            } == set(df['Query'].tolist())
+
 
 def test_build_tree_experimental(loaded_database_connection: DataIndexConnection):
     query_result = query(loaded_database_connection).hasa(
