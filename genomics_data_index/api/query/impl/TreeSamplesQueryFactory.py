@@ -6,6 +6,7 @@ from ete3 import Tree, ClusterTree
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.api.query.impl.ExperimentalTreeSamplesQuery import ExperimentalTreeSamplesQuery
 from genomics_data_index.api.query.impl.KmerTreeSamplesQuery import KmerTreeSamplesQuery
+from genomics_data_index.api.query.impl.MutationTreeSamplesQuery import MutationTreeSamplesQuery
 from genomics_data_index.api.query.impl.TreeBuilderReferenceMutations import TreeBuilderReferenceMutations
 from genomics_data_index.api.query.impl.TreeBuilderKmers import TreeBuilderKmers
 from genomics_data_index.api.query.impl.TreeSamplesQuery import TreeSamplesQuery
@@ -59,12 +60,12 @@ class TreeSamplesQueryFactory:
                                              wrapped_query: SamplesQuery,
                                              include_reference: bool = True) -> TreeSamplesQuery:
         if kind == 'mutation' or kind == 'mutations':
-            return TreeSamplesQuery(connection=connection,
-                                    wrapped_query=wrapped_query,
-                                    tree=tree,
-                                    alignment_length=alignment_length,
-                                    reference_name=reference_name,
-                                    reference_included=include_reference)
+            return MutationTreeSamplesQuery(connection=connection,
+                                            wrapped_query=wrapped_query,
+                                            tree=tree,
+                                            alignment_length=alignment_length,
+                                            reference_name=reference_name,
+                                            reference_included=include_reference)
         elif kind == 'mutation_experimental' or kind == 'mutations_experimental':
             return ExperimentalTreeSamplesQuery(connection=connection,
                                                 wrapped_query=wrapped_query,
@@ -76,7 +77,8 @@ class TreeSamplesQueryFactory:
             if isinstance(tree, ClusterTree):
                 tree = cast(ClusterTree, tree)
             else:
-                raise Exception(f'Invalid type for tree=[{tree}]. Expected [{ClusterTree.__name__}], got [{type(tree)}]')
+                raise Exception(
+                    f'Invalid type for tree=[{tree}]. Expected [{ClusterTree.__name__}], got [{type(tree)}]')
 
             return KmerTreeSamplesQuery(connection=connection,
                                         wrapped_query=wrapped_query,
