@@ -161,7 +161,7 @@ def test_query_isin_kmer(loaded_database_connection: DataIndexConnection):
 
 
 def test_to_distances_kmer(loaded_database_connection: DataIndexConnection):
-    query_result = query(loaded_database_connection)
+    query_result = query(loaded_database_connection).isin(['SampleA', 'SampleB', 'SampleC'], kind='names')
     results_d, labels = query_result.to_distances(kind='kmer')
 
     assert (3, 3) == results_d.shape
