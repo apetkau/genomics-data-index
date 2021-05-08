@@ -7,6 +7,7 @@ import pytest
 from genomics_data_index.api.query.GenomicsDataIndex import GenomicsDataIndex
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.api.query.impl.ExperimentalTreeSamplesQuery import ExperimentalTreeSamplesQuery
+from genomics_data_index.api.query.impl.MutationTreeSamplesQuery import MutationTreeSamplesQuery
 from genomics_data_index.api.query.impl.TreeSamplesQuery import TreeSamplesQuery
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
 from genomics_data_index.storage.SampleSet import SampleSet
@@ -972,8 +973,8 @@ def test_query_and_build_mutation_tree(loaded_database_connection: DataIndexConn
     assert 2 == len(query_result)
     assert 9 == len(query_result.universe_set)
 
-    assert isinstance(query_result, TreeSamplesQuery)
-    query_result = cast(TreeSamplesQuery, query_result)
+    assert isinstance(query_result, MutationTreeSamplesQuery)
+    query_result = cast(MutationTreeSamplesQuery, query_result)
     assert query_result.reference_included
     assert 'genome' == query_result.reference_name
 
@@ -990,8 +991,8 @@ def test_build_mutation_tree_include_reference(loaded_database_connection: DataI
     assert 3 == len(query_result)
     assert 9 == len(query_result.universe_set)
 
-    assert isinstance(query_result, TreeSamplesQuery)
-    query_result = cast(TreeSamplesQuery, query_result)
+    assert isinstance(query_result, MutationTreeSamplesQuery)
+    query_result = cast(MutationTreeSamplesQuery, query_result)
     assert query_result.reference_included
     assert 'genome' == query_result.reference_name
 
@@ -1008,8 +1009,8 @@ def test_build_mutation_tree_no_include_reference(loaded_database_connection: Da
     assert 3 == len(query_result)
     assert 9 == len(query_result.universe_set)
 
-    assert isinstance(query_result, TreeSamplesQuery)
-    query_result = cast(TreeSamplesQuery, query_result)
+    assert isinstance(query_result, MutationTreeSamplesQuery)
+    query_result = cast(MutationTreeSamplesQuery, query_result)
     assert not query_result.reference_included
     assert 'genome' == query_result.reference_name
 
@@ -1034,7 +1035,7 @@ def test_query_build_tree_and_query(loaded_database_connection: DataIndexConnect
     assert {'SampleB', 'SampleC', 'genome'} == set(query_result.tree.get_leaf_names())
 
 
-def test_query_build_tree_and_isin_kmer(loaded_database_connection: DataIndexConnection):
+def test_query_build_tree_and_within_kmer(loaded_database_connection: DataIndexConnection):
     db = loaded_database_connection.database
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
     sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
@@ -1045,7 +1046,8 @@ def test_query_build_tree_and_isin_kmer(loaded_database_connection: DataIndexCon
     assert 9 == len(query_result.universe_set)
     assert {sampleB.id, sampleC.id} == set(query_result.sample_set)
 
-    query_result = query_result.isin('SampleA', kind='kmer', distance=0.5)
+    query_result = query_result.within('SampleA', distance=0.5,
+                                       units='kmer_jaccard')
     assert 1 == len(query_result)
     assert 9 == len(query_result.universe_set)
     assert {sampleC.id} == set(query_result.sample_set)
