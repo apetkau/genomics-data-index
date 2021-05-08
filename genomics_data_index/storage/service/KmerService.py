@@ -1,9 +1,10 @@
+import logging
 import shutil
 from pathlib import Path
 from typing import List, Tuple, Union
-import pandas as pd
+
 import numpy as np
-import logging
+import pandas as pd
 
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.index.KmerSearchManager import KmerSearchManagerSourmash
@@ -91,9 +92,13 @@ class KmerService:
 
             return matches_set
 
-    def get_distance_matrix(self, sample_ids: Union[List[int], SampleSet], kmer_size: int) -> Tuple[np.ndarray, List[str]]:
+    def get_distance_matrix(self, sample_ids: Union[List[int], SampleSet], kmer_size: int,
+                            ncores: int = 1) -> Tuple[
+        np.ndarray, List[str]]:
         if isinstance(sample_ids, list):
             sample_ids = SampleSet(sample_ids)
+
+        sourmash_search_multicore = KmerSearchManagerSourmash(ncores=ncores)
 
         samples = self._sample_service.find_samples_by_ids(sample_ids)
         kmer_index_paths = [s.sample_kmer_index.kmer_index_path for s in samples if
@@ -103,7 +108,7 @@ class KmerService:
             raise Exception(f'Not all samples (number={len(samples)} have associated kmer signatures '
                             f'(number={len(kmer_index_paths)}).')
 
-        return self._sourmash_search.distances(kmer_size=kmer_size, signature_files=kmer_index_paths)
+        return sourmash_search_multicore.distances(kmer_size=kmer_size, signature_files=kmer_index_paths)
 
     def has_kmer_index(self, sample_name: str) -> bool:
         if self._sample_service.exists(sample_name):

@@ -3,8 +3,8 @@ from __future__ import annotations
 import abc
 from typing import Union, List, Set, Tuple
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.QueryFeature import QueryFeature
@@ -77,7 +77,7 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def build_tree(self, kind: str, scope: str, **kwargs) -> SamplesQuery:
+    def build_tree(self, kind: str, **kwargs) -> SamplesQuery:
         pass
 
     @abc.abstractmethod
@@ -112,6 +112,15 @@ class SamplesQuery(abc.ABC):
         :return: A SamplesQuery with the matched samples.
         """
         return self.isin(data=data, kind='distance', **kwargs)
+
+    @abc.abstractmethod
+    def _within_distance(self, sample_names: Union[str, List[str]], distance: float, units: str,
+                         **kwargs) -> SamplesQuery:
+        pass
+
+    @abc.abstractmethod
+    def _distance_units(self) -> List[str]:
+        pass
 
     @abc.abstractmethod
     def isa(self, data: Union[str, List[str]], kind: str = 'names', **kwargs) -> SamplesQuery:

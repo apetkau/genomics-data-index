@@ -7,6 +7,7 @@ import pytest
 from genomics_data_index.api.query.GenomicsDataIndex import GenomicsDataIndex
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.api.query.impl.ExperimentalTreeSamplesQuery import ExperimentalTreeSamplesQuery
+from genomics_data_index.api.query.impl.MutationTreeSamplesQuery import MutationTreeSamplesQuery
 from genomics_data_index.api.query.impl.TreeSamplesQuery import TreeSamplesQuery
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
 from genomics_data_index.storage.SampleSet import SampleSet
@@ -154,10 +155,32 @@ def test_query_isin_kmer(loaded_database_connection: DataIndexConnection):
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
     sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
 
-    query_result = query(loaded_database_connection).isin('SampleA', kind='kmer', distance=1.0)
+    query_result = query(loaded_database_connection).isin('SampleA', kind='distance', distance=1.0,
+                                                          units='kmer_jaccard')
     assert 3 == len(query_result)
     assert {sampleA.id, sampleB.id, sampleC.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)
+    assert "isin_kmer_jaccard('SampleA', dist=1.0, k=31)" == query_result.query_expression()
+
+
+def test_query_within_kmer_default(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+
+    query_result = query(loaded_database_connection).within('SampleA', distance=1.0)
+    assert 3 == len(query_result)
+    assert {sampleA.id, sampleB.id, sampleC.id} == set(query_result.sample_set)
+    assert 9 == len(query_result.universe_set)
+    assert "isin_kmer_jaccard('SampleA', dist=1.0, k=31)" == query_result.query_expression()
+
+
+def test_query_within_invalid_unit_with_no_tree(loaded_database_connection: DataIndexConnection):
+    with pytest.raises(Exception) as execinfo:
+        query(loaded_database_connection).within('SampleA', distance=1.0,
+                                                            units='substitutions')
+    assert 'units=[substitutions] is not supported' in str(execinfo.value)
 
 
 def test_to_distances_kmer(loaded_database_connection: DataIndexConnection):
@@ -187,7 +210,8 @@ def test_query_isin_kmer_2_matches(loaded_database_connection: DataIndexConnecti
     sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
     sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
 
-    query_result = query(loaded_database_connection).isin('SampleA', kind='kmer', distance=0.5)
+    query_result = query(loaded_database_connection).isin('SampleA', kind='distances', distance=0.5,
+                                                          units='kmer_jaccard')
     assert 2 == len(query_result)
     assert {sampleA.id, sampleC.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)
@@ -197,11 +221,12 @@ def test_query_isin_kmer_1_match(loaded_database_connection: DataIndexConnection
     db = loaded_database_connection.database
     sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
 
-    query_result = query(loaded_database_connection).isin('SampleA', kind='kmer', distance=0.49)
+    query_result = query(loaded_database_connection).isin('SampleA', kind='distance', distance=0.49,
+                                                          units='kmer_jaccard')
     assert 1 == len(query_result)
     assert {sampleA.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)
-    assert "isin_kmer('SampleA', dist=0.49, k=31)" == query_result.query_expression()
+    assert "isin_kmer_jaccard('SampleA', dist=0.49, k=31)" == query_result.query_expression()
 
 
 def test_query_single_mutation(loaded_database_connection: DataIndexConnection):
@@ -278,7 +303,8 @@ def test_query_single_mutation_two_samples_kmer_one_sample(loaded_database_conne
     assert {sampleB.id, sampleC.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)
 
-    query_result = query_result.isin('SampleA', kind='kmer', distance=0.5)
+    query_result = query_result.isin('SampleA', kind='distance', distance=0.5,
+                                     units='kmer_jaccard')
     assert 1 == len(query_result)
     assert {sampleC.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)
@@ -541,7 +567,8 @@ def test_query_custom_dataframe_isin_kmer_distance(loaded_database_connection: D
 
     query_result = query(loaded_database_connection, universe='dataframe',
                          data_frame=df, sample_ids_column='Sample ID')
-    query_result = query_result.isin('SampleA', kind='kmer', distance=0.5)
+    query_result = query_result.isin('SampleA', kind='distance', distance=0.5,
+                                     units='kmer_jaccard')
     assert 2 == len(query_result)
     assert 3 == len(query_result.universe_set)
     assert {sampleA.id, sampleC.id} == set(query_result.sample_set)
@@ -566,7 +593,8 @@ def test_query_custom_dataframe_kmer_to_distances(loaded_database_connection: Da
 
     query_result = query(loaded_database_connection, universe='dataframe',
                          data_frame=df, sample_ids_column='Sample ID')
-    query_result = query_result.isin('SampleA', kind='kmer', distance=0.5)
+    query_result = query_result.isin('SampleA', kind='distance', distance=0.5,
+                                     units='kmer_jaccard')
     assert {sampleA.id, sampleC.id} == set(query_result.sample_set)
 
     results_d, labels = query_result.to_distances(kind='kmer')
@@ -945,8 +973,8 @@ def test_query_and_build_mutation_tree(loaded_database_connection: DataIndexConn
     assert 2 == len(query_result)
     assert 9 == len(query_result.universe_set)
 
-    assert isinstance(query_result, TreeSamplesQuery)
-    query_result = cast(TreeSamplesQuery, query_result)
+    assert isinstance(query_result, MutationTreeSamplesQuery)
+    query_result = cast(MutationTreeSamplesQuery, query_result)
     assert query_result.reference_included
     assert 'genome' == query_result.reference_name
 
@@ -963,8 +991,8 @@ def test_build_mutation_tree_include_reference(loaded_database_connection: DataI
     assert 3 == len(query_result)
     assert 9 == len(query_result.universe_set)
 
-    assert isinstance(query_result, TreeSamplesQuery)
-    query_result = cast(TreeSamplesQuery, query_result)
+    assert isinstance(query_result, MutationTreeSamplesQuery)
+    query_result = cast(MutationTreeSamplesQuery, query_result)
     assert query_result.reference_included
     assert 'genome' == query_result.reference_name
 
@@ -981,8 +1009,8 @@ def test_build_mutation_tree_no_include_reference(loaded_database_connection: Da
     assert 3 == len(query_result)
     assert 9 == len(query_result.universe_set)
 
-    assert isinstance(query_result, TreeSamplesQuery)
-    query_result = cast(TreeSamplesQuery, query_result)
+    assert isinstance(query_result, MutationTreeSamplesQuery)
+    query_result = cast(MutationTreeSamplesQuery, query_result)
     assert not query_result.reference_included
     assert 'genome' == query_result.reference_name
 
@@ -1007,18 +1035,19 @@ def test_query_build_tree_and_query(loaded_database_connection: DataIndexConnect
     assert {'SampleB', 'SampleC', 'genome'} == set(query_result.tree.get_leaf_names())
 
 
-def test_query_build_tree_and_isin_kmer(loaded_database_connection: DataIndexConnection):
+def test_query_build_tree_and_within_kmer(loaded_database_connection: DataIndexConnection):
     db = loaded_database_connection.database
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
     sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
 
-    query_result = query(loaded_database_connection).hasa('reference:839:C:G', kind='mutation')\
+    query_result = query(loaded_database_connection).hasa('reference:839:C:G', kind='mutation') \
         .build_tree(kind='mutation', scope='genome', include_reference=True)
     assert 2 == len(query_result)
     assert 9 == len(query_result.universe_set)
     assert {sampleB.id, sampleC.id} == set(query_result.sample_set)
 
-    query_result = query_result.isin('SampleA', kind='kmer', distance=0.5)
+    query_result = query_result.within('SampleA', distance=0.5,
+                                       units='kmer_jaccard')
     assert 1 == len(query_result)
     assert 9 == len(query_result.universe_set)
     assert {sampleC.id} == set(query_result.sample_set)
@@ -1203,6 +1232,14 @@ def test_within_constructed_tree(loaded_database_connection: DataIndexConnection
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
     assert ['SampleA'] == df['Sample Name'].tolist()
     assert {"reference:839:C:G AND mutation_tree(genome) AND isa_name('SampleA')"
+            } == set(df['Query'].tolist())
+
+    # kmer jaccard still works
+    df = query_result.within('SampleA', distance=0.5, units='kmer_jaccard').toframe().sort_values('Sample Name')
+    assert 1 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    assert ['SampleC'] == df['Sample Name'].tolist()
+    assert {"reference:839:C:G AND mutation_tree(genome) AND isin_kmer_jaccard('SampleA', dist=0.5, k=31)"
             } == set(df['Query'].tolist())
 
 

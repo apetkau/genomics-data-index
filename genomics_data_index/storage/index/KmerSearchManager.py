@@ -4,8 +4,8 @@ import time
 from pathlib import Path
 from typing import List, Tuple
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 from sourmash.fig import load_matrix_and_labels
 
 from genomics_data_index.storage.util import execute_commands

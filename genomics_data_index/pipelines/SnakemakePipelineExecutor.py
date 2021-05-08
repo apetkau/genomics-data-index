@@ -6,8 +6,8 @@ from typing import List
 import pandas as pd
 import yaml
 
-from genomics_data_index.pipelines.PipelineExecutor import PipelineExecutor
 from genomics_data_index.pipelines.ExecutorResults import ExecutorResults
+from genomics_data_index.pipelines.PipelineExecutor import PipelineExecutor
 from genomics_data_index.storage.util import execute_commands
 
 logger = logging.getLogger(__name__)

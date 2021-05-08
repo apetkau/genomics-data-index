@@ -5,13 +5,13 @@ from typing import Callable, Set
 from ete3 import Tree, TreeNode
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
-from genomics_data_index.api.query.impl.TreeSamplesQuery import TreeSamplesQuery
+from genomics_data_index.api.query.impl.MutationTreeSamplesQuery import MutationTreeSamplesQuery
 from genomics_data_index.api.query.impl.WrappedSamplesQuery import WrappedSamplesQuery
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
 from genomics_data_index.storage.SampleSet import SampleSet
 
 
-class ExperimentalTreeSamplesQuery(TreeSamplesQuery):
+class ExperimentalTreeSamplesQuery(MutationTreeSamplesQuery):
     """
     This class contains experimental selection/query statements with respect to a tree
     that I have started implementing but haven't had time to properly test out yet. Eventually
@@ -96,7 +96,7 @@ class ExperimentalTreeSamplesQuery(TreeSamplesQuery):
                                             reference_included=self.reference_included)
 
     @classmethod
-    def from_tree_query(self, query: TreeSamplesQuery) -> ExperimentalTreeSamplesQuery:
+    def from_tree_query(self, query: MutationTreeSamplesQuery) -> ExperimentalTreeSamplesQuery:
         """
         Creates new ExperimentalTreeSamplesQuery to match the same information as the passed query.
         :param query: The query to copy from.

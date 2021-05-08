@@ -3,8 +3,8 @@ from __future__ import annotations
 import abc
 from typing import Set, Union, Dict, List, Tuple
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.configuration.connector import DataIndexConnection
@@ -109,6 +109,16 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
             return self._isin_internal(data=data, kind=kind, **kwargs)
         else:
             return self._wrap_create(self._wrapped_query.isin(data=data, kind=kind, **kwargs))
+
+    def _distance_units(self) -> List[str]:
+        return self._wrapped_query._distance_units()
+
+    def _within_distance(self, sample_names: Union[str, List[str]], distance: float,
+                         units: str, **kwargs) -> SamplesQuery:
+        return self._wrap_create(self._wrapped_query._within_distance(sample_names=sample_names,
+                                                                      distance=distance,
+                                                                      units=units,
+                                                                      **kwargs))
 
     def _isa_kinds(self) -> List[str]:
         return ['names']
