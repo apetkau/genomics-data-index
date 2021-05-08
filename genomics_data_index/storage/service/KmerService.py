@@ -22,6 +22,7 @@ class KmerService:
         all_samples = self._sample_service.get_samples()
         kmer_index_paths = [s.sample_kmer_index.kmer_index_path for s in all_samples if s.sample_kmer_index is not None]
         kmer_size = 31
+        similarity_threshold = 1 - distance_threshold
 
         matches_df = pd.DataFrame(data=[], columns=[
             'Query',
@@ -32,8 +33,10 @@ class KmerService:
 
         for sample_name in sample_names:
             query_sample = self._sample_service.get_sample(sample_name)
-            results_df = self._sourmash_search.search(kmer_size, query_sample.sample_kmer_index.kmer_index_path,
-                                                      kmer_index_paths)
+            results_df = self._sourmash_search.search(kmer_size=kmer_size,
+                                                      similarity_threshold=similarity_threshold,
+                                                      query_file=query_sample.sample_kmer_index.kmer_index_path,
+                                                      search_files=kmer_index_paths)
             results_df['Distance'] = 1 - results_df['similarity']
             results_df['Query'] = sample_name
             results_df = results_df.rename({
@@ -43,9 +46,6 @@ class KmerService:
             results_df = results_df[['Query', 'Match', 'Similarity', 'Distance']]
 
             matches_df = pd.concat([matches_df, results_df])
-
-        if distance_threshold is not None:
-            matches_df = matches_df[matches_df['Distance'] <= distance_threshold]
 
         sample_name_ids = self._sample_service.find_sample_name_ids(set(matches_df['Match'].tolist()))
         matches_set = SampleSet(sample_name_ids.values())
