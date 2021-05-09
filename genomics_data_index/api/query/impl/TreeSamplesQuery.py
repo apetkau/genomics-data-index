@@ -125,7 +125,7 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
                     annotate_label_fontsize: int = 12,
                     show_leaf_names: bool = True) -> TreeStyler:
 
-        return TreeStyler.create(tree=self._tree.copy(method='deepcopy'),
+        return TreeStyler.create(tree=self._tree.copy(method='cpickle'),
                                  initial_style=initial_style,
                                  mode=mode,
                                  highlight_style=highlight_style,

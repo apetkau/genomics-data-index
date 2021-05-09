@@ -180,7 +180,7 @@ class TreeStyler:
             ts.aligned_foot.add_face(tf, self._annotate_column)
 
         # Annotate nodes
-        tree = self._tree.copy(method='deepcopy')
+        tree = self._tree.copy(method='cpickle')
         for leaf in tree.iter_leaves():
             if leaf.name in sample_names:
                 annotate_face = self._build_annotate_face(width=face_width, height=face_height,
