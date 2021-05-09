@@ -130,6 +130,48 @@ def test_create_fofn_file_multiple_samples():
         assert_consensus(actual_consensus_C, expected_length=5180, expected_Ns=0, expected_gaps=0)
 
 
+def test_create_fofn_file_multiple_samples_batching():
+    with TemporaryDirectory() as tmp_dir_str:
+        tmp_dir = Path(tmp_dir_str)
+        samples = ['SampleA', 'SampleB', 'SampleC']
+
+        input_samples = [assemblies_samples[s] for s in samples]
+
+        pipeline_executor = SnakemakePipelineExecutor(working_directory=tmp_dir, use_conda=False,
+                                                      include_mlst=False, snakemake_batch_size=2)
+
+        results = pipeline_executor.execute(input_files=input_samples,
+                                            reference_file=assemblies_reference,
+                                            ncores=1)
+
+        input_fofn = results.get_file('gdi-fofn')
+
+        assert input_fofn.exists()
+
+        # Verify input file of file names for rest of gdi software (used as input to the indexing component)
+        fofn_df = pd.read_csv(input_fofn, sep='\t')
+        print(fofn_df)
+        assert ['Sample', 'VCF', 'Mask File', 'Sketch File'] == fofn_df.columns.tolist()
+
+        assert 3 == len(fofn_df)
+        assert ['SampleA', 'SampleB', 'SampleC'] == fofn_df['Sample'].tolist()
+
+        actual_mutations_A = Path(fofn_df[fofn_df['Sample'] == 'SampleA']['VCF'].tolist()[0])
+        actual_consensus_A = Path(fofn_df[fofn_df['Sample'] == 'SampleA']['Mask File'].tolist()[0])
+        assert_vcf(actual_mutations_A, expected_mutations['SampleA'])
+        assert_consensus(actual_consensus_A, expected_length=5180, expected_Ns=0, expected_gaps=0)
+
+        actual_mutations_B = Path(fofn_df[fofn_df['Sample'] == 'SampleB']['VCF'].tolist()[0])
+        actual_consensus_B = Path(fofn_df[fofn_df['Sample'] == 'SampleB']['Mask File'].tolist()[0])
+        assert_vcf(actual_mutations_B, expected_mutations['SampleB'])
+        assert_consensus(actual_consensus_B, expected_length=5180, expected_Ns=0, expected_gaps=0)
+
+        actual_mutations_C = Path(fofn_df[fofn_df['Sample'] == 'SampleC']['VCF'].tolist()[0])
+        actual_consensus_C = Path(fofn_df[fofn_df['Sample'] == 'SampleC']['Mask File'].tolist()[0])
+        assert_vcf(actual_mutations_C, expected_mutations['SampleC'])
+        assert_consensus(actual_consensus_C, expected_length=5180, expected_Ns=0, expected_gaps=0)
+
+
 def test_create_fofn_file_multiple_samples_with_ns():
     with TemporaryDirectory() as tmp_dir_str:
         tmp_dir = Path(tmp_dir_str)

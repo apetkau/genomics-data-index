@@ -336,6 +336,13 @@ def analysis(ctx):
               default=False)
 @click.option('--include-kmer/--no-include-kmer', help="Enable/disable including kmer analysis in results.",
               default=False)
+@click.option('--kmer-size', help='Kmer size for indexing. List multiple for multiple kmer sizes in an index',
+              default=[31], multiple=True, type=click.IntRange(min=1, max=201))
+@click.option('--kmer-scaled', help='The scaled parameter to pass to sourmash. Defines how many kmers to keep in the '
+                                    'sketch should be (i.e., a value of 1000 means to keep approx. 1/1000 kmers).',
+              default=1000, type=click.IntRange(min=1))
+@click.option('--batch-size', help='The maximum number of Snakemake jobs to execute in a single batch.',
+              default=5000, type=click.IntRange(min=1))
 @click.option('--assembly-input-file',
               help='A file listing the genome assemblies to process, one per line. This is an alternative'
                    ' to passing assemblies as arguments on the command-line',
@@ -344,7 +351,8 @@ def analysis(ctx):
 @click.argument('assembled_genomes', type=click.Path(exists=True), nargs=-1)
 def assembly(ctx, reference_file: str, index: bool, clean: bool, build_tree: bool, align_type: str,
              extra_tree_params: str, use_conda: bool,
-             include_mlst: bool, include_kmer: bool,
+             include_mlst: bool, include_kmer: bool, kmer_size: List[int], kmer_scaled: int,
+             batch_size: int,
              assembly_input_file: str, assembled_genomes: List[str]):
     kmer_service = ctx.obj['data_index_connection'].kmer_service
 
@@ -365,10 +373,18 @@ def assembly(ctx, reference_file: str, index: bool, clean: bool, build_tree: boo
     else:
         raise Exception(f'Snakemake working directory [{snakemake_directory}] already exists')
 
+    if isinstance(kmer_size, int):
+        kmer_sizes = [kmer_size]
+    else:
+        kmer_sizes = kmer_size
+
     pipeline_executor = SnakemakePipelineExecutor(working_directory=snakemake_directory,
                                                   use_conda=use_conda,
                                                   include_mlst=include_mlst,
-                                                  include_kmer=include_kmer)
+                                                  include_kmer=include_kmer,
+                                                  kmer_sizes=kmer_sizes,
+                                                  kmer_scaled=kmer_scaled,
+                                                  snakemake_batch_size=batch_size)
 
     logger.info(f'Processing {len(genome_paths)} genomes to identify mutations')
     results = pipeline_executor.execute(input_files=genome_paths,

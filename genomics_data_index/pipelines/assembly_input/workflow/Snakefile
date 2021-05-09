@@ -97,12 +97,11 @@ rule sourmash_sketch:
         "envs/main.yaml"
     threads: 1
     params:
-        kmer_size=31,
-        scaled=1000,
+        sourmash_params=config["sourmash_params"],
     log:
         sketch="logs/sourmash_sketch.{sample}.sketch.log"
     shell:
-        "sourmash sketch dna -p k={params.kmer_size},scaled={params.scaled} --name {wildcards.sample} "
+        "sourmash sketch dna -p {params.sourmash_params} --name {wildcards.sample} "
         "--output {output}.tmp {input.sample} 2>{log.sketch} && "
         "gzip {output}.tmp && mv {output}.tmp.gz {output}"
 
