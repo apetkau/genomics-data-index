@@ -18,18 +18,38 @@ class ExperimentalTreeSamplesQuery(MutationTreeSamplesQuery):
     these may make it into the regular TreeSamplesQuery class.
     """
 
-    def __init__(self, connection: DataIndexConnection, wrapped_query: SamplesQuery, tree: Tree,
+    def __init__(self, connection: DataIndexConnection, wrapped_query: SamplesQuery,
+                 tree: Tree, universe_tree: Tree,
                  alignment_length: int, reference_name: str, reference_included: bool):
         super().__init__(connection=connection, wrapped_query=wrapped_query,
                          tree=tree, alignment_length=alignment_length,
                          reference_name=reference_name,
                          reference_included=reference_included)
+        self._universe_tree = universe_tree
+
+    @property
+    def universe_tree(self) -> Tree:
+        return self._universe_tree
+
+    def reset_universe(self) -> SamplesQuery:
+        wrapped_reset_universe = self._wrapped_query.reset_universe()
+        universe_tree = self._tree_copy_prune(from_query=wrapped_reset_universe, preserve_branch_length=True)
+        return ExperimentalTreeSamplesQuery(connection=self._query_connection,
+                                            wrapped_query=wrapped_reset_universe,
+                                            tree=universe_tree,
+                                            universe_tree=universe_tree,
+                                            alignment_length=self._alignment_length,
+                                            reference_name=self.reference_name,
+                                            reference_included=self.reference_included)
 
     def _tree_copy(self) -> Tree:
-        return self._tree.copy(method='deepcopy')
+        return self._tree.copy(method='cpickle')
+
+    def _universe_tree_copy(self) -> Tree:
+        return self._universe_tree.copy(method='cpickle')
 
     def _tree_copy_prune(self, from_query: SamplesQuery = None, preserve_branch_length: bool = True) -> Tree:
-        tree = self._tree_copy()
+        tree = self._universe_tree_copy()
         if from_query is not None:
             query = from_query
         else:
@@ -83,6 +103,7 @@ class ExperimentalTreeSamplesQuery(MutationTreeSamplesQuery):
         return ExperimentalTreeSamplesQuery(connection=self._query_connection,
                                             wrapped_query=wrapped_query,
                                             tree=tree,
+                                            universe_tree=self._universe_tree,
                                             alignment_length=self._alignment_length,
                                             reference_name=self.reference_name,
                                             reference_included=self.reference_included)
@@ -91,6 +112,7 @@ class ExperimentalTreeSamplesQuery(MutationTreeSamplesQuery):
         return ExperimentalTreeSamplesQuery(connection=self._query_connection,
                                             wrapped_query=self._wrapped_query,
                                             tree=tree,
+                                            universe_tree=self._universe_tree,
                                             alignment_length=self._alignment_length,
                                             reference_name=self.reference_name,
                                             reference_included=self.reference_included)
@@ -105,6 +127,7 @@ class ExperimentalTreeSamplesQuery(MutationTreeSamplesQuery):
         return ExperimentalTreeSamplesQuery(connection=query._query_connection,
                                             wrapped_query=query._wrapped_query,
                                             tree=query.tree,
+                                            universe_tree=query.tree,
                                             alignment_length=query._alignment_length,
                                             reference_name=query.reference_name,
                                             reference_included=query.reference_included)

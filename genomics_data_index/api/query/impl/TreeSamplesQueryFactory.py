@@ -75,6 +75,7 @@ class TreeSamplesQueryFactory:
             return ExperimentalTreeSamplesQuery(connection=connection,
                                                 wrapped_query=wrapped_query,
                                                 tree=tree,
+                                                universe_tree=tree,
                                                 alignment_length=alignment_length,
                                                 reference_name=reference_name,
                                                 reference_included=include_reference)
