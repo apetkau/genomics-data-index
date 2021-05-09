@@ -123,7 +123,8 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
                     annotate_box_label_color: str = 'white',
                     annotate_arc_span: int = 350,
                     annotate_label_fontsize: int = 12,
-                    show_leaf_names: bool = True) -> TreeStyler:
+                    show_leaf_names: bool = True,
+                    tree_scale: float = None) -> TreeStyler:
 
         return TreeStyler.create(tree=self._tree.copy(method='cpickle'),
                                  initial_style=initial_style,
@@ -152,7 +153,8 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
                                  annotate_box_label_color=annotate_box_label_color,
                                  annotate_arc_span=annotate_arc_span,
                                  annotate_label_fontsize=annotate_label_fontsize,
-                                 show_leaf_names=show_leaf_names)
+                                 show_leaf_names=show_leaf_names,
+                                 tree_scale=tree_scale)
 
     @property
     def tree(self):

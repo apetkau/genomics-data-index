@@ -325,12 +325,14 @@ class TreeStyler:
                annotate_box_label_color: str = 'white',
                annotate_arc_span: int = 350,
                annotate_label_fontsize: int = 12,
-               show_leaf_names: bool = True) -> TreeStyler:
+               show_leaf_names: bool = True,
+               tree_scale: float = None) -> TreeStyler:
         if initial_style is not None:
             tree_style_elements = {'mode': mode, 'annotate_guiding_lines': annotate_guiding_lines,
                                    'figure_margin': figure_margin, 'show_border': show_border,
                                    'title': title, 'legend_title': legend_title, 'title_fsize': title_fsize,
-                                   'annotate_arc_span': annotate_arc_span, 'show_leaf_names': show_leaf_names}
+                                   'annotate_arc_span': annotate_arc_span, 'show_leaf_names': show_leaf_names,
+                                   'tree_scale': tree_scale}
             tree_style_elements_none = [tree_style_elements[k] is None for k in tree_style_elements]
 
             if any(tree_style_elements_none):
@@ -359,6 +361,7 @@ class TreeStyler:
             ts.margin_bottom = figure_margin
             ts.margin_left = figure_margin
             ts.margin_right = figure_margin
+            ts.scale = tree_scale
 
         if highlight_style is None:
             highlight_style = HighlightStyle.create('light')
