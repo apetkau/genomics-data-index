@@ -1198,16 +1198,24 @@ def test_query_then_build_tree_then_join_dataframe(loaded_database_connection: D
     assert ['green', 'blue'] == df['Color'].tolist()
 
     # I should still be able to perform within queries since I have a tree attached
-    query_result = query_result.isin(['SampleB'], kind='mrca')
+    query_result_BC = query_result.isin(['SampleB', 'SampleC'], kind='mrca')
 
-    assert 1 == len(query_result)
-    assert 3 == len(query_result.universe_set)
-    assert ['SampleB'] == query_result.tolist()
+    assert 2 == len(query_result_BC)
+    assert 3 == len(query_result_BC.universe_set)
+    assert ['SampleB', 'SampleC'] == query_result_BC.tolist()
+
+    # mrca from samples query
+    query_result_BC = query_result.isin(['SampleB', 'SampleC'], kind='samples')
+    query_result = query_result.isin(query_result_BC, kind='mrca')
+
+    assert 2 == len(query_result_BC)
+    assert 3 == len(query_result_BC.universe_set)
+    assert ['SampleB', 'SampleC'] == query_result_BC.tolist()
 
     # Resetting universe should work properly
     query_result = query_result.reset_universe()
-    assert 1 == len(query_result)
-    assert 1 == len(query_result.universe_set)
+    assert 2 == len(query_result)
+    assert 2 == len(query_result.universe_set)
 
 
 def test_query_tree_join_dataframe_isa_dataframe_column(loaded_database_connection: DataIndexConnection):
