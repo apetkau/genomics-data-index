@@ -21,8 +21,8 @@ class SamplesQueryIndex(SamplesQuery):
     HAS_KINDS = ['mutation', 'mutations', 'mlst']
     SUMMARY_FEATURES_KINDS = ['mutations']
     FEATURES_SELECTIONS = ['all', 'unique']
-    ISIN_TYPES = ['names', 'distance', 'distances']
-    ISA_TYPES = ['names']
+    ISIN_TYPES = ['sample', 'samples', 'distance', 'distances']
+    ISA_TYPES = ['sample', 'samples']
     DISTANCES_UNITS = ['kmer_jaccard']
 
     def __init__(self, connection: DataIndexConnection,
@@ -48,7 +48,7 @@ class SamplesQueryIndex(SamplesQuery):
                                  queries_collection=self._queries_collection)
 
     def join(self, data_frame: pd.DataFrame, sample_ids_column: str = None,
-             sample_names_column: str = None, default_isa_kind: str = 'names',
+             sample_names_column: str = None, default_isa_kind: str = 'sample',
              default_isa_column: str = None) -> SamplesQuery:
         if sample_ids_column is None and sample_names_column is None:
             raise Exception('At least one of sample_ids_column or sample_names_column must be set.')
@@ -245,7 +245,7 @@ class SamplesQueryIndex(SamplesQuery):
 
         return sample_names, query_message
 
-    def _isin_names(self, sample_names: Union[str, List[str]], query_message_prefix: str) -> SamplesQuery:
+    def _isin_samples(self, sample_names: Union[str, List[str]], query_message_prefix: str) -> SamplesQuery:
         sample_names, query_message = self._prepare_sample_names_query_message(sample_names,
                                                                                query_message_prefix=query_message_prefix,
                                                                                additional_messages='')
@@ -281,9 +281,9 @@ class SamplesQueryIndex(SamplesQuery):
                             f'For additional distance queries you perhaps need to build or attach a tree to '
                             f'the query.')
 
-    def isin(self, data: Union[str, List[str]], kind: str = 'names', **kwargs) -> SamplesQuery:
-        if kind == 'names':
-            return self._isin_names(sample_names=data, query_message_prefix='isin_names')
+    def isin(self, data: Union[str, List[str]], kind: str = 'samples', **kwargs) -> SamplesQuery:
+        if kind == 'sample' or kind == 'samples':
+            return self._isin_samples(sample_names=data, query_message_prefix='isin_samples')
         elif kind == 'distance' or kind == 'distances':
             return self._within_distance(sample_names=data, **kwargs)
         else:
@@ -301,9 +301,9 @@ class SamplesQueryIndex(SamplesQuery):
     def _can_handle_distance_units(self, units: str) -> bool:
         return units in self.DISTANCES_UNITS
 
-    def isa(self, data: Union[str, List[str]], kind: str = 'names', **kwargs) -> SamplesQuery:
-        if kind == 'names':
-            return self._isin_names(sample_names=data, query_message_prefix='isa_name')
+    def isa(self, data: Union[str, List[str]], kind: str = 'sample', **kwargs) -> SamplesQuery:
+        if kind == 'sample' or kind == 'samples':
+            return self._isin_samples(sample_names=data, query_message_prefix='isa_sample')
         else:
             raise Exception(f'kind=[{kind}] is not supported. Must be one of {self.ISA_TYPES}')
 

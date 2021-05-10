@@ -104,7 +104,7 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
     def isin_kinds(self) -> List[str]:
         return list(set(self._wrapped_query.isin_kinds()))
 
-    def isin(self, data: Union[str, List[str], pd.Series], kind: str = 'names', **kwargs) -> SamplesQuery:
+    def isin(self, data: Union[str, List[str], pd.Series], kind: str = 'samples', **kwargs) -> SamplesQuery:
         if self._can_handle_isin_kind(kind):
             return self._isin_internal(data=data, kind=kind, **kwargs)
         else:
@@ -121,10 +121,10 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
                                                                       **kwargs))
 
     def _isa_kinds(self) -> List[str]:
-        return ['names']
+        return ['sample', 'samples']
 
-    def isa(self, data: Union[str, List[str]], kind: str = 'names', **kwargs) -> SamplesQuery:
-        if kind == 'names':
+    def isa(self, data: Union[str, List[str]], kind: str = 'sample', **kwargs) -> SamplesQuery:
+        if kind == 'sample' or kind == 'samples':
             return self._wrap_create(self._wrapped_query.isa(data=data, kind=kind, **kwargs))
         else:
             return self._isa_internal(data=data, kind=kind, **kwargs)

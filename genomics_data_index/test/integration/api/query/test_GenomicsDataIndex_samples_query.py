@@ -45,7 +45,7 @@ def test_initialized_query_mutations(loaded_database_connection_with_built_tree:
     assert initial_query.tree is not None
 
 
-def test_query_isin_sample_names(loaded_database_connection: DataIndexConnection):
+def test_query_isin_samples(loaded_database_connection: DataIndexConnection):
     db = loaded_database_connection.database
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
 
@@ -128,7 +128,7 @@ def test_query_reset_universe(loaded_database_connection: DataIndexConnection):
     assert 1 == len(query_result.universe_set)
 
 
-def test_query_isin_sample_names_multilple(loaded_database_connection: DataIndexConnection):
+def test_query_isin_samples_multilple(loaded_database_connection: DataIndexConnection):
     db = loaded_database_connection.database
     sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
@@ -184,7 +184,7 @@ def test_query_within_invalid_unit_with_no_tree(loaded_database_connection: Data
 
 
 def test_to_distances_kmer(loaded_database_connection: DataIndexConnection):
-    query_result = query(loaded_database_connection).isin(['SampleA', 'SampleB', 'SampleC'], kind='names')
+    query_result = query(loaded_database_connection).isin(['SampleA', 'SampleB', 'SampleC'], kind='samples')
     results_d, labels = query_result.to_distances(kind='kmer')
 
     assert (3, 3) == results_d.shape
@@ -531,7 +531,7 @@ def test_join_custom_dataframe_no_query(loaded_database_connection: DataIndexCon
     assert {'dataframe(ids_col=[Sample ID])'} == set(query_result.toframe()['Query'].tolist())
 
 
-def test_query_custom_dataframe_isin_sample_names(loaded_database_connection: DataIndexConnection):
+def test_query_custom_dataframe_isin_samples(loaded_database_connection: DataIndexConnection):
     db = loaded_database_connection.database
     sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
@@ -549,7 +549,7 @@ def test_query_custom_dataframe_isin_sample_names(loaded_database_connection: Da
     assert 2 == len(query_result)
     assert 3 == len(query_result.universe_set)
     assert {sampleA.id, sampleC.id} == set(query_result.sample_set)
-    assert {"dataframe(ids_col=[Sample ID]) AND isin_names(['SampleA', 'SampleC'])"} == set(
+    assert {"dataframe(ids_col=[Sample ID]) AND isin_samples(['SampleA', 'SampleC'])"} == set(
         query_result.toframe()['Query'].tolist())
 
 
@@ -835,7 +835,7 @@ def test_query_join_dataframe_isa_dataframe_column(loaded_database_connection: D
     assert 3 == len(query_result)
     assert 3 == len(query_result.universe_set)
 
-    # By default, isa should select by 'name'
+    # By default, isa should select by 'sample'
     sub_result = query_result.isa('SampleB')
     assert 1 == len(sub_result)
     assert 3 == len(sub_result.universe_set)
@@ -843,7 +843,17 @@ def test_query_join_dataframe_isa_dataframe_column(loaded_database_connection: D
 
     df = sub_result.toframe()
     assert ['SampleB'] == df['Sample Name'].tolist()
-    assert {"dataframe(ids_col=[Sample ID]) AND isa_name('SampleB')"} == set(df['Query'].tolist())
+    assert {"dataframe(ids_col=[Sample ID]) AND isa_sample('SampleB')"} == set(df['Query'].tolist())
+
+    # Make sure isa also works when we pass the kind
+    sub_result = query_result.isa('SampleB', kind='sample')
+    assert 1 == len(sub_result)
+    assert 3 == len(sub_result.universe_set)
+    assert {sampleB.id} == set(sub_result.sample_set)
+
+    df = sub_result.toframe()
+    assert ['SampleB'] == df['Sample Name'].tolist()
+    assert {"dataframe(ids_col=[Sample ID]) AND isa_sample('SampleB')"} == set(df['Query'].tolist())
 
     # If we explicitly pass kind='dataframe' should select by column in dataframe
     sub_result = query_result.isa('red', isa_column='Color', kind='dataframe')
@@ -1218,20 +1228,20 @@ def test_within_constructed_tree(loaded_database_connection: DataIndexConnection
     assert {"reference:839:C:G AND mutation_tree(genome) AND within(mrca of ['SampleB', 'SampleC'])"
             } == set(df['Query'].tolist())
 
-    # Sample Names isin()
+    # Samples isin()
     df = query_result.isin(['SampleA', 'SampleC']).toframe().sort_values('Sample Name')
     assert 2 == len(df)
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
     assert ['SampleA', 'SampleC'] == df['Sample Name'].tolist()
-    assert {"reference:839:C:G AND mutation_tree(genome) AND isin_names(['SampleA', 'SampleC'])"
+    assert {"reference:839:C:G AND mutation_tree(genome) AND isin_samples(['SampleA', 'SampleC'])"
             } == set(df['Query'].tolist())
 
-    # Sample Names isa()
+    # Sample isa()
     df = query_result.isa('SampleA').toframe().sort_values('Sample Name')
     assert 1 == len(df)
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
     assert ['SampleA'] == df['Sample Name'].tolist()
-    assert {"reference:839:C:G AND mutation_tree(genome) AND isa_name('SampleA')"
+    assert {"reference:839:C:G AND mutation_tree(genome) AND isa_sample('SampleA')"
             } == set(df['Query'].tolist())
 
     # kmer jaccard still works
