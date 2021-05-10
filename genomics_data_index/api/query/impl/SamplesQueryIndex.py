@@ -261,10 +261,13 @@ class SamplesQueryIndex(SamplesQuery):
 
         kmer_service: KmerService = self._query_connection.kmer_service
 
-        sample_set_matches = kmer_service.find_matches_within(sample_names=list(sample_names),
-                                                              distance_threshold=distance,
-                                                              kmer_size=kmer_size,
-                                                              samples_universe=self._sample_set)
+        if len(sample_names) == 0:
+            sample_set_matches = SampleSet.create_empty()
+        else:
+            sample_set_matches = kmer_service.find_matches_within(sample_names=list(sample_names),
+                                                                  distance_threshold=distance,
+                                                                  kmer_size=kmer_size,
+                                                                  samples_universe=self._sample_set)
         queries_collection = self._queries_collection.append(query_message)
         return self._create_from(sample_set=sample_set_matches, universe_set=self._universe_set,
                                  queries_collection=queries_collection)

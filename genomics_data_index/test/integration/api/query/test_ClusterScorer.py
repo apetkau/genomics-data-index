@@ -50,9 +50,7 @@ def test_score_samples_with_mutation_tree(loaded_database_connection: DataIndexC
     assert math.isclose(3/3, cluster_scorer.score_samples(query_result), rel_tol=1e-3)
 
     # # Test no samples
-    # query_result = query_tree.isa('not exists')
-    # assert 0 == len(query_result)
-    # assert 9 == len(query_result.universe_set)
-    #
-    # cluster_scorer = ClusterScorer.create(query_tree)
-    # assert math.isclose(0.0, cluster_scorer.score_samples(query_result), rel_tol=1e-3)
+    query_result = query_tree.isa('not exists')
+    assert 0 == len(query_result)
+    cluster_scorer = ClusterScorer.create(query_tree)
+    assert math.isnan(cluster_scorer.score_samples(query_result))

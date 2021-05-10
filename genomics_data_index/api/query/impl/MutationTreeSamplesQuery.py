@@ -47,25 +47,28 @@ class MutationTreeSamplesQuery(TreeSamplesQuery):
         else:
             raise Exception(f'Invalid units=[{units}]. Must be one of {self.DISTANCE_UNITS}')
 
-        sample_name_ids_self = self._get_sample_name_ids()
         sample_names, query_infix = self._get_sample_names_query_infix_from_data(data)
-        found_samples_set = set()
-        for sample_name in sample_names:
-            sample_leaves = self._tree.get_leaves_by_name(sample_name)
-            if len(sample_leaves) != 1:
-                raise Exception(
-                    f'Invalid number of matching leaves for sample [{data}], leaves {sample_leaves}')
 
-            sample_node = sample_leaves[0]
+        if len(sample_names) == 0:
+            found_samples_set = SampleSet.create_empty()
+        else:
+            sample_name_ids_self = self._get_sample_name_ids()
+            found_samples_set = set()
+            for sample_name in sample_names:
+                sample_leaves = self._tree.get_leaves_by_name(sample_name)
+                if len(sample_leaves) != 1:
+                    raise Exception(
+                        f'Invalid number of matching leaves for sample [{data}], leaves {sample_leaves}')
 
-            for leaf in self._tree.iter_leaves():
-                if leaf.name not in sample_name_ids_self:
-                    continue
-                sample_distance_to_other_sample = sample_node.get_distance(leaf) * distance_multiplier
+                sample_node = sample_leaves[0]
 
-                if sample_distance_to_other_sample <= distance:
-                    found_samples_set.add(sample_name_ids_self[leaf.name])
+                for leaf in self._tree.iter_leaves():
+                    if leaf.name not in sample_name_ids_self:
+                        continue
+                    sample_distance_to_other_sample = sample_node.get_distance(leaf) * distance_multiplier
 
+                    if sample_distance_to_other_sample <= distance:
+                        found_samples_set.add(sample_name_ids_self[leaf.name])
         found_samples = SampleSet(found_samples_set)
         return self.intersect(found_samples, f'within({distance} {units} of {query_infix})')
 
