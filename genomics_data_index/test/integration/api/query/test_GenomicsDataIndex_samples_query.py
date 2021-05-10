@@ -55,6 +55,28 @@ def test_query_isin_samples(loaded_database_connection: DataIndexConnection):
     assert 9 == len(query_result.universe_set)
 
 
+def test_query_isin_sample_set_single(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleBSet = SampleSet([sampleB.id])
+
+    query_result = query(loaded_database_connection).isin(sampleBSet)
+    assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+    assert 9 == len(query_result.universe_set)
+
+
+def test_query_isin_samples_query_single(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    query_result_B = query(loaded_database_connection).isin('SampleB')
+
+    query_result = query(loaded_database_connection).isin(query_result_B)
+    assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+    assert 9 == len(query_result.universe_set)
+
+
 def test_query_and_or(loaded_database_connection: DataIndexConnection):
     db = loaded_database_connection.database
     sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
@@ -139,11 +161,34 @@ def test_query_isin_samples_multilple(loaded_database_connection: DataIndexConne
     assert 9 == len(query_result.universe_set)
 
 
+def test_query_isin_samples_multilple_samples_query(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    query_result_AB = query(loaded_database_connection).isin(['SampleA', 'SampleB'])
+
+    query_result = query(loaded_database_connection).isin(query_result_AB)
+    assert 2 == len(query_result)
+    assert {sampleA.id, sampleB.id} == set(query_result.sample_set)
+    assert 9 == len(query_result.universe_set)
+
+
 def test_query_isa_sample_name(loaded_database_connection: DataIndexConnection):
     db = loaded_database_connection.database
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
 
     query_result = query(loaded_database_connection).isa('SampleB')
+    assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+    assert 9 == len(query_result.universe_set)
+
+
+def test_query_isa_samples_query(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    query_result_B = query(loaded_database_connection).isa('SampleB')
+
+    query_result = query(loaded_database_connection).isa(query_result_B)
     assert 1 == len(query_result)
     assert {sampleB.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)
@@ -161,6 +206,21 @@ def test_query_isin_kmer(loaded_database_connection: DataIndexConnection):
     assert {sampleA.id, sampleB.id, sampleC.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)
     assert "isin_kmer_jaccard('SampleA', dist=1.0, k=31)" == query_result.query_expression()
+
+
+def test_query_isin_kmer_samples_query(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+    query_result_A = query(loaded_database_connection).isa('SampleA')
+
+    query_result = query(loaded_database_connection).isin(query_result_A, kind='distance', distance=1.0,
+                                                          units='kmer_jaccard')
+    assert 3 == len(query_result)
+    assert {sampleA.id, sampleB.id, sampleC.id} == set(query_result.sample_set)
+    assert 9 == len(query_result.universe_set)
+    assert "isin_kmer_jaccard(<SamplesQueryIndex[11% (1/9) samples]>, dist=1.0, k=31)" == query_result.query_expression()
 
 
 def test_query_within_kmer_default(loaded_database_connection: DataIndexConnection):
@@ -565,14 +625,25 @@ def test_query_custom_dataframe_isin_kmer_distance(loaded_database_connection: D
         [sampleC.id, 'blue']
     ], columns=['Sample ID', 'Color'])
 
-    query_result = query(loaded_database_connection, universe='dataframe',
+    main_query = query(loaded_database_connection, universe='dataframe',
                          data_frame=df, sample_ids_column='Sample ID')
-    query_result = query_result.isin('SampleA', kind='distance', distance=0.5,
+
+    # Test isin with sample name
+    query_result = main_query.isin('SampleA', kind='distance', distance=0.5,
                                      units='kmer_jaccard')
     assert 2 == len(query_result)
     assert 3 == len(query_result.universe_set)
     assert {sampleA.id, sampleC.id} == set(query_result.sample_set)
 
+    # Test isin with sample set
+    query_result_A = main_query.isa('SampleA', kind='sample')
+    query_result = main_query.isin(query_result_A, kind='distance', distance=0.5,
+                                     units='kmer_jaccard')
+    assert 2 == len(query_result)
+    assert 3 == len(query_result.universe_set)
+    assert {sampleA.id, sampleC.id} == set(query_result.sample_set)
+
+    # Test query with series expression
     query_result = query_result.isin(df['Color'] == 'blue', kind='dataframe')
     assert 1 == len(query_result)
     assert 3 == len(query_result.universe_set)
@@ -1178,6 +1249,7 @@ def test_within_constructed_tree(loaded_database_connection: DataIndexConnection
         'reference:839:C:G', kind='mutation').build_tree(
         kind='mutation', scope='genome', include_reference=True, extra_params='--seed 42 -m GTR')
     assert 2 == len(query_result)
+    assert 9 == len(query_result.universe_set)
 
     # subs/site
     df = query_result.isin('SampleC', kind='distance', distance=0.005,
@@ -1234,6 +1306,15 @@ def test_within_constructed_tree(loaded_database_connection: DataIndexConnection
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
     assert ['SampleA', 'SampleC'] == df['Sample Name'].tolist()
     assert {"reference:839:C:G AND mutation_tree(genome) AND isin_samples(['SampleA', 'SampleC'])"
+            } == set(df['Query'].tolist())
+
+    # Samples isin from samples query()
+    query_result_AC = query_result.isin(['SampleA', 'SampleC'], kind='samples')
+    df = query_result.isin(query_result_AC).toframe().sort_values('Sample Name')
+    assert 2 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    assert ['SampleA', 'SampleC'] == df['Sample Name'].tolist()
+    assert {"reference:839:C:G AND mutation_tree(genome) AND isin_samples(<MutationTreeSamplesQuery[22% (2/9) samples]>)"
             } == set(df['Query'].tolist())
 
     # Sample isa()

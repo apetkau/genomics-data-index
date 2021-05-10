@@ -105,7 +105,7 @@ class KmerService:
                             s.sample_kmer_index is not None]
 
         if len(kmer_index_paths) < len(samples):
-            raise Exception(f'Not all samples (number={len(samples)} have associated kmer signatures '
+            raise Exception(f'Not all samples (number={len(samples)}) have associated kmer signatures '
                             f'(number={len(kmer_index_paths)}).')
 
         return sourmash_search_multicore.distances(kmer_size=kmer_size, signature_files=kmer_index_paths)

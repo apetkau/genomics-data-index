@@ -294,9 +294,10 @@ class SamplesQueryIndex(SamplesQuery):
             logger.debug(f'data=[{data}] contains sample ids')
             if isinstance(data, SamplesQuery):
                 sample_set = data.sample_set
+                query_msg = f'{data}'
             else:
                 sample_set = data
-            query_msg = f'set({data})'
+                query_msg = f'set({len(data)} samples)'
         else:
             raise Exception(f'Unknown type for data=[{data}. Got type [{type(data)}]. '
                             'Must a string or list of strings (representing sample names) '
@@ -317,11 +318,13 @@ class SamplesQueryIndex(SamplesQuery):
             logger.debug(f'data=[{data}] contains sample ids')
             if isinstance(data, SamplesQuery):
                 sample_set = data.sample_set
+                query_msg = f'{data}'
             else:
                 sample_set = data
+                query_msg = f'set({len(data)} samples)'
 
-            sample_names = list(self._query_connection.sample_service.find_sample_name_ids(sample_set).keys())
-            query_msg = f'set({data})'
+            samples = self._query_connection.sample_service.find_samples_by_ids(sample_set)
+            sample_names = [s.name for s in samples]
         else:
             raise Exception(f'Unknown type for data=[{data}. Got type [{type(data)}]. '
                             'Must a string or list of strings (representing sample names) '
