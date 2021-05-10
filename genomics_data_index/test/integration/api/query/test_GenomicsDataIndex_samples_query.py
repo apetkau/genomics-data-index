@@ -84,8 +84,6 @@ def test_query_isin_samples_query_single(loaded_database_connection: DataIndexCo
 
 
 def test_query_isin_samples_query_no_matches(loaded_database_connection: DataIndexConnection):
-    db = loaded_database_connection.database
-    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
     query_result_empty = query(loaded_database_connection).isin('no_exist')
 
     query_result = query(loaded_database_connection).isin(query_result_empty)
@@ -243,6 +241,21 @@ def test_query_isin_kmer_samples_query(loaded_database_connection: DataIndexConn
     assert {sampleA.id, sampleB.id, sampleC.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)
     assert "isin_kmer_jaccard(<SamplesQueryIndex[11% (1/9) samples]>, dist=1.0, k=31)" == query_result.query_expression()
+
+
+def test_query_isin_kmer_samples_set(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+    sample_set_a = SampleSet([sampleA.id])
+
+    query_result = query(loaded_database_connection).isin(sample_set_a, kind='distance', distance=1.0,
+                                                          units='kmer_jaccard')
+    assert 3 == len(query_result)
+    assert {sampleA.id, sampleB.id, sampleC.id} == set(query_result.sample_set)
+    assert 9 == len(query_result.universe_set)
+    assert "isin_kmer_jaccard(set(1 samples), dist=1.0, k=31)" == query_result.query_expression()
 
 
 def test_query_isin_kmer_samples_query_no_matches(loaded_database_connection: DataIndexConnection):
@@ -1231,7 +1244,6 @@ def test_query_then_build_tree_then_join_dataframe(loaded_database_connection: D
 
     # I should still be able to perform within queries since I have a tree attached
     query_result = query_result_join.isin(['SampleB', 'SampleC'], kind='mrca')
-
     assert 2 == len(query_result)
     assert 3 == len(query_result.universe_set)
     assert ['SampleB', 'SampleC'] == query_result.tolist()
@@ -1239,7 +1251,13 @@ def test_query_then_build_tree_then_join_dataframe(loaded_database_connection: D
     # mrca from samples query
     query_result_BC = query_result_join.isin(['SampleB', 'SampleC'], kind='samples')
     query_result = query_result_join.isin(query_result_BC, kind='mrca')
+    assert 2 == len(query_result)
+    assert 3 == len(query_result.universe_set)
+    assert ['SampleB', 'SampleC'] == query_result.tolist()
 
+    # mrca from samples set
+    sample_set_BC = SampleSet([sampleB.id, sampleC.id])
+    query_result = query_result_join.isin(sample_set_BC, kind='mrca')
     assert 2 == len(query_result)
     assert 3 == len(query_result.universe_set)
     assert ['SampleB', 'SampleC'] == query_result.tolist()
@@ -1451,6 +1469,10 @@ def test_build_tree_experimental(loaded_database_connection: DataIndexConnection
 
 
 def test_within_constructed_tree_larger_tree(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+
     # Construct new tree with all the samples
     query_result = query(loaded_database_connection).build_tree(
         kind='mutation', scope='genome', include_reference=True, extra_params='--seed 42 -m GTR')
@@ -1490,6 +1512,16 @@ def test_within_constructed_tree_larger_tree(loaded_database_connection: DataInd
     assert ['SampleA', 'SampleB', 'SampleC'] == df['Sample Name'].tolist()
     assert {"mutation_tree(genome) AND within(mrca of "
             "<MutationTreeSamplesQuery[22% (2/9) samples]>)"
+            } == set(df['Query'].tolist())
+
+    # mrca of A and B, samples set
+    sample_set_AB = SampleSet([sampleA.id, sampleB.id])
+    df = query_result.isin(sample_set_AB, kind='mrca').toframe().sort_values('Sample Name')
+    assert 3 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    assert ['SampleA', 'SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert {"mutation_tree(genome) AND within(mrca of "
+            "set(2 samples))"
             } == set(df['Query'].tolist())
 
 
