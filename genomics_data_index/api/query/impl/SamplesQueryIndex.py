@@ -261,7 +261,7 @@ class SamplesQueryIndex(SamplesQuery):
 
         kmer_service: KmerService = self._query_connection.kmer_service
 
-        sample_set_matches = kmer_service.find_matches_within(sample_names=sample_names,
+        sample_set_matches = kmer_service.find_matches_within(sample_names=list(sample_names),
                                                               distance_threshold=distance,
                                                               kmer_size=kmer_size,
                                                               samples_universe=self._sample_set)
