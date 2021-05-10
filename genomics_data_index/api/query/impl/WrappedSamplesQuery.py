@@ -113,6 +113,10 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
         else:
             return self._wrap_create(self._wrapped_query.isin(data=data, kind=kind, **kwargs))
 
+    def _get_sample_names_query_infix_from_data(self, data: Union[str, List[str], pd.Series, SamplesQuery, SampleSet]
+                                            ) -> Tuple[Set[str], str]:
+        return self._wrapped_query._get_sample_names_query_infix_from_data(data)
+
     def _distance_units(self) -> List[str]:
         return self._wrapped_query._distance_units()
 

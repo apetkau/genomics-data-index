@@ -305,7 +305,7 @@ class SamplesQueryIndex(SamplesQuery):
         return sample_set, query_msg
 
     def _get_sample_names_query_infix_from_data(self, data: Union[str, List[str], pd.Series, SamplesQuery, SampleSet]
-                                            ) -> Tuple[List[str], str]:
+                                            ) -> Tuple[Set[str], str]:
         if isinstance(data, str) or isinstance(data, list):
             logger.debug(f'data=[{data}] contains sample names')
             if isinstance(data, str):
@@ -324,7 +324,7 @@ class SamplesQueryIndex(SamplesQuery):
                 query_msg = f'set({len(data)} samples)'
 
             samples = self._query_connection.sample_service.find_samples_by_ids(sample_set)
-            sample_names = [s.name for s in samples]
+            sample_names = {s.name for s in samples}
         else:
             raise Exception(f'Unknown type for data=[{data}. Got type [{type(data)}]. '
                             'Must a string or list of strings (representing sample names) '

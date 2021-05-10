@@ -152,6 +152,11 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
+    def _get_sample_names_query_infix_from_data(self, data: Union[str, List[str], pd.Series, SamplesQuery, SampleSet]
+                                            ) -> Tuple[Set[str], str]:
+        pass
+
+    @abc.abstractmethod
     def _can_handle_isin_kind(self, kind: str) -> bool:
         pass
 

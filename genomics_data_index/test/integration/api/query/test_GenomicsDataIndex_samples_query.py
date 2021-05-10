@@ -1257,7 +1257,7 @@ def test_within_constructed_tree(loaded_database_connection: DataIndexConnection
     assert 2 == len(df)
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
     assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
-    assert {'reference:839:C:G AND mutation_tree(genome) AND within(0.005 substitutions/site of SampleC)'
+    assert {"reference:839:C:G AND mutation_tree(genome) AND within(0.005 substitutions/site of 'SampleC')"
             } == set(df['Query'].tolist())
 
     # subs/site using within
@@ -1265,7 +1265,7 @@ def test_within_constructed_tree(loaded_database_connection: DataIndexConnection
     assert 2 == len(df)
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
     assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
-    assert {'reference:839:C:G AND mutation_tree(genome) AND within(0.005 substitutions/site of SampleC)'
+    assert {"reference:839:C:G AND mutation_tree(genome) AND within(0.005 substitutions/site of 'SampleC')"
             } == set(df['Query'].tolist())
 
     # subs
@@ -1273,7 +1273,17 @@ def test_within_constructed_tree(loaded_database_connection: DataIndexConnection
         'Sample Name')
     assert 2 == len(df)
     assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
-    assert {'reference:839:C:G AND mutation_tree(genome) AND within(26 substitutions of SampleC)'
+    assert {"reference:839:C:G AND mutation_tree(genome) AND within(26 substitutions of 'SampleC')"
+            } == set(df['Query'].tolist())
+
+    # subs using samples query
+    query_result_C = query_result.isin(['SampleC'], kind='samples')
+    df = query_result.isin(query_result_C, kind='distance', distance=26, units='substitutions').toframe().sort_values(
+        'Sample Name')
+    assert 2 == len(df)
+    assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert {'reference:839:C:G AND mutation_tree(genome) AND within(26 substitutions of '
+            '<MutationTreeSamplesQuery[11% (1/9) samples]>)'
             } == set(df['Query'].tolist())
 
     # should not include reference genome
@@ -1281,7 +1291,7 @@ def test_within_constructed_tree(loaded_database_connection: DataIndexConnection
         'Sample Name')
     assert 2 == len(df)
     assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
-    assert {'reference:839:C:G AND mutation_tree(genome) AND within(100 substitutions of SampleC)'
+    assert {"reference:839:C:G AND mutation_tree(genome) AND within(100 substitutions of 'SampleC')"
             } == set(df['Query'].tolist())
 
     # should have only query sample
@@ -1289,7 +1299,17 @@ def test_within_constructed_tree(loaded_database_connection: DataIndexConnection
         'Sample Name')
     assert 1 == len(df)
     assert ['SampleC'] == df['Sample Name'].tolist()
-    assert {'reference:839:C:G AND mutation_tree(genome) AND within(1 substitutions of SampleC)'
+    assert {"reference:839:C:G AND mutation_tree(genome) AND within(1 substitutions of 'SampleC')"
+            } == set(df['Query'].tolist())
+
+    # should have only query sample, using samples query as input
+    query_result_C = query_result.isin(['SampleC'], kind='samples')
+    df = query_result.isin(query_result_C, kind='distance', distance=1, units='substitutions').toframe().sort_values(
+        'Sample Name')
+    assert 1 == len(df)
+    assert ['SampleC'] == df['Sample Name'].tolist()
+    assert {"reference:839:C:G AND mutation_tree(genome) AND within(1 substitutions of "
+            "<MutationTreeSamplesQuery[11% (1/9) samples]>)"
             } == set(df['Query'].tolist())
 
     # mrca
