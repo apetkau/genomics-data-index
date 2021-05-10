@@ -292,6 +292,12 @@ class SamplesQueryIndex(SamplesQuery):
     def isin_kinds(self) -> List[str]:
         return self.ISIN_TYPES
 
+    def _isa_kinds(self) -> List[str]:
+        return self.ISA_TYPES
+
+    def _can_handle_isa_kind(self, kind: str) -> bool:
+        return kind in self.ISA_TYPES
+
     def _can_handle_isin_kind(self, kind: str) -> bool:
         return kind in self.ISIN_TYPES
 
@@ -305,7 +311,7 @@ class SamplesQueryIndex(SamplesQuery):
         if kind == 'sample' or kind == 'samples':
             return self._isin_samples(sample_names=data, query_message_prefix='isa_sample')
         else:
-            raise Exception(f'kind=[{kind}] is not supported. Must be one of {self.ISA_TYPES}')
+            raise Exception(f'kind=[{kind}] is not supported. Must be one of {self._isa_kinds()}')
 
     def to_distances(self, kind: str = 'kmer', **kwargs) -> Tuple[np.ndarray, List[str]]:
         if kind == 'kmer':

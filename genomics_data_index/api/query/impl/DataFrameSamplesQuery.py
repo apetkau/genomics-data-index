@@ -47,6 +47,9 @@ class DataFrameSamplesQuery(WrappedSamplesQuery):
     def _can_handle_isin_kind(self, kind: str) -> bool:
         return kind in self.ISIN_KINDS
 
+    def _can_handle_isa_kind(self, kind: str) -> bool:
+        return kind in self.ISA_KINDS
+
     def isa(self, data: Union[str, List[str]], kind: str = None, **kwargs) -> SamplesQuery:
         if kind is None:
             if self._default_isa_kind is None:
@@ -54,10 +57,7 @@ class DataFrameSamplesQuery(WrappedSamplesQuery):
             else:
                 kind = self._default_isa_kind
 
-        if kind == 'sample' or kind == 'samples':
-            return self._wrap_create(self._wrapped_query.isa(data=data, kind=kind, **kwargs))
-        else:
-            return self._isa_internal(data=data, kind=kind, **kwargs)
+        return super().isa(data=data, kind=kind, **kwargs)
 
     def _isa_internal(self, data: Union[str, List[str]], kind: str, isa_column: str = None,
                       regex: bool = False) -> SamplesQuery:

@@ -104,6 +104,9 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
     def isin_kinds(self) -> List[str]:
         return list(set(self._wrapped_query.isin_kinds()))
 
+    def _isa_kinds(self) -> List[str]:
+        return list(set(self._wrapped_query._isa_kinds()))
+
     def isin(self, data: Union[str, List[str], pd.Series], kind: str = 'samples', **kwargs) -> SamplesQuery:
         if self._can_handle_isin_kind(kind):
             return self._isin_internal(data=data, kind=kind, **kwargs)
@@ -120,14 +123,14 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
                                                                       units=units,
                                                                       **kwargs))
 
-    def _isa_kinds(self) -> List[str]:
-        return ['sample', 'samples']
+    def _can_handle_isa_kind(self, kind: str) -> bool:
+        return False
 
     def isa(self, data: Union[str, List[str]], kind: str = 'sample', **kwargs) -> SamplesQuery:
-        if kind == 'sample' or kind == 'samples':
-            return self._wrap_create(self._wrapped_query.isa(data=data, kind=kind, **kwargs))
-        else:
+        if self._can_handle_isa_kind(kind):
             return self._isa_internal(data=data, kind=kind, **kwargs)
+        else:
+            return self._wrap_create(self._wrapped_query.isa(data=data, kind=kind, **kwargs))
 
     def to_distances(self, kind: str = 'kmer', **kwargs) -> Tuple[np.ndarray, List[str]]:
         return self._wrapped_query.to_distances(kind=kind, **kwargs)
