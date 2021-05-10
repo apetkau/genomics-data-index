@@ -1320,6 +1320,26 @@ def test_within_constructed_tree(loaded_database_connection: DataIndexConnection
     assert {"reference:839:C:G AND mutation_tree(genome) AND within(mrca of ['SampleB', 'SampleC'])"
             } == set(df['Query'].tolist())
 
+    # mrca of samples query
+    query_result_BC = query_result.isin(['SampleB', 'SampleC'], kind='samples')
+    df = query_result.isin(query_result_BC, kind='mrca').toframe().sort_values('Sample Name')
+    assert 2 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert {"reference:839:C:G AND mutation_tree(genome) AND within(mrca of "
+            "<MutationTreeSamplesQuery[22% (2/9) samples]>)"
+            } == set(df['Query'].tolist())
+
+    # mrca of samples query, single sample as result
+    query_result_B = query_result.isin(['SampleB'], kind='samples')
+    df = query_result.isin(query_result_B, kind='mrca').toframe().sort_values('Sample Name')
+    assert 1 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    assert ['SampleB'] == df['Sample Name'].tolist()
+    assert {"reference:839:C:G AND mutation_tree(genome) AND within(mrca of "
+            "<MutationTreeSamplesQuery[11% (1/9) samples]>)"
+            } == set(df['Query'].tolist())
+
     # Samples isin()
     df = query_result.isin(['SampleA', 'SampleC']).toframe().sort_values('Sample Name')
     assert 2 == len(df)
@@ -1382,12 +1402,32 @@ def test_within_constructed_tree_larger_tree(loaded_database_connection: DataInd
     assert {"mutation_tree(genome) AND within(mrca of ['SampleB', 'SampleC'])"
             } == set(df['Query'].tolist())
 
+    # mrca of B and C, samples query
+    query_result_BC = query_result.isin(['SampleB', 'SampleC'], kind='samples')
+    df = query_result.isin(query_result_BC, kind='mrca').toframe().sort_values('Sample Name')
+    assert 2 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert {"mutation_tree(genome) AND within(mrca of "
+            "<MutationTreeSamplesQuery[22% (2/9) samples]>)"
+            } == set(df['Query'].tolist())
+
     # mrca A and B
     df = query_result.isin(['SampleA', 'SampleC'], kind='mrca').toframe().sort_values('Sample Name')
     assert 3 == len(df)
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
     assert ['SampleA', 'SampleB', 'SampleC'] == df['Sample Name'].tolist()
     assert {"mutation_tree(genome) AND within(mrca of ['SampleA', 'SampleC'])"
+            } == set(df['Query'].tolist())
+
+    # mrca of A and B, samples query
+    query_result_AB = query_result.isin(['SampleA', 'SampleB'], kind='samples')
+    df = query_result.isin(query_result_AB, kind='mrca').toframe().sort_values('Sample Name')
+    assert 3 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    assert ['SampleA', 'SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert {"mutation_tree(genome) AND within(mrca of "
+            "<MutationTreeSamplesQuery[22% (2/9) samples]>)"
             } == set(df['Query'].tolist())
 
 
