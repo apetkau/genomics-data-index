@@ -14,7 +14,8 @@ def query(connection: DataIndexConnection, **kwargs) -> SamplesQuery:
 
 def test_score_samples_with_mutation_tree(loaded_database_connection: DataIndexConnection):
     query_tree = query(loaded_database_connection).build_tree(kind='mutation',
-                                                              scope='genome', include_reference=True)
+                                                              scope='genome', include_reference=True,
+                                                              extra_params='--seed 42 -m GTR')
     assert 3 == len(query_tree)
     assert 9 == len(query_tree.universe_set)
 
@@ -41,12 +42,12 @@ def test_score_samples_with_mutation_tree(loaded_database_connection: DataIndexC
     assert 2 == len(query_result)
     cluster_scorer = ClusterScorer.create(query_tree)
     assert math.isclose(2/3, cluster_scorer.score_samples(query_result), rel_tol=1e-3)
-    #
-    # # Test all samples
-    # query_result = query_tree.isin(['SampleA', 'SampleB', 'SampleC'])
-    # assert 3 == len(query_result)
-    # cluster_scorer = ClusterScorer.create(query_tree)
-    # assert math.isclose(3/3, cluster_scorer.score_samples(query_result), rel_tol=1e-3)
+
+    # Test all samples
+    query_result = query_tree.isin(['SampleA', 'SampleB', 'SampleC'])
+    assert 3 == len(query_result)
+    cluster_scorer = ClusterScorer.create(query_tree)
+    assert math.isclose(3/3, cluster_scorer.score_samples(query_result), rel_tol=1e-3)
 
     # # Test no samples
     # query_result = query_tree.isa('not exists')
