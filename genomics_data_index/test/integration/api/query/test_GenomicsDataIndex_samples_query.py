@@ -1246,21 +1246,21 @@ def test_query_then_build_tree_then_join_dataframe(loaded_database_connection: D
     query_result = query_result_join.isin(['SampleB', 'SampleC'], kind='mrca')
     assert 2 == len(query_result)
     assert 3 == len(query_result.universe_set)
-    assert ['SampleB', 'SampleC'] == query_result.tolist()
+    assert {'SampleB', 'SampleC'} == set(query_result.tolist())
 
     # mrca from samples query
     query_result_BC = query_result_join.isin(['SampleB', 'SampleC'], kind='samples')
     query_result = query_result_join.isin(query_result_BC, kind='mrca')
     assert 2 == len(query_result)
     assert 3 == len(query_result.universe_set)
-    assert ['SampleB', 'SampleC'] == query_result.tolist()
+    assert {'SampleB', 'SampleC'} == set(query_result.tolist())
 
     # mrca from samples set
     sample_set_BC = SampleSet([sampleB.id, sampleC.id])
     query_result = query_result_join.isin(sample_set_BC, kind='mrca')
     assert 2 == len(query_result)
     assert 3 == len(query_result.universe_set)
-    assert ['SampleB', 'SampleC'] == query_result.tolist()
+    assert {'SampleB', 'SampleC'} == set(query_result.tolist())
 
     # mrca from samples query, empty result
     query_result_empty = query_result_join.isin([], kind='samples')
