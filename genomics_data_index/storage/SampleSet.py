@@ -41,7 +41,19 @@ class SampleSet:
         else:
             raise Exception(f'Cannot union other of type [{type(other)}]')
 
-    def minus(self, other):
+    def jaccard_index(self, other: Union[Set[int], SampleSet]) -> float:
+        if other is None:
+            raise Exception('Cannot calculate jaccard with other=[None]')
+        elif isinstance(other, AllSampleSet):
+            raise NotImplementedError('Jaccard with AllSampleSet is not implemented')
+        elif isinstance(other, SampleSet):
+            return self._bitmap.jaccard_index(other._bitmap)
+        elif isinstance(other, set):
+            return self._bitmap.jaccard_index(SampleSet(other)._bitmap)
+        else:
+            raise Exception(f'Cannot union other of type [{type(other)}]')
+
+    def minus(self, other: Union[Set[int], SampleSet]):
         if other is None:
             return self
         elif isinstance(other, AllSampleSet):

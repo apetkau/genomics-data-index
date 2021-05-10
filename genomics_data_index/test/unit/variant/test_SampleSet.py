@@ -1,3 +1,5 @@
+import math
+
 from genomics_data_index.storage.SampleSet import SampleSet
 
 
@@ -87,6 +89,42 @@ def test_union_sample_set():
     union = sample_set1.union(sample_set_non_overlap)
     assert isinstance(union, SampleSet)
     assert {1, 3, 10, 50, 100} == set(union)
+
+
+def test_jaccard_index_sample_set():
+    sample_set1 = SampleSet(sample_ids=[1, 3, 10])
+    sample_set2 = SampleSet(sample_ids=[3, 10, 20])
+    sample_set_empty = SampleSet(sample_ids=[])
+    sample_set_non_overlap = SampleSet(sample_ids=[50, 100])
+    sample_set_3 = SampleSet(sample_ids=[1, 3, 10, 20, 30])
+
+    assert math.isclose(1.0, sample_set1.jaccard_index(sample_set1), rel_tol=1e-3)
+
+    assert math.isclose(0.5, sample_set1.jaccard_index(sample_set2), rel_tol=1e-3)
+    assert math.isclose(0.5, sample_set2.jaccard_index(sample_set1), rel_tol=1e-3)
+
+    assert math.isclose(0, sample_set1.jaccard_index(sample_set_empty), rel_tol=1e-3)
+    assert math.isclose(0, sample_set_empty.jaccard_index(sample_set1), rel_tol=1e-3)
+
+    assert math.isclose(0, sample_set1.jaccard_index(sample_set_non_overlap), rel_tol=1e-3)
+    assert math.isclose(0, sample_set_non_overlap.jaccard_index(sample_set1), rel_tol=1e-3)
+
+    assert math.isclose(0.6, sample_set1.jaccard_index(sample_set_3), rel_tol=1e-3)
+    assert math.isclose(0.6, sample_set_3.jaccard_index(sample_set1), rel_tol=1e-3)
+
+
+def test_jaccard_index_sample_ids_set():
+    sample_set1 = SampleSet(sample_ids=[1, 3, 10])
+    sample_set2 = {3, 10, 20}
+    sample_set_empty = set()
+    sample_set_non_overlap = {50, 100}
+    sample_set_3 = {1, 3, 10, 20, 30}
+
+    assert math.isclose(1.0, sample_set1.jaccard_index(sample_set1), rel_tol=1e-3)
+    assert math.isclose(0.5, sample_set1.jaccard_index(sample_set2), rel_tol=1e-3)
+    assert math.isclose(0, sample_set1.jaccard_index(sample_set_empty), rel_tol=1e-3)
+    assert math.isclose(0, sample_set1.jaccard_index(sample_set_non_overlap), rel_tol=1e-3)
+    assert math.isclose(0.6, sample_set1.jaccard_index(sample_set_3), rel_tol=1e-3)
 
 
 def test_complement_sample_set():
