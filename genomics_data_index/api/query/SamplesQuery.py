@@ -161,7 +161,7 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def isin_kinds(self) -> List[str]:
+    def _isin_kinds(self) -> List[str]:
         pass
 
     @abc.abstractmethod

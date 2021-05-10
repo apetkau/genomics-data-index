@@ -289,7 +289,7 @@ class SamplesQueryIndex(SamplesQuery):
         else:
             raise Exception(f'kind=[{kind}] is not supported. Must be one of {self.ISIN_TYPES}')
 
-    def isin_kinds(self) -> List[str]:
+    def _isin_kinds(self) -> List[str]:
         return self.ISIN_TYPES
 
     def _isa_kinds(self) -> List[str]:

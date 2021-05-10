@@ -101,8 +101,8 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
     def _isa_internal(self, data: Union[str, List[str]], kind: str, **kwargs) -> SamplesQuery:
         return self._wrap_create(self._wrapped_query.isa(data=data, kind=kind, **kwargs))
 
-    def isin_kinds(self) -> List[str]:
-        return list(set(self._wrapped_query.isin_kinds()))
+    def _isin_kinds(self) -> List[str]:
+        return list(set(self._wrapped_query._isin_kinds()))
 
     def _isa_kinds(self) -> List[str]:
         return list(set(self._wrapped_query._isa_kinds()))

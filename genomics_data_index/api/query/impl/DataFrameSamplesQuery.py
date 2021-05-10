@@ -39,10 +39,10 @@ class DataFrameSamplesQuery(WrappedSamplesQuery):
                 raise Exception(f'data=[{data}] is wrong type for kind=[{kind}]. '
                                 f'Must be a boolean pandas.Series')
         else:
-            raise Exception(f'kind=[{kind}] is not supported. Must be one of {self.isin_kinds()}')
+            raise Exception(f'kind=[{kind}] is not supported. Must be one of {self._isin_kinds()}')
 
-    def isin_kinds(self) -> List[str]:
-        return list(set(super().isin_kinds() + self.ISIN_KINDS))
+    def _isin_kinds(self) -> List[str]:
+        return list(set(super()._isin_kinds() + self.ISIN_KINDS))
 
     def _can_handle_isin_kind(self, kind: str) -> bool:
         return kind in self.ISIN_KINDS
