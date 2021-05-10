@@ -123,7 +123,7 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def isa(self, data: Union[str, List[str]], kind: str = 'names', **kwargs) -> SamplesQuery:
+    def isa(self, data: Union[str, List[str]], kind: str, **kwargs) -> SamplesQuery:
         """
         Queries for samples which are a particular type/belong to a particular category.
         Read as "subset samples which are a (isa) particular type defined by 'data'".
@@ -138,14 +138,14 @@ class SamplesQuery(abc.ABC):
         """
         pass
 
-    def isan(self, data: Union[str, List[str]], kind: str = 'names', **kwargs) -> SamplesQuery:
+    def isan(self, data: Union[str, List[str]], kind: str, **kwargs) -> SamplesQuery:
         """
         Synonym for isa()
         """
         return self.isa(data=data, kind=kind, **kwargs)
 
     @abc.abstractmethod
-    def isin(self, data: Union[str, List[str], pd.Series], kind: str = 'names', **kwargs) -> SamplesQuery:
+    def isin(self, data: Union[str, List[str], pd.Series], kind: str, **kwargs) -> SamplesQuery:
         pass
 
     @abc.abstractmethod
