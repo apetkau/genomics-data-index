@@ -102,7 +102,7 @@ class SamplesQuery(abc.ABC):
     def complement(self):
         pass
 
-    def within(self, data: Union[str, List[str]], **kwargs) -> SamplesQuery:
+    def within(self, data: Union[str, List[str], SamplesQuery, SampleSet], **kwargs) -> SamplesQuery:
         """
         Queries for samples within a particular distance. This is identical to calling
         isin(data, kind='distance', ...). Used to help make code easier to read.
@@ -114,7 +114,7 @@ class SamplesQuery(abc.ABC):
         return self.isin(data=data, kind='distance', **kwargs)
 
     @abc.abstractmethod
-    def _within_distance(self, sample_names: Union[str, List[str]], distance: float, units: str,
+    def _within_distance(self, data: Union[str, List[str], SamplesQuery, SampleSet], distance: float, units: str,
                          **kwargs) -> SamplesQuery:
         pass
 
@@ -123,7 +123,7 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def isa(self, data: Union[str, List[str]], kind: str, **kwargs) -> SamplesQuery:
+    def isa(self, data: Union[str, List[str], SamplesQuery, SampleSet], kind: str, **kwargs) -> SamplesQuery:
         """
         Queries for samples which are a particular type/belong to a particular category.
         Read as "subset samples which are a (isa) particular type defined by 'data'".
@@ -138,14 +138,14 @@ class SamplesQuery(abc.ABC):
         """
         pass
 
-    def isan(self, data: Union[str, List[str]], kind: str, **kwargs) -> SamplesQuery:
+    def isan(self, data: Union[str, List[str], SamplesQuery, SampleSet], kind: str, **kwargs) -> SamplesQuery:
         """
         Synonym for isa()
         """
         return self.isa(data=data, kind=kind, **kwargs)
 
     @abc.abstractmethod
-    def isin(self, data: Union[str, List[str], pd.Series], kind: str, **kwargs) -> SamplesQuery:
+    def isin(self, data: Union[str, List[str], pd.Series, SamplesQuery, SampleSet], kind: str, **kwargs) -> SamplesQuery:
         pass
 
     @abc.abstractmethod

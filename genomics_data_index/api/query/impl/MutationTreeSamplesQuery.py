@@ -35,7 +35,7 @@ class MutationTreeSamplesQuery(TreeSamplesQuery):
                                         reference_name=self._reference_name,
                                         reference_included=self._reference_included)
 
-    def _within_distance_internal(self, sample_names: Union[str, List[str]], distance: float,
+    def _within_distance_internal(self, data: Union[str, List[str], SamplesQuery, SampleSet], distance: float,
                                   units: str) -> SamplesQuery:
         if units == 'substitutions':
             distance_multiplier = self._alignment_length
@@ -44,17 +44,17 @@ class MutationTreeSamplesQuery(TreeSamplesQuery):
         else:
             raise Exception(f'Invalid units=[{units}]. Must be one of {self.DISTANCE_UNITS}')
 
-        if isinstance(sample_names, list):
+        if isinstance(data, list):
             raise NotImplementedError
-        elif not isinstance(sample_names, str):
-            raise Exception(f'Invalid type for sample_names=[{sample_names}]')
+        elif not isinstance(data, str):
+            raise Exception(f'Invalid type for sample_names=[{data}]')
 
         sample_name_ids = self._get_sample_name_ids()
 
-        sample_leaves = self._tree.get_leaves_by_name(sample_names)
+        sample_leaves = self._tree.get_leaves_by_name(data)
         if len(sample_leaves) != 1:
             raise Exception(
-                f'Invalid number of matching leaves for sample [{sample_names}], leaves {sample_leaves}')
+                f'Invalid number of matching leaves for sample [{data}], leaves {sample_leaves}')
 
         sample_node = sample_leaves[0]
 
@@ -69,7 +69,7 @@ class MutationTreeSamplesQuery(TreeSamplesQuery):
                 found_samples_set.add(sample_name_ids[leaf.name])
 
         found_samples = SampleSet(found_samples_set)
-        return self.intersect(found_samples, f'within({distance} {units} of {sample_names})')
+        return self.intersect(found_samples, f'within({distance} {units} of {data})')
 
     def _can_handle_distance_units(self, units: str) -> bool:
         return units in self.DISTANCE_UNITS

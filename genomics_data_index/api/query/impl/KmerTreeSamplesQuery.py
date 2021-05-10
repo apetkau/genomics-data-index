@@ -26,9 +26,9 @@ class KmerTreeSamplesQuery(TreeSamplesQuery):
                                     tree=tree)
 
     # Override primarily to specify a default value for 'units'
-    def _within_distance(self, sample_names: Union[str, List[str]], distance: float,
+    def _within_distance(self, data: Union[str, List[str], SamplesQuery, SampleSet], distance: float,
                          units: str = 'kmer_jaccard', **kwargs) -> SamplesQuery:
-        return super()._within_distance(sample_names=sample_names, distance=distance,
+        return super()._within_distance(data=data, distance=distance,
                                         units=units, **kwargs)
 
     def _within_distance_internal(self, sample_names: Union[str, List[str]], distance: float,
