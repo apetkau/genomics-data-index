@@ -21,10 +21,32 @@ def test_score_samples_with_mutation_tree(loaded_database_connection: DataIndexC
     # Test single sample
     query_result = query_tree.isa('SampleA')
     assert 1 == len(query_result)
-    assert 9 == len(query_result.universe_set)
-
     cluster_scorer = ClusterScorer.create(query_tree)
-    assert math.isclose(1.0, cluster_scorer.score_samples(query_result), rel_tol=1e-3)
+    assert math.isclose(1/1, cluster_scorer.score_samples(query_result), rel_tol=1e-3)
+
+    # Test multiple samples
+    query_result = query_tree.isin(['SampleB', 'SampleC'])
+    assert 2 == len(query_result)
+    cluster_scorer = ClusterScorer.create(query_tree)
+    assert math.isclose(2/2, cluster_scorer.score_samples(query_result), rel_tol=1e-3)
+
+    # Test multiple samples non-perfect score
+    query_result = query_tree.isin(['SampleA', 'SampleB'])
+    assert 2 == len(query_result)
+    cluster_scorer = ClusterScorer.create(query_tree)
+    assert math.isclose(2/3, cluster_scorer.score_samples(query_result), rel_tol=1e-3)
+
+    # Test multiple samples non-perfect score 2
+    query_result = query_tree.isin(['SampleA', 'SampleC'])
+    assert 2 == len(query_result)
+    cluster_scorer = ClusterScorer.create(query_tree)
+    assert math.isclose(2/3, cluster_scorer.score_samples(query_result), rel_tol=1e-3)
+    #
+    # # Test all samples
+    # query_result = query_tree.isin(['SampleA', 'SampleB', 'SampleC'])
+    # assert 3 == len(query_result)
+    # cluster_scorer = ClusterScorer.create(query_tree)
+    # assert math.isclose(3/3, cluster_scorer.score_samples(query_result), rel_tol=1e-3)
 
     # # Test no samples
     # query_result = query_tree.isa('not exists')
