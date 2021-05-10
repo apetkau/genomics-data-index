@@ -239,7 +239,7 @@ def test_query_within_kmer_default(loaded_database_connection: DataIndexConnecti
 def test_query_within_invalid_unit_with_no_tree(loaded_database_connection: DataIndexConnection):
     with pytest.raises(Exception) as execinfo:
         query(loaded_database_connection).within('SampleA', distance=1.0,
-                                                            units='substitutions')
+                                                 units='substitutions')
     assert 'units=[substitutions] is not supported' in str(execinfo.value)
 
 
@@ -626,11 +626,11 @@ def test_query_custom_dataframe_isin_kmer_distance(loaded_database_connection: D
     ], columns=['Sample ID', 'Color'])
 
     main_query = query(loaded_database_connection, universe='dataframe',
-                         data_frame=df, sample_ids_column='Sample ID')
+                       data_frame=df, sample_ids_column='Sample ID')
 
     # Test isin with sample name
     query_result = main_query.isin('SampleA', kind='distance', distance=0.5,
-                                     units='kmer_jaccard')
+                                   units='kmer_jaccard')
     assert 2 == len(query_result)
     assert 3 == len(query_result.universe_set)
     assert {sampleA.id, sampleC.id} == set(query_result.sample_set)
@@ -638,7 +638,7 @@ def test_query_custom_dataframe_isin_kmer_distance(loaded_database_connection: D
     # Test isin with sample set
     query_result_A = main_query.isa('SampleA', kind='sample')
     query_result = main_query.isin(query_result_A, kind='distance', distance=0.5,
-                                     units='kmer_jaccard')
+                                   units='kmer_jaccard')
     assert 2 == len(query_result)
     assert 3 == len(query_result.universe_set)
     assert {sampleA.id, sampleC.id} == set(query_result.sample_set)
@@ -1314,8 +1314,9 @@ def test_within_constructed_tree(loaded_database_connection: DataIndexConnection
     assert 2 == len(df)
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
     assert ['SampleA', 'SampleC'] == df['Sample Name'].tolist()
-    assert {"reference:839:C:G AND mutation_tree(genome) AND isin_samples(<MutationTreeSamplesQuery[22% (2/9) samples]>)"
-            } == set(df['Query'].tolist())
+    assert {
+               "reference:839:C:G AND mutation_tree(genome) AND isin_samples(<MutationTreeSamplesQuery[22% (2/9) samples]>)"
+               } == set(df['Query'].tolist())
 
     # Sample isa()
     df = query_result.isa('SampleA').toframe().sort_values('Sample Name')
