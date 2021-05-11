@@ -64,7 +64,7 @@ class ClusterScorer:
             groups_sample_sets_df = universe_df[['Sample ID', groupby_column]].groupby(
                 groupby_column).agg(SampleSet)
             groups_scores_series = groups_sample_sets_df.apply(
-                lambda x: self.score_samples(x['Sample ID']))
+                lambda x: self.score_samples(x['Sample ID']), axis='columns')
 
             return groups_scores_series
 
