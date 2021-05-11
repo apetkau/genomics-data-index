@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Union
+from typing import Union, Any
 
 import pandas as pd
 
@@ -40,13 +40,15 @@ class ClusterScorer:
         else:
             raise Exception(f'kind=[{kind}] is invalid. Must be one of {self.SCORE_KINDS}')
 
-    def score_groupby(self, groupby_column: str, kind: str = 'mrca_jaccard') -> pd.Series:
+    def score_groupby(self, groupby_column: str, na_value: Any = None,
+                      kind: str = 'mrca_jaccard') -> pd.Series:
         """
         Gives a score for how well sets of samples defined by the groupby_column cluster together in a tree.
 
         :param groupby_column: The column in the samples query dataframe to group by. When using this option you likely
                                will want to join your query with an external data frame defining extra metadata associated
                                with the samples.
+        :param na_value: The value used to replace pd.NA with. If this is None (default) then NA values are excluded.
         :param kind: The kind of scoring method to use.
         :return: A series of scores (indexed by the groups in the groupby_column) for how well the passed set of samples
                  is clustered together in a tree.
@@ -61,8 +63,10 @@ class ClusterScorer:
                     f'column={groupby_column} not found in data frame from query={self._universe_samples}. '
                     f'Perhaps you meant to join this query with a dataframe before scoring clusters?')
 
-            groups_sample_sets_df = universe_df[['Sample ID', groupby_column]].groupby(
-                groupby_column).agg(SampleSet)
+            universe_sub_columns = universe_df[['Sample ID', groupby_column]]
+            if na_value is not None:
+                universe_sub_columns = universe_sub_columns.fillna(na_value)
+            groups_sample_sets_df = universe_sub_columns.groupby(groupby_column).agg(SampleSet)
             groups_scores_series = groups_sample_sets_df.apply(
                 lambda x: self.score_samples(x['Sample ID']), axis='columns')
 

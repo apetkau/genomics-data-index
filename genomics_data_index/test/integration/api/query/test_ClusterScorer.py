@@ -88,10 +88,10 @@ def test_score_groupby_with_mutation_tree(loaded_database_connection: DataIndexC
     sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
 
     metadata_df = pd.DataFrame([
-        [sampleA.id, 'red', 'up', 'A', '1'],
-        [sampleB.id, 'blue', 'up', 'B', '1'],
-        [sampleC.id, 'blue', 'down', 'C', '1']
-    ], columns=['Sample ID', 'Color', 'Direction', 'Letter', 'Number'])
+        [sampleA.id, 'red', 'up', 'A', '1', 'red'],
+        [sampleB.id, 'blue', 'up', 'B', '1', 'red'],
+        [sampleC.id, 'blue', 'down', 'C', '1', pd.NA]
+    ], columns=['Sample ID', 'Color', 'Direction', 'Letter', 'Number', 'Color_NA'])
 
     query_tree = query(loaded_database_connection).build_tree(kind='mutation',
                                                               scope='genome', include_reference=True,
@@ -126,3 +126,16 @@ def test_score_groupby_with_mutation_tree(loaded_database_connection: DataIndexC
     assert 1 == len(scores_series)
     assert {'1'} == set(scores_series.index)
     assert math.isclose(1/1, scores_series.loc['1'], abs_tol=1e-3)
+
+    # Group by with NA exclude NA
+    scores_series = cluster_scorer.score_groupby('Color_NA')
+    assert 1 == len(scores_series)
+    assert {'red'} == set(scores_series.index)
+    assert math.isclose(2/3, scores_series.loc['red'], abs_tol=1e-3)
+
+    # Group by with NA, fill na
+    scores_series = cluster_scorer.score_groupby('Color_NA', na_value='NA')
+    assert 2 == len(scores_series)
+    assert {'red', 'NA'} == set(scores_series.index)
+    assert math.isclose(2/3, scores_series.loc['red'], abs_tol=1e-3)
+    assert math.isclose(1/1, scores_series.loc['NA'], abs_tol=1e-3)
