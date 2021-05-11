@@ -87,21 +87,42 @@ def test_score_groupby_with_mutation_tree(loaded_database_connection: DataIndexC
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
     sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
 
-    metadata_df1 = pd.DataFrame([
-        [sampleA.id, 'red'],
-        [sampleB.id, 'blue'],
-        [sampleC.id, 'blue']
-    ], columns=['Sample ID', 'Color'])
+    metadata_df = pd.DataFrame([
+        [sampleA.id, 'red', 'up', 'A', '1'],
+        [sampleB.id, 'blue', 'up', 'B', '1'],
+        [sampleC.id, 'blue', 'down', 'C', '1']
+    ], columns=['Sample ID', 'Color', 'Direction', 'Letter', 'Number'])
 
     query_tree = query(loaded_database_connection).build_tree(kind='mutation',
                                                               scope='genome', include_reference=True,
                                                               extra_params='--seed 42 -m GTR')
-    query_tree_df1 = query_tree.join(metadata_df1, sample_ids_column='Sample ID')
+    query_tree_df = query_tree.join(metadata_df, sample_ids_column='Sample ID')
+    cluster_scorer = ClusterScorer.create(query_tree_df)
 
-    # Group by on color
-    cluster_scorer = ClusterScorer.create(query_tree_df1)
+    # Group by 2 groups perfect score
     scores_series = cluster_scorer.score_groupby('Color')
     assert 2 == len(scores_series)
     assert {'red', 'blue'} == set(scores_series.index)
     assert math.isclose(1/1, scores_series.loc['red'], abs_tol=1e-3)
     assert math.isclose(2/2, scores_series.loc['blue'], abs_tol=1e-3)
+
+    # Group by 2 groups imperfect score
+    scores_series = cluster_scorer.score_groupby('Direction')
+    assert 2 == len(scores_series)
+    assert {'up', 'down'} == set(scores_series.index)
+    assert math.isclose(2/3, scores_series.loc['up'], abs_tol=1e-3)
+    assert math.isclose(1/1, scores_series.loc['down'], abs_tol=1e-3)
+
+    # Group by 3 groups
+    scores_series = cluster_scorer.score_groupby('Letter')
+    assert 3 == len(scores_series)
+    assert {'A', 'B', 'C'} == set(scores_series.index)
+    assert math.isclose(1/1, scores_series.loc['A'], abs_tol=1e-3)
+    assert math.isclose(1/1, scores_series.loc['B'], abs_tol=1e-3)
+    assert math.isclose(1 / 1, scores_series.loc['C'], abs_tol=1e-3)
+
+    # Group by 1 group
+    scores_series = cluster_scorer.score_groupby('Number')
+    assert 1 == len(scores_series)
+    assert {'1'} == set(scores_series.index)
+    assert math.isclose(1/1, scores_series.loc['1'], abs_tol=1e-3)
