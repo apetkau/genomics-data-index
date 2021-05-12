@@ -74,6 +74,15 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
         else:
             raise Exception(f'Build tree is not of type {TreeSamplesQuery.__class__}')
 
+    def join_tree(self, tree: Tree, kind='mutation', **kwargs) -> SamplesQuery:
+        samples_query = self._wrapped_query.join_tree(tree=tree, kind=kind, **kwargs)
+
+        if isinstance(samples_query, TreeSamplesQuery):
+            samples_query = cast(TreeSamplesQuery, samples_query)
+            return samples_query._wrap_create(self, self.universe_set)
+        else:
+            raise Exception(f'Build tree is not of type {TreeSamplesQuery.__class__}')
+
     def _within_distance(self, data: Union[str, List[str], SamplesQuery, SampleSet], distance: float,
                          units: str, **kwargs) -> SamplesQuery:
         if self._can_handle_distance_units(units):

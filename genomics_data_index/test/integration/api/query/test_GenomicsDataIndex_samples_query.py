@@ -3,6 +3,7 @@ from typing import cast
 
 import pandas as pd
 import pytest
+from ete3 import Tree
 
 from genomics_data_index.api.query.GenomicsDataIndex import GenomicsDataIndex
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
@@ -1522,6 +1523,83 @@ def test_within_constructed_tree_larger_tree(loaded_database_connection: DataInd
     assert ['SampleA', 'SampleB', 'SampleC'] == df['Sample Name'].tolist()
     assert {"mutation_tree(genome) AND within(mrca of "
             "set(2 samples))"
+            } == set(df['Query'].tolist())
+
+
+def test_within_joined_mutations_tree(prebuilt_tree: Tree, loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+
+    query_result = query(loaded_database_connection).join_tree(tree=prebuilt_tree, kind='mutation',
+                                                               reference_name='genome',
+                                                               alignment_length=5180)
+    assert 3 == len(query_result)
+
+    # mrca B and C
+    df = query_result.isin(['SampleB', 'SampleC'], kind='mrca').toframe().sort_values('Sample Name')
+    assert 2 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert {"join_tree(4 leaves) AND within(mrca of ['SampleB', 'SampleC'])"
+            } == set(df['Query'].tolist())
+
+    # mrca of B and C, samples query
+    query_result_BC = query_result.isin(['SampleB', 'SampleC'], kind='samples')
+    df = query_result.isin(query_result_BC, kind='mrca').toframe().sort_values('Sample Name')
+    assert 2 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert {"join_tree(4 leaves) AND within(mrca of "
+            "<MutationTreeSamplesQuery[22% (2/9) samples]>)"
+            } == set(df['Query'].tolist())
+
+    # mrca A and B
+    df = query_result.isin(['SampleA', 'SampleC'], kind='mrca').toframe().sort_values('Sample Name')
+    assert 3 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    assert ['SampleA', 'SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert {"join_tree(4 leaves) AND within(mrca of ['SampleA', 'SampleC'])"
+            } == set(df['Query'].tolist())
+
+    # mrca of A and B, samples query
+    query_result_AB = query_result.isin(['SampleA', 'SampleB'], kind='samples')
+    df = query_result.isin(query_result_AB, kind='mrca').toframe().sort_values('Sample Name')
+    assert 3 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    assert ['SampleA', 'SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert {"join_tree(4 leaves) AND within(mrca of "
+            "<MutationTreeSamplesQuery[22% (2/9) samples]>)"
+            } == set(df['Query'].tolist())
+
+    # mrca of A and B, samples set
+    sample_set_AB = SampleSet([sampleA.id, sampleB.id])
+    df = query_result.isin(sample_set_AB, kind='mrca').toframe().sort_values('Sample Name')
+    assert 3 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    assert ['SampleA', 'SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert {"join_tree(4 leaves) AND within(mrca of "
+            "set(2 samples))"
+            } == set(df['Query'].tolist())
+
+    # subs/site using samples query
+    query_result_C = query_result.isin(['SampleC'], kind='samples')
+    df = query_result.isin(query_result_C, kind='distance', distance=2,
+                           units='substitutions/site').toframe().sort_values(
+        'Sample Name')
+    assert 2 == len(df)
+    assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert {'join_tree(4 leaves) AND within(2 substitutions/site of '
+            '<MutationTreeSamplesQuery[11% (1/9) samples]>)'
+            } == set(df['Query'].tolist())
+
+    # subs samples query
+    df = query_result.isin(['SampleC'], kind='distance', distance=2*5180,
+                           units='substitutions').toframe().sort_values('Sample Name')
+    assert 2 == len(df)
+    assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert {f'join_tree(4 leaves) AND within({2*5180} substitutions of '
+            "['SampleC'])"
             } == set(df['Query'].tolist())
 
 

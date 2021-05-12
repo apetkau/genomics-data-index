@@ -3,6 +3,7 @@ import warnings
 from pathlib import Path
 
 import pytest
+from ete3 import Tree
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
@@ -11,7 +12,7 @@ from genomics_data_index.storage.io.mlst.MLSTSampleDataPackage import MLSTSample
 from genomics_data_index.storage.io.mlst.MLSTTSeemannFeaturesReader import MLSTTSeemannFeaturesReader
 from genomics_data_index.api.query.GenomicsDataIndex import GenomicsDataIndex
 
-from genomics_data_index.test.integration import sample_dirs, reference_file, basic_mlst_file
+from genomics_data_index.test.integration import sample_dirs, reference_file, basic_mlst_file, tree_file
 from genomics_data_index.test.integration import sourmash_signatures
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
 from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
@@ -111,3 +112,7 @@ def loaded_data_store_from_project_dir() -> GenomicsDataIndex:
     print(tmp_dir)
 
     return GenomicsDataIndex.connect(project_dir=project_dir)
+
+@pytest.fixture
+def prebuilt_tree() -> Tree:
+    return Tree(str(tree_file))

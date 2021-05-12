@@ -5,6 +5,7 @@ from typing import Union, List, Set, Tuple
 
 import numpy as np
 import pandas as pd
+from ete3 import Tree
 
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.QueryFeature import QueryFeature
@@ -78,6 +79,10 @@ class SamplesQuery(abc.ABC):
 
     @abc.abstractmethod
     def build_tree(self, kind: str, **kwargs) -> SamplesQuery:
+        pass
+
+    @abc.abstractmethod
+    def join_tree(self, tree: Tree, kind='mutation', **kwargs) -> SamplesQuery:
         pass
 
     @abc.abstractmethod

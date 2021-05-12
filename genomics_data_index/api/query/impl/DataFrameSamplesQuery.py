@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Union, List
 
 import pandas as pd
+from ete3 import Tree
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.api.query.impl.TreeSamplesQueryFactory import TreeSamplesQueryFactory
@@ -115,6 +116,13 @@ class DataFrameSamplesQuery(WrappedSamplesQuery):
         return TreeSamplesQueryFactory.instance().build_tree(kind=kind,
                                                              database_connection=self._query_connection,
                                                              wrapped_query=self, **kwargs)
+
+    def join_tree(self, tree: Tree, kind='mutation', **kwargs) -> SamplesQuery:
+        return TreeSamplesQueryFactory.instance().join_tree(tree=tree,
+                                                            kind=kind,
+                                                            database_connection=self._query_connection,
+                                                            wrapped_query=self,
+                                                            **kwargs)
 
     def join(self, data_frame: pd.DataFrame, sample_ids_column: str = None,
              sample_names_column: str = None, default_isa_kind: str = 'names',

@@ -5,6 +5,7 @@ import logging
 
 import numpy as np
 import pandas as pd
+from ete3 import Tree
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.api.query.impl.DataFrameSamplesQuery import DataFrameSamplesQuery
@@ -70,6 +71,13 @@ class SamplesQueryIndex(SamplesQuery):
                                                                          connection=self._query_connection,
                                                                          default_isa_kind=default_isa_kind,
                                                                          default_isa_column=default_isa_column)
+
+    def join_tree(self, tree: Tree, kind='mutation', **kwargs) -> SamplesQuery:
+        return TreeSamplesQueryFactory.instance().join_tree(tree=tree,
+                                                            kind=kind,
+                                                            database_connection=self._query_connection,
+                                                            wrapped_query=self,
+                                                            **kwargs)
 
     def intersect(self, sample_set: SampleSet, query_message: str = None) -> SamplesQuery:
         intersected_set = self._intersect_sample_set(sample_set)
