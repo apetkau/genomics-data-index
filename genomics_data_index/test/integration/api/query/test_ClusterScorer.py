@@ -1,5 +1,6 @@
 import math
 import pandas as pd
+from ete3 import Tree
 
 from genomics_data_index.api.query.GenomicsDataIndex import GenomicsDataIndex
 from genomics_data_index.storage.model.db import Sample
@@ -13,10 +14,10 @@ def query(connection: DataIndexConnection, **kwargs) -> SamplesQuery:
     return GenomicsDataIndex(connection=connection).samples_query(**kwargs)
 
 
-def test_score_samples_with_mutation_tree(loaded_database_connection: DataIndexConnection):
-    query_tree = query(loaded_database_connection).build_tree(kind='mutation',
-                                                              scope='genome', include_reference=True,
-                                                              extra_params='--seed 42 -m GTR')
+def test_score_samples_with_mutation_tree(prebuilt_tree: Tree, loaded_database_connection: DataIndexConnection):
+    query_tree = query(loaded_database_connection).join_tree(tree=prebuilt_tree, kind='mutation',
+                                                             reference_name='genome',
+                                                             alignment_length=5180)
     assert 3 == len(query_tree)
     assert 9 == len(query_tree.universe_set)
 
@@ -24,49 +25,49 @@ def test_score_samples_with_mutation_tree(loaded_database_connection: DataIndexC
     query_result = query_tree.isa('SampleA')
     assert 1 == len(query_result)
     cluster_scorer = ClusterScorer.create(query_tree)
-    assert math.isclose(1/1, cluster_scorer.score_samples(query_result), rel_tol=1e-3)
+    assert math.isclose(1 / 1, cluster_scorer.score_samples(query_result), rel_tol=1e-3)
 
     # Test single sample set
     query_result = query_tree.isa('SampleA')
     assert 1 == len(query_result)
     cluster_scorer = ClusterScorer.create(query_tree)
-    assert math.isclose(1/1, cluster_scorer.score_samples(query_result.sample_set), rel_tol=1e-3)
+    assert math.isclose(1 / 1, cluster_scorer.score_samples(query_result.sample_set), rel_tol=1e-3)
 
     # Test multiple samples
     query_result = query_tree.isin(['SampleB', 'SampleC'])
     assert 2 == len(query_result)
     cluster_scorer = ClusterScorer.create(query_tree)
-    assert math.isclose(2/2, cluster_scorer.score_samples(query_result), rel_tol=1e-3)
+    assert math.isclose(2 / 2, cluster_scorer.score_samples(query_result), rel_tol=1e-3)
 
     # Test multiple samples set
     query_result = query_tree.isin(['SampleB', 'SampleC'])
     assert 2 == len(query_result)
     cluster_scorer = ClusterScorer.create(query_tree)
-    assert math.isclose(2/2, cluster_scorer.score_samples(query_result.sample_set), rel_tol=1e-3)
+    assert math.isclose(2 / 2, cluster_scorer.score_samples(query_result.sample_set), rel_tol=1e-3)
 
     # Test multiple samples non-perfect score
     query_result = query_tree.isin(['SampleA', 'SampleB'])
     assert 2 == len(query_result)
     cluster_scorer = ClusterScorer.create(query_tree)
-    assert math.isclose(2/3, cluster_scorer.score_samples(query_result), rel_tol=1e-3)
+    assert math.isclose(2 / 3, cluster_scorer.score_samples(query_result), rel_tol=1e-3)
 
     # Test multiple samples set non-perfect score
     query_result = query_tree.isin(['SampleA', 'SampleB'])
     assert 2 == len(query_result)
     cluster_scorer = ClusterScorer.create(query_tree)
-    assert math.isclose(2/3, cluster_scorer.score_samples(query_result.sample_set), rel_tol=1e-3)
+    assert math.isclose(2 / 3, cluster_scorer.score_samples(query_result.sample_set), rel_tol=1e-3)
 
     # Test multiple samples non-perfect score 2
     query_result = query_tree.isin(['SampleA', 'SampleC'])
     assert 2 == len(query_result)
     cluster_scorer = ClusterScorer.create(query_tree)
-    assert math.isclose(2/3, cluster_scorer.score_samples(query_result), rel_tol=1e-3)
+    assert math.isclose(2 / 3, cluster_scorer.score_samples(query_result), rel_tol=1e-3)
 
     # Test all samples
     query_result = query_tree.isin(['SampleA', 'SampleB', 'SampleC'])
     assert 3 == len(query_result)
     cluster_scorer = ClusterScorer.create(query_tree)
-    assert math.isclose(3/3, cluster_scorer.score_samples(query_result), rel_tol=1e-3)
+    assert math.isclose(3 / 3, cluster_scorer.score_samples(query_result), rel_tol=1e-3)
 
     # # Test no samples
     query_result = query_tree.isa('not exists')
@@ -81,7 +82,7 @@ def test_score_samples_with_mutation_tree(loaded_database_connection: DataIndexC
     assert math.isnan(cluster_scorer.score_samples(query_result.sample_set))
 
 
-def test_score_groupby_with_mutation_tree(loaded_database_connection: DataIndexConnection):
+def test_score_groupby_with_mutation_tree(prebuilt_tree: Tree, loaded_database_connection: DataIndexConnection):
     db = loaded_database_connection.database
     sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
@@ -93,9 +94,9 @@ def test_score_groupby_with_mutation_tree(loaded_database_connection: DataIndexC
         [sampleC.id, 'blue', 'down', 'C', '1', pd.NA]
     ], columns=['Sample ID', 'Color', 'Direction', 'Letter', 'Number', 'Color_NA'])
 
-    query_tree = query(loaded_database_connection).build_tree(kind='mutation',
-                                                              scope='genome', include_reference=True,
-                                                              extra_params='--seed 42 -m GTR')
+    query_tree = query(loaded_database_connection).join_tree(tree=prebuilt_tree, kind='mutation',
+                                                             reference_name='genome',
+                                                             alignment_length=5180)
     query_tree_df = query_tree.join(metadata_df, sample_ids_column='Sample ID')
     cluster_scorer = ClusterScorer.create(query_tree_df)
 
@@ -103,39 +104,39 @@ def test_score_groupby_with_mutation_tree(loaded_database_connection: DataIndexC
     scores_series = cluster_scorer.score_groupby('Color')
     assert 2 == len(scores_series)
     assert {'red', 'blue'} == set(scores_series.index)
-    assert math.isclose(1/1, scores_series.loc['red'], abs_tol=1e-3)
-    assert math.isclose(2/2, scores_series.loc['blue'], abs_tol=1e-3)
+    assert math.isclose(1 / 1, scores_series.loc['red'], abs_tol=1e-3)
+    assert math.isclose(2 / 2, scores_series.loc['blue'], abs_tol=1e-3)
 
     # Group by 2 groups imperfect score
     scores_series = cluster_scorer.score_groupby('Direction')
     assert 2 == len(scores_series)
     assert {'up', 'down'} == set(scores_series.index)
-    assert math.isclose(2/3, scores_series.loc['up'], abs_tol=1e-3)
-    assert math.isclose(1/1, scores_series.loc['down'], abs_tol=1e-3)
+    assert math.isclose(2 / 3, scores_series.loc['up'], abs_tol=1e-3)
+    assert math.isclose(1 / 1, scores_series.loc['down'], abs_tol=1e-3)
 
     # Group by 3 groups
     scores_series = cluster_scorer.score_groupby('Letter')
     assert 3 == len(scores_series)
     assert {'A', 'B', 'C'} == set(scores_series.index)
-    assert math.isclose(1/1, scores_series.loc['A'], abs_tol=1e-3)
-    assert math.isclose(1/1, scores_series.loc['B'], abs_tol=1e-3)
+    assert math.isclose(1 / 1, scores_series.loc['A'], abs_tol=1e-3)
+    assert math.isclose(1 / 1, scores_series.loc['B'], abs_tol=1e-3)
     assert math.isclose(1 / 1, scores_series.loc['C'], abs_tol=1e-3)
 
     # Group by 1 group
     scores_series = cluster_scorer.score_groupby('Number')
     assert 1 == len(scores_series)
     assert {'1'} == set(scores_series.index)
-    assert math.isclose(1/1, scores_series.loc['1'], abs_tol=1e-3)
+    assert math.isclose(1 / 1, scores_series.loc['1'], abs_tol=1e-3)
 
     # Group by with NA exclude NA
     scores_series = cluster_scorer.score_groupby('Color_NA')
     assert 1 == len(scores_series)
     assert {'red'} == set(scores_series.index)
-    assert math.isclose(2/3, scores_series.loc['red'], abs_tol=1e-3)
+    assert math.isclose(2 / 3, scores_series.loc['red'], abs_tol=1e-3)
 
     # Group by with NA, fill na
     scores_series = cluster_scorer.score_groupby('Color_NA', na_value='NA')
     assert 2 == len(scores_series)
     assert {'red', 'NA'} == set(scores_series.index)
-    assert math.isclose(2/3, scores_series.loc['red'], abs_tol=1e-3)
-    assert math.isclose(1/1, scores_series.loc['NA'], abs_tol=1e-3)
+    assert math.isclose(2 / 3, scores_series.loc['red'], abs_tol=1e-3)
+    assert math.isclose(1 / 1, scores_series.loc['NA'], abs_tol=1e-3)
