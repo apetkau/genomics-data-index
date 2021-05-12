@@ -3,7 +3,7 @@ from typing import cast
 
 import pandas as pd
 import pytest
-from ete3 import Tree
+from ete3 import Tree, ClusterTree
 
 from genomics_data_index.api.query.GenomicsDataIndex import GenomicsDataIndex
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
@@ -1601,6 +1601,22 @@ def test_within_joined_mutations_tree(prebuilt_tree: Tree, loaded_database_conne
     assert {f'join_tree(4 leaves) AND within({2*5180} substitutions of '
             "['SampleC'])"
             } == set(df['Query'].tolist())
+
+    # kmer jaccard still works
+    df = query_result.within('SampleA', distance=0.5, units='kmer_jaccard').toframe().sort_values('Sample Name')
+    assert 2 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    assert ['SampleA', 'SampleC'] == df['Sample Name'].tolist()
+    assert {"join_tree(4 leaves) AND isin_kmer_jaccard('SampleA', dist=0.5, k=31)"
+            } == set(df['Query'].tolist())
+
+
+def test_join_kmer_tree(prebuilt_tree: Tree, loaded_database_connection: DataIndexConnection):
+    query_result = query(loaded_database_connection).join_tree(tree=prebuilt_tree, kind='kmer')
+    assert 3 == len(query_result)
+    assert 9 == len(query_result.universe_set)
+    assert isinstance(query_result.tree, ClusterTree)
+    assert {'SampleA', 'SampleB', 'SampleC'} == set(query_result.tree.get_leaf_names())
 
 
 def test_summary_features_all(loaded_database_connection: DataIndexConnection):

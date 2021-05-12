@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import cast, List
+from typing import cast, List, Optional
 import logging
 
 from ete3 import Tree, ClusterTree
@@ -65,6 +65,35 @@ class TreeSamplesQueryFactory:
                                                              reference_name=reference_name,
                                                              include_reference=include_reference)
 
+    def _join_tree_kmers(self, tree: Tree, kind: str, database_connection: DataIndexConnection,
+                             wrapped_query: SamplesQuery,
+                             leaf_names: List[str]) -> TreeSamplesQuery:
+        samples_set = wrapped_query.sample_set
+        expected_leaves_number = len(samples_set)
+        if len(leaf_names) != expected_leaves_number:
+            logger.warning(
+                f'Passed tree has {len(leaf_names)} leaves, but only {expected_leaves_number} match samples in the '
+                f'system. Pruning tree to match samples in system.')
+            sample_name_ids = database_connection.sample_service.find_sample_name_ids(leaf_names)
+            sample_names = list(sample_name_ids.keys())
+            tree.prune(sample_names)
+
+        if not isinstance(tree, ClusterTree):
+            logger.warning(f'Passed tree={tree} is not a {ClusterTree.__name__}. '
+                           f'Converting to a {ClusterTree.__name__}')
+            newick = tree.write()
+            cluster_tree = ClusterTree(newick=newick)
+        else:
+            cluster_tree = cast(ClusterTree, tree)
+
+        return self._create_tree_samples_query_from_tree(kind=kind,
+                                                         connection=database_connection,
+                                                         wrapped_query=wrapped_query,
+                                                         tree=cluster_tree,
+                                                         alignment_length=None,
+                                                         reference_name=None,
+                                                         include_reference=False)
+
     def join_tree(self, tree: Tree, kind: str, database_connection: DataIndexConnection,
                   wrapped_query: SamplesQuery, **kwargs) -> TreeSamplesQuery:
         if kind not in self.BUILD_TREE_KINDS:
@@ -81,6 +110,10 @@ class TreeSamplesQueryFactory:
                                              wrapped_query=wrapped_query_tree_set,
                                              leaf_names=leaf_names,
                                              **kwargs)
+        elif kind == 'kmer' or kind == 'kmers':
+            return self._join_tree_kmers(tree=tree, kind=kind, database_connection=database_connection,
+                                         wrapped_query=wrapped_query_tree_set,
+                                         leaf_names=leaf_names)
         else:
             raise Exception(f'Invalid kind=[{kind}]. Must be one of {self.BUILD_TREE_KINDS}.')
 
@@ -116,8 +149,8 @@ class TreeSamplesQueryFactory:
                                                          include_reference=include_reference)
 
     def _create_tree_samples_query_from_tree(self, kind: str, tree: Tree,
-                                             alignment_length: int,
-                                             reference_name: str,
+                                             alignment_length: Optional[int],
+                                             reference_name: Optional[str],
                                              connection: DataIndexConnection,
                                              wrapped_query: SamplesQuery,
                                              include_reference: bool = True) -> TreeSamplesQuery:
