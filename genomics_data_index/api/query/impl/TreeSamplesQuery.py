@@ -171,3 +171,6 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
     @property
     def tree(self):
         return self._tree
+
+    def has_tree(self) -> bool:
+        return True

@@ -12,7 +12,7 @@ class ClusterScorer:
 
     SCORE_KINDS = ['mrca_jaccard']
 
-    def __init__(self, universe_samples: TreeSamplesQuery):
+    def __init__(self, universe_samples: SamplesQuery):
         self._universe_samples = universe_samples
 
     def _score_sample_mrca_jaccard(self, data: Union[SamplesQuery, SampleSet]) -> float:

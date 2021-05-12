@@ -196,6 +196,7 @@ def test_query_isa_sample_name(loaded_database_connection: DataIndexConnection):
     assert 1 == len(query_result)
     assert {sampleB.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)
+    assert not query_result.has_tree()
 
 
 def test_query_isa_sample_no_exist(loaded_database_connection: DataIndexConnection):
@@ -343,6 +344,7 @@ def test_query_single_mutation(loaded_database_connection: DataIndexConnection):
     assert 1 == len(query_result)
     assert {sampleB.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)
+    assert not query_result.has_tree()
 
 
 def test_query_single_mutation_complement(loaded_database_connection: DataIndexConnection):
@@ -360,6 +362,7 @@ def test_query_single_mutation_complement(loaded_database_connection: DataIndexC
     query_result = query_result.complement()
     assert 8 == len(query_result)
     assert 9 == len(query_result.universe_set)
+    assert not query_result.has_tree()
 
     assert sampleB.id not in query_result.sample_set
 
@@ -1025,6 +1028,7 @@ def test_query_join_dataframe_isin_dataframe_column(loaded_database_connection: 
     ], columns=['Sample ID', 'Color'])
 
     query_result = query(loaded_database_connection).join(data_frame=metadata_df, sample_ids_column='Sample ID')
+    assert not query_result.has_tree()
 
     assert 3 == len(query_result)
     assert 3 == len(query_result.universe_set)
@@ -1172,6 +1176,7 @@ def test_query_build_tree_and_within_kmer(loaded_database_connection: DataIndexC
     assert 2 == len(query_result)
     assert 9 == len(query_result.universe_set)
     assert {sampleB.id, sampleC.id} == set(query_result.sample_set)
+    assert query_result.has_tree()
 
     query_result = query_result.within('SampleA', distance=0.5,
                                        units='kmer_jaccard')
@@ -1294,13 +1299,16 @@ def test_query_tree_join_dataframe_isa_dataframe_column(loaded_database_connecti
     query_result = query(loaded_database_connection).hasa('reference:839:C:G', kind='mutation')
     assert 2 == len(query_result)
     assert {sampleB.id, sampleC.id} == set(query_result.sample_set)
+    assert not query_result.has_tree()
 
     query_result = query_result.build_tree(kind='mutation', scope='genome', include_reference=True)
     assert 2 == len(query_result)
     assert isinstance(query_result, TreeSamplesQuery)
+    assert query_result.has_tree()
 
     query_result = query_result.join(data_frame=metadata_df, sample_ids_column='Sample ID')
     assert 2 == len(query_result)
+    assert query_result.has_tree()
 
     # Now try to do isa on tree + dataframe query
     query_result = query_result.isa('green', kind='dataframe', isa_column='Color')
@@ -1331,9 +1339,11 @@ def test_query_join_tree_join_dataframe(prebuilt_tree: Tree, loaded_database_con
     assert 3 == len(query_result)
     assert 9 == len(query_result.universe_set)
     assert {sampleA.id, sampleB.id, sampleC.id} == set(query_result.sample_set)
+    assert query_result.has_tree()
 
     query_result = query_result.join(data_frame=metadata_df, sample_ids_column='Sample ID')
     assert 3 == len(query_result)
+    assert query_result.has_tree()
 
     # Now try to do isa on tree + dataframe query
     query_result_color = query_result.isa('green', kind='dataframe', isa_column='Color')

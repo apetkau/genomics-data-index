@@ -193,6 +193,9 @@ class SamplesQueryIndex(SamplesQuery):
         raise Exception(f'No tree exists for {self.__class__}.'
                         f' Perhaps you should try to run build_tree() first to build a tree.')
 
+    def has_tree(self) -> bool:
+        return False
+
     def __and__(self, other):
         return self.and_(other)
 

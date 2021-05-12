@@ -199,6 +199,10 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
+    def has_tree(self) -> bool:
+        pass
+
+    @abc.abstractmethod
     def tolist(self, names=True) -> List[Union[int, str]]:
         pass
 

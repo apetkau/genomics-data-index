@@ -90,6 +90,9 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
     def is_empty(self):
         return self._wrapped_query.is_empty()
 
+    def has_tree(self) -> bool:
+        return self._wrapped_query.has_tree()
+
     @property
     def tree(self):
         raise Exception(f'No tree exists for {self.__class__}.'
