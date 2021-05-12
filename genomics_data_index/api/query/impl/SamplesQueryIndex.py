@@ -318,7 +318,7 @@ class SamplesQueryIndex(SamplesQuery):
     def _get_sample_names_query_infix_from_data(self, data: Union[str, List[str], pd.Series, SamplesQuery, SampleSet]
                                             ) -> Tuple[Set[str], str]:
         if isinstance(data, str) or isinstance(data, list):
-            logger.debug(f'data=[{data}] contains sample names')
+            logger.debug(f'data={data} contains sample names')
             if isinstance(data, str):
                 query_msg = f"'{data}'"
                 data = [data]

@@ -1313,6 +1313,41 @@ def test_query_tree_join_dataframe_isa_dataframe_column(loaded_database_connecti
     assert {sampleB.id} == set(query_result.sample_set)
 
 
+def test_query_join_tree_join_dataframe(prebuilt_tree: Tree, loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+
+    metadata_df = pd.DataFrame([
+        [sampleA.id, 'red'],
+        [sampleB.id, 'green'],
+        [sampleC.id, 'blue']
+    ], columns=['Sample ID', 'Color'])
+
+    query_result = query(loaded_database_connection).join_tree(tree=prebuilt_tree, kind='mutation',
+                                                               reference_name='genome',
+                                                               alignment_length=5180)
+    assert 3 == len(query_result)
+    assert 9 == len(query_result.universe_set)
+    assert {sampleA.id, sampleB.id, sampleC.id} == set(query_result.sample_set)
+
+    query_result = query_result.join(data_frame=metadata_df, sample_ids_column='Sample ID')
+    assert 3 == len(query_result)
+
+    # Now try to do isa on tree + dataframe query
+    query_result_color = query_result.isa('green', kind='dataframe', isa_column='Color')
+    assert 1 == len(query_result_color)
+    assert {sampleB.id} == set(query_result_color.sample_set)
+
+    # mrca A and B
+    df = query_result.isin(['SampleA', 'SampleC'], kind='mrca').toframe().sort_values('Sample Name')
+    assert 3 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status', 'Color'] == df.columns.tolist()
+    assert ['SampleA', 'SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert ['red', 'green', 'blue'] == df['Color'].tolist()
+
+
 def test_within_constructed_tree(loaded_database_connection: DataIndexConnection):
     query_result = query(loaded_database_connection).hasa(
         'reference:839:C:G', kind='mutation').build_tree(
