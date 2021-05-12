@@ -46,7 +46,9 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
             elif len(sample_leaves_list) == 1:
                 found_sample_names = [sample_leaves_list[0].name]
             else:
-                first_sample_leaf = sample_leaves_list.pop()
+                # According to https://github.com/etetoolkit/ete/issues/503 'get_common_ancestor' does *not*
+                # Include the first node calling the function so I have to leave it in the list.
+                first_sample_leaf = sample_leaves_list[0]
                 ancestor_node = first_sample_leaf.get_common_ancestor(sample_leaves_list)
                 found_sample_names = ancestor_node.get_leaf_names()
 
