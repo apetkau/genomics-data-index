@@ -81,8 +81,8 @@ class ClusterScorer:
                                  (i.e., should be of type TreeSamplesQuery).
         :return: A new ClusterScorer for the passed samples.
         """
-        if not isinstance(universe_samples, TreeSamplesQuery):
-            raise Exception(f'Incorrect type for universe_samples. Got type={type(universe_samples)}, '
-                            f'expected type={TreeSamplesQuery.__class__}')
+        if not universe_samples.has_tree():
+            raise Exception(f'Passed universe_samples={universe_samples} does not have an associated tree. '
+                            f'Perhaps you forgot to join a tree with join_tree() or build with build_tree()?')
 
         return ClusterScorer(universe_samples=universe_samples)
