@@ -1,11 +1,10 @@
-from typing import Union, Iterable
 import logging
+from typing import Union, Iterable
 
 from ete3 import Tree, TreeStyle, NodeStyle
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.api.viewer.TreeSamplesVisual import TreeSamplesVisual
-
 
 logger = logging.getLogger(__name__)
 

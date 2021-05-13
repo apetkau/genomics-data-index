@@ -28,7 +28,8 @@ class DataFrameSamplesQuery(WrappedSamplesQuery):
         self._default_isa_kind = default_isa_kind
         self._default_isa_column = default_isa_column
 
-    def _isin_internal(self, data: Union[str, List[str], pd.Series, SamplesQuery, SampleSet], kind: str, **kwargs) -> SamplesQuery:
+    def _isin_internal(self, data: Union[str, List[str], pd.Series, SamplesQuery, SampleSet], kind: str,
+                       **kwargs) -> SamplesQuery:
         if kind == 'dataframe':
             if isinstance(data, pd.Series) and data.dtype == bool:
                 if data.index.equals(self._data_frame.index):
@@ -51,7 +52,8 @@ class DataFrameSamplesQuery(WrappedSamplesQuery):
     def _can_handle_isa_kind(self, kind: str) -> bool:
         return kind in self.ISA_KINDS
 
-    def isa(self, data: Union[str, List[str], pd.Series, SamplesQuery, SampleSet], kind: str = None, **kwargs) -> SamplesQuery:
+    def isa(self, data: Union[str, List[str], pd.Series, SamplesQuery, SampleSet], kind: str = None,
+            **kwargs) -> SamplesQuery:
         if kind is None:
             if self._default_isa_kind is None:
                 kind = 'sample'
@@ -60,7 +62,8 @@ class DataFrameSamplesQuery(WrappedSamplesQuery):
 
         return super().isa(data=data, kind=kind, **kwargs)
 
-    def _isa_internal(self, data: Union[str, List[str], pd.Series, SamplesQuery, SampleSet], kind: str, isa_column: str = None,
+    def _isa_internal(self, data: Union[str, List[str], pd.Series, SamplesQuery, SampleSet], kind: str,
+                      isa_column: str = None,
                       regex: bool = False) -> SamplesQuery:
         if kind == 'dataframe':
             if isa_column is None and self._default_isa_column is not None:

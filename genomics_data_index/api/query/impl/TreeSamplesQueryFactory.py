@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from typing import cast, List, Optional
 import logging
+from typing import cast, List, Optional
 
 from ete3 import Tree, ClusterTree
 
-from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.api.query.impl.ExperimentalTreeSamplesQuery import ExperimentalTreeSamplesQuery
 from genomics_data_index.api.query.impl.KmerTreeSamplesQuery import KmerTreeSamplesQuery
@@ -14,6 +13,7 @@ from genomics_data_index.api.query.impl.TreeBuilderKmers import TreeBuilderKmers
 from genomics_data_index.api.query.impl.TreeBuilderReferenceMutations import TreeBuilderReferenceMutations
 from genomics_data_index.api.query.impl.TreeSamplesQuery import TreeSamplesQuery
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
+from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.db import Reference
 
 logger = logging.getLogger(__name__)
@@ -66,8 +66,8 @@ class TreeSamplesQueryFactory:
                                                              include_reference=include_reference)
 
     def _join_tree_kmers(self, tree: Tree, kind: str, database_connection: DataIndexConnection,
-                             wrapped_query: SamplesQuery,
-                             leaf_names: List[str]) -> TreeSamplesQuery:
+                         wrapped_query: SamplesQuery,
+                         leaf_names: List[str]) -> TreeSamplesQuery:
         samples_set = wrapped_query.sample_set
         expected_leaves_number = len(samples_set)
         if len(leaf_names) != expected_leaves_number:

@@ -1,5 +1,5 @@
 import abc
-from typing import Union, Iterable, Tuple, Dict, Any, List
+from typing import Union, Iterable, Tuple, List
 
 from ete3 import Tree, TreeStyle, Face, RectFace, CircleFace, TextFace
 
@@ -7,7 +7,6 @@ from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 
 
 class TreeSamplesVisual(abc.ABC):
-
     LEGEND_FACE_KINDS = ['circle', 'circ', 'c',
                          'rectangle', 'rect', 'r']
 

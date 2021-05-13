@@ -1,8 +1,8 @@
 import logging
+import math
 from os import path
 from pathlib import Path
 from typing import List
-import math
 
 import pandas as pd
 import yaml

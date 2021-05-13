@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import copy
 import logging
-from typing import List, Dict, Any, Union, Iterable, Tuple
+from typing import List, Dict, Any, Union, Iterable
 
-from ete3 import Tree, NodeStyle, TreeStyle, CircleFace, TextFace, RectFace, Face
+from ete3 import Tree, NodeStyle, TreeStyle, TextFace, RectFace
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.api.viewer.TreeSamplesVisual import TreeSamplesVisual
@@ -206,7 +206,7 @@ class TreeStyler:
         self._apply_samples_styles(tree=tree, tree_style=tree_style)
 
         return tree.render(file_name=file_name, w=w, h=h, tree_style=tree_style,
-                                 units=units, dpi=dpi)
+                           units=units, dpi=dpi)
 
     @property
     def tree(self) -> Tree:

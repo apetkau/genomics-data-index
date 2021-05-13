@@ -2,9 +2,7 @@ from typing import cast
 
 from genomics_data_index.api.query.GenomicsDataIndex import GenomicsDataIndex
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
-
 from genomics_data_index.api.query.impl import ExperimentalTreeSamplesQuery
-
 from genomics_data_index.configuration.connector import DataIndexConnection
 
 

@@ -1,7 +1,7 @@
-from typing import Union, List, Set
+import logging
+from typing import Union, List
 
 from ete3 import Tree
-import logging
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.api.query.impl.TreeSamplesQuery import TreeSamplesQuery

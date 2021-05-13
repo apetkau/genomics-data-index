@@ -1,16 +1,16 @@
 from __future__ import annotations
+
 from typing import Union, Any, Optional, Callable, Dict
 
 import pandas as pd
 
-from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.api.query.impl.cluster.ClusterScoreMRCAJaccard import ClusterScoreMRCAJaccard
 from genomics_data_index.api.query.impl.cluster.ClusterScoreMethod import ClusterScoreMethod
+from genomics_data_index.storage.SampleSet import SampleSet
 
 
 class ClusterScorer:
-
     SCORE_KINDS: Dict[str, ClusterScoreMethod] = {
         'mrca_jaccard': ClusterScoreMRCAJaccard()
     }
@@ -69,7 +69,8 @@ class ClusterScorer:
             if groupby_func is None:
                 groups_sample_sets_df = universe_sub_columns.groupby(groupby_column).agg(SampleSet)
             else:
-                groups_sample_sets_df = universe_sub_columns.set_index(groupby_column).groupby(by=groupby_func).agg(SampleSet)
+                groups_sample_sets_df = universe_sub_columns.set_index(groupby_column).groupby(by=groupby_func).agg(
+                    SampleSet)
                 groups_sample_sets_df.index.name = groupby_column
 
             groups_sample_sets_df['Sample Count'] = groups_sample_sets_df.apply(
@@ -77,9 +78,11 @@ class ClusterScorer:
 
             # Subset before scoring to not waste time scoring groups we don't need
             if min_samples_count is not None:
-                groups_sample_sets_df = groups_sample_sets_df[groups_sample_sets_df['Sample Count'] >= min_samples_count]
+                groups_sample_sets_df = groups_sample_sets_df[
+                    groups_sample_sets_df['Sample Count'] >= min_samples_count]
             if max_samples_count is not None:
-                groups_sample_sets_df = groups_sample_sets_df[groups_sample_sets_df['Sample Count'] <= max_samples_count]
+                groups_sample_sets_df = groups_sample_sets_df[
+                    groups_sample_sets_df['Sample Count'] <= max_samples_count]
 
             # Do scoring
             groups_sample_sets_df['Score'] = groups_sample_sets_df.apply(

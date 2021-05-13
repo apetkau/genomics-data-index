@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from typing import Union, List, Set, Tuple
 import logging
+from typing import Union, List, Set, Tuple
 
 import numpy as np
 import pandas as pd
@@ -17,7 +17,6 @@ from genomics_data_index.storage.model.QueryFeature import QueryFeature
 from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
 from genomics_data_index.storage.model.QueryFeatureMutation import QueryFeatureMutation
 from genomics_data_index.storage.service.KmerService import KmerService
-
 
 logger = logging.getLogger(__name__)
 
@@ -256,8 +255,8 @@ class SamplesQueryIndex(SamplesQuery):
                       query_message_prefix: str) -> SamplesQuery:
         sample_set, query_infix = self._get_sample_set_query_infix_from_data(data)
         query_message = self._prepare_isin_query_message(query_message_prefix=query_message_prefix,
-                                                        query_msg_infix=query_infix,
-                                                        additional_messages='')
+                                                         query_msg_infix=query_infix,
+                                                         additional_messages='')
         queries_collection = self._queries_collection.append(query_message)
         return self._create_from(sample_set=sample_set, universe_set=self._universe_set,
                                  queries_collection=queries_collection)
@@ -267,8 +266,8 @@ class SamplesQueryIndex(SamplesQuery):
         additional_messages = f', dist={distance}, k={kmer_size}'
         sample_names, query_infix = self._get_sample_names_query_infix_from_data(data)
         query_message = self._prepare_isin_query_message(query_message_prefix='isin_kmer_jaccard',
-                                                        query_msg_infix=query_infix,
-                                                        additional_messages=additional_messages)
+                                                         query_msg_infix=query_infix,
+                                                         additional_messages=additional_messages)
 
         kmer_service: KmerService = self._query_connection.kmer_service
 
@@ -293,7 +292,7 @@ class SamplesQueryIndex(SamplesQuery):
                             f'the query.')
 
     def _get_sample_set_query_infix_from_data(self, data: Union[str, List[str], pd.Series, SamplesQuery, SampleSet]
-                                            ) -> Tuple[SampleSet, str]:
+                                              ) -> Tuple[SampleSet, str]:
         if isinstance(data, str) or isinstance(data, list):
             logger.debug(f'data=[{data}] contains sample names')
             if isinstance(data, str):
@@ -319,7 +318,7 @@ class SamplesQueryIndex(SamplesQuery):
         return sample_set, query_msg
 
     def _get_sample_names_query_infix_from_data(self, data: Union[str, List[str], pd.Series, SamplesQuery, SampleSet]
-                                            ) -> Tuple[Set[str], str]:
+                                                ) -> Tuple[Set[str], str]:
         if isinstance(data, str) or isinstance(data, list):
             logger.debug(f'data={data} contains sample names')
             if isinstance(data, str):

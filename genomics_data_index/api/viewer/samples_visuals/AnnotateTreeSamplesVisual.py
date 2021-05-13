@@ -1,18 +1,16 @@
-from typing import Union, Iterable, Dict, Any
 import copy
 import logging
+from typing import Union, Iterable, Dict, Any
 
 from ete3 import Tree, TreeStyle, TextFace, RectFace, Face, CircleFace
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.api.viewer.TreeSamplesVisual import TreeSamplesVisual
 
-
 logger = logging.getLogger(__name__)
 
 
 class AnnotateTreeSamplesVisual(TreeSamplesVisual):
-
     ANNOTATE_KINDS = TreeSamplesVisual.LEGEND_FACE_KINDS
 
     def __init__(self,
