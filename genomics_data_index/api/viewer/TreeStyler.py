@@ -7,6 +7,7 @@ from typing import List, Dict, Any, Union, Iterable, Tuple
 from ete3 import Tree, NodeStyle, TreeStyle, CircleFace, TextFace, RectFace, Face
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
+from genomics_data_index.api.viewer.TreeSamplesVisual import TreeSamplesVisual
 from genomics_data_index.api.viewer.samples_visuals.AnnotateTreeSamplesVisual import AnnotateTreeSamplesVisual
 from genomics_data_index.api.viewer.samples_visuals.HighlightTreeSamplesVisual import HighlightTreeSamplesVisual
 
@@ -18,6 +19,7 @@ class TreeStyler:
 
     def __init__(self, tree: Tree, default_highlight_styles: HighlightStyle, annotate_column: int,
                  tree_style: TreeStyle,
+                 samples_styles_list: List[TreeSamplesVisual],
                  legend_nsize: int = 20, legend_fsize: int = 11,
                  annotate_color_present: str = '#66c2a4',
                  annotate_color_absent: str = 'white',
@@ -55,6 +57,8 @@ class TreeStyler:
             raise Exception(f'Invalid value for annotate_kind={annotate_kind}.'
                             f' Must be one of {AnnotateTreeSamplesVisual.ANNOTATE_KINDS}')
         self._annotate_kind = annotate_kind
+
+        self._samples_styles_list = samples_styles_list
 
     def annotate(self, samples: Union[SamplesQuery, Iterable[str]],
                  label: Union[str, Dict[str, Any]] = None,
@@ -101,9 +105,6 @@ class TreeStyler:
         else:
             label_present = None
 
-        tree_style = copy.deepcopy(self._tree_style)
-        tree = self._tree.copy(method='cpickle')
-
         samples_visual = AnnotateTreeSamplesVisual(samples=samples,
                                                    label=label_present,
                                                    annotate_show_box_label=annotate_show_box_label,
@@ -123,10 +124,13 @@ class TreeStyler:
                                                    annotate_opacity_absent=self._annotate_opacity_absent,
                                                    border_width=self._annotate_border_width,
                                                    margin=self._annotate_margin)
-        samples_visual.apply_visual(tree=tree, tree_style=tree_style)
+        samples_styles_list_new = copy.copy(self._samples_styles_list)
+        samples_styles_list_new.append(samples_visual)
 
-        return TreeStyler(tree, default_highlight_styles=self._default_highlight_styles,
-                          tree_style=tree_style, legend_fsize=self._legend_fsize, legend_nsize=self._legend_nsize,
+        return TreeStyler(self._tree, default_highlight_styles=self._default_highlight_styles,
+                          tree_style=self._tree_style,
+                          samples_styles_list=samples_styles_list_new,
+                          legend_fsize=self._legend_fsize, legend_nsize=self._legend_nsize,
                           annotate_column=self._annotate_column + 1,
                           annotate_color_present=self._annotate_color_present,
                           annotate_color_absent=self._annotate_color_absent,
@@ -153,19 +157,19 @@ class TreeStyler:
         else:
             new_default_styles = self._default_highlight_styles
 
-        tree_style = copy.deepcopy(self._tree_style)
-        tree = self._tree.copy(method='cpickle')
-
         samples_visual = HighlightTreeSamplesVisual(samples=samples,
                                                     node_style=nstyle,
                                                     legend_color=legend_color,
                                                     legend_label=legend_label,
                                                     legend_nodesize=self._legend_nsize,
                                                     legend_fontsize=self._legend_fsize)
-        samples_visual.apply_visual(tree=tree, tree_style=tree_style)
+        samples_styles_list_new = copy.copy(self._samples_styles_list)
+        samples_styles_list_new.append(samples_visual)
 
-        return TreeStyler(tree, default_highlight_styles=new_default_styles,
-                          tree_style=tree_style, legend_fsize=self._legend_fsize, legend_nsize=self._legend_nsize,
+        return TreeStyler(self._tree, default_highlight_styles=new_default_styles,
+                          tree_style=self._tree_style,
+                          samples_styles_list=samples_styles_list_new,
+                          legend_fsize=self._legend_fsize, legend_nsize=self._legend_nsize,
                           annotate_column=self._annotate_column,
                           annotate_color_present=self._annotate_color_present,
                           annotate_color_absent=self._annotate_color_absent,
@@ -181,6 +185,10 @@ class TreeStyler:
                           annotate_box_label_color=self._annotate_box_label_color,
                           annotate_label_fontsize=self._annotate_label_fontsize)
 
+    def _apply_samples_styles(self, tree: Tree, tree_style: TreeStyle) -> None:
+        for samples_style in self._samples_styles_list:
+            samples_style.apply_visual(tree=tree, tree_style=tree_style)
+
     def render(self, file_name: str = '%%inline', w: int = None, h: int = None,
                tree_style: TreeStyle = None, units: str = 'px', dpi: int = 90):
         if tree_style is None:
@@ -193,12 +201,16 @@ class TreeStyler:
         if w is None and h is None:
             w = 400
 
-        return self._tree.render(file_name=file_name, w=w, h=h, tree_style=tree_style,
+        tree = self._tree.copy('newick')
+        tree_style = copy.deepcopy(self._tree_style)
+        self._apply_samples_styles(tree=tree, tree_style=tree_style)
+
+        return tree.render(file_name=file_name, w=w, h=h, tree_style=tree_style,
                                  units=units, dpi=dpi)
 
     @property
     def tree(self) -> Tree:
-        return copy.deepcopy(self._tree)
+        return self._tree.copy('newick')
 
     @property
     def tree_style(self) -> TreeStyle:
@@ -290,6 +302,7 @@ class TreeStyler:
         return TreeStyler(tree=tree,
                           default_highlight_styles=highlight_style,
                           tree_style=ts,
+                          samples_styles_list=[],
                           legend_nsize=legend_nsize,
                           legend_fsize=legend_fsize,
                           annotate_column=1,
