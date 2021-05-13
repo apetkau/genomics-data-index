@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Union, Any, Optional
+from typing import Union, Any, Optional, Callable
 
 import pandas as pd
 
@@ -41,6 +41,7 @@ class ClusterScorer:
 
     def score_groupby(self, groupby_column: str, kind: str = 'mrca_jaccard',
                       min_samples_count: Optional[int] = None, max_samples_count: Optional[int] = None,
+                      groupby_func: Callable[[Any], str] = None,
                       na_value: Any = None) -> pd.DataFrame:
         """
         Gives a score for how well sets of samples defined by the groupby_column cluster together in a tree.
@@ -51,6 +52,10 @@ class ClusterScorer:
         :param kind: The kind of scoring method to use.
         :param min_samples_count: The minimum samples in a group to include for scoring (default no minimum).
         :param max_samples_count: The maximum samples in a group to include for scoring (default no maximum).
+        :param groupby_func: An optional function to apply to the groupby_column to be used to define the groups.
+                             This gets passed a particular value from the groupby_column and returns a string representing
+                             the group this value belongs to. For example if one value in 'groupby_column' is A.B.C then
+                             groupby_func('A.B.C') => 'A' would say this particular row belongs to group 'A'.
         :param na_value: The value used to replace pd.NA with. If this is None (default) then NA values are excluded.
         :return: A dataframe containing scores and counts of samples (indexed by the groups in the groupby_column)
          for how well the passed set of samples is clustered together in a tree.
@@ -68,7 +73,13 @@ class ClusterScorer:
             universe_sub_columns = universe_df[['Sample ID', groupby_column]]
             if na_value is not None:
                 universe_sub_columns = universe_sub_columns.fillna(na_value)
-            groups_sample_sets_df = universe_sub_columns.groupby(groupby_column).agg(SampleSet)
+
+            if groupby_func is None:
+                groups_sample_sets_df = universe_sub_columns.groupby(groupby_column).agg(SampleSet)
+            else:
+                groups_sample_sets_df = universe_sub_columns.set_index(groupby_column).groupby(by=groupby_func).agg(SampleSet)
+                groups_sample_sets_df.index.name = groupby_column
+
             groups_sample_sets_df['Sample Count'] = groups_sample_sets_df.apply(
                 lambda x: len(x['Sample ID']), axis='columns')
 
