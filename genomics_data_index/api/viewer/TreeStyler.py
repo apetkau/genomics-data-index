@@ -15,7 +15,6 @@ logger = logging.getLogger(__name__)
 
 class TreeStyler:
     MODES = ['r', 'c']
-    ANNOTATE_KINDS = ['circle', 'rect', 'rectangle']
 
     def __init__(self, tree: Tree, default_highlight_styles: HighlightStyle, annotate_column: int,
                  tree_style: TreeStyle,
@@ -52,9 +51,9 @@ class TreeStyler:
         self._annotate_box_label_color = annotate_box_label_color
         self._annotate_label_fontsize = annotate_label_fontsize
 
-        if annotate_kind not in self.ANNOTATE_KINDS:
+        if annotate_kind not in AnnotateTreeSamplesVisual.ANNOTATE_KINDS:
             raise Exception(f'Invalid value for annotate_kind={annotate_kind}.'
-                            f' Must be one of {self.ANNOTATE_KINDS}')
+                            f' Must be one of {AnnotateTreeSamplesVisual.ANNOTATE_KINDS}')
         self._annotate_kind = annotate_kind
 
     def annotate(self, samples: Union[SamplesQuery, Iterable[str]],

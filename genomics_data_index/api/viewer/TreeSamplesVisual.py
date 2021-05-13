@@ -8,7 +8,8 @@ from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 
 class TreeSamplesVisual(abc.ABC):
 
-    LEGEND_FACE_KINDS = ['circle', 'rect']
+    LEGEND_FACE_KINDS = ['circle', 'circ', 'c',
+                         'rectangle', 'rect', 'r']
 
     def __init__(self, samples: Union[SamplesQuery, Iterable[str]],
                  legend_nodesize: int,
@@ -49,10 +50,10 @@ class TreeSamplesVisual(abc.ABC):
             tree_style.legend.add_face(text_face, column=1)
 
     def _build_legend_item(self, color: str, legend_label: str, kind: str) -> Tuple[Face, Face]:
-        if kind == 'rect' or kind == 'rectangle':
+        if kind == 'rect' or kind == 'rectangle' or kind == 'r':
             cf = RectFace(width=self._legend_nodesize, height=self._legend_nodesize, bgcolor=color,
                           fgcolor='black')
-        elif kind == 'circle':
+        elif kind == 'circle' or kind == 'circ' or kind == 'c':
             cf = CircleFace(radius=self._legend_nodesize / 2, color=color)
         else:
             raise Exception(f'kind=[{kind}] must be one of {self.LEGEND_FACE_KINDS}')

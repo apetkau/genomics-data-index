@@ -13,6 +13,8 @@ logger = logging.getLogger(__name__)
 
 class AnnotateTreeSamplesVisual(TreeSamplesVisual):
 
+    ANNOTATE_KINDS = TreeSamplesVisual.LEGEND_FACE_KINDS
+
     def __init__(self,
                  samples: Union[SamplesQuery, Iterable[str]],
                  label: Union[str, Dict[str, Any]],
@@ -43,7 +45,12 @@ class AnnotateTreeSamplesVisual(TreeSamplesVisual):
         self._color_present = color_present
         self._color_absent = color_absent
         self._annotate_column = annotate_column
-        self._annotate_kind = annotate_kind
+
+        if annotate_kind not in self.ANNOTATE_KINDS:
+            raise Exception(f'annotate_kind=[{annotate_kind}] is invalid. Must be one of {self.ANNOTATE_KINDS}')
+        else:
+            self._annotate_kind = annotate_kind
+
         self._annotate_border_color = annotate_border_color
         self._annotate_opacity_present = annotate_opacity_present
         self._annotate_opacity_absent = annotate_opacity_absent
@@ -94,7 +101,7 @@ class AnnotateTreeSamplesVisual(TreeSamplesVisual):
 
     def _build_annotate_face(self, width: int, height: int, border_color: str, bgcolor: str,
                              opacity: float, label: Union[str, Dict[str, Any]] = None) -> Face:
-        if self._annotate_kind == 'rect' or self._annotate_kind == 'rectangle':
+        if self._annotate_kind == 'rect' or self._annotate_kind == 'rectangle' or self._annotate_kind == 'r':
             rf = RectFace(width=width, height=height, fgcolor=None, bgcolor=bgcolor, label=label)
             rf.border.width = self._annotate_border_width
             rf.margin_top = self._annotate_margin
@@ -107,7 +114,7 @@ class AnnotateTreeSamplesVisual(TreeSamplesVisual):
             rf.hz_align = 1
             rf.vt_align = 1
             return rf
-        elif self._annotate_kind == 'circle':
+        elif self._annotate_kind == 'circle' or self._annotate_kind == 'circ' or self._annotate_kind == 'c':
             # Make circle radius such that it fits in bounding box defined by width and height
             min_dimension = min(width, height)
             radius = min_dimension / 2
