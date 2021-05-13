@@ -41,7 +41,7 @@ class ClusterScorer:
             raise Exception(f'kind=[{kind}] is invalid. Must be one of {self.SCORE_KINDS}')
 
     def score_groupby(self, groupby_column: str, na_value: Any = None,
-                      kind: str = 'mrca_jaccard') -> pd.Series:
+                      kind: str = 'mrca_jaccard') -> pd.DataFrame:
         """
         Gives a score for how well sets of samples defined by the groupby_column cluster together in a tree.
 
@@ -50,8 +50,8 @@ class ClusterScorer:
                                with the samples.
         :param na_value: The value used to replace pd.NA with. If this is None (default) then NA values are excluded.
         :param kind: The kind of scoring method to use.
-        :return: A series of scores (indexed by the groups in the groupby_column) for how well the passed set of samples
-                 is clustered together in a tree.
+        :return: A dataframe containing scores and counts of samples (indexed by the groups in the groupby_column)
+         for how well the passed set of samples is clustered together in a tree.
         """
         if kind not in self.SCORE_KINDS:
             raise Exception(f'kind=[{kind}] is invalid. Must be one of {self.SCORE_KINDS}')
@@ -67,10 +67,12 @@ class ClusterScorer:
             if na_value is not None:
                 universe_sub_columns = universe_sub_columns.fillna(na_value)
             groups_sample_sets_df = universe_sub_columns.groupby(groupby_column).agg(SampleSet)
-            groups_scores_series = groups_sample_sets_df.apply(
+            groups_sample_sets_df['Sample Count'] = groups_sample_sets_df.apply(
+                lambda x: len(x['Sample ID']), axis='columns')
+            groups_sample_sets_df['Score'] = groups_sample_sets_df.apply(
                 lambda x: self.score_samples(x['Sample ID']), axis='columns')
 
-            return groups_scores_series
+            return groups_sample_sets_df[['Score', 'Sample Count']]
 
     @classmethod
     def create(cls, universe_samples: SamplesQuery) -> ClusterScorer:
