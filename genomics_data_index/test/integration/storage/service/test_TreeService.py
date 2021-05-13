@@ -35,7 +35,7 @@ def test_build_tree_core_iqtree(tree_service, core_alignment_service, expected_t
 
     actual_distance = 5180 * tree.get_distance('SampleA', 'genome')
     expected_distance = 26
-    assert abs(expected_distance - actual_distance) < 5
+    assert abs(expected_distance - actual_distance) < 6
 
 
 def test_build_tree_core_iqtree_2cores(tree_service, core_alignment_service, expected_tree):
@@ -64,7 +64,7 @@ def test_build_tree_full(tree_service, core_alignment_service, expected_tree):
 
     actual_distance = 5180 * tree.get_distance('SampleA', 'genome')
     expected_distance = 26
-    assert abs(expected_distance - actual_distance) < 5
+    assert abs(expected_distance - actual_distance) < 6
 
 
 def test_build_tree_two_samples(tree_service, core_alignment_service):
