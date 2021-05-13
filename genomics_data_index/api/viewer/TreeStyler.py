@@ -90,11 +90,23 @@ class TreeStyler:
         if color_absent is None:
             color_absent = self._annotate_color_absent
 
+        if isinstance(label, str):
+            # Pick default color since ete3 by default colors the same as what I'm using for the fill color
+            label = {'text': label, 'color': 'black', 'font': 'Verdana', 'fontsize': self._annotate_label_fontsize}
+
+        if label is not None:
+            label_present = copy.deepcopy(label)
+            if 'fontsize' not in label_present:
+                label_present['fontsize'] = self._annotate_label_fontsize
+                label_present['color'] = self._annotate_box_label_color
+        else:
+            label_present = None
+
         tree_style = copy.deepcopy(self._tree_style)
         tree = self._tree.copy(method='cpickle')
 
         samples_visual = AnnotateTreeSamplesVisual(samples=samples,
-                                                   label=label,
+                                                   label=label_present,
                                                    annotate_show_box_label=annotate_show_box_label,
                                                    annotate_box_label_color=annotate_box_label_color,
                                                    annotate_label_fontsize=self._annotate_label_fontsize,
