@@ -110,7 +110,6 @@ class AnnotateTreeSamplesVisual(TreeSamplesVisual):
             return rf
         elif self._annotate_kind == 'circle':
             # Make circle radius such that it fits in bounding box defined by width and height
-            # Shrink a bit since I noticed it was being clipped slightly
             min_dimension = min(width, height)
             radius = min_dimension / 2
 

@@ -77,6 +77,19 @@ class TreeStyler:
         :param color_absent: The color to use when a sample is absent (defaults to class-defined color).
         :return: A new TreeStyler object which contains the completed annotation column.
         """
+        if box_width is None:
+            box_width = self._annotate_box_width
+        if box_height is None:
+            box_height = self._annotate_box_height
+        if annotate_show_box_label is None:
+            annotate_show_box_label = self._annotate_show_box_label
+        if annotate_box_label_color is None:
+            annotate_box_label_color = self._annotate_box_label_color
+        if color_present is None:
+            color_present = self._annotate_color_present
+        if color_absent is None:
+            color_absent = self._annotate_color_absent
+
         tree_style = copy.deepcopy(self._tree_style)
         tree = self._tree.copy(method='cpickle')
 
