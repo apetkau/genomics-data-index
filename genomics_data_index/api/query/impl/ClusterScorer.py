@@ -5,26 +5,17 @@ import pandas as pd
 
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
+from genomics_data_index.api.query.impl.cluster.ClusterScoreMRCAJaccard import ClusterScoreMRCAJaccard
 
 
 class ClusterScorer:
 
-    SCORE_KINDS = ['mrca_jaccard']
+    SCORE_KINDS = {
+        'mrca_jaccard': ClusterScoreMRCAJaccard()
+    }
 
     def __init__(self, universe_samples: SamplesQuery):
         self._universe_samples = universe_samples
-
-    def _score_sample_mrca_jaccard(self, data: Union[SamplesQuery, SampleSet]) -> float:
-        if isinstance(data, SamplesQuery):
-            data_set = data.sample_set
-        elif isinstance(data, SampleSet):
-            data_set = data
-        else:
-            raise Exception(f'Invalid type for data={data}. Got type {type(data)}. Expected {SamplesQuery.__name__}'
-                            f' or {SampleSet.__name__}')
-
-        mrca_samples = self._universe_samples.isin(data, kind='mrca')
-        return data_set.jaccard_index(mrca_samples.sample_set)
 
     def score_samples(self, samples: Union[SamplesQuery, SampleSet], kind: str = 'mrca_jaccard') -> float:
         """
@@ -34,8 +25,8 @@ class ClusterScorer:
         :param kind: The kind of scoring method to use.
         :return: A score for how well the passed set of samples is clustered together in a tree.
         """
-        if kind == 'mrca_jaccard':
-            return self._score_sample_mrca_jaccard(samples)
+        if kind in self.SCORE_KINDS:
+            return self.SCORE_KINDS[kind].score(samples, self._universe_samples)
         else:
             raise Exception(f'kind=[{kind}] is invalid. Must be one of {self.SCORE_KINDS}')
 
