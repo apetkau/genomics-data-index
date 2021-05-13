@@ -1,31 +1,22 @@
 from __future__ import annotations
-from typing import Union, Any
+from typing import Union, Any, Optional, Callable, Dict
 
 import pandas as pd
 
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
-from genomics_data_index.api.query.impl.TreeSamplesQuery import TreeSamplesQuery
+from genomics_data_index.api.query.impl.cluster.ClusterScoreMRCAJaccard import ClusterScoreMRCAJaccard
+from genomics_data_index.api.query.impl.cluster.ClusterScoreMethod import ClusterScoreMethod
 
 
 class ClusterScorer:
 
-    SCORE_KINDS = ['mrca_jaccard']
+    SCORE_KINDS: Dict[str, ClusterScoreMethod] = {
+        'mrca_jaccard': ClusterScoreMRCAJaccard()
+    }
 
     def __init__(self, universe_samples: SamplesQuery):
         self._universe_samples = universe_samples
-
-    def _score_sample_mrca_jaccard(self, data: Union[SamplesQuery, SampleSet]) -> float:
-        if isinstance(data, SamplesQuery):
-            data_set = data.sample_set
-        elif isinstance(data, SampleSet):
-            data_set = data
-        else:
-            raise Exception(f'Invalid type for data={data}. Got type {type(data)}. Expected {SamplesQuery.__name__}'
-                            f' or {SampleSet.__name__}')
-
-        mrca_samples = self._universe_samples.isin(data, kind='mrca')
-        return data_set.jaccard_index(mrca_samples.sample_set)
 
     def score_samples(self, samples: Union[SamplesQuery, SampleSet], kind: str = 'mrca_jaccard') -> float:
         """
@@ -35,23 +26,31 @@ class ClusterScorer:
         :param kind: The kind of scoring method to use.
         :return: A score for how well the passed set of samples is clustered together in a tree.
         """
-        if kind == 'mrca_jaccard':
-            return self._score_sample_mrca_jaccard(samples)
+        if kind in self.SCORE_KINDS:
+            return self.SCORE_KINDS[kind].score(samples, self._universe_samples)
         else:
             raise Exception(f'kind=[{kind}] is invalid. Must be one of {self.SCORE_KINDS}')
 
-    def score_groupby(self, groupby_column: str, na_value: Any = None,
-                      kind: str = 'mrca_jaccard') -> pd.Series:
+    def score_groupby(self, groupby_column: str, kind: str = 'mrca_jaccard',
+                      min_samples_count: Optional[int] = None, max_samples_count: Optional[int] = None,
+                      groupby_func: Callable[[Any], str] = None,
+                      na_value: Any = None) -> pd.DataFrame:
         """
         Gives a score for how well sets of samples defined by the groupby_column cluster together in a tree.
 
         :param groupby_column: The column in the samples query dataframe to group by. When using this option you likely
                                will want to join your query with an external data frame defining extra metadata associated
                                with the samples.
-        :param na_value: The value used to replace pd.NA with. If this is None (default) then NA values are excluded.
         :param kind: The kind of scoring method to use.
-        :return: A series of scores (indexed by the groups in the groupby_column) for how well the passed set of samples
-                 is clustered together in a tree.
+        :param min_samples_count: The minimum samples in a group to include for scoring (default no minimum).
+        :param max_samples_count: The maximum samples in a group to include for scoring (default no maximum).
+        :param groupby_func: An optional function to apply to the groupby_column to be used to define the groups.
+                             This gets passed a particular value from the groupby_column and returns a string representing
+                             the group this value belongs to. For example if one value in 'groupby_column' is A.B.C then
+                             groupby_func('A.B.C') => 'A' would say this particular row belongs to group 'A'.
+        :param na_value: The value used to replace pd.NA with. If this is None (default) then NA values are excluded.
+        :return: A dataframe containing scores and counts of samples (indexed by the groups in the groupby_column)
+         for how well the passed set of samples is clustered together in a tree.
         """
         if kind not in self.SCORE_KINDS:
             raise Exception(f'kind=[{kind}] is invalid. Must be one of {self.SCORE_KINDS}')
@@ -66,11 +65,34 @@ class ClusterScorer:
             universe_sub_columns = universe_df[['Sample ID', groupby_column]]
             if na_value is not None:
                 universe_sub_columns = universe_sub_columns.fillna(na_value)
-            groups_sample_sets_df = universe_sub_columns.groupby(groupby_column).agg(SampleSet)
-            groups_scores_series = groups_sample_sets_df.apply(
+
+            if groupby_func is None:
+                groups_sample_sets_df = universe_sub_columns.groupby(groupby_column).agg(SampleSet)
+            else:
+                groups_sample_sets_df = universe_sub_columns.set_index(groupby_column).groupby(by=groupby_func).agg(SampleSet)
+                groups_sample_sets_df.index.name = groupby_column
+
+            groups_sample_sets_df['Sample Count'] = groups_sample_sets_df.apply(
+                lambda x: len(x['Sample ID']), axis='columns')
+
+            # Subset before scoring to not waste time scoring groups we don't need
+            if min_samples_count is not None:
+                groups_sample_sets_df = groups_sample_sets_df[groups_sample_sets_df['Sample Count'] >= min_samples_count]
+            if max_samples_count is not None:
+                groups_sample_sets_df = groups_sample_sets_df[groups_sample_sets_df['Sample Count'] <= max_samples_count]
+
+            # Do scoring
+            groups_sample_sets_df['Score'] = groups_sample_sets_df.apply(
                 lambda x: self.score_samples(x['Sample ID']), axis='columns')
 
-            return groups_scores_series
+            return groups_sample_sets_df[['Score', 'Sample Count']]
+
+    @classmethod
+    def register_score_kind(cls, name: str, score_kind: ClusterScoreMethod) -> None:
+        if name not in cls.SCORE_KINDS:
+            cls.SCORE_KINDS[name] = score_kind
+        else:
+            raise Exception(f'Score kind with name={name} already exists {cls.SCORE_KINDS[name]}')
 
     @classmethod
     def create(cls, universe_samples: SamplesQuery) -> ClusterScorer:
