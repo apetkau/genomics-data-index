@@ -1,11 +1,10 @@
 from __future__ import annotations
-from typing import Union, Any
+from typing import Union, Any, Optional
 
 import pandas as pd
 
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
-from genomics_data_index.api.query.impl.TreeSamplesQuery import TreeSamplesQuery
 
 
 class ClusterScorer:
@@ -40,16 +39,19 @@ class ClusterScorer:
         else:
             raise Exception(f'kind=[{kind}] is invalid. Must be one of {self.SCORE_KINDS}')
 
-    def score_groupby(self, groupby_column: str, na_value: Any = None,
-                      kind: str = 'mrca_jaccard') -> pd.DataFrame:
+    def score_groupby(self, groupby_column: str, kind: str = 'mrca_jaccard',
+                      min_samples_count: Optional[int] = None, max_samples_count: Optional[int] = None,
+                      na_value: Any = None) -> pd.DataFrame:
         """
         Gives a score for how well sets of samples defined by the groupby_column cluster together in a tree.
 
         :param groupby_column: The column in the samples query dataframe to group by. When using this option you likely
                                will want to join your query with an external data frame defining extra metadata associated
                                with the samples.
-        :param na_value: The value used to replace pd.NA with. If this is None (default) then NA values are excluded.
         :param kind: The kind of scoring method to use.
+        :param min_samples_count: The minimum samples in a group to include for scoring (default no minimum).
+        :param max_samples_count: The maximum samples in a group to include for scoring (default no maximum).
+        :param na_value: The value used to replace pd.NA with. If this is None (default) then NA values are excluded.
         :return: A dataframe containing scores and counts of samples (indexed by the groups in the groupby_column)
          for how well the passed set of samples is clustered together in a tree.
         """
@@ -69,6 +71,14 @@ class ClusterScorer:
             groups_sample_sets_df = universe_sub_columns.groupby(groupby_column).agg(SampleSet)
             groups_sample_sets_df['Sample Count'] = groups_sample_sets_df.apply(
                 lambda x: len(x['Sample ID']), axis='columns')
+
+            # Subset before scoring to not waste time scoring groups we don't need
+            if min_samples_count is not None:
+                groups_sample_sets_df = groups_sample_sets_df[groups_sample_sets_df['Sample Count'] >= min_samples_count]
+            if max_samples_count is not None:
+                groups_sample_sets_df = groups_sample_sets_df[groups_sample_sets_df['Sample Count'] <= max_samples_count]
+
+            # Do scoring
             groups_sample_sets_df['Score'] = groups_sample_sets_df.apply(
                 lambda x: self.score_samples(x['Sample ID']), axis='columns')
 

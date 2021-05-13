@@ -146,3 +146,17 @@ def test_score_groupby_with_mutation_tree(prebuilt_tree: Tree, loaded_database_c
     assert {'red', 'NA'} == set(scores_df.index)
     assert math.isclose(2 / 3, scores_df.loc['red', 'Score'], abs_tol=1e-3)
     assert math.isclose(1 / 1, scores_df.loc['NA', 'Score'], abs_tol=1e-3)
+
+    # Group by 2 groups exclude 1 due to minimum samples
+    scores_df = cluster_scorer.score_groupby('Color', min_samples_count=2)
+    assert ['Score', 'Sample Count'] == scores_df.columns.tolist()
+    assert 1 == len(scores_df)
+    assert {'blue'} == set(scores_df.index)
+    assert math.isclose(2 / 2, scores_df.loc['blue', 'Score'], abs_tol=1e-3)
+
+    # Group by 2 groups exclude 1 due to maximum samples
+    scores_df = cluster_scorer.score_groupby('Color', max_samples_count=1)
+    assert ['Score', 'Sample Count'] == scores_df.columns.tolist()
+    assert 1 == len(scores_df)
+    assert {'red'} == set(scores_df.index)
+    assert math.isclose(1 / 1, scores_df.loc['red', 'Score'], abs_tol=1e-3)
