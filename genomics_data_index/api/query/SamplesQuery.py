@@ -5,6 +5,7 @@ from typing import Union, List, Set, Tuple
 
 import numpy as np
 import pandas as pd
+from ete3 import Tree
 
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.QueryFeature import QueryFeature
@@ -81,6 +82,10 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
+    def join_tree(self, tree: Tree, kind='mutation', **kwargs) -> SamplesQuery:
+        pass
+
+    @abc.abstractmethod
     def reset_universe(self) -> SamplesQuery:
         """
         Resets the 'universe' set to be the set of currently selected samples.
@@ -102,7 +107,7 @@ class SamplesQuery(abc.ABC):
     def complement(self):
         pass
 
-    def within(self, data: Union[str, List[str]], **kwargs) -> SamplesQuery:
+    def within(self, data: Union[str, List[str], SamplesQuery, SampleSet], **kwargs) -> SamplesQuery:
         """
         Queries for samples within a particular distance. This is identical to calling
         isin(data, kind='distance', ...). Used to help make code easier to read.
@@ -114,7 +119,7 @@ class SamplesQuery(abc.ABC):
         return self.isin(data=data, kind='distance', **kwargs)
 
     @abc.abstractmethod
-    def _within_distance(self, sample_names: Union[str, List[str]], distance: float, units: str,
+    def _within_distance(self, data: Union[str, List[str], SamplesQuery, SampleSet], distance: float, units: str,
                          **kwargs) -> SamplesQuery:
         pass
 
@@ -123,7 +128,8 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def isa(self, data: Union[str, List[str]], kind: str = 'names', **kwargs) -> SamplesQuery:
+    def isa(self, data: Union[str, List[str], SamplesQuery, SampleSet], kind: str = None,
+            **kwargs) -> SamplesQuery:
         """
         Queries for samples which are a particular type/belong to a particular category.
         Read as "subset samples which are a (isa) particular type defined by 'data'".
@@ -138,14 +144,21 @@ class SamplesQuery(abc.ABC):
         """
         pass
 
-    def isan(self, data: Union[str, List[str]], kind: str = 'names', **kwargs) -> SamplesQuery:
+    def isan(self, data: Union[str, List[str], SamplesQuery, SampleSet], kind: str = None,
+             **kwargs) -> SamplesQuery:
         """
         Synonym for isa()
         """
         return self.isa(data=data, kind=kind, **kwargs)
 
     @abc.abstractmethod
-    def isin(self, data: Union[str, List[str], pd.Series], kind: str = 'names', **kwargs) -> SamplesQuery:
+    def isin(self, data: Union[str, List[str], pd.Series, SamplesQuery, SampleSet], kind: str = None,
+             **kwargs) -> SamplesQuery:
+        pass
+
+    @abc.abstractmethod
+    def _get_sample_names_query_infix_from_data(self, data: Union[str, List[str], pd.Series, SamplesQuery, SampleSet]
+                                            ) -> Tuple[Set[str], str]:
         pass
 
     @abc.abstractmethod
@@ -153,7 +166,15 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def isin_kinds(self) -> List[str]:
+    def _can_handle_isa_kind(self, kind: str) -> bool:
+        pass
+
+    @abc.abstractmethod
+    def _isa_kinds(self) -> List[str]:
+        pass
+
+    @abc.abstractmethod
+    def _isin_kinds(self) -> List[str]:
         pass
 
     @abc.abstractmethod
@@ -175,6 +196,10 @@ class SamplesQuery(abc.ABC):
     @property
     @abc.abstractmethod
     def tree(self):
+        pass
+
+    @abc.abstractmethod
+    def has_tree(self) -> bool:
         pass
 
     @abc.abstractmethod

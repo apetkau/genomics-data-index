@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Union, List
 
 import pandas as pd
+from ete3 import Tree
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.api.query.impl.TreeSamplesQueryFactory import TreeSamplesQueryFactory
@@ -27,7 +28,7 @@ class DataFrameSamplesQuery(WrappedSamplesQuery):
         self._default_isa_kind = default_isa_kind
         self._default_isa_column = default_isa_column
 
-    def _isin_internal(self, data: Union[str, List[str], pd.Series], kind: str, **kwargs) -> SamplesQuery:
+    def _isin_internal(self, data: Union[str, List[str], pd.Series, SamplesQuery, SampleSet], kind: str, **kwargs) -> SamplesQuery:
         if kind == 'dataframe':
             if isinstance(data, pd.Series) and data.dtype == bool:
                 if data.index.equals(self._data_frame.index):
@@ -39,27 +40,27 @@ class DataFrameSamplesQuery(WrappedSamplesQuery):
                 raise Exception(f'data=[{data}] is wrong type for kind=[{kind}]. '
                                 f'Must be a boolean pandas.Series')
         else:
-            raise Exception(f'kind=[{kind}] is not supported. Must be one of {self.isin_kinds()}')
+            raise Exception(f'kind=[{kind}] is not supported. Must be one of {self._isin_kinds()}')
 
-    def isin_kinds(self) -> List[str]:
-        return list(set(super().isin_kinds() + self.ISIN_KINDS))
+    def _isin_kinds(self) -> List[str]:
+        return list(set(super()._isin_kinds() + self.ISIN_KINDS))
 
     def _can_handle_isin_kind(self, kind: str) -> bool:
         return kind in self.ISIN_KINDS
 
-    def isa(self, data: Union[str, List[str]], kind: str = None, **kwargs) -> SamplesQuery:
+    def _can_handle_isa_kind(self, kind: str) -> bool:
+        return kind in self.ISA_KINDS
+
+    def isa(self, data: Union[str, List[str], pd.Series, SamplesQuery, SampleSet], kind: str = None, **kwargs) -> SamplesQuery:
         if kind is None:
             if self._default_isa_kind is None:
-                kind = 'names'
+                kind = 'sample'
             else:
                 kind = self._default_isa_kind
 
-        if kind == 'names':
-            return self._wrap_create(self._wrapped_query.isa(data=data, kind=kind, **kwargs))
-        else:
-            return self._isa_internal(data=data, kind=kind, **kwargs)
+        return super().isa(data=data, kind=kind, **kwargs)
 
-    def _isa_internal(self, data: Union[str, List[str]], kind: str, isa_column: str = None,
+    def _isa_internal(self, data: Union[str, List[str], pd.Series, SamplesQuery, SampleSet], kind: str, isa_column: str = None,
                       regex: bool = False) -> SamplesQuery:
         if kind == 'dataframe':
             if isa_column is None and self._default_isa_column is not None:
@@ -115,6 +116,13 @@ class DataFrameSamplesQuery(WrappedSamplesQuery):
         return TreeSamplesQueryFactory.instance().build_tree(kind=kind,
                                                              database_connection=self._query_connection,
                                                              wrapped_query=self, **kwargs)
+
+    def join_tree(self, tree: Tree, kind='mutation', **kwargs) -> SamplesQuery:
+        return TreeSamplesQueryFactory.instance().join_tree(tree=tree,
+                                                            kind=kind,
+                                                            database_connection=self._query_connection,
+                                                            wrapped_query=self,
+                                                            **kwargs)
 
     def join(self, data_frame: pd.DataFrame, sample_ids_column: str = None,
              sample_names_column: str = None, default_isa_kind: str = 'names',

@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from typing import Union, List, Set, Tuple
+import logging
 
 import numpy as np
 import pandas as pd
+from ete3 import Tree
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.api.query.impl.DataFrameSamplesQuery import DataFrameSamplesQuery
@@ -17,12 +19,15 @@ from genomics_data_index.storage.model.QueryFeatureMutation import QueryFeatureM
 from genomics_data_index.storage.service.KmerService import KmerService
 
 
+logger = logging.getLogger(__name__)
+
+
 class SamplesQueryIndex(SamplesQuery):
     HAS_KINDS = ['mutation', 'mutations', 'mlst']
     SUMMARY_FEATURES_KINDS = ['mutations']
     FEATURES_SELECTIONS = ['all', 'unique']
-    ISIN_TYPES = ['names', 'distance', 'distances']
-    ISA_TYPES = ['names']
+    ISIN_TYPES = ['sample', 'samples', 'distance', 'distances']
+    ISA_TYPES = ['sample', 'samples']
     DISTANCES_UNITS = ['kmer_jaccard']
 
     def __init__(self, connection: DataIndexConnection,
@@ -48,7 +53,7 @@ class SamplesQueryIndex(SamplesQuery):
                                  queries_collection=self._queries_collection)
 
     def join(self, data_frame: pd.DataFrame, sample_ids_column: str = None,
-             sample_names_column: str = None, default_isa_kind: str = 'names',
+             sample_names_column: str = None, default_isa_kind: str = 'sample',
              default_isa_column: str = None) -> SamplesQuery:
         if sample_ids_column is None and sample_names_column is None:
             raise Exception('At least one of sample_ids_column or sample_names_column must be set.')
@@ -66,6 +71,13 @@ class SamplesQueryIndex(SamplesQuery):
                                                                          connection=self._query_connection,
                                                                          default_isa_kind=default_isa_kind,
                                                                          default_isa_column=default_isa_column)
+
+    def join_tree(self, tree: Tree, kind='mutation', **kwargs) -> SamplesQuery:
+        return TreeSamplesQueryFactory.instance().join_tree(tree=tree,
+                                                            kind=kind,
+                                                            database_connection=self._query_connection,
+                                                            wrapped_query=self,
+                                                            **kwargs)
 
     def intersect(self, sample_set: SampleSet, query_message: str = None) -> SamplesQuery:
         intersected_set = self._intersect_sample_set(sample_set)
@@ -181,6 +193,9 @@ class SamplesQueryIndex(SamplesQuery):
         raise Exception(f'No tree exists for {self.__class__}.'
                         f' Perhaps you should try to run build_tree() first to build a tree.')
 
+    def has_tree(self) -> bool:
+        return False
+
     def __and__(self, other):
         return self.and_(other)
 
@@ -232,65 +247,121 @@ class SamplesQueryIndex(SamplesQuery):
         return self._create_from(intersect_found, universe_set=self._universe_set,
                                  queries_collection=queries_collection)
 
-    def _prepare_sample_names_query_message(self, sample_names: Union[str, List[str]],
-                                            query_message_prefix: str,
-                                            additional_messages: str) -> Tuple[List[str], str]:
-        if isinstance(sample_names, str):
-            query_message = f"{query_message_prefix}('{sample_names}'{additional_messages})"
-            sample_names = [sample_names]
-        elif isinstance(sample_names, list):
-            query_message = f"{query_message_prefix}({sample_names}{additional_messages})"
-        else:
-            raise Exception(f'Unrecognized input type sample_names={sample_names}. Can only be a str or list')
+    def _prepare_isin_query_message(self, query_message_prefix: str,
+                                    query_msg_infix: str,
+                                    additional_messages: str) -> str:
+        return f"{query_message_prefix}({query_msg_infix}{additional_messages})"
 
-        return sample_names, query_message
-
-    def _isin_names(self, sample_names: Union[str, List[str]], query_message_prefix: str) -> SamplesQuery:
-        sample_names, query_message = self._prepare_sample_names_query_message(sample_names,
-                                                                               query_message_prefix=query_message_prefix,
-                                                                               additional_messages='')
-
-        samples = self._query_connection.sample_service.get_existing_samples_by_names(sample_names)
-        sample_ids = {s.id for s in samples}
-        sample_set = SampleSet(sample_ids)
+    def _isin_samples(self, data: Union[str, List[str], pd.Series, SamplesQuery, SampleSet],
+                      query_message_prefix: str) -> SamplesQuery:
+        sample_set, query_infix = self._get_sample_set_query_infix_from_data(data)
+        query_message = self._prepare_isin_query_message(query_message_prefix=query_message_prefix,
+                                                        query_msg_infix=query_infix,
+                                                        additional_messages='')
         queries_collection = self._queries_collection.append(query_message)
         return self._create_from(sample_set=sample_set, universe_set=self._universe_set,
                                  queries_collection=queries_collection)
 
-    def _within_kmer_jaccard(self, sample_names: Union[str, List[str]], distance: float, kmer_size: int = 31):
+    def _within_kmer_jaccard(self, data: Union[str, List[str], pd.Series, SamplesQuery, SampleSet],
+                             distance: float, kmer_size: int = 31) -> SamplesQuery:
         additional_messages = f', dist={distance}, k={kmer_size}'
-        sample_names, query_message = self._prepare_sample_names_query_message(sample_names,
-                                                                               query_message_prefix='isin_kmer_jaccard',
-                                                                               additional_messages=additional_messages)
+        sample_names, query_infix = self._get_sample_names_query_infix_from_data(data)
+        query_message = self._prepare_isin_query_message(query_message_prefix='isin_kmer_jaccard',
+                                                        query_msg_infix=query_infix,
+                                                        additional_messages=additional_messages)
+
         kmer_service: KmerService = self._query_connection.kmer_service
 
-        sample_set_matches = kmer_service.find_matches_within(sample_names=sample_names,
-                                                              distance_threshold=distance,
-                                                              kmer_size=kmer_size,
-                                                              samples_universe=self._sample_set)
+        if len(sample_names) == 0:
+            sample_set_matches = SampleSet.create_empty()
+        else:
+            sample_set_matches = kmer_service.find_matches_within(sample_names=list(sample_names),
+                                                                  distance_threshold=distance,
+                                                                  kmer_size=kmer_size,
+                                                                  samples_universe=self._sample_set)
         queries_collection = self._queries_collection.append(query_message)
         return self._create_from(sample_set=sample_set_matches, universe_set=self._universe_set,
                                  queries_collection=queries_collection)
 
-    def _within_distance(self, sample_names: Union[str, List[str]], distance: float,
+    def _within_distance(self, data: Union[str, List[str], pd.Series, SamplesQuery, SampleSet], distance: float,
                          units: str = 'kmer_jaccard', **kwargs) -> SamplesQuery:
         if units == 'kmer_jaccard':
-            return self._within_kmer_jaccard(sample_names=sample_names, distance=distance, **kwargs)
+            return self._within_kmer_jaccard(data=data, distance=distance, **kwargs)
         else:
             raise Exception(f'units=[{units}] is not supported. Must be one of {self._distance_units()}. '
                             f'For additional distance queries you perhaps need to build or attach a tree to '
                             f'the query.')
 
-    def isin(self, data: Union[str, List[str]], kind: str = 'names', **kwargs) -> SamplesQuery:
-        if kind == 'names':
-            return self._isin_names(sample_names=data, query_message_prefix='isin_names')
+    def _get_sample_set_query_infix_from_data(self, data: Union[str, List[str], pd.Series, SamplesQuery, SampleSet]
+                                            ) -> Tuple[SampleSet, str]:
+        if isinstance(data, str) or isinstance(data, list):
+            logger.debug(f'data=[{data}] contains sample names')
+            if isinstance(data, str):
+                query_msg = f"'{data}'"
+                data = [data]
+            else:
+                query_msg = f'{data}'
+            samples = self._query_connection.sample_service.get_existing_samples_by_names(data)
+            sample_ids = {s.id for s in samples}
+            sample_set = SampleSet(sample_ids)
+        elif isinstance(data, SamplesQuery) or isinstance(data, SampleSet):
+            logger.debug(f'data=[{data}] contains sample ids')
+            if isinstance(data, SamplesQuery):
+                sample_set = data.sample_set
+                query_msg = f'{data}'
+            else:
+                sample_set = data
+                query_msg = f'set({len(data)} samples)'
+        else:
+            raise Exception(f'Unknown type for data=[{data}. Got type [{type(data)}]. '
+                            'Must a string or list of strings (representing sample names) '
+                            'or a set of sample IDs (as a SamplesQuery or SampleSet).')
+        return sample_set, query_msg
+
+    def _get_sample_names_query_infix_from_data(self, data: Union[str, List[str], pd.Series, SamplesQuery, SampleSet]
+                                            ) -> Tuple[Set[str], str]:
+        if isinstance(data, str) or isinstance(data, list):
+            logger.debug(f'data={data} contains sample names')
+            if isinstance(data, str):
+                query_msg = f"'{data}'"
+                data = [data]
+            else:
+                query_msg = f'{data}'
+            sample_names = data
+        elif isinstance(data, SamplesQuery) or isinstance(data, SampleSet):
+            logger.debug(f'data=[{data}] contains sample ids')
+            if isinstance(data, SamplesQuery):
+                sample_set = data.sample_set
+                query_msg = f'{data}'
+            else:
+                sample_set = data
+                query_msg = f'set({len(data)} samples)'
+
+            samples = self._query_connection.sample_service.find_samples_by_ids(sample_set)
+            sample_names = {s.name for s in samples}
+        else:
+            raise Exception(f'Unknown type for data=[{data}. Got type [{type(data)}]. '
+                            'Must a string or list of strings (representing sample names) '
+                            'or a set of sample IDs (as a SamplesQuery or SampleSet).')
+        return sample_names, query_msg
+
+    def isin(self, data: Union[str, List[str], pd.Series, SamplesQuery, SampleSet], kind: str = 'samples',
+             **kwargs) -> SamplesQuery:
+        if kind == 'sample' or kind == 'samples':
+            return self._isin_samples(data=data, query_message_prefix='isin_samples')
         elif kind == 'distance' or kind == 'distances':
-            return self._within_distance(sample_names=data, **kwargs)
+            return self._within_distance(data=data, **kwargs)
         else:
             raise Exception(f'kind=[{kind}] is not supported. Must be one of {self.ISIN_TYPES}')
 
-    def isin_kinds(self) -> List[str]:
+    def _isin_kinds(self) -> List[str]:
         return self.ISIN_TYPES
+
+    def _isa_kinds(self) -> List[str]:
+        return self.ISA_TYPES
+
+    def _can_handle_isa_kind(self, kind: str) -> bool:
+        return kind in self.ISA_TYPES
 
     def _can_handle_isin_kind(self, kind: str) -> bool:
         return kind in self.ISIN_TYPES
@@ -301,11 +372,11 @@ class SamplesQueryIndex(SamplesQuery):
     def _can_handle_distance_units(self, units: str) -> bool:
         return units in self.DISTANCES_UNITS
 
-    def isa(self, data: Union[str, List[str]], kind: str = 'names', **kwargs) -> SamplesQuery:
-        if kind == 'names':
-            return self._isin_names(sample_names=data, query_message_prefix='isa_name')
+    def isa(self, data: Union[str, List[str]], kind: str = 'sample', **kwargs) -> SamplesQuery:
+        if kind == 'sample' or kind == 'samples':
+            return self._isin_samples(data=data, query_message_prefix='isa_sample')
         else:
-            raise Exception(f'kind=[{kind}] is not supported. Must be one of {self.ISA_TYPES}')
+            raise Exception(f'kind=[{kind}] is not supported. Must be one of {self._isa_kinds()}')
 
     def to_distances(self, kind: str = 'kmer', **kwargs) -> Tuple[np.ndarray, List[str]]:
         if kind == 'kmer':

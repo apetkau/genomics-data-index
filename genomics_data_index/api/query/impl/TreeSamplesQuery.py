@@ -4,7 +4,6 @@ import abc
 import logging
 from typing import Union, List, cast
 
-import pandas as pd
 from ete3 import Tree, TreeStyle
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
@@ -24,43 +23,49 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
         super().__init__(connection=connection, wrapped_query=wrapped_query)
         self._tree = tree
 
-    def _within_mrca(self, sample_names: Union[str, List[str]]) -> SamplesQuery:
-        if isinstance(sample_names, str):
-            sample_names = [sample_names]
+    def _within_mrca(self, data: Union[str, List[str], SamplesQuery, SampleSet]) -> SamplesQuery:
+        if isinstance(data, str):
+            data = [data]
 
-        sample_name_ids = self._get_sample_name_ids()
-        sample_leaves_list = []
-        for name in sample_names:
-            sample_leaves = self._tree.get_leaves_by_name(name)
-            if len(sample_leaves) != 1:
-                raise Exception(
-                    f'Invalid number of matching leaves for sample [{name}], leaves {sample_leaves}')
+        sample_names, query_infix = self._get_sample_names_query_infix_from_data(data)
+        if len(sample_names) == 0:
+            found_samples = SampleSet.create_empty()
+        else:
+            sample_name_ids_self = self._get_sample_name_ids()
+            sample_leaves_list = []
+            for name in sample_names:
+                sample_leaves = self._tree.get_leaves_by_name(name)
+                if len(sample_leaves) != 1:
+                    raise Exception(
+                        f'Invalid number of matching leaves for sample [{name}], leaves {sample_leaves}')
+                else:
+                    sample_leaves_list.append(sample_leaves[0])
+
+            if len(sample_leaves_list) == 0:
+                raise Exception(f'Should at least have some leaves in the tree matching data={data}')
+            elif len(sample_leaves_list) == 1:
+                found_sample_names = [sample_leaves_list[0].name]
             else:
-                sample_leaves_list.append(sample_leaves[0])
+                # According to https://github.com/etetoolkit/ete/issues/503 'get_common_ancestor' does *not*
+                # Include the first node calling the function so I have to leave it in the list.
+                first_sample_leaf = sample_leaves_list[0]
+                ancestor_node = first_sample_leaf.get_common_ancestor(sample_leaves_list)
+                found_sample_names = ancestor_node.get_leaf_names()
 
-        if len(sample_leaves_list) == 0:
-            raise Exception(f'Should at least have some leaves in the tree matching sample_names={sample_names}')
-        elif len(sample_leaves_list) == 1:
-            found_sample_names = sample_names
-        else:
-            first_sample_leaf = sample_leaves_list.pop()
-            ancestor_node = first_sample_leaf.get_common_ancestor(sample_leaves_list)
-            found_sample_names = ancestor_node.get_leaf_names()
+            found_samples_list = []
+            for name in found_sample_names:
+                if name in sample_name_ids_self:
+                    found_samples_list.append(sample_name_ids_self[name])
+            found_samples = SampleSet(found_samples_list)
+        return self.intersect(found_samples, f'within(mrca of {query_infix})')
 
-        found_samples_list = []
-        for name in found_sample_names:
-            if name in sample_name_ids:
-                found_samples_list.append(sample_name_ids[name])
-        found_samples = SampleSet(found_samples_list)
-        return self.intersect(found_samples, f'within(mrca of {sample_names})')
-
-    def _isin_internal(self, data: Union[str, List[str], pd.Series], kind: str, **kwargs) -> SamplesQuery:
+    def _isin_internal(self, data: Union[str, List[str], SamplesQuery, SampleSet], kind: str, **kwargs) -> SamplesQuery:
         if kind == 'distance':
-            return self._within_distance(sample_names=data, **kwargs)
+            return self._within_distance(data=data, **kwargs)
         elif kind == 'mrca':
-            return self._within_mrca(sample_names=data)
+            return self._within_mrca(data=data)
         else:
-            raise Exception(f'kind=[{kind}] is not supported. Must be one of {self.isin_kinds()}')
+            raise Exception(f'kind=[{kind}] is not supported. Must be one of {self._isin_kinds()}')
 
     def build_tree(self, kind: str, **kwargs) -> SamplesQuery:
         samples_query = self._wrapped_query.build_tree(kind=kind, **kwargs)
@@ -71,19 +76,28 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
         else:
             raise Exception(f'Build tree is not of type {TreeSamplesQuery.__class__}')
 
-    def _within_distance(self, sample_names: Union[str, List[str]], distance: float,
+    def join_tree(self, tree: Tree, kind='mutation', **kwargs) -> SamplesQuery:
+        samples_query = self._wrapped_query.join_tree(tree=tree, kind=kind, **kwargs)
+
+        if isinstance(samples_query, TreeSamplesQuery):
+            samples_query = cast(TreeSamplesQuery, samples_query)
+            return samples_query._wrap_create(self, self.universe_set)
+        else:
+            raise Exception(f'Build tree is not of type {TreeSamplesQuery.__class__}')
+
+    def _within_distance(self, data: Union[str, List[str], SamplesQuery, SampleSet], distance: float,
                          units: str, **kwargs) -> SamplesQuery:
         if self._can_handle_distance_units(units):
-            return self._within_distance_internal(sample_names=sample_names,
+            return self._within_distance_internal(data=data,
                                                   distance=distance, units=units)
         else:
-            return self._wrap_create(self._wrapped_query._within_distance(sample_names=sample_names,
+            return self._wrap_create(self._wrapped_query._within_distance(data=data,
                                                                           distance=distance,
                                                                           units=units,
                                                                           **kwargs))
 
     @abc.abstractmethod
-    def _within_distance_internal(self, sample_names: Union[str, List[str]], distance: float,
+    def _within_distance_internal(self, data: Union[str, List[str], SamplesQuery, SampleSet], distance: float,
                                   units: str) -> SamplesQuery:
         pass
 
@@ -91,8 +105,8 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
     def _can_handle_distance_units(self, units: str) -> bool:
         pass
 
-    def isin_kinds(self) -> List[str]:
-        return list(set(super().isin_kinds() + self.ISIN_TREE_TYPES))
+    def _isin_kinds(self) -> List[str]:
+        return list(set(super()._isin_kinds() + self.ISIN_TREE_TYPES))
 
     def _can_handle_isin_kind(self, kind: str) -> bool:
         return kind in self.ISIN_TREE_TYPES
@@ -159,3 +173,6 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
     @property
     def tree(self):
         return self._tree
+
+    def has_tree(self) -> bool:
+        return True

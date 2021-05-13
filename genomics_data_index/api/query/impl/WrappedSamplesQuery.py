@@ -90,6 +90,9 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
     def is_empty(self):
         return self._wrapped_query.is_empty()
 
+    def has_tree(self) -> bool:
+        return self._wrapped_query.has_tree()
+
     @property
     def tree(self):
         raise Exception(f'No tree exists for {self.__class__}.'
@@ -101,33 +104,40 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
     def _isa_internal(self, data: Union[str, List[str]], kind: str, **kwargs) -> SamplesQuery:
         return self._wrap_create(self._wrapped_query.isa(data=data, kind=kind, **kwargs))
 
-    def isin_kinds(self) -> List[str]:
-        return list(set(self._wrapped_query.isin_kinds()))
+    def _isin_kinds(self) -> List[str]:
+        return list(set(self._wrapped_query._isin_kinds()))
 
-    def isin(self, data: Union[str, List[str], pd.Series], kind: str = 'names', **kwargs) -> SamplesQuery:
+    def _isa_kinds(self) -> List[str]:
+        return list(set(self._wrapped_query._isa_kinds()))
+
+    def isin(self, data: Union[str, List[str], SamplesQuery, SampleSet], kind: str = 'samples', **kwargs) -> SamplesQuery:
         if self._can_handle_isin_kind(kind):
             return self._isin_internal(data=data, kind=kind, **kwargs)
         else:
             return self._wrap_create(self._wrapped_query.isin(data=data, kind=kind, **kwargs))
 
+    def _get_sample_names_query_infix_from_data(self, data: Union[str, List[str], pd.Series, SamplesQuery, SampleSet]
+                                            ) -> Tuple[Set[str], str]:
+        return self._wrapped_query._get_sample_names_query_infix_from_data(data)
+
     def _distance_units(self) -> List[str]:
         return self._wrapped_query._distance_units()
 
-    def _within_distance(self, sample_names: Union[str, List[str]], distance: float,
+    def _within_distance(self, data: Union[str, List[str], SamplesQuery, SampleSet], distance: float,
                          units: str, **kwargs) -> SamplesQuery:
-        return self._wrap_create(self._wrapped_query._within_distance(sample_names=sample_names,
+        return self._wrap_create(self._wrapped_query._within_distance(data=data,
                                                                       distance=distance,
                                                                       units=units,
                                                                       **kwargs))
 
-    def _isa_kinds(self) -> List[str]:
-        return ['names']
+    def _can_handle_isa_kind(self, kind: str) -> bool:
+        return False
 
-    def isa(self, data: Union[str, List[str]], kind: str = 'names', **kwargs) -> SamplesQuery:
-        if kind == 'names':
-            return self._wrap_create(self._wrapped_query.isa(data=data, kind=kind, **kwargs))
-        else:
+    def isa(self, data: Union[str, List[str]], kind: str = 'sample', **kwargs) -> SamplesQuery:
+        if self._can_handle_isa_kind(kind):
             return self._isa_internal(data=data, kind=kind, **kwargs)
+        else:
+            return self._wrap_create(self._wrapped_query.isa(data=data, kind=kind, **kwargs))
 
     def to_distances(self, kind: str = 'kmer', **kwargs) -> Tuple[np.ndarray, List[str]]:
         return self._wrapped_query.to_distances(kind=kind, **kwargs)
