@@ -50,6 +50,13 @@ class AnnotateTreeSamplesVisual(TreeSamplesVisual):
         self._annotate_border_width = border_width
         self._annotate_margin = margin
 
+        if self._annotate_show_box_label:
+            self._box_label = copy.deepcopy(self._label)
+            if self._box_label is not None and annotate_box_label_color is not None:
+                self._box_label['color'] = annotate_box_label_color
+        else:
+            self._box_label = None
+
     def apply_visual(self, tree: Tree, tree_style: TreeStyle) -> None:
         if self._label is not None:
             text = self._label.get('text', None)
@@ -72,7 +79,7 @@ class AnnotateTreeSamplesVisual(TreeSamplesVisual):
                                                           border_color=self._annotate_border_color,
                                                           bgcolor=self._color_present,
                                                           opacity=self._annotate_opacity_present,
-                                                          label=self._label)
+                                                          label=self._box_label)
             else:
                 annotate_face = self._build_annotate_face(width=self._box_width, height=self._box_height,
                                                           border_color=self._annotate_border_color,
