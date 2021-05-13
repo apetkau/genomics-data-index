@@ -59,11 +59,6 @@ class AnnotateTreeSamplesVisual(TreeSamplesVisual):
         else:
             label_present = None
 
-        if isinstance(self._samples, SamplesQuery):
-            sample_names = set(self._samples.tolist(names=True))
-        else:
-            sample_names = set(self._samples)
-
         if self._label is not None:
             text = self._label.get('text', None)
             fsize = self._label.get('fontsize', self._annotate_label_fontsize)
@@ -80,7 +75,7 @@ class AnnotateTreeSamplesVisual(TreeSamplesVisual):
 
         # Annotate nodes
         for leaf in tree.iter_leaves():
-            if leaf.name in sample_names:
+            if leaf.name in self.sample_names:
                 annotate_face = self._build_annotate_face(width=self._box_width, height=self._box_height,
                                                           border_color=self._annotate_border_color,
                                                           bgcolor=self._color_present,

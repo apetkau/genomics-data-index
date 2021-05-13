@@ -1,5 +1,5 @@
 import abc
-from typing import Union, Iterable, Tuple, Dict, Any
+from typing import Union, Iterable, Tuple, Dict, Any, List
 
 from ete3 import Tree, TreeStyle, Face, RectFace, CircleFace, TextFace
 
@@ -16,6 +16,16 @@ class TreeSamplesVisual(abc.ABC):
         self._samples = samples
         self._legend_nodesize = legend_nodesize
         self._legend_fontsize = legend_fontsize
+        self._samples_names = None
+
+    @property
+    def sample_names(self) -> List[str]:
+        if self._samples_names is None:
+            if isinstance(self._samples, SamplesQuery):
+                self._sample_names = self._samples.tolist(names=True)
+            else:
+                self._sample_names = set(self._samples)
+        return self._sample_names
 
     @abc.abstractmethod
     def apply_visual(self, tree: Tree, tree_style: TreeStyle) -> None:

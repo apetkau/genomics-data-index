@@ -24,16 +24,10 @@ class HighlightTreeSamplesVisual(TreeSamplesVisual):
         self._legend_label = legend_label
 
     def apply_visual(self, tree: Tree, tree_style: TreeStyle) -> None:
-        if isinstance(self._samples, SamplesQuery):
-            sample_names = self._samples.tolist(names=True)
-        else:
-            sample_names = set(self._samples)
-
         self._add_legend_entry(self._legend_label, legend_color=self._legend_color,
                                kind='rect', tree_style=tree_style)
 
-        # Highlight nodes
-        for name in sample_names:
+        for name in self.sample_names:
             nodes = tree.get_leaves_by_name(name)
             if len(nodes) == 0:
                 logger.warning(f'Could not find sample=[{name}] in tree. Not highlighting.')
