@@ -1,16 +1,17 @@
 from __future__ import annotations
-from typing import Union, Any, Optional, Callable
+from typing import Union, Any, Optional, Callable, Dict
 
 import pandas as pd
 
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.api.query.impl.cluster.ClusterScoreMRCAJaccard import ClusterScoreMRCAJaccard
+from genomics_data_index.api.query.impl.cluster.ClusterScoreMethod import ClusterScoreMethod
 
 
 class ClusterScorer:
 
-    SCORE_KINDS = {
+    SCORE_KINDS: Dict[str, ClusterScoreMethod] = {
         'mrca_jaccard': ClusterScoreMRCAJaccard()
     }
 
@@ -85,6 +86,13 @@ class ClusterScorer:
                 lambda x: self.score_samples(x['Sample ID']), axis='columns')
 
             return groups_sample_sets_df[['Score', 'Sample Count']]
+
+    @classmethod
+    def register_score_kind(cls, name: str, score_kind: ClusterScoreMethod) -> None:
+        if name not in cls.SCORE_KINDS:
+            cls.SCORE_KINDS[name] = score_kind
+        else:
+            raise Exception(f'Score kind with name={name} already exists {cls.SCORE_KINDS[name]}')
 
     @classmethod
     def create(cls, universe_samples: SamplesQuery) -> ClusterScorer:
