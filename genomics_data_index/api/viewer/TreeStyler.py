@@ -2,21 +2,24 @@ from __future__ import annotations
 
 import copy
 import logging
-from typing import List, Dict, Any, Union, Iterable, Tuple
+from typing import List, Dict, Any, Union, Iterable
 
-from ete3 import Tree, NodeStyle, TreeStyle, CircleFace, TextFace, RectFace, Face
+from ete3 import Tree, NodeStyle, TreeStyle, TextFace, RectFace
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
+from genomics_data_index.api.viewer.TreeSamplesVisual import TreeSamplesVisual
+from genomics_data_index.api.viewer.samples_visuals.AnnotateTreeSamplesVisual import AnnotateTreeSamplesVisual
+from genomics_data_index.api.viewer.samples_visuals.HighlightTreeSamplesVisual import HighlightTreeSamplesVisual
 
 logger = logging.getLogger(__name__)
 
 
 class TreeStyler:
     MODES = ['r', 'c']
-    ANNOTATE_KINDS = ['circle', 'rect', 'rectangle']
 
     def __init__(self, tree: Tree, default_highlight_styles: HighlightStyle, annotate_column: int,
                  tree_style: TreeStyle,
+                 samples_styles_list: List[TreeSamplesVisual],
                  legend_nsize: int = 20, legend_fsize: int = 11,
                  annotate_color_present: str = '#66c2a4',
                  annotate_color_absent: str = 'white',
@@ -50,64 +53,12 @@ class TreeStyler:
         self._annotate_box_label_color = annotate_box_label_color
         self._annotate_label_fontsize = annotate_label_fontsize
 
-        if annotate_kind not in self.ANNOTATE_KINDS:
+        if annotate_kind not in AnnotateTreeSamplesVisual.ANNOTATE_KINDS:
             raise Exception(f'Invalid value for annotate_kind={annotate_kind}.'
-                            f' Must be one of {self.ANNOTATE_KINDS}')
+                            f' Must be one of {AnnotateTreeSamplesVisual.ANNOTATE_KINDS}')
         self._annotate_kind = annotate_kind
 
-    def _build_legend_item(self, color: str, legend_label: str, kind: str) -> Tuple[Face, Face]:
-        if kind == 'rect' or kind == 'rectangle':
-            cf = RectFace(width=self._legend_nsize, height=self._legend_nsize, bgcolor=color,
-                          fgcolor='black')
-        elif kind == 'circle':
-            cf = CircleFace(radius=self._legend_nsize / 2, color=color)
-        else:
-            raise Exception(f'kind=[{kind}] must be one of {self.ANNOTATE_KINDS}')
-        cf.hz_align = 2
-        cf.margin_left = 3
-        cf.margin_right = 3
-        cf.margin_top = 3
-        cf.margin_bottom = 3
-        tf = TextFace(legend_label, fsize=self._legend_fsize)
-        tf.margin_left = 10
-        tf.margin_right = 10
-        return cf, tf
-
-    def _build_annotate_face(self, width: int, height: int, border_color: str, bgcolor: str,
-                             opacity: float, label: Union[str, Dict[str, Any]] = None) -> Face:
-        if self._annotate_kind == 'rect' or self._annotate_kind == 'rectangle':
-            rf = RectFace(width=width, height=height, fgcolor=None, bgcolor=bgcolor, label=label)
-            rf.border.width = self._annotate_border_width
-            rf.margin_top = self._annotate_margin
-            rf.margin_bottom = self._annotate_margin
-            rf.margin_left = self._annotate_margin
-            rf.margin_right = self._annotate_margin
-            rf.border.color = border_color
-            rf.background.color = bgcolor
-            rf.opacity = opacity
-            rf.hz_align = 1
-            rf.vt_align = 1
-            return rf
-        elif self._annotate_kind == 'circle':
-            # Make circle radius such that it fits in bounding box defined by width and height
-            # Shrink a bit since I noticed it was being clipped slightly
-            min_dimension = min(width, height)
-            radius = min_dimension / 2
-
-            cf = CircleFace(radius=radius, color=bgcolor, label=label)
-            cf.border.width = self._annotate_border_width
-            cf.margin_top = self._annotate_margin
-            cf.margin_bottom = self._annotate_margin
-            cf.margin_left = self._annotate_margin
-            cf.margin_right = self._annotate_margin
-            cf.border.color = border_color
-            cf.opacity = opacity
-            cf.hz_align = 1
-            cf.vt_align = 1
-            return cf
-        else:
-            raise Exception(f'Invalid value for annotate_kind={self._annotate_kind}.'
-                            f' Must be one of {self.ANNOTATE_KINDS}')
+        self._samples_styles_list = samples_styles_list
 
     def annotate(self, samples: Union[SamplesQuery, Iterable[str]],
                  label: Union[str, Dict[str, Any]] = None,
@@ -129,81 +80,57 @@ class TreeStyler:
         :param color_absent: The color to use when a sample is absent (defaults to class-defined color).
         :return: A new TreeStyler object which contains the completed annotation column.
         """
-        if color_absent is None:
-            color_absent = self._annotate_color_absent
+        if box_width is None:
+            box_width = self._annotate_box_width
+        if box_height is None:
+            box_height = self._annotate_box_height
+        if annotate_show_box_label is None:
+            annotate_show_box_label = self._annotate_show_box_label
+        if annotate_box_label_color is None:
+            annotate_box_label_color = self._annotate_box_label_color
         if color_present is None:
             color_present = self._annotate_color_present
+        if color_absent is None:
+            color_absent = self._annotate_color_absent
+
         if isinstance(label, str):
             # Pick default color since ete3 by default colors the same as what I'm using for the fill color
             label = {'text': label, 'color': 'black', 'font': 'Verdana', 'fontsize': self._annotate_label_fontsize}
 
-        if (label is not None) and (self._annotate_show_box_label or annotate_show_box_label):
+        if label is not None:
             label_present = copy.deepcopy(label)
             if 'fontsize' not in label_present:
                 label_present['fontsize'] = self._annotate_label_fontsize
-
-            if annotate_box_label_color is not None:
-                label_present['color'] = annotate_box_label_color
-            else:
                 label_present['color'] = self._annotate_box_label_color
         else:
             label_present = None
 
-        if isinstance(samples, SamplesQuery):
-            sample_names = set(samples.tolist(names=True))
-        else:
-            sample_names = set(samples)
+        samples_visual = AnnotateTreeSamplesVisual(samples=samples,
+                                                   label=label_present,
+                                                   annotate_show_box_label=annotate_show_box_label,
+                                                   annotate_box_label_color=annotate_box_label_color,
+                                                   annotate_label_fontsize=self._annotate_label_fontsize,
+                                                   legend_label=legend_label,
+                                                   box_width=box_width,
+                                                   box_height=box_height,
+                                                   color_present=color_present,
+                                                   color_absent=color_absent,
+                                                   legend_nodesize=self._legend_nsize,
+                                                   legend_fontsize=self._legend_fsize,
+                                                   annotate_column=self._annotate_column,
+                                                   annotate_kind=self._annotate_kind,
+                                                   annotate_border_color=self._annotate_border_color,
+                                                   annotate_opacity_present=self._annotate_opacity_present,
+                                                   annotate_opacity_absent=self._annotate_opacity_absent,
+                                                   border_width=self._annotate_border_width,
+                                                   margin=self._annotate_margin)
+        samples_styles_list_new = copy.copy(self._samples_styles_list)
+        samples_styles_list_new.append(samples_visual)
 
-        if box_width is None:
-            face_width = self._annotate_box_width
-        else:
-            face_width = box_width
-
-        if box_height is None:
-            face_height = self._annotate_box_height
-        else:
-            face_height = box_height
-
-        ts = copy.deepcopy(self._tree_style)
-        if label is not None:
-            text = label.get('text', None)
-            fsize = label.get('fontsize', self._annotate_label_fontsize)
-            ftype = label.get('font', 'Verdana')
-            color = label.get('color', 'black')
-            tf = TextFace(text, fsize=fsize, ftype=ftype, fgcolor=color)
-            tf.margin_bottom = 10
-            tf.margin_left = 10
-            tf.margin_right = 10
-            tf.margin_top = 10
-            tf.hz_align = 1
-            ts.aligned_header.add_face(tf, self._annotate_column)
-            ts.aligned_foot.add_face(tf, self._annotate_column)
-
-        # Annotate nodes
-        tree = self._tree.copy(method='cpickle')
-        for leaf in tree.iter_leaves():
-            if leaf.name in sample_names:
-                annotate_face = self._build_annotate_face(width=face_width, height=face_height,
-                                                          border_color=self._annotate_border_color,
-                                                          bgcolor=color_present, opacity=self._annotate_opacity_present,
-                                                          label=label_present)
-            else:
-                annotate_face = self._build_annotate_face(width=face_width, height=face_height,
-                                                          border_color=self._annotate_border_color,
-                                                          bgcolor=color_absent, opacity=self._annotate_opacity_absent,
-                                                          label=None)
-
-            leaf.add_face(annotate_face, column=self._annotate_column, position='aligned')
-
-        # Add legend item
-        if legend_label is not None:
-            color_face, text_face = self._build_legend_item(color=color_present, legend_label=legend_label,
-                                                            kind=self._annotate_kind)
-            ts.legend.add_face(color_face, column=0)
-            ts.legend.add_face(text_face, column=1)
-
-        return TreeStyler(tree, default_highlight_styles=self._default_highlight_styles,
-                          tree_style=ts, legend_fsize=self._legend_fsize, legend_nsize=self._legend_nsize,
+        return TreeStyler(self._tree, default_highlight_styles=self._default_highlight_styles,
+                          tree_style=self._tree_style,
+                          samples_styles_list=samples_styles_list_new,
+                          legend_fsize=self._legend_fsize, legend_nsize=self._legend_nsize,
                           annotate_column=self._annotate_column + 1,
                           annotate_color_present=self._annotate_color_present,
                           annotate_color_absent=self._annotate_color_absent,
@@ -222,6 +149,7 @@ class TreeStyler:
     def highlight(self, samples: Union[SamplesQuery, Iterable[str]],
                   nstyle: NodeStyle = None, legend_color: str = None,
                   legend_label: str = None) -> TreeStyler:
+
         if nstyle is None and legend_color is None:
             nstyle = self._default_highlight_styles.node_style
             legend_color = self._default_highlight_styles.legend_color
@@ -229,37 +157,19 @@ class TreeStyler:
         else:
             new_default_styles = self._default_highlight_styles
 
-        if isinstance(samples, SamplesQuery):
-            sample_names = samples.tolist(names=True)
-            query_expression = samples.query_expression()
-        else:
-            sample_names = set(samples)
-            query_expression = f'set({len(sample_names)} samples)'
+        samples_visual = HighlightTreeSamplesVisual(samples=samples,
+                                                    node_style=nstyle,
+                                                    legend_color=legend_color,
+                                                    legend_label=legend_label,
+                                                    legend_nodesize=self._legend_nsize,
+                                                    legend_fontsize=self._legend_fsize)
+        samples_styles_list_new = copy.copy(self._samples_styles_list)
+        samples_styles_list_new.append(samples_visual)
 
-        # Add legend item
-        if legend_label is not None:
-            ts = copy.deepcopy(self._tree_style)
-            color_face, text_face = self._build_legend_item(color=legend_color, legend_label=legend_label,
-                                                            kind='rect')
-            ts.legend.add_face(color_face, column=0)
-            ts.legend.add_face(text_face, column=1)
-        else:
-            ts = self._tree_style
-
-        # Highlight nodes
-        tree = copy.deepcopy(self._tree)
-        for name in sample_names:
-            nodes = tree.get_leaves_by_name(name)
-            if len(nodes) == 0:
-                logger.warning(f'Could not find sample=[{name}] in tree. Not highlighting.')
-            elif len(nodes) > 1:
-                raise Exception(f'More than one node in the tree matched sample=[{name}]')
-            else:
-                node = nodes[0]
-                node.set_style(nstyle)
-
-        return TreeStyler(tree, default_highlight_styles=new_default_styles,
-                          tree_style=ts, legend_fsize=self._legend_fsize, legend_nsize=self._legend_nsize,
+        return TreeStyler(self._tree, default_highlight_styles=new_default_styles,
+                          tree_style=self._tree_style,
+                          samples_styles_list=samples_styles_list_new,
+                          legend_fsize=self._legend_fsize, legend_nsize=self._legend_nsize,
                           annotate_column=self._annotate_column,
                           annotate_color_present=self._annotate_color_present,
                           annotate_color_absent=self._annotate_color_absent,
@@ -275,6 +185,10 @@ class TreeStyler:
                           annotate_box_label_color=self._annotate_box_label_color,
                           annotate_label_fontsize=self._annotate_label_fontsize)
 
+    def _apply_samples_styles(self, tree: Tree, tree_style: TreeStyle) -> None:
+        for samples_style in self._samples_styles_list:
+            samples_style.apply_visual(tree=tree, tree_style=tree_style)
+
     def render(self, file_name: str = '%%inline', w: int = None, h: int = None,
                tree_style: TreeStyle = None, units: str = 'px', dpi: int = 90):
         if tree_style is None:
@@ -287,12 +201,16 @@ class TreeStyler:
         if w is None and h is None:
             w = 400
 
-        return self._tree.render(file_name=file_name, w=w, h=h, tree_style=tree_style,
-                                 units=units, dpi=dpi)
+        tree = self._tree.copy('newick')
+        tree_style = copy.deepcopy(self._tree_style)
+        self._apply_samples_styles(tree=tree, tree_style=tree_style)
+
+        return tree.render(file_name=file_name, w=w, h=h, tree_style=tree_style,
+                           units=units, dpi=dpi)
 
     @property
     def tree(self) -> Tree:
-        return copy.deepcopy(self._tree)
+        return self._tree.copy('newick')
 
     @property
     def tree_style(self) -> TreeStyle:
@@ -384,6 +302,7 @@ class TreeStyler:
         return TreeStyler(tree=tree,
                           default_highlight_styles=highlight_style,
                           tree_style=ts,
+                          samples_styles_list=[],
                           legend_nsize=legend_nsize,
                           legend_fsize=legend_fsize,
                           annotate_column=1,

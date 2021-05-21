@@ -113,6 +113,7 @@ def loaded_data_store_from_project_dir() -> GenomicsDataIndex:
 
     return GenomicsDataIndex.connect(project_dir=project_dir)
 
+
 @pytest.fixture
 def prebuilt_tree() -> Tree:
     return Tree(str(tree_file))

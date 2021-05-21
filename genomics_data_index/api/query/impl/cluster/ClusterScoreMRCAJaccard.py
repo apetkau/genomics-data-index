@@ -1,8 +1,8 @@
 from typing import Union
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
-from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.api.query.impl.cluster.ClusterScoreMethod import ClusterScoreMethod
+from genomics_data_index.storage.SampleSet import SampleSet
 
 
 class ClusterScoreMRCAJaccard(ClusterScoreMethod):

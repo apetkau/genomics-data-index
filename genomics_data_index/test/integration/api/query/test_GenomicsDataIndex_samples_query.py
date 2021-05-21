@@ -1402,7 +1402,8 @@ def test_within_constructed_tree(loaded_database_connection: DataIndexConnection
 
     # subs using samples query, empty result
     query_result_empty = query_result.isin([], kind='samples')
-    df = query_result.isin(query_result_empty, kind='distance', distance=26, units='substitutions').toframe().sort_values(
+    df = query_result.isin(query_result_empty, kind='distance', distance=26,
+                           units='substitutions').toframe().sort_values(
         'Sample Name')
     assert 0 == len(df)
 
@@ -1482,7 +1483,7 @@ def test_within_constructed_tree(loaded_database_connection: DataIndexConnection
     assert ['SampleA', 'SampleC'] == df['Sample Name'].tolist()
     assert {
                "reference:839:C:G AND mutation_tree(genome) AND isin_samples(<MutationTreeSamplesQuery[22% (2/9) samples]>)"
-               } == set(df['Query'].tolist())
+           } == set(df['Query'].tolist())
 
     # Sample isa()
     df = query_result.isa('SampleA').toframe().sort_values('Sample Name')
@@ -1639,11 +1640,11 @@ def test_within_joined_mutations_tree(prebuilt_tree: Tree, loaded_database_conne
             } == set(df['Query'].tolist())
 
     # subs samples query
-    df = query_result.isin(['SampleC'], kind='distance', distance=2*5180,
+    df = query_result.isin(['SampleC'], kind='distance', distance=2 * 5180,
                            units='substitutions').toframe().sort_values('Sample Name')
     assert 2 == len(df)
     assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
-    assert {f'join_tree(4 leaves) AND within({2*5180} substitutions of '
+    assert {f'join_tree(4 leaves) AND within({2 * 5180} substitutions of '
             "['SampleC'])"
             } == set(df['Query'].tolist())
 

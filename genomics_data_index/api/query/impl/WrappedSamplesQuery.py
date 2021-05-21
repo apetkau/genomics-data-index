@@ -110,14 +110,15 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
     def _isa_kinds(self) -> List[str]:
         return list(set(self._wrapped_query._isa_kinds()))
 
-    def isin(self, data: Union[str, List[str], SamplesQuery, SampleSet], kind: str = 'samples', **kwargs) -> SamplesQuery:
+    def isin(self, data: Union[str, List[str], SamplesQuery, SampleSet], kind: str = 'samples',
+             **kwargs) -> SamplesQuery:
         if self._can_handle_isin_kind(kind):
             return self._isin_internal(data=data, kind=kind, **kwargs)
         else:
             return self._wrap_create(self._wrapped_query.isin(data=data, kind=kind, **kwargs))
 
     def _get_sample_names_query_infix_from_data(self, data: Union[str, List[str], pd.Series, SamplesQuery, SampleSet]
-                                            ) -> Tuple[Set[str], str]:
+                                                ) -> Tuple[Set[str], str]:
         return self._wrapped_query._get_sample_names_query_infix_from_data(data)
 
     def _distance_units(self) -> List[str]:

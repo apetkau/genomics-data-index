@@ -140,7 +140,7 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
                     show_leaf_names: bool = True,
                     tree_scale: float = None) -> TreeStyler:
 
-        return TreeStyler.create(tree=self._tree.copy(method='cpickle'),
+        return TreeStyler.create(tree=self._tree,
                                  initial_style=initial_style,
                                  mode=mode,
                                  highlight_style=highlight_style,

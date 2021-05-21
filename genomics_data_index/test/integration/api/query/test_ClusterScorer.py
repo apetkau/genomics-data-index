@@ -1,13 +1,14 @@
 import math
 import re
+
 import pandas as pd
 from ete3 import Tree
 
 from genomics_data_index.api.query.GenomicsDataIndex import GenomicsDataIndex
-from genomics_data_index.storage.model.db import Sample
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.api.query.impl.ClusterScorer import ClusterScorer
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
+from genomics_data_index.storage.model.db import Sample
 
 
 # wrapper methods to simplify writing tests
@@ -173,7 +174,7 @@ def test_score_groupby_with_mutation_tree(prebuilt_tree: Tree, loaded_database_c
 
     # Group by A.1 group using Type and groupby_func
     scores_df = cluster_scorer.score_groupby('Type', groupby_func=
-        lambda x: m.group(1) if (m := re.search(r'^([^.]+\.[^.]+)', x)) else pd.NA)
+    lambda x: m.group(1) if (m := re.search(r'^([^.]+\.[^.]+)', x)) else pd.NA)
     assert ['Score', 'Sample Count'] == scores_df.columns.tolist()
     assert 1 == len(scores_df)
     assert {'A.1'} == set(scores_df.index)
@@ -181,7 +182,7 @@ def test_score_groupby_with_mutation_tree(prebuilt_tree: Tree, loaded_database_c
 
     # Group A.1 group using Type and groupby_func
     scores_df = cluster_scorer.score_groupby('Type', groupby_func=
-        lambda x: m.group(1) if (m := re.search(r'^([^.]+)', x)) else pd.NA)
+    lambda x: m.group(1) if (m := re.search(r'^([^.]+)', x)) else pd.NA)
     assert ['Score', 'Sample Count'] == scores_df.columns.tolist()
     assert 1 == len(scores_df)
     assert {'A'} == set(scores_df.index)
@@ -189,7 +190,7 @@ def test_score_groupby_with_mutation_tree(prebuilt_tree: Tree, loaded_database_c
 
     # Group by 2 groups using Type and groupby_func
     scores_df = cluster_scorer.score_groupby('Type', groupby_func=
-        lambda x: m.group(1) if (m := re.search(r'^([^.]+\.[^.]+)', x)) else x)
+    lambda x: m.group(1) if (m := re.search(r'^([^.]+\.[^.]+)', x)) else x)
     assert ['Score', 'Sample Count'] == scores_df.columns.tolist()
     assert 2 == len(scores_df)
     assert {'A', 'A.1'} == set(scores_df.index)

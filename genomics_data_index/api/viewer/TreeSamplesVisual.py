@@ -1,0 +1,67 @@
+import abc
+from typing import Union, Iterable, Tuple, List
+
+from ete3 import Tree, TreeStyle, Face, RectFace, CircleFace, TextFace
+
+from genomics_data_index.api.query.SamplesQuery import SamplesQuery
+
+
+class TreeSamplesVisual(abc.ABC):
+    LEGEND_FACE_KINDS = ['circle', 'circ', 'c',
+                         'rectangle', 'rect', 'r']
+
+    def __init__(self, samples: Union[SamplesQuery, Iterable[str]],
+                 legend_nodesize: int,
+                 legend_fontsize: int):
+        self._samples = samples
+        self._legend_nodesize = legend_nodesize
+        self._legend_fontsize = legend_fontsize
+        self._samples_names = None
+
+    @property
+    def sample_names(self) -> List[str]:
+        if self._samples_names is None:
+            if isinstance(self._samples, SamplesQuery):
+                self._sample_names = self._samples.tolist(names=True)
+            else:
+                self._sample_names = set(self._samples)
+        return self._sample_names
+
+    @abc.abstractmethod
+    def apply_visual(self, tree: Tree, tree_style: TreeStyle) -> None:
+        """
+        Applies a visual style defined by the passed samples to the Tree and TreeStyle.
+        Will modify tree and tree_style in-place (this avoids having to copy large trees
+        which was causing me issues).
+
+        :param tree: The Tree to apply visual information to.
+        :param tree_style: The TreeStyle to apply visual information to.
+        :returns: None. Modifies tree and tree_style in-place.
+        """
+        pass
+
+    def _add_legend_entry(self, legend_label: str, legend_color: str, kind: str, tree_style: TreeStyle) -> None:
+        if legend_label is not None:
+            color_face, text_face = self._build_legend_item(color=legend_color,
+                                                            legend_label=legend_label,
+                                                            kind=kind)
+            tree_style.legend.add_face(color_face, column=0)
+            tree_style.legend.add_face(text_face, column=1)
+
+    def _build_legend_item(self, color: str, legend_label: str, kind: str) -> Tuple[Face, Face]:
+        if kind == 'rect' or kind == 'rectangle' or kind == 'r':
+            cf = RectFace(width=self._legend_nodesize, height=self._legend_nodesize, bgcolor=color,
+                          fgcolor='black')
+        elif kind == 'circle' or kind == 'circ' or kind == 'c':
+            cf = CircleFace(radius=self._legend_nodesize / 2, color=color)
+        else:
+            raise Exception(f'kind=[{kind}] must be one of {self.LEGEND_FACE_KINDS}')
+        cf.hz_align = 2
+        cf.margin_left = 3
+        cf.margin_right = 3
+        cf.margin_top = 3
+        cf.margin_bottom = 3
+        tf = TextFace(legend_label, fsize=self._legend_fontsize)
+        tf.margin_left = 10
+        tf.margin_right = 10
+        return cf, tf
