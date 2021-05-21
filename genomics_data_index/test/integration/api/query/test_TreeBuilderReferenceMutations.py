@@ -26,7 +26,7 @@ def test_build_tree(loaded_database_connection):
 
     actual_distance = 5180 * actual_tree.get_distance('SampleA', 'genome')
     expected_distance = 26
-    assert abs(expected_distance - actual_distance) < 5
+    assert abs(expected_distance - actual_distance) < 6
 
 
 def test_build_tree_core(loaded_database_connection):
@@ -50,7 +50,7 @@ def test_build_tree_core(loaded_database_connection):
 
     actual_distance = 5180 * actual_tree.get_distance('SampleA', 'genome')
     expected_distance = 26
-    assert abs(expected_distance - actual_distance) < 5
+    assert abs(expected_distance - actual_distance) < 6
 
 
 def test_build_tree_exclude_reference(loaded_database_connection):
