@@ -19,35 +19,86 @@ logger = logging.getLogger(__name__)
 
 
 class GenomicsDataIndex:
+    """
+    The root class for the Python API. Used to connect to a genomics index and build query objects.
+    """
+
     QUERY_UNIVERSE = ['all', 'mutations', 'mutations_experimental', 'dataframe']
     MUTATION_ID_TYPES = ['spdi_ref', 'spdi']
 
     def __init__(self, connection: DataIndexConnection):
+        """
+        Builds a new GenomicsDataIndex.
+        :param connection: The database connection to use.
+
+        :return: A new GenomicsDataIndex.
+        """
         self._connection = connection
         self._samples_count = self.count_samples()
 
     @property
     def connection(self) -> DataIndexConnection:
+        """
+        Gets the database connection object.
+
+        :return: The database connection object.
+        """
         return self._connection
 
     def count_samples(self) -> int:
+        """
+        Counts the samples stored in this genomics index.
+
+        :return: The count of samples stored in this genomics index.
+        """
         return self._connection.sample_service.count_samples()
 
     def sample_names(self) -> List[str]:
+        """
+        Gets a list of all sample names stored in this index.
+
+        :return: A list of all sample names stored in this index.
+        """
         return [s.name for s in self._connection.sample_service.get_samples()]
 
     def count_references(self) -> int:
+        """
+        Counts the number of reference genomes stored in this genomics index.
+
+        :return: The count of reference genomes stored in this genomics index.
+        """
         return self._connection.reference_service.count_reference_genomes()
 
     def reference_names(self) -> List[str]:
+        """
+        Gets a list of the names of the reference genomes used in this index.
+        :return: A list of all reference genome names.
+        """
         return [r.name for r in self._connection.reference_service.get_reference_genomes()]
 
     def count_mutations(self, reference_genome: str, include_unknown: bool = False) -> int:
+        """
+        Counts all mutations indexed relative to the given reference genome.
+
+        :param reference_genome: The reference genome.
+        :param include_unknown: Whether or not unknown mutations should be included.
+
+        :return: A count of all mutations relative to the given reference genome.
+        """
         return self._connection.variation_service.count_on_reference(reference_genome,
                                                                      include_unknown=include_unknown)
 
     def mutations_summary(self, reference_genome: str, id_type: str = 'spdi_ref',
                           include_unknown: bool = False) -> pd.DataFrame:
+        """
+        Summarizes all mutations stored in this index relative to the passed reference genome.
+
+        :param reference_genome: The reference genome.
+        :param id_type: The type of identifier to use.
+        :param include_unknown: Whether or not unknown mutations should be included.
+
+        :return: A summary of all mutations in this index as a DataFrame.
+        """
         rs = self._connection.reference_service
         if id_type not in self.MUTATION_ID_TYPES:
             raise Exception(f'id_type={id_type} must be one of {self.MUTATION_ID_TYPES}')
@@ -73,9 +124,23 @@ class GenomicsDataIndex:
                                      'Deletion', 'Insertion', 'Count']).set_index('Mutation')
 
     def db_size(self, unit: str = 'B') -> pd.DataFrame:
+        """
+        Gets the size of this genomics index broken apart into separate sections.
+
+        :param unit: The units to use for reporting the sizes.
+
+        :return: A DataFrame summarizing the size of this genomics index.
+        """
         return self._connection.db_size(unit)
 
     def samples_query(self, universe: str = 'all', **kwargs) -> SamplesQuery:
+        """
+        Constructs a new SamplesQuery with respect to this index.
+
+        :param universe: The universe of samples under consideration. Options include ['all', 'mutations', 'dataframe'].
+        :param kwargs: Additional arguments depending on the universe of samples.
+        :return: A SamplesQuery object which can be used to further refine the query.
+        """
         if universe == 'all':
             return self._query_all_samples(self._connection)
         elif universe == 'mutations':
@@ -133,6 +198,14 @@ class GenomicsDataIndex:
 
     @classmethod
     def connect(cls, project_dir: Union[Path, str] = None, project: Project = None) -> GenomicsDataIndex:
+        """
+        Connects to a new genomics index. One of either project_dir or project must be set (by default assumes
+        project_dir is the current directory).
+
+        :param project_dir: The project/index directory. Defaults to the current directory.
+        :param project: The :py:class:`genomics_data_index.configuration.Project` to connect to.
+        :return: A new GenomicsDataIndex connected to the given project.
+        """
         if project_dir is None and project is None:
             project_dir = os.getcwd()
             logger.warning(f'No project_dir or project specified. Assuming project is current dir [{project_dir}]')

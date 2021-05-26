@@ -6,6 +6,10 @@ from genomics_data_index.storage.SampleSet import SampleSet
 
 
 class ClusterScoreMRCAJaccard(ClusterScoreMethod):
+    """
+    A method which assigns cluster scores based on all the samples under the most recent common ancestor (MRCA) of the
+    passed set of samples.
+    """
 
     def __init__(self):
         super().__init__()

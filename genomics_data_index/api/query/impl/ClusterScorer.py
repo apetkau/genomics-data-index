@@ -11,11 +11,20 @@ from genomics_data_index.storage.SampleSet import SampleSet
 
 
 class ClusterScorer:
+    """
+    A ClusterScorer is used to assign scores to clusters of samples based on a tree.
+    """
+
     SCORE_KINDS: Dict[str, ClusterScoreMethod] = {
         'mrca_jaccard': ClusterScoreMRCAJaccard()
     }
 
     def __init__(self, universe_samples: SamplesQuery):
+        """
+        Builds a new ClusterScorer with the given universe samples.
+        :param universe_samples: The universe of samples used for scoring.
+        :return: A new ClusterScorer.
+        """
         self._universe_samples = universe_samples
 
     def score_samples(self, samples: Union[SamplesQuery, SampleSet], kind: str = 'mrca_jaccard') -> float:
@@ -92,6 +101,13 @@ class ClusterScorer:
 
     @classmethod
     def register_score_kind(cls, name: str, score_kind: ClusterScoreMethod) -> None:
+        """
+        Registers a new ClusterScoreMethod. This can be used to dynamically add new scoring implementations to
+        the ClusterScorer.
+        :param name: The name of the ClusterScoreMethod. This will be used as the 'kind' parameter in ClusterScorder.score_samples().
+        :param score_kind: The ClusterScoreMethod implementation.
+        :return: Nothing. Maps the name to the ClusterScoreMethod implementation.
+        """
         if name not in cls.SCORE_KINDS:
             cls.SCORE_KINDS[name] = score_kind
         else:

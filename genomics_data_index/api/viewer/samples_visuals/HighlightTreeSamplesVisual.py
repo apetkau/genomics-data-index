@@ -10,12 +10,25 @@ logger = logging.getLogger(__name__)
 
 
 class HighlightTreeSamplesVisual(TreeSamplesVisual):
+    """
+    Class used to highlight the set of samples with a particular color/node style.
+    """
 
     def __init__(self, samples: Union[SamplesQuery, Iterable[str]],
                  node_style: NodeStyle,
                  legend_color: str, legend_label: str,
                  legend_nodesize: int,
                  legend_fontsize: int):
+        """
+        Builds a new HighlightTreeSamplesVisual with the given information.
+        :param samples: The set of samples to highlight.
+        :param node_style: The style of the nodes in the tree for the set of samples.
+        :param legend_color: The color of the legend item.
+        :param legend_label: The legend label.
+        :param legend_nodesize: The size of the legend node.
+        :param legend_fontsize: The size of the legend font.
+        :return: A new HighlightTreeSamplesVisual.
+        """
         super().__init__(samples=samples, legend_nodesize=legend_nodesize,
                          legend_fontsize=legend_fontsize)
         self._node_style = node_style

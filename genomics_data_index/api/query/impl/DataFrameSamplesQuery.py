@@ -13,6 +13,10 @@ from genomics_data_index.storage.SampleSet import SampleSet
 
 
 class DataFrameSamplesQuery(WrappedSamplesQuery):
+    """
+    Defines a SamplesQuery which is joined to a DataFrame. This allows for queries that make use of data in the DataFrame.
+    """
+
     ISIN_KINDS = ['dataframe']
     ISA_KINDS = ['dataframe']
 
@@ -22,6 +26,24 @@ class DataFrameSamplesQuery(WrappedSamplesQuery):
                  sample_ids_col: str,
                  default_isa_kind: str,
                  default_isa_column: str):
+        """
+        Builds a new DataFrameSamplesQuery from the given information. In most normal operations DataFrameSamplesQuery objects
+        are not created directly but are instead created from an :py:class:`genomics_data_index.api.GenomicsDataIndex`
+        object or from the join operation applied to a SamplesQuery.
+
+        :param connection: A connection to a database containing samples.
+        :param wrapped_query: The SamplesQuery to wrap around/decorate.
+        :param universe_set: The :py:class:`genomics_data_index.storage.SampleSet` representing a set of samples defining
+                       the universe (used for e.g., complement() operations).
+        :param data_frame: The DataFrame to join to this query. This dataframe must have a column which matches rows to
+                           the Sample IDs stored in database defined by the connection object.
+        :param sample_ids_col: The name of the column in the DataFrame defining the Sample ID for a particular row.
+        :param default_isa_kind: If A is a DataFrameSamplesQuery defines the default `kind` parameter to be used
+                                 when running A.isa(data, kind='...').
+        :param default_isa_column: If A is a DataFrameSamplesQuery defines the default 'isa_column' parameter
+                                   to be used when running A.isa(data, kind='...', isa_column='...').
+        :return: A new DataFrameSamplesQuery object.
+        """
         super().__init__(connection=connection, wrapped_query=wrapped_query, universe_set=universe_set)
         self._sample_ids_col = sample_ids_col
         self._data_frame = data_frame
@@ -138,6 +160,23 @@ class DataFrameSamplesQuery(WrappedSamplesQuery):
                                       query_message: str = None,
                                       default_isa_kind: str = None,
                                       default_isa_column: str = None) -> DataFrameSamplesQuery:
+        """
+        Builds a new DataFrameSamplesQuery from the given information matching by a column defining the Sample IDs.
+        In most normal operations DataFrameSamplesQuery objects are not created directly but are instead created from
+        an :py:class:`genomics_data_index.api.GenomicsDataIndex` object or from the join operation applied to a SamplesQuery.
+
+        :param sample_ids_col: The name of the column in the DataFrame defining the Sample ID for a particular row.
+        :param data_frame: The DataFrame to join to this query. This dataframe must have a column which matches rows to
+                   the Sample IDs stored in database defined by the connection object.
+        :param wrapped_query: The SamplesQuery to wrap around/decorate.
+        :param connection: A connection to a database containing samples.
+        :param query_message: The query_message to use when creating this new DataFrameSamplesQuery object.
+        :param default_isa_kind: If A is a DataFrameSamplesQuery defines the default `kind` parameter to be used
+                                 when running A.isa(data, kind='...').
+        :param default_isa_column: If A is a DataFrameSamplesQuery defines the default 'isa_column' parameter
+                                   to be used when running A.isa(data, kind='...', isa_column='...').
+        :return: A new DataFrameSamplesQuery object.
+        """
         sample_ids = data_frame[sample_ids_column].tolist()
         df_sample_set = SampleSet(sample_ids=sample_ids)
         universe_set = wrapped_query.universe_set.intersection(df_sample_set)
@@ -162,6 +201,24 @@ class DataFrameSamplesQuery(WrappedSamplesQuery):
                                         connection: DataIndexConnection,
                                         default_isa_kind: str = None,
                                         default_isa_column: str = None) -> DataFrameSamplesQuery:
+        """
+        Builds a new DataFrameSamplesQuery from the given information matching by a column defining the Sample names.
+        In most normal operations DataFrameSamplesQuery objects are not created directly but are instead created from
+        an :py:class:`genomics_data_index.api.GenomicsDataIndex` object or from the join operation applied to a SamplesQuery.
+
+        :param sample_names_column: The name of the column in the DataFrame defining the Sample name for a particular row.
+                                    This will internally be matched up to Sample IDs in the database defined by the connection
+                                    object and used to create a new column in the DataFrame with the Sample ID.
+        :param data_frame: The DataFrame to join to this query. This dataframe must have a column which matches rows to
+                   the Sample names stored in database defined by the connection object.
+        :param wrapped_query: The SamplesQuery to wrap around/decorate.
+        :param connection: A connection to a database containing samples.
+        :param default_isa_kind: If A is a DataFrameSamplesQuery defines the default `kind` parameter to be used
+                                 when running A.isa(data, kind='...').
+        :param default_isa_column: If A is a DataFrameSamplesQuery defines the default 'isa_column' parameter
+                                   to be used when running A.isa(data, kind='...', isa_column='...').
+        :return: A new DataFrameSamplesQuery object.
+        """
         sample_names = set(data_frame[sample_names_column].tolist())
         sample_ids_column = 'Sample ID'
 

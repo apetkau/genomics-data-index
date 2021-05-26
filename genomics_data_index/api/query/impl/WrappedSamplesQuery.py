@@ -13,8 +13,23 @@ from genomics_data_index.storage.model.QueryFeature import QueryFeature
 
 
 class WrappedSamplesQuery(SamplesQuery, abc.ABC):
+    """
+    A WrappedSamplesQuery wraps around/decorates a SamplesQuery object with additional information used to enhance the
+    queries. For example by including a tree or a DataFrame.
+    """
 
     def __init__(self, connection: DataIndexConnection, wrapped_query: SamplesQuery, universe_set: SampleSet = None):
+        """
+        Builds a new WrappedSamplesQuery from the given information. In most normal operations WrappedSamplesQuery objects
+        are not created directly but are instead created from an :py:class:`genomics_data_index.api.GenomicsDataIndex`
+        object or from operations applied to a SamplesQuery.
+
+        :param connection: A connection to a database containing samples.
+        :param wrapped_query: The SamplesQuery to wrap around/decorate.
+        :param universe_set: The :py:class:`genomics_data_index.storage.SampleSet` representing a set of samples defining
+                       the universe (used for e.g., complement() operations).
+        :return: A new WrappedSamplesQuery object.
+        """
         super().__init__()
         self._query_connection = connection
         self._wrapped_query = wrapped_query
