@@ -15,6 +15,10 @@ logger = logging.getLogger(__name__)
 
 
 class TreeStyler:
+    """
+    A class used to style and render a tree and sets of samples on this tree.
+    """
+
     MODES = ['r', 'c']
 
     def __init__(self, tree: Tree, default_highlight_styles: HighlightStyle, annotate_column: int,
@@ -34,6 +38,36 @@ class TreeStyler:
                  annotate_show_box_label: bool = False,
                  annotate_box_label_color: str = 'white',
                  annotate_label_fontsize: int = 12):
+        """
+        Creates a new TreeStyler with the given default settings.
+        :param tree: The tree to style and render.
+        :param highlight_style: A style used to define how the highlight() method should behave.
+                                Can either be one of the named highlight styles ['light', 'light_hn', 'pastel', 'medium', dark']
+                                or an instance of a :py:class:`genomics_data_index.api.viewer.TreeStyler.HighlightStyle`.
+        :param annotate_column: Which column in the annotate table this annotate visual belongs to (starting from column 0).
+        :param tree_style: The ete3.TreeStyle object defining the style of the tree.
+        :param samples_styles_list: A list of :py:class:`genomics_data_index.api.viewer.TreeSamplesVisual` objects
+                                   that define the different styles to apply to sets of samples (e.g., highlight or annotate).
+        :param legend_nsize: The legend node size.
+        :param legend_fsize: The legend font size.
+        :param annotate_color_present: The default color of samples which are present in the set for the annotate() method.
+        :param annotate_color_absent: The default color of samples which are absent in the set for the annotate() method.
+        :param annotate_opacity_present: The default opacity of samples which are present in the set for the annotate() method.
+        :param annotate_opacity_absent: The default opacity of samples which are absent in the set for the annotate() method.
+        :param annotate_border_color: The default border color of the drawn annotations.
+        :param annotate_kind: The default kind color of the drawn annotations (either 'circle' or 'rectangle').
+        :param annotate_box_width: The width of the boxes for the drawn annotations.
+        :param annotate_box_height: The height of the boxes for the drawn annotations.
+        :param annotate_border_width: The width of the border for the boxes for the drawn annotations.
+        :param annotate_margin: The margin width of the boxes for the drawn annotations.
+        :param annotate_show_box_label:
+        :param annotate_box_label_color:
+        :param annotate_label_fontsize:
+        :param annotate_show_box_label: True if labels should be shown in the annotation boxes, False otherwise.
+        :param annotate_box_label_color: The color of the labels in the annotation boxes.
+        :param annotate_label_fontsize: The font size of the annotation labels.
+        :return: A new TreeStyler object.
+        """
         self._tree = tree
         self._default_highlight_styles = default_highlight_styles
         self._tree_style = tree_style
@@ -149,6 +183,15 @@ class TreeStyler:
     def highlight(self, samples: Union[SamplesQuery, Iterable[str]],
                   nstyle: NodeStyle = None, legend_color: str = None,
                   legend_label: str = None) -> TreeStyler:
+        """
+        Highlights the selected samples in the tree with a particular style defined by the passed default_highlight_styles
+        on creation of this TreeStyler.
+        :param samples: The set of samples to highlight.
+        :param nstyle: Overrides the node style for the leaf node in the tree defined by the highlight styles.
+        :param legend_color: Overrides the color of the legend item.
+        :param legend_label: Defines the label of the legend item.
+        :return: A new TreeStyler with the given samples highlighted.
+        """
 
         if nstyle is None and legend_color is None:
             nstyle = self._default_highlight_styles.node_style
@@ -191,6 +234,16 @@ class TreeStyler:
 
     def render(self, file_name: str = '%%inline', w: int = None, h: int = None,
                tree_style: TreeStyle = None, units: str = 'px', dpi: int = 90):
+        """
+        Renders the tree with the styles defined by this TreeStyler object to an image.
+        :param file_name: The image file name to save, use '%%inline' to draw inline in Jupyter notebooks (default).
+        :param w: The width of the image.
+        :param h: The height of the image.
+        :param tree_style: The ete3.TreeStyle object (overrides the object defined by this TreeStyler).
+        :param units: The units of the width/height (default in pixels).
+        :param dpi: The dots per inch.
+        :return: An image/image data of the drawn tree styled according to this TreeStyler.
+        """
         if tree_style is None:
             tree_style = self._tree_style
 
@@ -210,10 +263,23 @@ class TreeStyler:
 
     @property
     def tree(self) -> Tree:
+        """
+        Gets a copy of the tree this TreeStyler is applied to.
+        Note that any highlight() or annotate() methods only get applied when running render().
+        So the returned tree will *not* be styled according to the defined highlight() or annotate() objects.
+        This is in part because for large trees copying all the tree style/node style objects from ete3 was causing
+        recursion errors.
+
+        :return: The tree this TreeStyler is applied to.
+        """
         return self._tree.copy('newick')
 
     @property
     def tree_style(self) -> TreeStyle:
+        """
+        Gets a copy of the ete3.TreeStyle object being used to draw this tree.
+        :return: The ete3.TreeStyle object.
+        """
         return copy.deepcopy(self._tree_style)
 
     @classmethod
@@ -245,6 +311,43 @@ class TreeStyler:
                annotate_label_fontsize: int = 12,
                show_leaf_names: bool = True,
                tree_scale: float = None) -> TreeStyler:
+        """
+        Constructs a new TreeStyler object used to style and visualize trees.
+        All parameters listed below are optional except for tree.
+        :param tree: The tree to style.
+        :param initial_style: The initial ete3.TreeStyle to start with.
+        :param mode: Either 'r' (rectangular) or 'c' (circular).
+        :param highlight_style: A style used to define how the highlight() method should behave.
+                                Can either be one of the named highlight styles ['light', 'light_hn', 'pastel', 'medium', dark']
+                                or an instance of a :py:class:`genomics_data_index.api.viewer.TreeStyler.HighlightStyle`.
+        :param legend_nsize: The legend node size.
+        :param legend_fsize: The legend font size.
+        :param annotate_color_present: The default color of samples which are present in the set for the annotate() method.
+        :param annotate_color_absent: The default color of samples which are absent in the set for the annotate() method.
+        :param annotate_opacity_present: The default opacity of samples which are present in the set for the annotate() method.
+        :param annotate_opacity_absent: The default opacity of samples which are absent in the set for the annotate() method.
+        :param annotate_border_color: The default border color of the drawn annotations.
+        :param annotate_kind: The default kind color of the drawn annotations (either 'circle' or 'rectangle').
+        :param annotate_box_width: The width of the boxes for the drawn annotations.
+        :param annotate_box_height: The height of the boxes for the drawn annotations.
+        :param annotate_border_width: The width of the border for the boxes for the drawn annotations.
+        :param annotate_margin: The margin width of the boxes for the drawn annotations.
+        :param annotate_guiding_lines: True if guiding lines should be drawn that matches sample names to the annotation boxes,
+                                       False otherwise.
+        :param annotate_guiding_lines_color:  The color of the annotate guiding lines.
+        :param figure_margin: The margin spacing (used for all of top, bottom, left, and right) for the overall figure.
+        :param show_border: True if a border should be shown around the overall figure, False otherwise.
+        :param title: A title for the figure.
+        :param title_fsize: The font size of the figure title.
+        :param legend_title: The title of the legend.
+        :param annotate_show_box_label: True if labels should be shown in the annotation boxes, False otherwise.
+        :param annotate_box_label_color: The color of the labels in the annotation boxes.
+        :param annotate_arc_span: For mode='c' (circular) the degrees the circular tree should span.
+        :param annotate_label_fontsize: The font size of the annotation labels.
+        :param show_leaf_names: True if leaf names should be shown on the tree, False otherwise.
+        :param tree_scale: A scale factor for the tree.
+        :return: A new TreeStyler object used to style and visualize trees.
+        """
         if initial_style is not None:
             tree_style_elements = {'mode': mode, 'annotate_guiding_lines': annotate_guiding_lines,
                                    'figure_margin': figure_margin, 'show_border': show_border,
@@ -322,28 +425,57 @@ class TreeStyler:
 
 
 class HighlightStyle:
+    """
+    Defines a list of styles used to highlight different sets of samples in a tree.
+    """
+
     THEMES = ['light', 'light_hn', 'pastel', 'medium', 'dark']
 
     def __init__(self, node_styles: List[Dict[str, Union[str, NodeStyle]]],
                  index: int):
+        """
+        Builds a new HighlightStyle with the given information.
+        :param node_styles: A list of NodeStyle and legend color objects
+                           (a list of dictionaries with two keys: 'nstyle' and 'legend_color').
+        :param index: The index for the current element in the list of styles (the one that will be used next).
+        :return: A new HighlightStyle.
+        """
         self._node_styles = node_styles
         self._index = index
 
     @property
     def node_style(self) -> NodeStyle:
+        """
+        Gets the current node style from the HighlightStyle.
+        :return: The node style.
+        """
         return self._node_styles[self._index]['nstyle']
 
     @property
     def legend_color(self) -> NodeStyle:
+        """
+        Gets the current legend color from the HighlightStyle.
+        :return: The legend color.
+        """
         return self._node_styles[self._index]['legend_color']
 
     def next(self) -> HighlightStyle:
+        """
+        Advances the current highlight style by 1. Will wrap around to the beginning of the list of styles
+        if the end is reached. This is used so that every execution of TreeStyler.highlight() will use a different highlight style.
+        :return: A new HighlightStyle object with the next style selected in the list.
+        """
         # Advance by 1, wrapping around if we reach the end of the highlight styles
         new_index = (self._index + 1) % len(self._node_styles)
         return HighlightStyle(self._node_styles, index=new_index)
 
     @classmethod
     def create(cls, kind: str) -> HighlightStyle:
+        """
+        Creates a new pre-defined HighlightStyle.
+        :param kind: The kind (name) of the pre-defined HighlightStyle to create.
+        :return: A new HighlightStyle.
+        """
         if kind == 'light':
             fg_colors = ['#e5f5f9', '#fee8c8', '#e0ecf4', '#deebf7']
             bg_colors = fg_colors

@@ -7,12 +7,23 @@ from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 
 
 class TreeSamplesVisual(abc.ABC):
+    """
+    Defines a visual element on a tree which applies to a set of samples (e.g., highlight or annotate).
+    """
+
     LEGEND_FACE_KINDS = ['circle', 'circ', 'c',
                          'rectangle', 'rect', 'r']
 
     def __init__(self, samples: Union[SamplesQuery, Iterable[str]],
                  legend_nodesize: int,
                  legend_fontsize: int):
+        """
+        Creates a new TreeSamplesVisual with the given information.
+        :param samples: The set of samples to apply this visual style to.
+        :param legend_nodesize: The legend node size for this set of samples.
+        :param legend_fontsize: The legend font size for this set of samples.
+        :return: A new TreeSamplesVisual.
+        """
         self._samples = samples
         self._legend_nodesize = legend_nodesize
         self._legend_fontsize = legend_fontsize
@@ -20,6 +31,10 @@ class TreeSamplesVisual(abc.ABC):
 
     @property
     def sample_names(self) -> List[str]:
+        """
+        Gets the names of the samples this visual style applies to.
+        :return: A list of the names of samples this visual style applies to.
+        """
         if self._samples_names is None:
             if isinstance(self._samples, SamplesQuery):
                 self._sample_names = self._samples.tolist(names=True)

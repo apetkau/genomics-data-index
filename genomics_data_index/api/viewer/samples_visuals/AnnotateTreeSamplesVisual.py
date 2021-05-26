@@ -11,6 +11,10 @@ logger = logging.getLogger(__name__)
 
 
 class AnnotateTreeSamplesVisual(TreeSamplesVisual):
+    """
+    Creates a visual style which adds boxes which are colored based on the presence/absence of samples in the set.
+    """
+
     ANNOTATE_KINDS = TreeSamplesVisual.LEGEND_FACE_KINDS
 
     def __init__(self,
@@ -31,6 +35,30 @@ class AnnotateTreeSamplesVisual(TreeSamplesVisual):
                  annotate_opacity_absent: float,
                  border_width: int,
                  margin: int):
+        """
+        Creates a new AnnotateTreeSamplesVisual with the given information. This is not intended to be created directly
+        but instead is created via methods in the :py:class:`genomics_data_index.api.viewer.TreeStyler` class.
+        :param samples: The set of samples this visual style applies to.
+        :param label: A label for this set of samples.
+        :param annotate_show_box_label: Whether or not the label should be printed in each annotate box.
+        :param annotate_box_label_color: The color of the annotate box label if it is to be displayed.
+        :param annotate_label_fontsize: The font size of the annotate box label if it is to be displayed.
+        :param legend_label: The legend label.
+        :param box_width: The width of the annotate box.
+        :param box_height: The height of the annotate box.
+        :param color_present: The color of the samples present in this set.
+        :param color_absent: The color of the samples absent in this set.
+        :param legend_nodesize: The node size for the legend.
+        :param legend_fontsize: The legend font size.
+        :param annotate_column: Which column in the annotate table this annotate visual belongs to (starting from column 0).
+        :param annotate_kind: The type of annotation to display for present samples ['circle', 'rectangle'].
+        :param annotate_border_color: The border color of teh annotate box.
+        :param annotate_opacity_present: The opacity of the present samples.
+        :param annotate_opacity_absent: The opacity of the absent samples.
+        :param border_width: The width of the border.
+        :param margin: The width of the margin in each annotate box.
+        :return: A new AnnotateTreeSamplesVisual.
+        """
         super().__init__(samples, legend_nodesize=legend_nodesize,
                          legend_fontsize=legend_fontsize)
         self._label = label
