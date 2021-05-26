@@ -22,6 +22,11 @@ logger = logging.getLogger(__name__)
 
 
 class SamplesQueryIndex(SamplesQuery):
+    """
+    The main class implementing :py:class:`genomics_data_index.api.query.SamplesQuery`. This is used
+    to store selections of sets of samples as well as operations to select subsets of samples.
+    """
+
     HAS_KINDS = ['mutation', 'mutations', 'mlst']
     SUMMARY_FEATURES_KINDS = ['mutations']
     FEATURES_SELECTIONS = ['all', 'unique']
@@ -33,6 +38,18 @@ class SamplesQueryIndex(SamplesQuery):
                  universe_set: SampleSet,
                  sample_set: SampleSet,
                  queries_collection: QueriesCollection = QueriesCollection.create_empty()):
+        """
+        Builds a new SamplesQueryIndex from the given information. In most normal operations SamplesQuery objects
+        are not created directly but are instead created from an :py:class:`genomics_data_index.api.GenomicsDataIndex`
+        object or from operations applied to a SamplesQuery.
+
+        :param connection: A connection to a database containing samples.
+        :param universe_set: The :py:class:`genomics_data_index.storage.SampleSet` representing a set of samples defining
+                       the universe (used for e.g., complement() operations).
+        :param sample_set: The :py:class:`genomics_data_index.storage.SampleSet` representing the set of selected samples.
+        :param queries_collection: A collection of strings representing the queries performed to arrive at this SamplesQuery.
+        :return: A new SamplesQueryIndex object.
+        """
         super().__init__()
         self._query_connection = connection
         self._universe_set = universe_set
