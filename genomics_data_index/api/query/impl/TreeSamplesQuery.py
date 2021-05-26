@@ -16,10 +16,25 @@ logger = logging.getLogger(__name__)
 
 
 class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
+    """
+    A class to handle queries that are joined to a tree. Subclasses are used for different implementations
+    depending on what sort of data was used to build the tree (e.g., mutations or kmers).
+    """
+
     BUILD_TREE_KINDS = ['mutation']
     ISIN_TREE_TYPES = ['distance', 'mrca']
 
     def __init__(self, connection: DataIndexConnection, wrapped_query: SamplesQuery, tree: Tree):
+        """
+        Builds a new TreeSamplesQuery from the given information. In most normal operations SamplesQuery objects
+        are not created directly but are instead created from an :py:class:`genomics_data_index.api.GenomicsDataIndex`
+        object or from operations applied to a SamplesQuery (e.g., build_tree() or join_tree()).
+
+        :param connection: A connection to a database containing samples.
+        :param wrapped_query: The SamplesQuery to wrap around and join to the passed tree.
+        :param tree: The tree to join to this query.
+        :return: A new TreeSamplesQuery object.
+        """
         super().__init__(connection=connection, wrapped_query=wrapped_query)
         self._tree = tree
 
@@ -139,7 +154,42 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
                     annotate_label_fontsize: int = 12,
                     show_leaf_names: bool = True,
                     tree_scale: float = None) -> TreeStyler:
-
+        """
+        Constructs a new :py:class:`genomics_data_index.api.viewer.TreeStyler` object used to style and visualize trees.
+        All parameters listed below are optional.
+        :param initial_style: The initial ete3.TreeStyle to start with.
+        :param mode: Either 'r' (rectangular) or 'c' (circular).
+        :param highlight_style: A style used to define how the highlight() method should behave.
+                                Can either be one of the named highlight styles ['light', 'light_hn', 'pastel', 'medium', dark']
+                                or an instance of a :py:class:`genomics_data_index.api.viewer.TreeStyler.HighlightStyle`.
+        :param legend_nsize: The legend node size.
+        :param legend_fsize: The legend font size.
+        :param annotate_color_present: The default color of samples which are present in the set for the annotate() method.
+        :param annotate_color_absent: The default color of samples which are absent in the set for the annotate() method.
+        :param annotate_opacity_present: The default opacity of samples which are present in the set for the annotate() method.
+        :param annotate_opacity_absent: The default opacity of samples which are absent in the set for the annotate() method.
+        :param annotate_border_color: The default border color of the drawn annotations.
+        :param annotate_kind: The default kind color of the drawn annotations (either 'circle' or 'rectangle').
+        :param annotate_box_width: The width of the boxes for the drawn annotations.
+        :param annotate_box_height: The height of the boxes for the drawn annotations.
+        :param annotate_border_width: The width of the border for the boxes for the drawn annotations.
+        :param annotate_margin: The margin width of the boxes for the drawn annotations.
+        :param annotate_guiding_lines: True if guiding lines should be drawn that matches sample names to the annotation boxes,
+                                       False otherwise.
+        :param annotate_guiding_lines_color:  The color of the annotate guiding lines.
+        :param figure_margin: The margin spacing (used for all of top, bottom, left, and right) for the overall figure.
+        :param show_border: True if a border should be shown around the overall figure, False otherwise.
+        :param title: A title for the figure.
+        :param title_fsize: The font size of the figure title.
+        :param legend_title: The title of the legend.
+        :param annotate_show_box_label: True if labels should be shown in the annotation boxes, False otherwise.
+        :param annotate_box_label_color: The color of the labels in the annotation boxes.
+        :param annotate_arc_span: For mode='c' (circular) the degrees the circular tree should span.
+        :param annotate_label_fontsize: The font size of the annotation labels.
+        :param show_leaf_names: True if leaf names should be shown on the tree, False otherwise.
+        :param tree_scale: A scale factor for the tree.
+        :return: A new :py:class:`genomics_data_index.api.viewer.TreeStyler` object used to style and visualize trees.
+        """
         return TreeStyler.create(tree=self._tree,
                                  initial_style=initial_style,
                                  mode=mode,

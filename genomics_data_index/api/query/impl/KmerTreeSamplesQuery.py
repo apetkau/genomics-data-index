@@ -10,8 +10,21 @@ from genomics_data_index.storage.SampleSet import SampleSet
 
 
 class KmerTreeSamplesQuery(TreeSamplesQuery):
+    """
+    A KmerTreeSamplesQuery defines a query with a joined tree derived from kmers.
+    """
 
     def __init__(self, connection: DataIndexConnection, wrapped_query: SamplesQuery, tree: ClusterTree):
+        """
+        Builds a new KmerTreeSamplesQuery from the given information. In most normal operations SamplesQuery objects
+        are not created directly but are instead created from an :py:class:`genomics_data_index.api.GenomicsDataIndex`
+        object or from operations applied to a SamplesQuery (e.g., build_tree() or join_tree()).
+
+        :param connection: A connection to a database containing samples.
+        :param wrapped_query: The SamplesQuery to wrap around and join to the passed tree.
+        :param tree: The tree to join to this query.
+        :return: A new KmerTreeSamplesQuery object.
+        """
         super().__init__(connection=connection, wrapped_query=wrapped_query, tree=tree)
 
     def _wrap_create(self, wrapped_query: SamplesQuery, universe_set: SampleSet = None) -> WrappedSamplesQuery:

@@ -13,21 +13,47 @@ logger = logging.getLogger(__name__)
 
 
 class MutationTreeSamplesQuery(TreeSamplesQuery):
+    """
+    A MutationTreeSamplesQuery represents a query with a tree derived from nucleotide mutation data.
+    """
+
     DISTANCE_UNITS = ['substitutions', 'substitutions/site']
 
     def __init__(self, connection: DataIndexConnection, wrapped_query: SamplesQuery, tree: Tree,
                  alignment_length: int, reference_name: str, reference_included: bool):
+        """
+        Builds a new MutationTreeSamplesQuery from the given information. In most normal operations SamplesQuery objects
+        are not created directly but are instead created from an :py:class:`genomics_data_index.api.GenomicsDataIndex`
+        object or from operations applied to a SamplesQuery (e.g., build_tree() or join_tree()).
+
+        :param connection: A connection to a database containing samples.
+        :param wrapped_query: The SamplesQuery to wrap around and join to the passed tree.
+        :param tree: The tree to join to this query.
+        :param alignment_length: The length of the alignment of mutations used to generate the tree
+                                 (used to convert substitutions/site distances to substitutions distances).
+        :param reference_name: The name of the reference genome in the tree.
+        :param reference_included: True if the reference genome is one of the leaves of the tree, False otherwise.
+        :return: A new MutationTreeSamplesQuery object.
+        """
         super().__init__(connection=connection, wrapped_query=wrapped_query, tree=tree)
         self._alignment_length = alignment_length
         self._reference_name = reference_name
         self._reference_included = reference_included
 
     @property
-    def reference_name(self):
+    def reference_name(self) -> str:
+        """
+        Gets the name of the reference genome.
+        :return: The name of the reference genome.
+        """
         return self._reference_name
 
     @property
-    def reference_included(self):
+    def reference_included(self) -> bool:
+        """
+        Whether or not the reference genome is included as a leaf of the tree.
+        :return: True if the reference genome is a leaf of the tree, False otherwise.
+        """
         return self._reference_included
 
     def _wrap_create(self, wrapped_query: SamplesQuery, universe_set: SampleSet = None) -> WrappedSamplesQuery:
