@@ -2,58 +2,90 @@
 [![Build Status](https://github.com/apetkau/thesis-index/workflows/Integration%20Tests/badge.svg?branch=development)](https://github.com/apetkau/thesis-index/actions?query=branch/development)
 
 This project is to design a system which can index large amounts of genomics data and enable rapid querying of this
-data. This is an ongoing (in-development) project and so not all (or even most) of the ideas below are implemented yet.
+data.
 
-A short tutorial and example of this software is available at [Tutorial 1: Salmonella dataset][tutorial1].
+**Indexing** breaks genomes up into individual features (*nucleotide mutations*, *k-mers*, or *genes/MLST*)
+and stores the index in a directory which can easily be shared with other people.
 
-## Background
+**Querying** provides both a *Python API* and *Command-line interface* to select sets of samples using this index
+or attached external data (e.g., phylogenetic trees or DataFrames of metadata).
 
-The type of genomic features that I will index are:
+```python
+# Select samples with a 26568 C > A mutation
+s.hasa('MN996528.1:26568:C:A')
+```
 
-1. Single nucleotide variants/mutations (and small indels)
-2. Kmers
-3. Genes (e.g., MLST)
+Summaries of the **features** (mutations, kmers, MLST) can be exported from a set of samples alongside
+*nucleotide alignments*, *distance matrices* or *trees* constructed from subsets of features.
 
-The goal is to abstract out the common methods to index these different types of features into a single interface.
+| Mutation | Count |
+|----------|-------|
+| 10 G>T   | 1     |
+| 20 C>T   | 3     |
+| 30 A>G   | 5     |
 
-The types of queries I wish to perform are as follows:
+**Visualization** of trees and sets of selected samples can be constructed using the provided Python API and the
+visualization tools provided by the [ETE Toolkit][].
 
-1. Sample-based queries (or sample-relatedness queries)
+![tree-visualization.png][]
 
-   These could consist of questions such as "list samples related to Sample X"
+# 1. Overview
 
-2. Feature-based queries
+The software is divided into two main components: *(1) Indexing* and *(2) Querying*.
 
-   These could consist of questions such as "list all samples with an A -> T mutation at position 500" or "list all
-   samples containing gene xyz (query based on k-mers similar to [BIGSI][] or [COBS][]).
+## 1.1. Indexing
 
-3. Cluster-based queries
+![figure-index.png][]
 
-   These could consist of questions such as "list all samples in cluster X" (where cluster X is defined based on shared
-   features or placement in a phylogenetic tree).
+The *indexing* component provides a mechanism to break genomes up into individual features and store these features
+in a database. The types of features supported include: **Nucleotide mutations**, **K-mers**, and **Genes/MLST**.
 
-You can see more details in my [Thesis proposal][thesis-proposal].
+## 1.2. Querying
 
-# Dependencies
+![figure-queries.png][]
 
-This project requires Python, MariaDB (or some other relational database) and the following other software:
+The *querying* component provides a Python API or command-line interface for executing queries on the genomics index. The primary type of query is a 
+**Samples query** which returns sets of samples based on different criteria. These criteria
+are grouped into different **Methods**. Each method operates on a particular type of **Data**
+which could include features stored in the *genomics index* as well as trees or external metadata.
 
-1. bcftools
-2. bedtools
-3. sourmash
-4. iqtree
+### 1.2.1. Python API
 
-# Installation
+An example query on an existing set of samples `s` would be:
 
-It's best to install everything in a conda environment:
+```python
+r = s.isa('B.1.1.7', isa_column='lineage') \
+     .isin(['SampleA'], distance=1, units='substitutions') \
+     .hasa('D614G')
+```
+
+This would be read as:
+
+>Select all samples in `s` which are a **B.1.1.7 lineage** as defined in some attached DataFrame (`isa()`) *AND*
+> which are within **1 substitution** of **SampleA** as defined on a phylogenetic tree (`isin()`) *AND* 
+> which have a **D614G** mutation (`hasa()`).
+
+*Note: I have left out some details in this query. Full examples for querying are available at [Tutorial 1: Salmonella dataset][tutorial1].*
+
+# 2. Background
+
+This is still an ongoing project. A lot of background material is found in my [Thesis proposal][thesis-proposal].
+
+# 3. Installation
+
+To install the project please first clone the git repository:
+
+```bash
+git clone https://github.com/apetkau/genomics-data-index.git
+cd genomics-data-index
+```
+
+Now install all the dependencies using [conda][] and [bioconda][] with:
 
 ```bash
 conda env create -f conda-env.yaml
 conda activate gdi
 ```
-
-This is an on-going project which will undergo a lot of changes and so the exact conda dependnecies are probably best
-found in the [CI test script][ci-dependencies] (for now).
 
 Once these are installed you can setup the Python package with:
 
@@ -61,7 +93,7 @@ Once these are installed you can setup the Python package with:
 pip install .
 ```
 
-# Usage
+# 4. Usage
 
 The main command is called `gdi`:
 
@@ -104,12 +136,19 @@ gdi load snippy --reference-file reference.fasta snippy-analysis/
 
 Where `snippy-analysis/` contains directories like `SampleA`, `SampleB`, etc.
 
-# Tutorial
+# 5. Tutorial
 
 A tutorial and demonstration of the software is available at:
 
 1. [Tutorial 1: Salmonella dataset][tutorial1]
 
+# 6. Acknowledgements
+
+I would like to acknowledge the [Public Health Agency of Canada][], the [University of Manitoba][], 
+and the [VADA Program][] for providing me with the opportunity, resources and training for working on this project.
+
+Some icons used in this documentation are provided by [Font Awesome][] and licensed under a 
+[Creative Commons Attribution 4.0][] license.
 
 [thesis-proposal]: https://drive.google.com/file/d/1sd0WjmwO_KU5wacfpUiPGT20xVOwBc8i/view?usp=sharing
 [BIGSI]: https://bigsi.readme.io/
@@ -117,5 +156,16 @@ A tutorial and demonstration of the software is available at:
 [ci-dependencies]: .github/workflows/ci-test.yml#L37
 [tutorial1]: docs/tutorial/tutorial-1-salmonella.ipynb
 [snippy]: https://github.com/tseemann/snippy
+[ETE Toolkit]: http://etetoolkit.org/
+[tree-visualization.png]: docs/images/tree-visualization.png
+[figure-index.png]: docs/images/figure-index.png
+[figure-queries.png]: docs/images/figure-queries.png
+[Public Health Agency of Canada]: https://www.canada.ca/en/public-health.html
+[University of Manitoba]: https://umanitoba.ca/
+[VADA Program]: http://vada.cs.umanitoba.ca/
+[conda]: https://docs.conda.io/en/latest/
+[bioconda]: https://bioconda.github.io/
+[Font Awesome]: https://fontawesome.com/
+[Creative Commons Attribution 4.0]: https://fontawesome.com/license/free
 
 
