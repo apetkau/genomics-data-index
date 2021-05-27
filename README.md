@@ -5,18 +5,28 @@ This project is to design a system which can index large amounts of genomics dat
 data.
 
 **Indexing** breaks genomes up into individual features (*nucleotide mutations*, *k-mers*, or *genes/MLST*)
-and stores the index in a directory which can easily be shared with other people.
+and stores the index in a directory which can easily be shared with other people. Indexes can be generated 
+direct from sequence data or loaded from existing intermediate files (e.g., VCF files).
+
+```bash
+# Index features in VCF files listed in vcf-files.txt
+gdi load vcf vcf-files.txt
+```
 
 **Querying** provides both a *Python API* and *Command-line interface* to select sets of samples using this index
 or attached external data (e.g., phylogenetic trees or DataFrames of metadata).
 
 ```python
 # Select samples with a 26568 C > A mutation
-s.hasa('MN996528.1:26568:C:A')
+r = s.hasa('MN996528.1:26568:C:A')
 ```
 
-Summaries of the **features** (mutations, kmers, MLST) can be exported from a set of samples alongside
+**Summaries of the features** (mutations, kmers, MLST) can be exported from a set of samples alongside
 *nucleotide alignments*, *distance matrices* or *trees* constructed from subsets of features.
+
+```python
+r.summary_features()
+```
 
 | Mutation | Count |
 |----------|-------|
@@ -27,7 +37,30 @@ Summaries of the **features** (mutations, kmers, MLST) can be exported from a se
 **Visualization** of trees and sets of selected samples can be constructed using the provided Python API and the
 visualization tools provided by the [ETE Toolkit][].
 
+```python
+r.tree_styler() \
+ .highlight(set1) \
+ .highlight(set2) \
+ #...
+ .render()
+```
+
 ![tree-visualization.png][]
+
+You can see more examples of this software in action at [Tutorial 1: Salmonella dataset][tutorial1].
+
+# Table of contents
+
+- [1. Overview](#1-overview)
+  * [1.1. Indexing](#11-indexing)
+    + [1.1.1. Naming features](#111-naming-features)
+  * [1.2. Querying](#12-querying)
+    + [1.2.1. Python API](#121-python-api)
+- [2. Background](#2-background)
+- [3. Installation](#3-installation)
+- [4. Usage](#4-usage)
+- [5. Tutorial](#5-tutorial)
+- [6. Acknowledgements](#6-acknowledgements)
 
 # 1. Overview
 
@@ -39,6 +72,15 @@ The software is divided into two main components: *(1) Indexing* and *(2) Queryi
 
 The *indexing* component provides a mechanism to break genomes up into individual features and store these features
 in a database. The types of features supported include: **Nucleotide mutations**, **K-mers**, and **Genes/MLST**.
+
+### 1.1.1. Naming features
+
+Indexing assigns names to the individual features, represented as strings inspired by the
+[Sequence Position Deletion Insertion (SPDI)][] model.
+
+1. **Nucleotide mutations**: `reference:position:deletion:insertion` (e.g., `ref:100:A:T`)
+2. **Genes/MLST**: `scheme:locus:allele` (e.g., `ecoli:adk:100`)
+3. **Kmers**: *Not implemented yet*
 
 ## 1.2. Querying
 
@@ -56,14 +98,14 @@ An example query on an existing set of samples `s` would be:
 ```python
 r = s.isa('B.1.1.7', isa_column='lineage') \
      .isin(['SampleA'], distance=1, units='substitutions') \
-     .hasa('D614G')
+     .hasa('MN996528.1:26568:C:A')
 ```
 
 This would be read as:
 
 >Select all samples in `s` which are a **B.1.1.7 lineage** as defined in some attached DataFrame (`isa()`) *AND*
 > which are within **1 substitution** of **SampleA** as defined on a phylogenetic tree (`isin()`) *AND* 
-> which have a **D614G** mutation (`hasa()`).
+> which have a **MN996528.1:26568:C:A** mutation (`hasa()`).
 
 *Note: I have left out some details in this query. Full examples for querying are available at [Tutorial 1: Salmonella dataset][tutorial1].*
 
@@ -167,5 +209,6 @@ Some icons used in this documentation are provided by [Font Awesome][] and licen
 [bioconda]: https://bioconda.github.io/
 [Font Awesome]: https://fontawesome.com/
 [Creative Commons Attribution 4.0]: https://fontawesome.com/license/free
+[Sequence Position Deletion Insertion (SPDI)]: https://doi.org/10.1093/bioinformatics/btz856
 
 
