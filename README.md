@@ -47,7 +47,7 @@ r.tree_styler() \
 
 ![tree-visualization.png][]
 
-You can see more examples of this software in action at [Tutorial 1: Salmonella dataset][tutorial1].
+You can see more examples of this software in action in the provided [Tutorials](#5-tutorial).
 
 # Table of contents
 
@@ -180,9 +180,10 @@ Where `snippy-analysis/` contains directories like `SampleA`, `SampleB`, etc.
 
 # 5. Tutorial
 
-A tutorial and demonstration of the software is available at:
+Tutorials and a demonstration of the software is available at:
 
-1. [Tutorial 1: Salmonella dataset][tutorial1]
+1. [Tutorial 1: Querying (Salmonella)][tutorial1]
+2. [Tutorial 2: Indexing assemblies (SARS-CoV-2)][tutorial2]
 
 # 6. Acknowledgements
 
@@ -197,6 +198,7 @@ Some icons used in this documentation are provided by [Font Awesome][] and licen
 [COBS]: https://github.com/bingmann/cobs
 [ci-dependencies]: .github/workflows/ci-test.yml#L37
 [tutorial1]: docs/tutorial/tutorial-1-salmonella.ipynb
+[tutorial2]: docs/tutorial/tutorial-2-sars-cov-2.ipynb
 [snippy]: https://github.com/tseemann/snippy
 [ETE Toolkit]: http://etetoolkit.org/
 [tree-visualization.png]: docs/images/tree-visualization.png
