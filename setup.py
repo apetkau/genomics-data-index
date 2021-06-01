@@ -14,7 +14,7 @@ Operating System :: POSIX :: Linux
 """.strip().split('\n')
 
 setup(name='genomics-data-index',
-      version='0.1.0.dev1',
+      version='0.1.0.dev2',
       description='Indexes genomics data (mutations, kmers, MLST) for fast querying of features.',
       author='Aaron Petkau',
       author_email='aaron.petkau@gmail.com',
