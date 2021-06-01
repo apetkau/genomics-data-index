@@ -5,3 +5,4 @@
 * Changed up applying visual styles to sets of samples in a tree to only apply when rendering.
     * This fixes an issue where copying trees was crashing when rendering large trees (I copy only once using 'newick').
 * Wrote a large amount of documentation (not complete yet).
+* Wrote tutorials for usage of this software.
