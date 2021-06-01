@@ -1,6 +1,9 @@
 recursive-include genomics_data_index/test/integration/data *
 recursive-include genomics_data_index/pipelines/assembly_input/ *
 include README.md
+include CHANGELOG.md
 include MANIFEST.in
 include LICENSE
 include pytest.ini
+include pyproject.toml
+include setup.py
