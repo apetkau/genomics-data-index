@@ -49,7 +49,7 @@ setup(name='genomics-data-index',
           'snakemake',
           'pytest',
       ],
-      python_requires="<=3.8",
+      python_requires="<3.9",
       packages=find_packages(),
       include_package_data=True,
       entry_points={
