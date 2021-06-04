@@ -1,5 +1,6 @@
 # Genomics data index
 [![Build Status](https://github.com/apetkau/thesis-index/workflows/Integration%20Tests/badge.svg?branch=development)](https://github.com/apetkau/thesis-index/actions?query=branch/development)
+[![pypi](https://badge.fury.io/py/genomics-data-index.svg)](https://pypi.python.org/pypi/genomics-data-index/)
 
 This project is to design a system which can index large amounts of genomics data and enable rapid querying of this
 data.
@@ -58,6 +59,8 @@ You can see more examples of this software in action in the provided [Tutorials]
     + [1.2.1. Python API](#121-python-api)
 - [2. Background](#2-background)
 - [3. Installation](#3-installation)
+  * [3.1. PyPI/pip](#31-pypi-pip)
+  * [3.2. From source](#32-from-source)
 - [4. Usage](#4-usage)
 - [5. Tutorial](#5-tutorial)
 - [6. Acknowledgements](#6-acknowledgements)
@@ -115,7 +118,19 @@ This is still an ongoing project. A lot of background material is found in my [T
 
 # 3. Installation
 
-To install the project please first clone the git repository:
+## 3.1. PyPI/pip
+
+To install this project from [PyPI][gdi-pypi] you can run the following:
+
+```bash
+pip install genomics-data-index
+```
+
+Note that you will have to install some additional dependencies separately. Please see the [conda-env.yaml][] environment file for details.
+
+## 3.2. From source
+
+To install the project from the source on GitHub please first clone the git repository:
 
 ```bash
 git clone https://github.com/apetkau/genomics-data-index.git
@@ -212,5 +227,5 @@ Some icons used in this documentation are provided by [Font Awesome][] and licen
 [Font Awesome]: https://fontawesome.com/
 [Creative Commons Attribution 4.0]: https://fontawesome.com/license/free
 [Sequence Position Deletion Insertion (SPDI)]: https://doi.org/10.1093/bioinformatics/btz856
-
+[pypi-gdi]: https://pypi.org/project/genomics-data-index/
 
