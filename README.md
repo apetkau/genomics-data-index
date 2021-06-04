@@ -59,8 +59,9 @@ You can see more examples of this software in action in the provided [Tutorials]
     + [1.2.1. Python API](#121-python-api)
 - [2. Background](#2-background)
 - [3. Installation](#3-installation)
-  * [3.1. PyPI/pip](#31-pypipip)
-  * [3.2. From source](#32-from-source)
+  * [3.1. Conda](#31-conda)
+  * [3.2. PyPI/pip](#32-pypipip)
+  * [3.3. From GitHub](#33-from-github)
 - [4. Usage](#4-usage)
 - [5. Tutorial](#5-tutorial)
 - [6. Acknowledgements](#6-acknowledgements)
@@ -118,17 +119,42 @@ This is still an ongoing project. A lot of background material is found in my [T
 
 # 3. Installation
 
-## 3.1. PyPI/pip
+## 3.1. Conda
 
-To install this project from [PyPI][gdi-pypi] you can run the following:
+To install this project using [conda][] first create a conda environment with the necessary dependencies as follows (a full conda package is not available yet #51).
 
 ```bash
-pip install genomics-data-index
+conda create --name gdi python=3.8 pyqt bedtools iqtree bcftools htslib
+
+# Activate environment
+conda activate gdi
+```
+
+Now, you can install with:
+
+```bash
+python -m pip install genomics-data-index
+```
+
+If everything is working you should be able to run:
+
+```bash
+gdi --version
+```
+
+You should see `gdi, version 0.1.0` printed out.
+
+## 3.2. PyPI/pip
+
+To install just the Python component of this project from [PyPI][gdi-pypi] you can run the following:
+
+```bash
+python -m pip install genomics-data-index
 ```
 
 Note that you will have to install some additional dependencies separately. Please see the [conda-env.yaml][] environment file for details.
 
-## 3.2. From source
+## 3.3. From GitHub
 
 To install the project from the source on GitHub please first clone the git repository:
 
@@ -195,10 +221,25 @@ Where `snippy-analysis/` contains directories like `SampleA`, `SampleB`, etc.
 
 # 5. Tutorial
 
-Tutorials and a demonstration of the software is available at:
+Tutorials and a demonstration of the software are available at:
 
 1. [Tutorial 1: Querying (Salmonella)][tutorial1]
 2. [Tutorial 2: Indexing assemblies (SARS-CoV-2)][tutorial2]
+
+In order to run these tutorials you will first have to install the `genomics-data-index` software (see the [Installation](#3-installation) section for details). In addition, you will have to install [Jupyter Lab][]. If you have already installed the `genomics-data-index` software with conda you can install Jupyter Lab as follows:
+
+```bash
+conda activate gdi
+conda install jupyterlab
+```
+
+To run Jupyter you can run the following:
+
+```bash
+jupyter lab
+```
+
+Please see the instructions for [Jupyter Lab][jupyter-docs] for details.
 
 # 6. Acknowledgements
 
@@ -229,4 +270,6 @@ Some icons used in this documentation are provided by [Font Awesome][] and licen
 [Sequence Position Deletion Insertion (SPDI)]: https://doi.org/10.1093/bioinformatics/btz856
 [pypi-gdi]: https://pypi.org/project/genomics-data-index/
 [conda-env.yaml]: conda-env.yaml
+[Jupyter Lab]: https://jupyter.org/
+[jupyter-docs]: https://jupyterlab.readthedocs.io/en/latest/
 
