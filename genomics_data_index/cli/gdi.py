@@ -18,6 +18,7 @@ from Bio import AlignIO
 import genomics_data_index.storage.service.FeatureService as FeatureService
 from genomics_data_index.cli import yaml_config_provider
 from genomics_data_index.configuration.Project import Project, ProjectConfigurationError
+from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
 from genomics_data_index.pipelines.SnakemakePipelineExecutor import SnakemakePipelineExecutor
 from genomics_data_index.storage.index.KmerIndexer import KmerIndexerSourmash, KmerIndexManager
 from genomics_data_index.storage.io.mlst.MLSTChewbbacaReader import MLSTChewbbacaReader
@@ -37,7 +38,6 @@ from genomics_data_index.storage.service.SampleService import SampleService
 from genomics_data_index.storage.service.TreeService import TreeService
 from genomics_data_index.storage.service.VariationService import VariationService
 from genomics_data_index.storage.util import get_genome_name
-from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
 
 logger = logging.getLogger('genomics_data_index')
 max_cores = multiprocessing.cpu_count()
