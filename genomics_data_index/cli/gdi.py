@@ -15,6 +15,7 @@ import coloredlogs
 import pandas as pd
 from Bio import AlignIO
 
+from genomics_data_index import __version__
 import genomics_data_index.storage.service.FeatureService as FeatureService
 from genomics_data_index.cli import yaml_config_provider
 from genomics_data_index.configuration.Project import Project, ProjectConfigurationError
@@ -75,6 +76,7 @@ def get_project_exit_on_error(ctx) -> Project:
 @click.option('--ncores', help='Number of cores for any parallel processing', default=max_cores,
               type=click.IntRange(min=1, max=max_cores))
 @click.option('--log-level', default='INFO', help='Sets the log level', type=click.Choice(LOG_LEVELS))
+@click.version_option(version=__version__)
 @click_config_file.configuration_option(provider=yaml_config_provider,
                                         config_file_name='config.yaml',
                                         implicit=False)
