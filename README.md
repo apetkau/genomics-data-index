@@ -228,4 +228,5 @@ Some icons used in this documentation are provided by [Font Awesome][] and licen
 [Creative Commons Attribution 4.0]: https://fontawesome.com/license/free
 [Sequence Position Deletion Insertion (SPDI)]: https://doi.org/10.1093/bioinformatics/btz856
 [pypi-gdi]: https://pypi.org/project/genomics-data-index/
+[conda-env.yaml]: conda-env.yaml
 
