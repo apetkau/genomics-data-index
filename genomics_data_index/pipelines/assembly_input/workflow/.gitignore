@@ -1,0 +1,5 @@
+.snakemake
+align/
+data/
+consensus/
+variant/
