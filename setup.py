@@ -13,9 +13,14 @@ Programming Language :: Python :: 3.8
 Operating System :: POSIX :: Linux
 """.strip().split('\n')
 
+with open("README.md", "r", encoding="utf-8") as fh:
+    long_description = fh.read()
+
 setup(name='genomics-data-index',
-      version='0.1.0.dev1',
+      version='0.1.0.dev3',
       description='Indexes genomics data (mutations, kmers, MLST) for fast querying of features.',
+      long_description=long_description,
+      long_description_content_type="text/markdown",
       author='Aaron Petkau',
       author_email='aaron.petkau@gmail.com',
       url='https://github.com/apetkau/genomics-data-index',
@@ -49,6 +54,7 @@ setup(name='genomics-data-index',
           'snakemake',
           'pytest',
       ],
+      python_requires="<3.9",
       packages=find_packages(),
       include_package_data=True,
       entry_points={

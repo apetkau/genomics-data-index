@@ -18,6 +18,7 @@ from Bio import AlignIO
 import genomics_data_index.storage.service.FeatureService as FeatureService
 from genomics_data_index.cli import yaml_config_provider
 from genomics_data_index.configuration.Project import Project, ProjectConfigurationError
+from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
 from genomics_data_index.pipelines.SnakemakePipelineExecutor import SnakemakePipelineExecutor
 from genomics_data_index.storage.index.KmerIndexer import KmerIndexerSourmash, KmerIndexManager
 from genomics_data_index.storage.io.mlst.MLSTChewbbacaReader import MLSTChewbbacaReader
@@ -99,17 +100,16 @@ def init(project_dir: str):
 @main.group()
 @click.pass_context
 def load(ctx):
-    project = get_project_exit_on_error(ctx)
-    ctx.obj['data_index_connection'] = project.create_connection()
+    pass
 
 
-def load_variants_common(ctx, data_package: NucleotideSampleDataPackage, reference_file, input, build_tree, align_type,
+def load_variants_common(data_index_connection: DataIndexConnection, ncores: int,
+                         data_package: NucleotideSampleDataPackage, reference_file, input, build_tree, align_type,
                          extra_tree_params: str):
-    reference_service = ctx.obj['data_index_connection'].reference_service
-    variation_service = cast(VariationService, ctx.obj['data_index_connection'].variation_service)
-    sample_service = cast(SampleService, ctx.obj['data_index_connection'].sample_service)
-    tree_service = ctx.obj['data_index_connection'].tree_service
-    ncores = ctx.obj['ncores']
+    reference_service = data_index_connection.reference_service
+    variation_service = cast(VariationService, data_index_connection.variation_service)
+    sample_service = cast(SampleService, data_index_connection.sample_service)
+    tree_service = data_index_connection.tree_service
 
     try:
         reference_service.add_reference_genome(reference_file)
@@ -145,6 +145,8 @@ def load_variants_common(ctx, data_package: NucleotideSampleDataPackage, referen
               default=None)
 def load_snippy(ctx, snippy_dir: Path, reference_file: Path, build_tree: bool, align_type: str, extra_tree_params: str):
     ncores = ctx.obj['ncores']
+    project = get_project_exit_on_error(ctx)
+    data_index_connection = project.create_connection()
 
     snippy_dir = Path(snippy_dir)
     reference_file = Path(reference_file)
@@ -161,7 +163,8 @@ def load_snippy(ctx, snippy_dir: Path, reference_file: Path, build_tree: bool, a
         data_package = NucleotideSampleDataPackage.create_from_snippy(sample_dirs,
                                                                       sample_files_processor=file_processor)
 
-        load_variants_common(ctx=ctx, data_package=data_package, reference_file=reference_file,
+        load_variants_common(data_index_connection=data_index_connection, ncores=ncores, data_package=data_package,
+                             reference_file=reference_file,
                              input=snippy_dir, build_tree=build_tree, align_type=align_type,
                              extra_tree_params=extra_tree_params)
 
@@ -176,9 +179,11 @@ def load_snippy(ctx, snippy_dir: Path, reference_file: Path, build_tree: bool, a
 @click.option('--extra-tree-params', help='Extra parameters to tree-building software',
               default=None)
 def load_vcf(ctx, vcf_fofns: str, reference_file: str, build_tree: bool, align_type: str, extra_tree_params: str):
+    ncores = ctx.obj['ncores']
     vcf_fofns = Path(vcf_fofns)
     reference_file = Path(reference_file)
-    ncores = ctx.obj['ncores']
+    project = get_project_exit_on_error(ctx)
+    data_index_connection = project.create_connection()
 
     click.echo(f'Loading files listed in {vcf_fofns}')
     sample_vcf_map = {}
@@ -203,7 +208,8 @@ def load_vcf(ctx, vcf_fofns: str, reference_file: str, build_tree: bool, align_t
                                                                               masked_genomic_files_map=mask_files_map,
                                                                               sample_files_processor=file_processor)
 
-        load_variants_common(ctx=ctx, data_package=data_package, reference_file=reference_file,
+        load_variants_common(data_index_connection=data_index_connection, ncores=ncores, data_package=data_package,
+                             reference_file=reference_file,
                              input=Path(vcf_fofns), build_tree=build_tree, align_type=align_type,
                              extra_tree_params=extra_tree_params)
 
@@ -214,8 +220,9 @@ def load_vcf(ctx, vcf_fofns: str, reference_file: str, build_tree: bool, align_t
 @click.option('--kmer-size', help='Kmer size for indexing. List multiple for multiple kmer sizes in an index',
               default=[31], multiple=True, type=click.IntRange(min=1, max=201))
 def load_kmer(ctx, kmer_fofns, kmer_size):
-    filesystem_storage = ctx.obj['data_index_connection'].filesystem_storage
-    kmer_service = ctx.obj['data_index_connection'].kmer_service
+    data_index_connection = get_project_exit_on_error(ctx).create_connection()
+    filesystem_storage = data_index_connection.filesystem_storage
+    kmer_service = data_index_connection.kmer_service
 
     if not isinstance(kmer_size, list):
         kmer_size = list(kmer_size)
@@ -257,7 +264,8 @@ def load_kmer(ctx, kmer_fofns, kmer_size):
 @click.option('--scheme-name', help='Override scheme name found in MLST file',
               default=FeatureService.AUTO_SCOPE, type=str)
 def load_mlst_tseemann(ctx, mlst_file: List[Path], scheme_name: str):
-    mlst_service = cast(MLSTService, ctx.obj['data_index_connection'].mlst_service)
+    data_index_connection = get_project_exit_on_error(ctx).create_connection()
+    mlst_service = cast(MLSTService, data_index_connection.mlst_service)
     for file in mlst_file:
         click.echo(f'Loading MLST results from {str(file)}')
         data_package = MLSTSampleDataPackage(MLSTTSeemannFeaturesReader(mlst_file=file))
@@ -270,7 +278,8 @@ def load_mlst_tseemann(ctx, mlst_file: List[Path], scheme_name: str):
 @click.option('--scheme-name', help='Override scheme name found in SISTR MLST file',
               default=FeatureService.AUTO_SCOPE, type=str)
 def load_mlst_sistr(ctx, mlst_file: List[Path], scheme_name: str):
-    mlst_service = cast(MLSTService, ctx.obj['data_index_connection'].mlst_service)
+    data_index_connection = get_project_exit_on_error(ctx).create_connection()
+    mlst_service = cast(MLSTService, data_index_connection.mlst_service)
     for file in mlst_file:
         click.echo(f'Loading cgMLST results from {str(file)}')
         data_package = MLSTSampleDataPackage(MLSTSistrReader(mlst_file=file))
@@ -283,7 +292,8 @@ def load_mlst_sistr(ctx, mlst_file: List[Path], scheme_name: str):
 @click.option('--scheme-name', help='Set scheme name',
               required=True, type=str)
 def load_mlst_sistr(ctx, mlst_file: List[Path], scheme_name: str):
-    mlst_service = cast(MLSTService, ctx.obj['data_index_connection'].mlst_service)
+    data_index_connection = get_project_exit_on_error(ctx).create_connection()
+    mlst_service = cast(MLSTService, data_index_connection.mlst_service)
     for file in mlst_file:
         click.echo(f'Loading MLST results from [{str(file)}] under scheme [{scheme_name}]')
         data_package = MLSTSampleDataPackage(MLSTChewbbacaReader(mlst_file=file, scheme=scheme_name))
@@ -293,29 +303,29 @@ def load_mlst_sistr(ctx, mlst_file: List[Path], scheme_name: str):
 @main.group(name='list')
 @click.pass_context
 def list_data(ctx):
-    project = get_project_exit_on_error(ctx)
-    ctx.obj['data_index_connection'] = project.create_connection()
+    pass
 
 
 @list_data.command(name='genomes')
 @click.pass_context
 def list_genomes(ctx):
-    items = [genome.name for genome in ctx.obj['data_index_connection'].reference_service.get_reference_genomes()]
+    data_index_connection = get_project_exit_on_error(ctx).create_connection()
+    items = [genome.name for genome in data_index_connection.reference_service.get_reference_genomes()]
     click.echo('\n'.join(items))
 
 
 @list_data.command(name='samples')
 @click.pass_context
 def list_samples(ctx):
-    items = [sample.name for sample in ctx.obj['data_index_connection'].sample_service.get_samples()]
+    data_index_connection = get_project_exit_on_error(ctx).create_connection()
+    items = [sample.name for sample in data_index_connection.sample_service.get_samples()]
     click.echo('\n'.join(items))
 
 
 @main.group()
 @click.pass_context
 def analysis(ctx):
-    project = get_project_exit_on_error(ctx)
-    ctx.obj['data_index_connection'] = project.create_connection()
+    pass
 
 
 @analysis.command()
@@ -354,7 +364,8 @@ def assembly(ctx, reference_file: str, index: bool, clean: bool, build_tree: boo
              include_mlst: bool, include_kmer: bool, kmer_size: List[int], kmer_scaled: int,
              batch_size: int,
              assembly_input_file: str, assembled_genomes: List[str]):
-    kmer_service = ctx.obj['data_index_connection'].kmer_service
+    data_index_connection = get_project_exit_on_error(ctx).create_connection()
+    kmer_service = data_index_connection.kmer_service
 
     if not index:
         logger.debug('--no-index is enabled so setting --no-clean')
@@ -427,8 +438,7 @@ def assembly(ctx, reference_file: str, index: bool, clean: bool, build_tree: boo
 @main.group()
 @click.pass_context
 def export(ctx):
-    project = get_project_exit_on_error(ctx)
-    ctx.obj['data_index_connection'] = project.create_connection()
+    pass
 
 
 @export.command(name='tree')
@@ -436,11 +446,12 @@ def export(ctx):
 @click.argument('name', nargs=-1)
 @click.option('--ascii/--no-ascii', help='Export as ASCII figure')
 def export_tree(ctx, name: List[str], ascii: bool):
+    data_index_connection = get_project_exit_on_error(ctx).create_connection()
     if len(name) == 0:
         logger.warning('No reference genome names passed, will not export tree')
 
     for ref_name in name:
-        reference = ctx.obj['data_index_connection'].reference_service.find_reference_genome(ref_name)
+        reference = data_index_connection.reference_service.find_reference_genome(ref_name)
         if ascii:
             click.echo(str(reference.tree))
         else:
@@ -450,8 +461,7 @@ def export_tree(ctx, name: List[str], ascii: bool):
 @main.group()
 @click.pass_context
 def build(ctx):
-    project = get_project_exit_on_error(ctx)
-    ctx.obj['data_index_connection'] = project.create_connection()
+    pass
 
 
 @build.command()
@@ -463,9 +473,10 @@ def build(ctx):
 @click.option('--sample', help='Sample to include in alignment (can list more than one).',
               multiple=True, type=str)
 def alignment(ctx, output_file: Path, reference_name: str, align_type: str, sample: List[str]):
-    alignment_service = ctx.obj['data_index_connection'].alignment_service
-    reference_service = ctx.obj['data_index_connection'].reference_service
-    sample_service = ctx.obj['data_index_connection'].sample_service
+    data_index_connection = get_project_exit_on_error(ctx).create_connection()
+    alignment_service = data_index_connection.alignment_service
+    reference_service = data_index_connection.reference_service
+    sample_service = data_index_connection.sample_service
 
     if not reference_service.exists_reference_genome(reference_name):
         logger.error(f'Reference genome [{reference_name}] does not exist')
@@ -501,8 +512,9 @@ def alignment(ctx, output_file: Path, reference_name: str, align_type: str, samp
               default=None)
 def tree(ctx, output_file: Path, reference_name: str, align_type: str,
          tree_build_type: str, sample: List[str], extra_params: str):
-    alignment_service = ctx.obj['data_index_connection'].alignment_service
-    tree_service = ctx.obj['data_index_connection'].tree_service
+    data_index_connection = get_project_exit_on_error(ctx).create_connection()
+    alignment_service = data_index_connection.alignment_service
+    tree_service = data_index_connection.tree_service
     reference_service = ctx.obj['data_index_connection'].reference_service
     sample_service = ctx.obj['data_index_connection'].sample_service
     ncores = ctx.obj['ncores']
@@ -540,8 +552,7 @@ def tree(ctx, output_file: Path, reference_name: str, align_type: str,
 @main.group()
 @click.pass_context
 def rebuild(ctx):
-    project = get_project_exit_on_error(ctx)
-    ctx.obj['data_index_connection'] = project.create_connection()
+    pass
 
 
 @rebuild.command(name='tree')
@@ -552,8 +563,9 @@ def rebuild(ctx):
 @click.option('--extra-params', help='Extra parameters to tree-building software',
               default=None)
 def rebuild_tree(ctx, reference: List[str], align_type: str, extra_params: str):
-    tree_service = ctx.obj['data_index_connection'].tree_service
-    reference_service = ctx.obj['data_index_connection'].reference_service
+    data_index_connection = get_project_exit_on_error(ctx).create_connection()
+    tree_service = data_index_connection.tree_service
+    reference_service = data_index_connection.reference_service
     ncores = ctx.obj['ncores']
 
     if len(reference) == 0:
@@ -578,15 +590,15 @@ def rebuild_tree(ctx, reference: List[str], align_type: str, extra_params: str):
 @main.group()
 @click.pass_context
 def query(ctx):
-    project = get_project_exit_on_error(ctx)
-    ctx.obj['data_index_connection'] = project.create_connection()
+    pass
 
 
 @query.command(name='sample-mutation')
 @click.pass_context
 @click.argument('name', nargs=-1)
 def query_sample_mutation(ctx, name: List[str]):
-    mutation_query_service = ctx.obj['data_index_connection'].mutation_query_service
+    data_index_connection = get_project_exit_on_error(ctx).create_connection()
+    mutation_query_service = data_index_connection.mutation_query_service
     match_df = mutation_query_service.find_matches(samples=name)
     match_df.to_csv(sys.stdout, sep='\t', index=False, float_format='%0.4g', na_rep='-')
 
@@ -595,7 +607,8 @@ def query_sample_mutation(ctx, name: List[str]):
 @click.pass_context
 @click.argument('name', nargs=-1)
 def query_sample_kmer(ctx, name: List[str]):
-    kmer_query_service = ctx.obj['data_index_connection'].kmer_query_service
+    data_index_connection = get_project_exit_on_error(ctx).create_connection()
+    kmer_query_service = data_index_connection.kmer_query_service
     match_df = kmer_query_service.find_matches(samples=name)
     match_df.to_csv(sys.stdout, sep='\t', index=False, float_format='%0.4g', na_rep='-')
 
@@ -608,7 +621,8 @@ def query_sample_kmer(ctx, name: List[str]):
               required=False)
 @click.option('--summarize/--no-summarize', help='Print summary information on query')
 def query_mutation(ctx, name: List[str], include_unknown: bool, summarize: bool):
-    mutation_query_service = ctx.obj['data_index_connection'].mutation_query_service
+    data_index_connection = get_project_exit_on_error(ctx).create_connection()
+    mutation_query_service = data_index_connection.mutation_query_service
 
     features = [QueryFeatureMutation(n) for n in name]
     if not summarize:
@@ -627,7 +641,8 @@ def query_mutation(ctx, name: List[str], include_unknown: bool, summarize: bool)
               required=False)
 @click.option('--summarize/--no-summarize', help='Print summary information on query')
 def query_mlst(ctx, name: List[str], include_unknown: bool, summarize: bool):
-    mlst_query_service = ctx.obj['data_index_connection'].mlst_query_service
+    data_index_connection = get_project_exit_on_error(ctx).create_connection()
+    mlst_query_service = data_index_connection.mlst_query_service
 
     features = [QueryFeatureMLST(n) for n in name]
     if not summarize:
@@ -641,8 +656,7 @@ def query_mlst(ctx, name: List[str], include_unknown: bool, summarize: bool):
 @main.group(name='db')
 @click.pass_context
 def db(ctx):
-    project = get_project_exit_on_error(ctx)
-    ctx.obj['data_index_connection'] = project.create_connection()
+    pass
 
 
 UNITS = ['B', 'KB', 'MB', 'GB']
@@ -652,5 +666,6 @@ UNITS = ['B', 'KB', 'MB', 'GB']
 @click.pass_context
 @click.option('--unit', default='B', help='The unit to display data sizes as.', type=click.Choice(UNITS))
 def db_size(ctx, unit):
-    size_df = ctx.obj['data_index_connection'].db_size(unit)
+    data_index_connection = get_project_exit_on_error(ctx).create_connection()
+    size_df = data_index_connection.db_size(unit)
     size_df.to_csv(sys.stdout, sep='\t', index=False, float_format='%0.2f', na_rep='-')
