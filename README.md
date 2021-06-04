@@ -59,7 +59,7 @@ You can see more examples of this software in action in the provided [Tutorials]
     + [1.2.1. Python API](#121-python-api)
 - [2. Background](#2-background)
 - [3. Installation](#3-installation)
-  * [3.1. PyPI/pip](#31-pypi-pip)
+  * [3.1. PyPI/pip](#31-pypipip)
   * [3.2. From source](#32-from-source)
 - [4. Usage](#4-usage)
 - [5. Tutorial](#5-tutorial)
