@@ -37,6 +37,7 @@ from genomics_data_index.storage.service.SampleService import SampleService
 from genomics_data_index.storage.service.TreeService import TreeService
 from genomics_data_index.storage.service.VariationService import VariationService
 from genomics_data_index.storage.util import get_genome_name
+from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
 
 logger = logging.getLogger('genomics_data_index')
 max_cores = multiprocessing.cpu_count()
@@ -102,13 +103,13 @@ def load(ctx):
     pass
 
 
-def load_variants_common(ctx, data_package: NucleotideSampleDataPackage, reference_file, input, build_tree, align_type,
+def load_variants_common(data_index_connection: DataIndexConnection, ncores: int,
+                         data_package: NucleotideSampleDataPackage, reference_file, input, build_tree, align_type,
                          extra_tree_params: str):
-    reference_service = ctx.obj['data_index_connection'].reference_service
-    variation_service = cast(VariationService, ctx.obj['data_index_connection'].variation_service)
-    sample_service = cast(SampleService, ctx.obj['data_index_connection'].sample_service)
-    tree_service = ctx.obj['data_index_connection'].tree_service
-    ncores = ctx.obj['ncores']
+    reference_service = data_index_connection.reference_service
+    variation_service = cast(VariationService, data_index_connection.variation_service)
+    sample_service = cast(SampleService, data_index_connection.sample_service)
+    tree_service = data_index_connection.tree_service
 
     try:
         reference_service.add_reference_genome(reference_file)
@@ -145,7 +146,7 @@ def load_variants_common(ctx, data_package: NucleotideSampleDataPackage, referen
 def load_snippy(ctx, snippy_dir: Path, reference_file: Path, build_tree: bool, align_type: str, extra_tree_params: str):
     ncores = ctx.obj['ncores']
     project = get_project_exit_on_error(ctx)
-    ctx.obj['data_index_connection'] = project.create_connection()
+    data_index_connection = project.create_connection()
 
     snippy_dir = Path(snippy_dir)
     reference_file = Path(reference_file)
@@ -162,7 +163,8 @@ def load_snippy(ctx, snippy_dir: Path, reference_file: Path, build_tree: bool, a
         data_package = NucleotideSampleDataPackage.create_from_snippy(sample_dirs,
                                                                       sample_files_processor=file_processor)
 
-        load_variants_common(ctx=ctx, data_package=data_package, reference_file=reference_file,
+        load_variants_common(data_index_connection=data_index_connection, ncores=ncores, data_package=data_package,
+                             reference_file=reference_file,
                              input=snippy_dir, build_tree=build_tree, align_type=align_type,
                              extra_tree_params=extra_tree_params)
 
@@ -177,11 +179,11 @@ def load_snippy(ctx, snippy_dir: Path, reference_file: Path, build_tree: bool, a
 @click.option('--extra-tree-params', help='Extra parameters to tree-building software',
               default=None)
 def load_vcf(ctx, vcf_fofns: str, reference_file: str, build_tree: bool, align_type: str, extra_tree_params: str):
+    ncores = ctx.obj['ncores']
     vcf_fofns = Path(vcf_fofns)
     reference_file = Path(reference_file)
-    ncores = ctx.obj['ncores']
     project = get_project_exit_on_error(ctx)
-    ctx.obj['data_index_connection'] = project.create_connection()
+    data_index_connection = project.create_connection()
 
     click.echo(f'Loading files listed in {vcf_fofns}')
     sample_vcf_map = {}
@@ -206,7 +208,8 @@ def load_vcf(ctx, vcf_fofns: str, reference_file: str, build_tree: bool, align_t
                                                                               masked_genomic_files_map=mask_files_map,
                                                                               sample_files_processor=file_processor)
 
-        load_variants_common(ctx=ctx, data_package=data_package, reference_file=reference_file,
+        load_variants_common(data_index_connection=data_index_connection, ncores=ncores, data_package=data_package,
+                             reference_file=reference_file,
                              input=Path(vcf_fofns), build_tree=build_tree, align_type=align_type,
                              extra_tree_params=extra_tree_params)
 
