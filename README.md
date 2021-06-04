@@ -121,7 +121,7 @@ This is still an ongoing project. A lot of background material is found in my [T
 
 ## 3.1. Conda
 
-To install this project using [conda][] first create a conda environment with the necessary dependencies as follows (a full conda package is not available yet #51).
+To install this project using [conda][] first create a conda environment with the necessary dependencies as follows (a full conda package is not available yet https://github.com/apetkau/genomics-data-index/issues/51 ).
 
 ```bash
 conda create --name gdi python=3.8 pyqt bedtools iqtree bcftools htslib
