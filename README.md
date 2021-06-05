@@ -275,6 +275,6 @@ Some icons used in this documentation are provided by [Font Awesome][] and licen
 [Juptyer]: https://jupyter.org/
 [jupyter-docs]: https://jupyterlab.readthedocs.io/en/latest/
 [Binder]: https://mybinder.org/
-[tutorial1-binder]: https://mybinder.org/v2/gh/apetkau/genomics-data-index/development?filepath=docs%2Ftutorial%2Ftutorial-1-salmonella.ipynb
-[tutorial2-binder]: https://mybinder.org/v2/gh/apetkau/genomics-data-index/development?filepath=docs%2Ftutorial%2Ftutorial-2-sars-cov-2.ipynb
+[tutorial1-binder]: https://mybinder.org/v2/gh/apetkau/genomics-data-index/development?urlpath=lab%2Ftree%2Fdocs%2Ftutorial%2Ftutorial-1-salmonella.ipynb
+[tutorial2-binder]: https://mybinder.org/v2/gh/apetkau/genomics-data-index/development?urlpath=lab%2Ftree%2Fdocs%2Ftutorial%2Ftutorial-2-sars-cov-2.ipynb
 
