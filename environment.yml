@@ -11,4 +11,6 @@ dependencies:
   - bcftools
   - htslib
   - pip
+  - pip:
+    - genomics-data-index
 prefix: /home/apetkau/miniconda3/envs/gdi
