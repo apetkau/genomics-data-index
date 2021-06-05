@@ -1,6 +1,7 @@
 # Genomics data index
 [![Build Status](https://github.com/apetkau/thesis-index/workflows/Integration%20Tests/badge.svg?branch=development)](https://github.com/apetkau/thesis-index/actions?query=branch/development)
 [![pypi](https://badge.fury.io/py/genomics-data-index.svg)](https://pypi.python.org/pypi/genomics-data-index/)
+[![Binder](https://mybinder.org/badge_logo.svg)][tutorial1-binder]
 
 This project is to design a system which can index large amounts of genomics data and enable rapid querying of this
 data.
@@ -221,10 +222,10 @@ Where `snippy-analysis/` contains directories like `SampleA`, `SampleB`, etc.
 
 # 5. Tutorial
 
-Tutorials and a demonstration of the software are available at:
+Tutorials and a demonstration of the software are available below. You can select the **launch | binder** badge to launch each of these tutorials in a cloud environment using [Binder][].
 
-1. [Tutorial 1: Querying (Salmonella)][tutorial1]
-2. [Tutorial 2: Indexing assemblies (SARS-CoV-2)][tutorial2]
+1. [Tutorial 1: Querying (Salmonella)][tutorial1] - [![Binder](https://mybinder.org/badge_logo.svg)][tutorial1-binder] 
+2. [Tutorial 2: Indexing assemblies (SARS-CoV-2)][tutorial2] - [![Binder](https://mybinder.org/badge_logo.svg)][tutorial2-binder]
 
 In order to run these tutorials you will first have to install the `genomics-data-index` software (see the [Installation](#3-installation) section for details). In addition, you will have to install [Jupyter Lab][]. If you have already installed the `genomics-data-index` software with conda you can install Jupyter Lab as follows:
 
@@ -272,4 +273,7 @@ Some icons used in this documentation are provided by [Font Awesome][] and licen
 [conda-env.yaml]: conda-env.yaml
 [Jupyter Lab]: https://jupyter.org/
 [jupyter-docs]: https://jupyterlab.readthedocs.io/en/latest/
+[Binder]: https://mybinder.org/
+[tutorial1-binder]: https://mybinder.org/v2/gh/apetkau/genomics-data-index/development?filepath=docs%2Ftutorial%2Ftutorial-1-salmonella.ipynb
+[tutorial2-binder]: https://mybinder.org/v2/gh/apetkau/genomics-data-index/development?filepath=docs%2Ftutorial%2Ftutorial-2-sars-cov-2.ipynb
 
