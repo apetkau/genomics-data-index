@@ -10,6 +10,7 @@ dependencies:
   - python=3.8
   - bcftools
   - htslib
+  - ete3
   - pip
   - pip:
     - genomics-data-index
