@@ -1,0 +1,4 @@
+#!/bin/bash
+# A script to install genomics-data-index from the repository
+# Used for launching in Binder
+python -m pip install .
