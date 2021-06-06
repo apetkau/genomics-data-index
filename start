@@ -1,0 +1,3 @@
+# Set QT_QPA_PLATFORM so that ete3 can render trees (using Qt) on a headless server (for mybinder.org)
+export QT_QPA_PLATFORM="offscreen"
+exec "$@"
