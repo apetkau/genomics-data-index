@@ -1835,6 +1835,8 @@ def test_summary_features_two(loaded_database_connection: DataIndexConnection):
         'Insertion': 'first',
         'Mutation': 'count',
     }).rename(columns={'Mutation': 'Count'}).sort_index()
+    expected_df['Total'] = 2
+    expected_df['Percent'] = 100 * (expected_df['Count'] / expected_df['Total'])
 
     mutations_df = query(loaded_database_connection).hasa(
         'reference:839:C:G', kind='mutation').summary_features()
@@ -1843,6 +1845,8 @@ def test_summary_features_two(loaded_database_connection: DataIndexConnection):
     assert len(expected_df) == len(mutations_df)
     assert list(expected_df.index) == list(mutations_df.index)
     assert list(expected_df['Count']) == list(mutations_df['Count'])
+    assert list(expected_df['Total']) == list(mutations_df['Total'])
+    assert math.isclose(100 * (2 / 2), mutations_df.loc['reference:839:C:G', 'Percent'])
 
 
 def test_tofeaturesset_all(loaded_database_only_snippy: DataIndexConnection):
