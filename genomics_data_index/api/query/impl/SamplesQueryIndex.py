@@ -190,14 +190,7 @@ class SamplesQueryIndex(SamplesQuery):
 
     def tofeaturesset(self, kind: str = 'mutations', selection: str = 'all',
                       ncores: int = 1) -> Set[str]:
-        if selection == 'all':
-            return set(self.summary_features(kind=kind, ncores=ncores).index)
-        elif selection == 'unique':
-            features_set = set(self.summary_features(kind=kind, ncores=ncores).index)
-            complement_features_set = set(self.complement().summary_features(kind=kind, ncores=ncores).index)
-            return features_set - complement_features_set
-        else:
-            raise Exception(f'Unsupported selection=[{selection}]. Must be one of {self.FEATURES_SELECTIONS}.')
+        return set(self.summary_features(kind=kind, selection=selection, ncores=ncores).index)
 
     def and_(self, other):
         if isinstance(other, SamplesQuery):
