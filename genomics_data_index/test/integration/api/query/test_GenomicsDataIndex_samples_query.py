@@ -1766,6 +1766,32 @@ def test_summary_features_kindall_unique(loaded_database_connection: DataIndexCo
     assert list(expected_df.index) == list(mutations_df.index)
     assert list(expected_df['Count']) == list(mutations_df['Count'])
 
+    # Unique to ABC (all)
+    dfABC = pd.concat([dfA, dfB, dfC])
+    expected_df = dfABC
+    expected_df = expected_df.groupby('Mutation').agg({
+        'Sequence': 'first',
+        'Position': 'first',
+        'Deletion': 'first',
+        'Insertion': 'first',
+        'Mutation': 'count',
+    }).rename(columns={'Mutation': 'Count'}).sort_index()
+
+    mutations_df = q.isin(['SampleA', 'SampleB', 'SampleC']).summary_features(selection='unique')
+    mutations_df = mutations_df.sort_index()
+
+    assert len(expected_df) == len(mutations_df)
+    assert 112 == len(mutations_df) # Check length against independently generated length
+    assert list(expected_df.index) == list(mutations_df.index)
+    assert list(expected_df['Count']) == list(mutations_df['Count'])
+
+    # Unique to None
+    mutations_df = q.isin([]).summary_features(selection='unique')
+    mutations_df = mutations_df.sort_index()
+
+    assert 0 == len(mutations_df)
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Count'] == list(mutations_df.columns)
+
 
 def test_summary_features_two(loaded_database_connection: DataIndexConnection):
     dfB = pd.read_csv(snippy_all_dataframes['SampleB'], sep='\t')
