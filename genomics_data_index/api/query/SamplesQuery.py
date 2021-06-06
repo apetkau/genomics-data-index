@@ -99,11 +99,13 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def summary_features(self, kind: str = 'mutations', **kwargs) -> pd.DataFrame:
+    def summary_features(self, kind: str = 'mutations', selection: str = 'all', **kwargs) -> pd.DataFrame:
         """
         Summarizes the selected features in a DataFrame. Please specify the kind of features with the kind parameter.
 
         :param kind: The kind of feature to summarize. By default this is *mutations*.
+        :param selection: The method used to select features. Use 'all' (default) to select all features.
+                          Use 'unique' to select only those features unique to the selected samples.
         :param **kwargs: Additional keyword arguments. Please see the documentation for the underlying implementation.
 
         :return: A DataFrame summarizing the features within the selected samples.
@@ -116,7 +118,12 @@ class SamplesQuery(abc.ABC):
         """
         Returns all features as a set of strings for the selected samples.
 
-        :param
+        :param kind: The kind of feature to summarize. By default this is *mutations*.
+        :param selection: The method used to select features. Use 'all' (default) to select all features.
+                  Use 'unique' to select only those features unique to the selected samples.
+        :param ncores: The number of cores to use for generating the features set.
+
+        :return: A set of feature identifiers derived from the selected samples.
         """
         pass
 

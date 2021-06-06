@@ -1665,7 +1665,7 @@ def test_join_kmer_tree(prebuilt_tree: Tree, loaded_database_connection: DataInd
     assert {'SampleA', 'SampleB', 'SampleC'} == set(query_result.tree.get_leaf_names())
 
 
-def test_summary_features_all(loaded_database_connection: DataIndexConnection):
+def test_summary_features_kindall(loaded_database_connection: DataIndexConnection):
     dfA = pd.read_csv(snippy_all_dataframes['SampleA'], sep='\t')
     dfB = pd.read_csv(snippy_all_dataframes['SampleB'], sep='\t')
     dfC = pd.read_csv(snippy_all_dataframes['SampleC'], sep='\t')
@@ -1679,6 +1679,25 @@ def test_summary_features_all(loaded_database_connection: DataIndexConnection):
     }).rename(columns={'Mutation': 'Count'}).sort_index()
 
     mutations_df = query(loaded_database_connection).summary_features()
+    mutations_df = mutations_df.sort_index()
+
+    assert len(expected_df) == len(mutations_df)
+    assert list(expected_df.index) == list(mutations_df.index)
+    assert list(expected_df['Count']) == list(mutations_df['Count'])
+
+
+def test_summary_features_kindall_unique_A(loaded_database_connection: DataIndexConnection):
+    dfA = pd.read_csv(snippy_all_dataframes['SampleA'], sep='\t')
+    expected_df = dfA
+    expected_df = expected_df.groupby('Mutation').agg({
+        'Sequence': 'first',
+        'Position': 'first',
+        'Deletion': 'first',
+        'Insertion': 'first',
+        'Mutation': 'count',
+    }).rename(columns={'Mutation': 'Count'}).sort_index()
+
+    mutations_df = query(loaded_database_connection).isa('SampleA').summary_features(selection='unique')
     mutations_df = mutations_df.sort_index()
 
     assert len(expected_df) == len(mutations_df)

@@ -150,21 +150,43 @@ class SamplesQueryIndex(SamplesQuery):
             '% Unknown': per_unknown,
         }])
 
-    def summary_features(self, kind: str = 'mutations', **kwargs) -> pd.DataFrame:
+    def summary_features(self, kind: str = 'mutations', selection: str = 'all', **kwargs) -> pd.DataFrame:
         if kind == 'mutations':
-            return self._summary_features_mutations(kind=kind, **kwargs)
+            return self._summary_features_mutations(kind=kind, selection=selection, **kwargs)
         else:
             raise Exception(f'Unsupported value kind=[{kind}]. Must be one of {self.SUMMARY_FEATURES_KINDS}.')
 
-    def _summary_features_mutations(self, kind: str, ncores: int = 1,
+    def _summary_features_mutations(self, kind: str, selection: str = 'all',
+                                    ncores: int = 1,
                                     batch_size: int = 500,
-                                    mutation_type: str = 'all'):
+                                    mutation_type: str = 'all') -> pd.DataFrame:
+        if selection not in self.FEATURES_SELECTIONS:
+            raise Exception(f'selection=[{selection}] is unknown. Must be one of {self.FEATURES_SELECTIONS}')
+
         vs = self._query_connection.variation_service
-        return vs.count_mutations_in_sample_ids_dataframe(sample_ids=self._sample_set,
-                                                          ncores=ncores,
-                                                          batch_size=batch_size,
-                                                          mutation_type=mutation_type
-                                                          )
+        features_all_df = vs.count_mutations_in_sample_ids_dataframe(sample_ids=self._sample_set,
+                                                                     ncores=ncores,
+                                                                     batch_size=batch_size,
+                                                                     mutation_type=mutation_type
+                                                                     )
+        if selection == 'all':
+            return features_all_df
+        elif selection == 'unique':
+            features_complement_df = self.complement().summary_features(kind=kind, selection='all',
+                                                                        ncores=ncores, batch_size=batch_size,
+                                                                        mutation_type=mutation_type)
+            features_merged_df = features_all_df.merge(features_complement_df, left_index=True, right_index=True,
+                                                       how='left', indicator=True, suffixes=('_x', '_y'))
+            features_merged_df = features_merged_df[features_merged_df['_merge'] == 'left_only'].rename({
+                'Sequence_x': 'Sequence',
+                'Position_x': 'Position',
+                'Deletion_x': 'Deletion',
+                'Insertion_x': 'Insertion',
+                'Count_x': 'Count',
+            }, axis='columns')
+            return features_merged_df[['Sequence', 'Position', 'Deletion', 'Insertion', 'Count']]
+        else:
+            raise Exception(f'selection=[{selection}] is unknown. Must be one of {self.FEATURES_SELECTIONS}')
 
     def tofeaturesset(self, kind: str = 'mutations', selection: str = 'all',
                       ncores: int = 1) -> Set[str]:
