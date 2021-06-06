@@ -169,6 +169,8 @@ class SamplesQueryIndex(SamplesQuery):
                                                                      batch_size=batch_size,
                                                                      mutation_type=mutation_type
                                                                      )
+        features_all_df['Total'] = len(self)
+        features_all_df['Percent'] = 100 * (features_all_df['Count'] / features_all_df['Total'])
         if selection == 'all':
             return features_all_df
         elif selection == 'unique':
@@ -183,8 +185,11 @@ class SamplesQueryIndex(SamplesQuery):
                 'Deletion_x': 'Deletion',
                 'Insertion_x': 'Insertion',
                 'Count_x': 'Count',
+                'Total_x': 'Total',
+                'Percent_x': 'Percent',
             }, axis='columns')
-            return features_merged_df[['Sequence', 'Position', 'Deletion', 'Insertion', 'Count']]
+            return features_merged_df[['Sequence', 'Position', 'Deletion', 'Insertion',
+                                       'Count', 'Total', 'Percent']]
         else:
             raise Exception(f'selection=[{selection}] is unknown. Must be one of {self.FEATURES_SELECTIONS}')
 
