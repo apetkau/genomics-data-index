@@ -1686,8 +1686,12 @@ def test_summary_features_kindall(loaded_database_connection: DataIndexConnectio
     assert list(expected_df['Count']) == list(mutations_df['Count'])
 
 
-def test_summary_features_kindall_unique_A(loaded_database_connection: DataIndexConnection):
+def test_summary_features_kindall_unique(loaded_database_connection: DataIndexConnection):
     dfA = pd.read_csv(snippy_all_dataframes['SampleA'], sep='\t')
+    dfB = pd.read_csv(snippy_all_dataframes['SampleB'], sep='\t')
+    dfC = pd.read_csv(snippy_all_dataframes['SampleC'], sep='\t')
+
+    # Unique to A
     expected_df = dfA
     expected_df = expected_df.groupby('Mutation').agg({
         'Sequence': 'first',
@@ -1697,10 +1701,68 @@ def test_summary_features_kindall_unique_A(loaded_database_connection: DataIndex
         'Mutation': 'count',
     }).rename(columns={'Mutation': 'Count'}).sort_index()
 
-    mutations_df = query(loaded_database_connection).isa('SampleA').summary_features(selection='unique')
+    q = query(loaded_database_connection)
+
+    mutations_df = q.isa('SampleA').summary_features(selection='unique')
     mutations_df = mutations_df.sort_index()
 
     assert len(expected_df) == len(mutations_df)
+    assert 46 == len(mutations_df) # Check length against independently generated length
+    assert list(expected_df.index) == list(mutations_df.index)
+    assert list(expected_df['Count']) == list(mutations_df['Count'])
+
+    # Unique to B
+    dfAC = pd.concat([dfA, dfC])
+    expected_df = dfB[~dfB['Mutation'].isin(list(dfAC['Mutation']))]
+    expected_df = expected_df.groupby('Mutation').agg({
+        'Sequence': 'first',
+        'Position': 'first',
+        'Deletion': 'first',
+        'Insertion': 'first',
+        'Mutation': 'count',
+    }).rename(columns={'Mutation': 'Count'}).sort_index()
+
+    mutations_df = q.isa('SampleB').summary_features(selection='unique')
+    mutations_df = mutations_df.sort_index()
+
+    assert len(expected_df) == len(mutations_df)
+    assert list(expected_df.index) == list(mutations_df.index)
+    assert list(expected_df['Count']) == list(mutations_df['Count'])
+
+    # Unique to C
+    dfAB = pd.concat([dfA, dfB])
+    expected_df = dfC[~dfC['Mutation'].isin(list(dfAB['Mutation']))]
+    expected_df = expected_df.groupby('Mutation').agg({
+        'Sequence': 'first',
+        'Position': 'first',
+        'Deletion': 'first',
+        'Insertion': 'first',
+        'Mutation': 'count',
+    }).rename(columns={'Mutation': 'Count'}).sort_index()
+
+    mutations_df = q.isa('SampleC').summary_features(selection='unique')
+    mutations_df = mutations_df.sort_index()
+
+    assert len(expected_df) == len(mutations_df)
+    assert list(expected_df.index) == list(mutations_df.index)
+    assert list(expected_df['Count']) == list(mutations_df['Count'])
+
+    # Unique to BC
+    dfBC = pd.concat([dfB, dfC])
+    expected_df = dfBC[~dfBC['Mutation'].isin(list(dfA['Mutation']))]
+    expected_df = expected_df.groupby('Mutation').agg({
+        'Sequence': 'first',
+        'Position': 'first',
+        'Deletion': 'first',
+        'Insertion': 'first',
+        'Mutation': 'count',
+    }).rename(columns={'Mutation': 'Count'}).sort_index()
+
+    mutations_df = q.isin(['SampleB', 'SampleC']).summary_features(selection='unique')
+    mutations_df = mutations_df.sort_index()
+
+    assert len(expected_df) == len(mutations_df)
+    assert 66 == len(mutations_df) # Check length against independently generated length
     assert list(expected_df.index) == list(mutations_df.index)
     assert list(expected_df['Count']) == list(mutations_df['Count'])
 
