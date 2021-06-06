@@ -1688,7 +1688,7 @@ def test_summary_features_kindall(loaded_database_connection: DataIndexConnectio
     assert list(expected_df.index) == list(mutations_df.index)
     assert list(expected_df['Count']) == list(mutations_df['Count'])
     assert list(expected_df['Total']) == list(mutations_df['Total'])
-    assert math.isclose(100 * (2/9), mutations_df.loc['reference:619:G:C', 'Percent'])
+    assert math.isclose(100 * (2 / 9), mutations_df.loc['reference:619:G:C', 'Percent'])
 
 
 def test_summary_features_kindall_unique(loaded_database_connection: DataIndexConnection):
@@ -1714,7 +1714,7 @@ def test_summary_features_kindall_unique(loaded_database_connection: DataIndexCo
     mutations_df = mutations_df.sort_index()
 
     assert len(expected_df) == len(mutations_df)
-    assert 46 == len(mutations_df) # Check length against independently generated length
+    assert 46 == len(mutations_df)  # Check length against independently generated length
     assert list(expected_df.index) == list(mutations_df.index)
     assert list(expected_df['Count']) == list(mutations_df['Count'])
     assert list(expected_df['Total']) == list(mutations_df['Total'])
@@ -1740,7 +1740,7 @@ def test_summary_features_kindall_unique(loaded_database_connection: DataIndexCo
     assert list(expected_df.index) == list(mutations_df.index)
     assert list(expected_df['Count']) == list(mutations_df['Count'])
     assert list(expected_df['Total']) == list(mutations_df['Total'])
-    assert math.isclose(100 * (1/1), mutations_df.loc['reference:349:AAGT:A', 'Percent'])
+    assert math.isclose(100 * (1 / 1), mutations_df.loc['reference:349:AAGT:A', 'Percent'])
 
     # Unique to C
     dfAB = pd.concat([dfA, dfB])
@@ -1762,7 +1762,7 @@ def test_summary_features_kindall_unique(loaded_database_connection: DataIndexCo
     assert list(expected_df.index) == list(mutations_df.index)
     assert list(expected_df['Count']) == list(mutations_df['Count'])
     assert list(expected_df['Total']) == list(mutations_df['Total'])
-    assert math.isclose(100 * (1/1), mutations_df.loc['reference:866:GCCAGATCC:G', 'Percent'])
+    assert math.isclose(100 * (1 / 1), mutations_df.loc['reference:866:GCCAGATCC:G', 'Percent'])
 
     # Unique to BC
     dfBC = pd.concat([dfB, dfC])
@@ -1781,11 +1781,11 @@ def test_summary_features_kindall_unique(loaded_database_connection: DataIndexCo
     mutations_df = mutations_df.sort_index()
 
     assert len(expected_df) == len(mutations_df)
-    assert 66 == len(mutations_df) # Check length against independently generated length
+    assert 66 == len(mutations_df)  # Check length against independently generated length
     assert list(expected_df.index) == list(mutations_df.index)
     assert list(expected_df['Count']) == list(mutations_df['Count'])
     assert list(expected_df['Total']) == list(mutations_df['Total'])
-    assert math.isclose(100 * (2/2), mutations_df.loc['reference:619:G:C', 'Percent'])
+    assert math.isclose(100 * (2 / 2), mutations_df.loc['reference:619:G:C', 'Percent'])
     assert math.isclose(100 * (1 / 2), mutations_df.loc['reference:866:GCCAGATCC:G', 'Percent'])
     assert math.isclose(100 * (1 / 2), mutations_df.loc['reference:349:AAGT:A', 'Percent'])
 
@@ -1806,7 +1806,7 @@ def test_summary_features_kindall_unique(loaded_database_connection: DataIndexCo
     mutations_df = mutations_df.sort_index()
 
     assert len(expected_df) == len(mutations_df)
-    assert 112 == len(mutations_df) # Check length against independently generated length
+    assert 112 == len(mutations_df)  # Check length against independently generated length
     assert list(expected_df.index) == list(mutations_df.index)
     assert list(expected_df['Count']) == list(mutations_df['Count'])
     assert list(expected_df['Total']) == list(mutations_df['Total'])
