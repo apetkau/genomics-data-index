@@ -225,9 +225,9 @@ Where `snippy-analysis/` contains directories like `SampleA`, `SampleB`, etc.
 Tutorials and a demonstration of the software are available below. You can select the **[launch | binder]** badge to launch each of these tutorials in an interactive [Jupyter][] environment within the cloud environment using [Binder][].
 
 1. [Tutorial 1: Querying (Salmonella)][tutorial1] - [![Binder](https://mybinder.org/badge_logo.svg)][tutorial1-binder] 
-    * __In case GitHub link is not rendering try [here](https://nbviewer.jupyter.org/github/apetkau/genomics-data-index/blob/development/docs/tutorial/tutorial-1-salmonella.ipynb)__
+    * _In case GitHub link is not rendering try [here](https://nbviewer.jupyter.org/github/apetkau/genomics-data-index/blob/development/docs/tutorial/tutorial-1-salmonella.ipynb)_
 2. [Tutorial 2: Indexing assemblies (SARS-CoV-2)][tutorial2] - [![Binder](https://mybinder.org/badge_logo.svg)][tutorial2-binder]
-    * __In case GitHub link is not rendering try [here](https://nbviewer.jupyter.org/github/apetkau/genomics-data-index/blob/development/docs/tutorial/tutorial-2-sars-cov-2.ipynb)__
+    * _In case GitHub link is not rendering try [here](https://nbviewer.jupyter.org/github/apetkau/genomics-data-index/blob/development/docs/tutorial/tutorial-2-sars-cov-2.ipynb)_
 
 Alternatively, you can run these tutorials on your local machine. In order to run these tutorials you will first have to install the `genomics-data-index` software (see the [Installation](#3-installation) section for details). In addition, you will have to install [Jupyter Lab][]. If you have already installed the `genomics-data-index` software with conda you can install Jupyter Lab as follows:
 
