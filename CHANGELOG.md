@@ -1,3 +1,10 @@
+# 0.2.0
+
+* [doc]: Updates to readme and other documentation.
+* [doc]: Added method to launch tutorials using Binder.
+* [api]: Adding ability to summarize only features unique to a selected set (for `q.summary_features()`).
+* [api]: Adding `Total` and `Percent` columns to `q.summary_features()` dataframe.
+
 # 0.1.0
 
 * Initial release of entire project.

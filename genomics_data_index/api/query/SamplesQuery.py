@@ -99,11 +99,29 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def summary_features(self, kind: str = 'mutations', **kwargs) -> pd.DataFrame:
+    def summary_features(self, kind: str = 'mutations', selection: str = 'all', **kwargs) -> pd.DataFrame:
         """
         Summarizes the selected features in a DataFrame. Please specify the kind of features with the kind parameter.
 
+        The `selection` parameter is used to define how to select features in the set of samples. If set to `unique`
+        then only those features unique to the selected samples will be returned. Otherwise, if set to `all` then all
+        features found in the selected samples are returned (even those that are also found in other samples in the universe).
+
+        For example, say you have a set of samples S = {A, B, C} and features F = {1:A:C, 2:G:T, 3:C:T}. Lets
+        also assume that sample A has {1:A:C, 2:G:T}, sample B has {2:G:T, 3:C:T} and sample C has {2:G:T}.
+        Also lets assume we have a query q = {A, B} (that is a query has selected two samples A and B).
+
+        Then q.summary_features(selection='all') will return a data frame with features {1:A:C, 2:G:T, 3:C:T} (since
+        those are found in either sample A or B).
+
+        However, q.summary_features(selection='unique') will return a data frame with features {1:A:C, 3:C:T} since
+        these features are only found in samples A and B (the feature 2:G:T is found in sample C).
+
         :param kind: The kind of feature to summarize. By default this is *mutations*.
+        :param selection: The method used to select features. Use 'all' (default) to select all features present in
+                          at least one of the selected samples in this query. Use 'unique' to select only those features
+                          that are present in the selected samples of this query
+                          (and nowhere else in the universe of samples).
         :param **kwargs: Additional keyword arguments. Please see the documentation for the underlying implementation.
 
         :return: A DataFrame summarizing the features within the selected samples.
@@ -116,7 +134,12 @@ class SamplesQuery(abc.ABC):
         """
         Returns all features as a set of strings for the selected samples.
 
-        :param
+        :param kind: The kind of feature to summarize. By default this is *mutations*.
+        :param selection: The method used to select features. Use 'all' (default) to select all features.
+                  Use 'unique' to select only those features unique to the selected samples.
+        :param ncores: The number of cores to use for generating the features set.
+
+        :return: A set of feature identifiers derived from the selected samples.
         """
         pass
 

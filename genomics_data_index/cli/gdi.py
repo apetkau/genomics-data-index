@@ -15,8 +15,8 @@ import coloredlogs
 import pandas as pd
 from Bio import AlignIO
 
-from genomics_data_index import __version__
 import genomics_data_index.storage.service.FeatureService as FeatureService
+from genomics_data_index import __version__
 from genomics_data_index.cli import yaml_config_provider
 from genomics_data_index.configuration.Project import Project, ProjectConfigurationError
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
