@@ -13,5 +13,5 @@ dependencies:
   - ete3
   - pip
   - pip:
-    - genomics-data-index
+    - git+https://github.com/apetkau/genomics-data-index.git
 prefix: /home/apetkau/miniconda3/envs/gdi
