@@ -134,7 +134,7 @@ conda activate gdi
 Now, you can install with:
 
 ```bash
-python -m pip install genomics-data-index
+pip install genomics-data-index
 ```
 
 If everything is working you should be able to run:
@@ -150,7 +150,7 @@ You should see `gdi, version 0.1.0` printed out.
 To install just the Python component of this project from [PyPI][gdi-pypi] you can run the following:
 
 ```bash
-python -m pip install genomics-data-index
+pip install genomics-data-index
 ```
 
 Note that you will have to install some additional dependencies separately. Please see the [conda-env.yaml][] environment file for details.
@@ -277,4 +277,5 @@ Some icons used in this documentation are provided by [Font Awesome][] and licen
 [Binder]: https://mybinder.org/
 [tutorial1-binder]: https://mybinder.org/v2/gh/apetkau/genomics-data-index/development?urlpath=lab%2Ftree%2Fdocs%2Ftutorial%2Ftutorial-1-salmonella.ipynb
 [tutorial2-binder]: https://mybinder.org/v2/gh/apetkau/genomics-data-index/development?urlpath=lab%2Ftree%2Fdocs%2Ftutorial%2Ftutorial-2-sars-cov-2.ipynb
+[gdi-pypi]: https://pypi.python.org/pypi/genomics-data-index/
 
