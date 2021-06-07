@@ -72,7 +72,7 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
         return self._wrapped_query.summary()
 
     def summary_features(self, kind: str = 'mutations', selection: str = 'all', **kwargs) -> pd.DataFrame:
-        return self._wrapped_query.summary_features(kind=kind, **kwargs)
+        return self._wrapped_query.summary_features(kind=kind, selection=selection, **kwargs)
 
     def tofeaturesset(self, kind: str = 'mutations', selection: str = 'all', ncores: int = 1) -> Set[str]:
         return self._wrapped_query.tofeaturesset(kind=kind, selection=selection, ncores=ncores)
