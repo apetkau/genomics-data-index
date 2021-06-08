@@ -228,6 +228,8 @@ Tutorials and a demonstration of the software are available below (code in [sepa
     * _In case GitHub link is not rendering try [here][tutorial1-nbviewer]_
 2. [Tutorial 2: Indexing assemblies (SARS-CoV-2)][tutorial2] - [![Binder](https://mybinder.org/badge_logo.svg)][tutorial2-binder]
     * _In case GitHub link is not rendering try [here][tutorial2-nbviewer]_
+3. [Tutorial 3: Querying overview][tutorial3] - [![Binder](https://mybinder.org/badge_logo.svg)][tutorial3-binder]
+    * _In case GitHub link is not rendering try [here][tutorial3-nbviewer]_
 
 Alternatively, you can run these tutorials on your local machine. In order to run these tutorials you will first have to install the `genomics-data-index` software (see the [Installation](#3-installation) section for details). In addition, you will have to install [Jupyter Lab][]. If you have already installed the `genomics-data-index` software with conda you can install Jupyter Lab as follows:
 
@@ -262,6 +264,7 @@ Some icons used in this documentation are provided by [Font Awesome][] and licen
 [ci-dependencies]: .github/workflows/ci-test.yml#L37
 [tutorial1]: https://github.com/apetkau/genomics-data-index-examples/blob/main/examples/tutorial-1-salmonella.ipynb
 [tutorial2]: https://github.com/apetkau/genomics-data-index-examples/blob/main/examples/tutorial-2-sars-cov-2.ipynb
+[tutorial3]: https://github.com/apetkau/genomics-data-index-examples/blob/main/examples/tutorial-3-querying-overview.ipynb
 [snippy]: https://github.com/tseemann/snippy
 [ETE Toolkit]: http://etetoolkit.org/
 [tree-visualization.png]: docs/images/tree-visualization.png
@@ -283,7 +286,9 @@ Some icons used in this documentation are provided by [Font Awesome][] and licen
 [Binder]: https://mybinder.org/
 [tutorial1-nbviewer]: https://nbviewer.jupyter.org/github/apetkau/genomics-data-index-examples/blob/main/examples/tutorial-1-salmonella.ipynb
 [tutorial2-nbviewer]: https://nbviewer.jupyter.org/github/apetkau/genomics-data-index-examples/blob/main/examples/tutorial-2-sars-cov-2.ipynb
+[tutorial3-nbviewer]: https://nbviewer.jupyter.org/github/apetkau/genomics-data-index-examples/blob/main/examples/tutorial-3-querying-overview.ipynb
 [tutorial1-binder]: https://mybinder.org/v2/gh/apetkau/genomics-data-index-examples/main?urlpath=lab%2Ftree%2Fexamples%2Ftutorial-1-salmonella.ipynb
 [tutorial2-binder]: https://mybinder.org/v2/gh/apetkau/genomics-data-index-examples/main?urlpath=lab%2Ftree%2Fexamples%2Ftutorial-2-sars-cov-2.ipynb
+[tutorial3-binder]: https://mybinder.org/v2/gh/apetkau/genomics-data-index-examples/main?urlpath=lab%2Ftree%2Fexamples%2Ftutorial-3-querying-overview.ipynb
 [gdi-pypi]: https://pypi.python.org/pypi/genomics-data-index/
 
