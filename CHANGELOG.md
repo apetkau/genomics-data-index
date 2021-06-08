@@ -1,7 +1,8 @@
 # 0.2.0
 
 * [doc]: Updates to readme and other documentation.
-* [doc]: Added method to launch tutorials using Binder.
+* [doc]: Moving tutorials to separate repository <https://github.com/apetkau/genomics-data-index-examples>.
+    * Added method to launch tutorials using Binder.
 * [api]: Adding ability to summarize only features unique to a selected set (for `q.summary_features()`).
 * [api]: Adding `Total` and `Percent` columns to `q.summary_features()` dataframe.
 
