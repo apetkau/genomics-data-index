@@ -1,0 +1,41 @@
+name: gdi
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - bedtools
+  - pyqt
+  - iqtree
+  - python=3.8
+  - bcftools
+  - htslib
+  - bcftools
+  - git
+  - ete3
+  - biopython >=1.70
+  - click
+  - click-config-file
+  - coloredlogs
+  - ete3
+  - jsonschema ==3.2.0
+  - numpy
+  - pandas >=1.0.0
+  - pybedtools
+  - pymysql
+  - pyqt5
+  - pyroaring
+  - pytest
+  - python >=3.7,<3.9
+  - pyvcf
+  - pyyaml
+  - requests
+  - scikit-bio
+  - snakemake
+  - sourmash
+  - sqlalchemy
+  - pip
+  - pip:
+    - biocommons.seqrepo
+    - ga4gh.vrs[extras] ==0.6.2
+    - git+https://github.com/apetkau/genomics-data-index.git
