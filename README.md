@@ -122,12 +122,14 @@ This is still an ongoing project. A lot of background material is found in my [T
 
 ## 3.1. Conda
 
-To install this project using [conda][] first create a conda environment with the necessary dependencies as follows (a full conda package is not available yet https://github.com/apetkau/genomics-data-index/issues/51 ).
+[Conda][conda] is a package and environment management software which makes it very easy to install and maintain dependencies of software without requiring administrator/root access. Packages from conda are provided using different *channels* and the [bioconda][] channel contains a very large collection of bioinformatics software which can be automatically installed. To make use of conda you will have to first download and [install conda][]. Once installed you can use the command `conda` to install software/manage conda environments.
+
+To install this software, we will first, create a conda environment with the necessary dependencies as follows (a full conda package is not available yet https://github.com/apetkau/genomics-data-index/issues/51 ).
 
 ```bash
-conda create --name gdi python=3.8 pyqt bedtools iqtree bcftools htslib
+conda create -c bioconda -c conda-forge -c defaults --name gdi python=3.8 pyqt bedtools iqtree bcftools htslib
 
-# Activate environment
+# Activate environment. Needed to install additional Python dependencies below.
 conda activate gdi
 ```
 
@@ -274,6 +276,7 @@ Some icons used in this documentation are provided by [Font Awesome][] and licen
 [University of Manitoba]: https://umanitoba.ca/
 [VADA Program]: http://vada.cs.umanitoba.ca/
 [conda]: https://docs.conda.io/en/latest/
+[install conda]: https://docs.conda.io/en/latest/miniconda.html
 [bioconda]: https://bioconda.github.io/
 [Font Awesome]: https://fontawesome.com/
 [Creative Commons Attribution 4.0]: https://fontawesome.com/license/free
