@@ -237,5 +237,24 @@ def test_read_snpeff(variants_reader_default_no_data: VcfVariantsReader):
     sample_14_014 = vr.read_vcf(file=snpeff_sample_vcfs['SH14-014'], sample_name='SH14-014')
 
     assert 139 == len(sample_10_014)
+    assert ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE'] == list(sample_10_014.columns)
+    assert ['SH10-014', 'NC_011083', 140658, 'C', 'A', 'snp',
+            'SH10-014.vcf.gz'] == sample_10_014[sample_10_014['POS'] == 140658].iloc[0].tolist()
+    assert ['SH10-014', 'NC_011083', 1125996, 'CG', 'C', 'del',
+            'SH10-014.vcf.gz'] == sample_10_014[sample_10_014['POS'] == 1125996].iloc[0].tolist()
+    assert ['SH10-014', 'NC_011083', 1246085, 'C', 'CG', 'ins',
+            'SH10-014.vcf.gz'] == sample_10_014[sample_10_014['POS'] == 1246085].iloc[0].tolist()
+    assert ['SH10-014', 'NC_011083', 3535121, 'CGCGA', 'TGTGG', 'complex',
+            'SH10-014.vcf.gz'] == sample_10_014[sample_10_014['POS'] == 3535121].iloc[0].tolist()
+
     assert 115 == len(sample_14_001)
+    assert ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE'] == list(sample_14_001.columns)
+    assert ['SH14-001', 'NC_011083', 203200, 'C', 'T', 'snp',
+            'SH14-001.vcf.gz'] == sample_14_001[sample_14_001['POS'] == 203200].iloc[0].tolist()
+
     assert 107 == len(sample_14_014)
+    assert ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE'] == list(sample_14_014.columns)
+    assert ['SH14-014', 'NC_011083', 298472, 'A', 'C', 'snp',
+            'SH14-014.vcf.gz'] == sample_14_014[sample_14_014['POS'] == 298472].iloc[0].tolist()
+
+
