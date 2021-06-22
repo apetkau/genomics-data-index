@@ -30,6 +30,36 @@ class VcfVariantsReader(NucleotideFeaturesReader):
     def _drop_extra_columns(self, vcf_df: pd.DataFrame) -> pd.DataFrame:
         return vcf_df.drop('INFO', axis='columns')
 
+    def _parse_annotations(self, file: Path, reader: vcf.Reader, vcf_df: pd.DataFrame) -> pd.DataFrame:
+        infos = reader.infos
+        expected_start_str = "Functional annotations: '"
+        if 'ANN' in infos:
+            ann_info = infos['ANN'].desc
+            if not ann_info.startswith(expected_start_str):
+                logger.warning(
+                    f"Found 'ANN' in VCF file [{file}] but INFO description does not start with [{expected_start_str}]."
+                    " Will ignore ANN annotations.")
+            else:
+                ann_info = ann_info[len(expected_start_str):]
+
+                if ann_info.endswith("'"):
+                    ann_info = ann_info[0:len(ann_info) - 1]
+
+                ann_headers = [x.strip() for x in ann_info.split('|')]
+
+                # Split up multiple entries in ANN
+                ann_groups = vcf_df['INFO'].map(lambda x: x['ANN']).explode()
+                ann_series = ann_groups.map(lambda x: x.split('|'))
+                ann_series = ann_series.map(lambda x: dict(zip(ann_headers, x)))
+                print(ann_series)
+                ann_df = pd.json_normalize(ann_series).add_prefix('ANN.')
+                print(ann_df)
+
+                return ann_df[
+                    ['ANN.Annotation', 'ANN.Gene_Name', 'ANN.Gene_ID', 'ANN.Feature_Type', 'ANN.HGVS.c', 'ANN.HGVS.p']]
+
+        return pd.DataFrame()
+
     def get_or_create_feature_file(self, sample_name: str):
         vcf_file, index_file = self._sample_files_map[sample_name].get_vcf_file()
         return vcf_file
@@ -43,13 +73,21 @@ class VcfVariantsReader(NucleotideFeaturesReader):
         out['REF'] = out['REF'].map(self._fix_ref)
         out['TYPE'] = self._get_type(out)
 
+        ann_df = self._parse_annotations(file=file, reader=reader, vcf_df=out)
+        if len(ann_df) > 0:
+            out = out.merge(ann_df, how='inner', left_index=True, right_index=True)
+        else:
+            logger.debug(f'No snpeff annotations found (no INFO.ANN entry) in VCF [{file}].')
+
         out = self._drop_extra_columns(out)
 
         out['FILE'] = os.path.basename(file)
         cols = out.columns.tolist()
         out['SAMPLE'] = sample_name
         out = out.reindex(columns=['SAMPLE'] + cols)
-        return out
+        return out.loc[:, ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE',
+                           'ANN.Annotation', 'ANN.Gene_Name', 'ANN.Gene_ID', 'ANN.Feature_Type',
+                           'ANN.HGVS.c', 'ANN.HGVS.p', 'FILE']]
 
     def _get_type(self, vcf_df: pd.DataFrame) -> pd.Series:
         return vcf_df['INFO'].map(lambda x: x['TYPE'][0])
