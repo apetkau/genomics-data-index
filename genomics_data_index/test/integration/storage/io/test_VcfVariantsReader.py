@@ -11,6 +11,7 @@ from genomics_data_index.storage.io.mutation.VcfVariantsReader import VcfVariant
 from genomics_data_index.storage.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor
 from genomics_data_index.test.integration import data_dir
 from genomics_data_index.test.integration import data_dir_empty
+from genomics_data_index.test.integration import snpeff_sample_vcfs
 
 
 @pytest.fixture
@@ -63,6 +64,11 @@ def variants_reader_empty(sample_dirs_empty) -> VcfVariantsReader:
 
 
 @pytest.fixture
+def variants_reader_default_no_data() -> VcfVariantsReader:
+    return VcfVariantsReader(sample_files_map={})
+
+
+@pytest.fixture
 def variants_reader_empty_masks(sample_dirs) -> VcfVariantsReader:
     sample_vcf_map = {}
     for d in sample_dirs:
@@ -91,6 +97,16 @@ def variants_reader_from_snippy_internal(sample_dirs) -> VcfVariantsReader:
 @pytest.fixture
 def variants_reader_from_snippy(sample_dirs) -> VcfVariantsReader:
     return variants_reader_from_snippy_internal(sample_dirs)
+
+
+@pytest.fixture
+def variants_reader_snpeff() -> VcfVariantsReader:
+    tmp_dir = Path(tempfile.mkdtemp())
+    file_processor = SerialSampleFilesProcessor(tmp_dir)
+    data_package = NucleotideSampleDataPackage.create_from_sequence_masks(sample_vcf_map=snpeff_sample_vcfs,
+                                                                          sample_files_processor=file_processor)
+    processed_files = cast(Dict[str, NucleotideSampleData], data_package.process_all_data())
+    return VcfVariantsReader.create(processed_files)
 
 
 def test_get_variants_table(variants_reader):
@@ -212,3 +228,14 @@ def test_snippy_read_empty_vcf(sample_dirs_empty):
     df = reader.get_features_table()
 
     assert 0 == len(df), 'Data has incorrect length'
+
+
+def test_read_snpeff(variants_reader_default_no_data: VcfVariantsReader):
+    vr = variants_reader_default_no_data
+    sample_10_014 = vr.read_vcf(file=snpeff_sample_vcfs['SH10-014'], sample_name='SH10-014')
+    sample_14_001 = vr.read_vcf(file=snpeff_sample_vcfs['SH14-001'], sample_name='SH14-001')
+    sample_14_014 = vr.read_vcf(file=snpeff_sample_vcfs['SH14-014'], sample_name='SH14-014')
+
+    assert 139 == len(sample_10_014)
+    assert 115 == len(sample_14_001)
+    assert 107 == len(sample_14_014)
