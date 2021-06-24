@@ -236,6 +236,9 @@ def test_read_snpeff(variants_reader_default_no_data: VcfVariantsReader):
     sample_14_001 = vr.read_vcf(file=snpeff_sample_vcfs['SH14-001'], sample_name='SH14-001')
     sample_14_014 = vr.read_vcf(file=snpeff_sample_vcfs['SH14-014'], sample_name='SH14-014')
 
+    print(f"reader infos type: {type(sample_10_014.infos)}")
+    print(f"reader infos values: {sample_10_014.infos}")
+
     assert 139 == len(sample_10_014)
     print(sample_10_014[sample_10_014['POS'] == 140658])
     assert ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'ANN.Annotation', 'ANN.Gene_Name',

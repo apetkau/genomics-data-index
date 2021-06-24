@@ -91,6 +91,8 @@ class VcfVariantsReader(NucleotideFeaturesReader):
 
     def read_vcf(self, file: Path, sample_name: str) -> pd.DataFrame:
         reader = vcf.Reader(filename=str(file))
+        print(f'reader infos type: {type(reader.infos)}')
+        print(f'reader infos values: {reader.infos}')
         df = pd.DataFrame([vars(r) for r in reader])
         out = self._fix_df_columns(df)
 
