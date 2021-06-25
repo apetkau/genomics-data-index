@@ -55,6 +55,30 @@ def mock_vcf_df_with_ann_multiple_entries_single_sample() -> pd.DataFrame:
 
 
 @pytest.fixture
+def mock_vcf_df_with_ann_multiple_entries_multiple_samples() -> pd.DataFrame:
+    return pd.DataFrame([
+        ['NC_011083', 140658, 'C', 'A',
+         {'ANN': [('A|missense_variant|MODERATE|murF|SEHA_RS01180|transcript|SEHA_RS01180|'
+                  'protein_coding|1/1|c.497C>A|p.Ala166Glu|497/1359|497/1359|166/452||'),
+                  ('A|upstream_gene_variant|MODIFIER|mraY|SEHA_RS01185|transcript|SEHA_RS01185|'
+                  'protein_coding||c.-856C>A|||||856|'),
+                  ('A|upstream_gene_variant|MODIFIER|murD|SEHA_RS01190|transcript|SEHA_RS01190|'
+                  'protein_coding||c.-1941C>A|||||1941|')]}
+         ],
+         ['NC_011083', 203200, 'C', 'T',
+          {'ANN': [('T|missense_variant|MODERATE|SEHA_RS01460|SEHA_RS01460|transcript|SEHA_RS01460|'
+                    'protein_coding|1/1|c.602C>T|p.Thr201Met|602/927|602/927|201/308||'),
+                   ('T|upstream_gene_variant|MODIFIER|SEHA_RS01445|SEHA_RS01445|transcript|SEHA_RS01445|'
+                    'protein_coding||c.-2172G>A|||||2172|'),
+                   ('T|upstream_gene_variant|MODIFIER|can|SEHA_RS01455|transcript|SEHA_RS01455|'
+                    'protein_coding||c.-710G>A|||||710|')]}
+         ],
+    ], columns=[
+        'CHROM', 'POS', 'REF', 'ALT', 'INFO',
+    ])
+
+
+@pytest.fixture
 def mock_snpeff_infos_invalid():
     class MockAnn():
         def __init__(self):
@@ -105,13 +129,37 @@ def test_parse_annotation_entries_multiple_entries_single_sample(
 
     assert ['ANN.Allele', 'ANN.Annotation', 'ANN.Annotation_Impact', 'ANN.Gene_Name', 'ANN.Gene_ID',
             'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p'] == list(ann_entries_df.columns)
-    print(ann_entries_df)
     assert 3 == len(ann_entries_df)
     assert [0, 0, 0] == list(ann_entries_df.index)
-    print(ann_entries_df['ANN.HGVS.p'].isna())
     assert ['A', 'missense_variant', 'MODERATE', 'murF', 'SEHA_RS01180', 'transcript', 'protein_coding',
             'c.497C>A', 'p.Ala166Glu'] == list(ann_entries_df.iloc[0])
     assert ['A', 'upstream_gene_variant', 'MODIFIER', 'mraY', 'SEHA_RS01185', 'transcript', 'protein_coding',
             'c.-856C>A', pd.NA] == list(ann_entries_df.iloc[1])
     assert ['A', 'upstream_gene_variant', 'MODIFIER', 'murD', 'SEHA_RS01190', 'transcript', 'protein_coding',
             'c.-1941C>A', pd.NA] == list(ann_entries_df.iloc[2])
+
+
+def test_parse_annotation_entries_multiple_entries_multiple_samples(
+        vcf_snpeff_annotation_parser: VcfSnpEffAnnotationParser,
+        mock_snpeff_infos, mock_vcf_df_with_ann_multiple_entries_multiple_samples: pd.DataFrame):
+    headers_list = vcf_snpeff_annotation_parser.parse_annotation_headers(mock_snpeff_infos)
+    ann_entries_df = vcf_snpeff_annotation_parser.parse_annotation_entries(vcf_ann_headers=headers_list,
+                                                                           vcf_df=mock_vcf_df_with_ann_multiple_entries_multiple_samples)
+
+    assert ['ANN.Allele', 'ANN.Annotation', 'ANN.Annotation_Impact', 'ANN.Gene_Name', 'ANN.Gene_ID',
+            'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p'] == list(ann_entries_df.columns)
+    assert 6 == len(ann_entries_df)
+    assert [0, 0, 0, 1, 1, 1] == list(ann_entries_df.index)
+    assert ['A', 'missense_variant', 'MODERATE', 'murF', 'SEHA_RS01180', 'transcript', 'protein_coding',
+            'c.497C>A', 'p.Ala166Glu'] == list(ann_entries_df.iloc[0])
+    assert ['A', 'upstream_gene_variant', 'MODIFIER', 'mraY', 'SEHA_RS01185', 'transcript', 'protein_coding',
+            'c.-856C>A', pd.NA] == list(ann_entries_df.iloc[1])
+    assert ['A', 'upstream_gene_variant', 'MODIFIER', 'murD', 'SEHA_RS01190', 'transcript', 'protein_coding',
+            'c.-1941C>A', pd.NA] == list(ann_entries_df.iloc[2])
+
+    assert ['T', 'missense_variant', 'MODERATE', 'SEHA_RS01460', 'SEHA_RS01460', 'transcript', 'protein_coding',
+            'c.602C>T', 'p.Thr201Met'] == list(ann_entries_df.iloc[3])
+    assert ['T', 'upstream_gene_variant', 'MODIFIER', 'SEHA_RS01445', 'SEHA_RS01445', 'transcript', 'protein_coding',
+            'c.-2172G>A', pd.NA] == list(ann_entries_df.iloc[4])
+    assert ['T', 'upstream_gene_variant', 'MODIFIER', 'can', 'SEHA_RS01455', 'transcript', 'protein_coding',
+            'c.-710G>A', pd.NA] == list(ann_entries_df.iloc[5])
