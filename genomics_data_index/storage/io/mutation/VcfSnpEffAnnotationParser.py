@@ -16,6 +16,9 @@ class InvalidSnpEffVcfError(Exception):
 
 class VcfSnpEffAnnotationParser:
 
+    ANNOTATION_COLUMNS = ['ANN.Allele', 'ANN.Annotation', 'ANN.Annotation_Impact', 'ANN.Gene_Name', 'ANN.Gene_ID',
+             'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p']
+
     def __init__(self):
         pass
 
@@ -35,7 +38,8 @@ class VcfSnpEffAnnotationParser:
 
                 return [x.strip() for x in ann_info.split('|')]
         else:
-            raise InvalidSnpEffVcfError("VCF does not contain 'ANN' in vcf_info.")
+            logger.debug(f"VCF does not contain 'ANN' in vcf_info, keys=[{vcf_info.keys()}]")
+            return []
 
     def _setup_vcf_df_index(self, vcf_df: pd.DataFrame) -> pd.DataFrame:
         vcf_df_with_keys = vcf_df.copy()
@@ -55,6 +59,9 @@ class VcfSnpEffAnnotationParser:
 
         return ann_split_fields
 
+    def vcf_has_annotations(self, vcf_df: pd.DataFrame) -> bool:
+        return 'INFO' in vcf_df and 'ANN' in vcf_df.iloc[0]['INFO']
+
     def parse_annotation_entries(self, vcf_ann_headers: List[str], vcf_df: pd.DataFrame) -> pd.DataFrame:
         """
         Given a list of snpeff VCF 'ANN' headers and the VCF datqframe, splits up the snpeff effects into separate rows.
@@ -69,29 +76,33 @@ class VcfSnpEffAnnotationParser:
                  names.
         """
         vcf_df_with_keys = self._setup_vcf_df_index(vcf_df)
-        ann_split_fields = self._extract_ann_from_info(vcf_df_with_keys, vcf_ann_headers)
 
-        def insert_key_to_dictionary(x: pd.Series):
-            """
-            I use this to insert the 'VARIANT_KEY' into the 'ANN' dictionary
-            so that when I run pd.json_normalize I can keep everything linked by the same key
-            (since json_normalize removes my index in the Series).
-            :param x: A series of columns.
-            :return: A series of columns with the 'VARIANT_KEY' inserted into the 'ANN' dictionary.
-            """
-            x['ANN']['VARIANT_KEY'] = x['VARIANT_KEY']
-            return x
+        if self.vcf_has_annotations(vcf_df):
+            ann_split_fields = self._extract_ann_from_info(vcf_df_with_keys, vcf_ann_headers)
 
-        ann_series = ann_split_fields.apply(insert_key_to_dictionary, axis='columns')['ANN']
-        ann_df = pd.json_normalize(ann_series).add_prefix('ANN.').set_index('ANN.VARIANT_KEY')
+            def insert_key_to_dictionary(x: pd.Series):
+                """
+                I use this to insert the 'VARIANT_KEY' into the 'ANN' dictionary
+                so that when I run pd.json_normalize I can keep everything linked by the same key
+                (since json_normalize removes my index in the Series).
+                :param x: A series of columns.
+                :return: A series of columns with the 'VARIANT_KEY' inserted into the 'ANN' dictionary.
+                """
+                x['ANN']['VARIANT_KEY'] = x['VARIANT_KEY']
+                return x
 
-        # Now join ann_df back to vcf_df_with_keys to recover the original index
-        vcf_df_with_keys = vcf_df_with_keys.merge(ann_df, left_index=True, right_index=True).set_index(
-            'original_index')
+            ann_series = ann_split_fields.apply(insert_key_to_dictionary, axis='columns')['ANN']
+            ann_df = pd.json_normalize(ann_series).add_prefix('ANN.').set_index('ANN.VARIANT_KEY')
 
-        vcf_df_with_keys = vcf_df_with_keys[
-            ['ANN.Allele', 'ANN.Annotation', 'ANN.Annotation_Impact', 'ANN.Gene_Name', 'ANN.Gene_ID',
-             'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p']]
-        vcf_df_with_keys = vcf_df_with_keys.replace('', pd.NA)
+            # Now join ann_df back to vcf_df_with_keys to recover the original index
+            vcf_df_with_keys = vcf_df_with_keys.merge(ann_df, left_index=True, right_index=True).set_index(
+                'original_index')
+
+            vcf_df_with_keys = vcf_df_with_keys[self.ANNOTATION_COLUMNS]
+            vcf_df_with_keys = vcf_df_with_keys.replace('', pd.NA)
+        else:
+            logger.debug('vcf_df has no snpeff annotations, will set all annotations as NA')
+            vcf_df_with_keys = pd.DataFrame(data=[], columns=self.ANNOTATION_COLUMNS,
+                                            index=vcf_df.index, dtype='object')
 
         return vcf_df_with_keys
