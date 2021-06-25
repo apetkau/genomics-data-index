@@ -26,7 +26,7 @@ def mock_snpeff_infos():
 
 
 @pytest.fixture
-def mock_vcf_df_with_ann() -> pd.DataFrame:
+def mock_vcf_df_with_ann_single() -> pd.DataFrame:
     return pd.DataFrame([
         ['NC_011083', 140658, 'C', 'A',
          {'ANN': ('A|missense_variant|MODERATE|murF|SEHA_RS01180|transcript|SEHA_RS01180|'
@@ -66,10 +66,14 @@ def test_parse_annotation_headers_invalid(vcf_snpeff_annotation_parser: VcfSnpEf
 
 
 def test_parse_annotation_entries(vcf_snpeff_annotation_parser: VcfSnpEffAnnotationParser,
-                                          mock_snpeff_infos, mock_vcf_df_with_ann: pd.DataFrame):
+                                          mock_snpeff_infos, mock_vcf_df_with_ann_single: pd.DataFrame):
     headers_list = vcf_snpeff_annotation_parser.parse_annotation_headers(mock_snpeff_infos)
     ann_entries_df = vcf_snpeff_annotation_parser.parse_annotation_entries(vcf_ann_headers=headers_list,
-                                                                        vcf_df=mock_vcf_df_with_ann)
+                                                                        vcf_df=mock_vcf_df_with_ann_single)
 
-    assert ['ANN.Annotation', 'ANN.Gene_Name', 'ANN.Gene_ID', 'ANN.Feature_Type', 'ANN.HGVS.c',
-            'ANN.HGVS.p'] == list(ann_entries_df.columns)
+    assert ['ANN.Allele', 'ANN.Annotation', 'ANN.Annotation_Impact', 'ANN.Gene_Name', 'ANN.Gene_ID',
+            'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p'] == list(ann_entries_df.columns)
+    assert 1 == len(ann_entries_df)
+    assert [0] == list(ann_entries_df.index)
+    assert ['A', 'missense_variant', 'MODERATE', 'murF', 'SEHA_RS01180', 'transcript', 'protein_coding',
+           'c.497C>A', 'p.Ala166Glu'] == list(ann_entries_df.iloc[0])
