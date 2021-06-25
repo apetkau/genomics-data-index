@@ -1,4 +1,5 @@
 import pytest
+import pandas as pd
 
 from genomics_data_index.storage.io.mutation.VcfSnpEffAnnotationParser import VcfSnpEffAnnotationParser, InvalidSnpEffVcfError
 
@@ -22,6 +23,18 @@ def mock_snpeff_infos():
     return {
         'ANN': MockAnn()
     }
+
+
+@pytest.fixture
+def mock_vcf_df_with_ann() -> pd.DataFrame:
+    return pd.DataFrame([
+        ['NC_011083', 140658, 'C', 'A',
+         {'ANN': ('A|missense_variant|MODERATE|murF|SEHA_RS01180|transcript|SEHA_RS01180|'
+          'protein_coding|1/1|c.497C>A|p.Ala166Glu|497/1359|497/1359|166/452||')}
+         ],
+    ], columns=[
+        'CHROM', 'POS', 'REF', 'ALT', 'INFO',
+    ])
 
 
 @pytest.fixture
@@ -50,3 +63,13 @@ def test_parse_annotation_headers_invalid(vcf_snpeff_annotation_parser: VcfSnpEf
     with pytest.raises(InvalidSnpEffVcfError) as execinfo:
         vcf_snpeff_annotation_parser.parse_annotation_headers(mock_snpeff_infos_invalid)
     assert "Found 'ANN' in VCF information but description" in str(execinfo.value)
+
+
+def test_parse_annotation_entries(vcf_snpeff_annotation_parser: VcfSnpEffAnnotationParser,
+                                          mock_snpeff_infos, mock_vcf_df_with_ann: pd.DataFrame):
+    headers_list = vcf_snpeff_annotation_parser.parse_annotation_headers(mock_snpeff_infos)
+    ann_entries_df = vcf_snpeff_annotation_parser.parse_annotation_entries(vcf_ann_headers=headers_list,
+                                                                        vcf_df=mock_vcf_df_with_ann)
+
+    assert ['ANN.Annotation', 'ANN.Gene_Name', 'ANN.Gene_ID', 'ANN.Feature_Type', 'ANN.HGVS.c',
+            'ANN.HGVS.p'] == list(ann_entries_df.columns)

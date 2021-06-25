@@ -37,7 +37,7 @@ class VcfSnpEffAnnotationParser:
         else:
             raise InvalidSnpEffVcfError("VCF does not contain 'ANN' in vcf_info.")
 
-    def parse_annotations(self, vcf_ann_headers: List[str], vcf_df: pd.DataFrame) -> pd.DataFrame:
+    def _setup_vcf_df_index(self, vcf_df: pd.DataFrame) -> pd.DataFrame:
         vcf_df_with_keys = vcf_df.copy()
         vcf_df_with_keys['VARIANT_KEY'] = vcf_df_with_keys.apply(
             lambda x: f"{x['CHROM']}:{x['POS']}:{x['REF']}:{x['ALT']}",
@@ -45,13 +45,31 @@ class VcfSnpEffAnnotationParser:
         vcf_df_with_keys = vcf_df_with_keys.reset_index().rename({'index': 'original_index'}, axis='columns')
         vcf_df_with_keys = vcf_df_with_keys.set_index('VARIANT_KEY')
 
-        # Split up multiple entries in ANN
+        return vcf_df_with_keys
+
+    def _extract_ann_from_info(self, vcf_df_with_keys: pd.DataFrame, vcf_ann_headers: List[str]) -> pd.DataFrame:
         ann_groups = vcf_df_with_keys['INFO'].map(lambda x: x['ANN']).explode()
-        print("ANN Groups\n")
-        print(ann_groups)
         ann_split_fields = ann_groups.map(lambda x: x.split('|'))
         ann_split_fields = ann_split_fields.map(lambda x: dict(zip(vcf_ann_headers, x))).to_frame()
         ann_split_fields = ann_split_fields.rename({'INFO': 'ANN'}, axis='columns').reset_index()
+
+        return ann_split_fields
+
+    def parse_annotation_entries(self, vcf_ann_headers: List[str], vcf_df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Given a list of snpeff VCF 'ANN' headers and the VCF datqframe, splits up the snpeff effects into separate rows.
+        Returns a new dataframe with all the snpeff 'ANN' effects, one per row. The index is the same as the input 'vcf_df'
+        dataframe which means you can merge the returned value to 'vcf_df' afterwards by the indexes.
+        :param vcf_ann_headers: A list of headers for the VCF 'ANN' entries (order matters here).
+        :param vcf_df: The dataframe containing the VCF information. The 'ANN' information is assumed to exist
+                       in the 'INFO' column.
+        :return: A dataframe with the snpeff annotation entries, one entry per line. The index is the same as the input
+                 vcf_df, which means that you can merge the returned dataframe with 'vcf_df' by the index. If there are
+                 no snpeff annotations then this will return an empty dataframe with the appropriate snpeff ANN columns
+                 names.
+        """
+        vcf_df_with_keys = self._setup_vcf_df_index(vcf_df)
+        ann_split_fields = self._extract_ann_from_info(vcf_df_with_keys, vcf_ann_headers)
 
         def insert_key_to_dictionary(x: pd.Series):
             """
@@ -70,8 +88,6 @@ class VcfSnpEffAnnotationParser:
         # Now join ann_df back to vcf_df_with_keys to recover the original index
         vcf_df_with_keys = vcf_df_with_keys.merge(ann_df, left_index=True, right_index=True).set_index(
             'original_index')
-        print("vcf_df_with_keys\n")
-        print(vcf_df_with_keys)
 
         return vcf_df_with_keys[
             ['ANN.Annotation', 'ANN.Gene_Name', 'ANN.Gene_ID', 'ANN.Feature_Type', 'ANN.HGVS.c', 'ANN.HGVS.p']]
