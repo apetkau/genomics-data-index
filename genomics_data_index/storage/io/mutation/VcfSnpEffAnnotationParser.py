@@ -89,6 +89,9 @@ class VcfSnpEffAnnotationParser:
         vcf_df_with_keys = vcf_df_with_keys.merge(ann_df, left_index=True, right_index=True).set_index(
             'original_index')
 
-        return vcf_df_with_keys[
+        vcf_df_with_keys = vcf_df_with_keys[
             ['ANN.Allele', 'ANN.Annotation', 'ANN.Annotation_Impact', 'ANN.Gene_Name', 'ANN.Gene_ID',
              'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p']]
+        vcf_df_with_keys = vcf_df_with_keys.replace('', pd.NA)
+
+        return vcf_df_with_keys
