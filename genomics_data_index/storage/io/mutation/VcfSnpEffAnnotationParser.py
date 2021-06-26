@@ -53,7 +53,7 @@ class VcfSnpEffAnnotationParser:
 
     def _extract_ann_from_info(self, vcf_df_with_keys: pd.DataFrame, vcf_ann_headers: List[str]) -> pd.DataFrame:
         ann_groups = vcf_df_with_keys['INFO'].map(lambda x: x['ANN']).explode()
-        ann_split_fields = ann_groups.map(lambda x: x.split('|'))
+        ann_split_fields = ann_groups.map(lambda x: x.split('|') if not pd.isna(x) else [pd.NA] * len(vcf_ann_headers))
         ann_split_fields = ann_split_fields.map(lambda x: dict(zip(vcf_ann_headers, x))).to_frame()
         ann_split_fields = ann_split_fields.rename({'INFO': 'ANN'}, axis='columns').reset_index()
 
@@ -99,7 +99,10 @@ class VcfSnpEffAnnotationParser:
                 'original_index')
 
             vcf_df_with_keys = vcf_df_with_keys[self.ANNOTATION_COLUMNS]
-            vcf_df_with_keys = vcf_df_with_keys.replace('', pd.NA)
+
+            # Fill NA with '' and convert '' back to NA because a straight conversion of '' to NA
+            # fails in cases where a column has a mixture of '' and NA values.
+            vcf_df_with_keys = vcf_df_with_keys.fillna('').replace('', pd.NA)
         else:
             logger.debug('vcf_df has no snpeff annotations, will set all annotations as NA')
             vcf_df_with_keys = pd.DataFrame(data=[], columns=self.ANNOTATION_COLUMNS,
