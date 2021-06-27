@@ -43,11 +43,11 @@ class VcfSnpEffAnnotationParser:
 
     def _setup_vcf_df_index(self, vcf_df: pd.DataFrame) -> pd.DataFrame:
         vcf_df_with_keys = vcf_df.copy()
-        vcf_df_with_keys['VARIANT_KEY'] = vcf_df_with_keys.apply(
+        vcf_df_with_keys['VARIANT_ID'] = vcf_df_with_keys.apply(
             lambda x: f"{x['CHROM']}:{x['POS']}:{x['REF']}:{x['ALT']}",
             axis='columns')
         vcf_df_with_keys = vcf_df_with_keys.reset_index().rename({'index': 'original_index'}, axis='columns')
-        vcf_df_with_keys = vcf_df_with_keys.set_index('VARIANT_KEY')
+        vcf_df_with_keys = vcf_df_with_keys.set_index('VARIANT_ID')
 
         return vcf_df_with_keys
 
@@ -88,24 +88,28 @@ class VcfSnpEffAnnotationParser:
                 :param x: A series of columns.
                 :return: A series of columns with the 'VARIANT_KEY' inserted into the 'ANN' dictionary.
                 """
-                x['ANN']['VARIANT_KEY'] = x['VARIANT_KEY']
+                x['ANN']['VARIANT_ID'] = x['VARIANT_ID']
                 return x
 
             ann_series = ann_split_fields.apply(insert_key_to_dictionary, axis='columns')['ANN']
-            ann_df = pd.json_normalize(ann_series).add_prefix('ANN.').set_index('ANN.VARIANT_KEY')
+            ann_df = pd.json_normalize(ann_series).add_prefix('ANN.').rename(
+                {'ANN.VARIANT_ID': 'VARIANT_ID'}, axis='columns').set_index('VARIANT_ID')
+
+            # Copy index to column 'VARIANT_ID' so it remains after merging
+            ann_df['VARIANT_ID'] = ann_df.index
 
             # Now join ann_df back to vcf_df_with_keys to recover the original index
             vcf_df_with_keys = vcf_df_with_keys.merge(ann_df, left_index=True, right_index=True).set_index(
                 'original_index')
 
-            vcf_df_with_keys = vcf_df_with_keys[self.ANNOTATION_COLUMNS]
+            vcf_df_with_keys = vcf_df_with_keys[self.ANNOTATION_COLUMNS + ['VARIANT_ID']]
 
             # Fill NA with '' and convert '' back to NA because a straight conversion of '' to NA
             # fails in cases where a column has a mixture of '' and NA values.
             vcf_df_with_keys = vcf_df_with_keys.fillna('').replace('', pd.NA)
         else:
             logger.debug('vcf_df has no snpeff annotations, will set all annotations as NA')
-            vcf_df_with_keys = pd.DataFrame(data=[], columns=self.ANNOTATION_COLUMNS,
-                                            index=vcf_df.index, dtype='object')
+            vcf_df_with_keys = vcf_df_with_keys.reset_index().reindex(
+                columns=self.ANNOTATION_COLUMNS + ['original_index', 'VARIANT_ID']).set_index('original_index')
 
         return vcf_df_with_keys
