@@ -43,11 +43,14 @@ class VcfSnpEffAnnotationParser:
 
     def _setup_vcf_df_index(self, vcf_df: pd.DataFrame) -> pd.DataFrame:
         vcf_df_with_keys = vcf_df.copy()
-        vcf_df_with_keys['VARIANT_ID'] = vcf_df_with_keys.apply(
-            lambda x: f"{x['CHROM']}:{x['POS']}:{x['REF']}:{x['ALT']}",
-            axis='columns')
-        vcf_df_with_keys = vcf_df_with_keys.reset_index().rename({'index': 'original_index'}, axis='columns')
-        vcf_df_with_keys = vcf_df_with_keys.set_index('VARIANT_ID')
+        if len(vcf_df_with_keys) == 0:
+            vcf_df_with_keys = vcf_df_with_keys.reindex(columns=vcf_df_with_keys.columns.tolist() + ['VARIANT_ID'])
+        else:
+            vcf_df_with_keys['VARIANT_ID'] = vcf_df_with_keys.apply(
+                lambda x: f"{x['CHROM']}:{x['POS']}:{x['REF']}:{x['ALT']}",
+                axis='columns')
+            vcf_df_with_keys = vcf_df_with_keys.reset_index().rename({'index': 'original_index'}, axis='columns')
+            vcf_df_with_keys = vcf_df_with_keys.set_index('VARIANT_ID')
 
         return vcf_df_with_keys
 
@@ -60,7 +63,7 @@ class VcfSnpEffAnnotationParser:
         return ann_split_fields
 
     def vcf_has_annotations(self, vcf_df: pd.DataFrame) -> bool:
-        return 'INFO' in vcf_df and 'ANN' in vcf_df.iloc[0]['INFO']
+        return len(vcf_df) > 0 and 'INFO' in vcf_df and 'ANN' in vcf_df.iloc[0]['INFO']
 
     def parse_annotation_entries(self, vcf_ann_headers: List[str], vcf_df: pd.DataFrame) -> pd.DataFrame:
         """

@@ -75,6 +75,13 @@ def mock_vcf_df_with_and_without_ann() -> pd.DataFrame:
 
 
 @pytest.fixture
+def mock_vcf_df_empty() -> pd.DataFrame:
+    return pd.DataFrame(columns=[
+        'CHROM', 'POS', 'REF', 'ALT', 'INFO',
+    ])
+
+
+@pytest.fixture
 def mock_snpeff_infos_empty():
     return {}
 
@@ -264,3 +271,13 @@ def test_parse_annotation_entries_some_with_some_without_annotations(vcf_snpeff_
 
     assert {True} == set(ann_entries_df.drop('VARIANT_ID', axis='columns').iloc[3].isna())
     assert 'NC_011083:203200:C:T' == ann_entries_df['VARIANT_ID'].iloc[3]
+
+
+def test_parse_annotation_entries_empty(vcf_snpeff_annotation_parser: VcfSnpEffAnnotationParser,
+                                        mock_vcf_df_empty: pd.DataFrame):
+    ann_entries_df = vcf_snpeff_annotation_parser.parse_annotation_entries(vcf_ann_headers=[],
+                                                                           vcf_df=mock_vcf_df_empty)
+
+    assert ['ANN.Allele', 'ANN.Annotation', 'ANN.Annotation_Impact', 'ANN.Gene_Name', 'ANN.Gene_ID',
+            'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p', 'VARIANT_ID'] == list(ann_entries_df.columns)
+    assert 0 == len(ann_entries_df)
