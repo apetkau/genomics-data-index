@@ -2,6 +2,7 @@ import tempfile
 from os import path, listdir
 from pathlib import Path
 from typing import List, Dict, cast
+import pandas as pd
 
 import pytest
 
@@ -232,36 +233,68 @@ def test_snippy_read_empty_vcf(sample_dirs_empty):
 
 def test_read_snpeff(variants_reader_default_no_data: VcfVariantsReader):
     vr = variants_reader_default_no_data
-    sample_10_014 = vr.read_vcf(file=snpeff_sample_vcfs['SH10-014'], sample_name='SH10-014')
-    sample_14_001 = vr.read_vcf(file=snpeff_sample_vcfs['SH14-001'], sample_name='SH14-001')
-    sample_14_014 = vr.read_vcf(file=snpeff_sample_vcfs['SH14-014'], sample_name='SH14-014')
+    sample_10_014 = vr.read_vcf(file=snpeff_sample_vcfs['SH10-014'], sample_name='SH10-014').sort_values('POS')
+    sample_14_001 = vr.read_vcf(file=snpeff_sample_vcfs['SH14-001'], sample_name='SH14-001').sort_values('POS')
+    sample_14_014 = vr.read_vcf(file=snpeff_sample_vcfs['SH14-014'], sample_name='SH14-014').sort_values('POS')
 
-    print(f"reader infos type: {type(sample_10_014.infos)}")
-    print(f"reader infos values: {sample_10_014.infos}")
+    assert 1434 == len(sample_10_014)
+    assert ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE', 'VARIANT_ID',
+            'ANN.Allele', 'ANN.Annotation', 'ANN.Annotation_Impact', 'ANN.Gene_Name', 'ANN.Gene_ID',
+            'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p'] == list(sample_10_014.columns)
 
-    assert 139 == len(sample_10_014)
-    print(sample_10_014[sample_10_014['POS'] == 140658])
-    assert ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'ANN.Annotation', 'ANN.Gene_Name',
-            'ANN.Gene_ID', 'ANN.Feature_Type', 'ANN.HGVS.c', 'ANN.HGVS.p', 'FILE'] == list(sample_10_014.columns)
-    assert ['SH10-014', 'NC_011083', 140658, 'C', 'A', 'snp',
-            'SH10-014.vcf.gz'] == sample_10_014[sample_10_014['POS'] == 140658].iloc[0].tolist()
-    assert ['SH10-014', 'NC_011083', 1125996, 'CG', 'C', 'del',
-            'SH10-014.vcf.gz'] == sample_10_014[sample_10_014['POS'] == 1125996].iloc[0].tolist()
-    assert ['SH10-014', 'NC_011083', 1246085, 'C', 'CG', 'ins',
-            'SH10-014.vcf.gz'] == sample_10_014[sample_10_014['POS'] == 1246085].iloc[0].tolist()
-    assert ['SH10-014', 'NC_011083', 3535121, 'CGCGA', 'TGTGG', 'complex',
-            'SH10-014.vcf.gz'] == sample_10_014[sample_10_014['POS'] == 3535121].iloc[0].tolist()
+    # snv/snp
+    sample_10_014_varA = sample_10_014[sample_10_014['POS'] == 140658]
+    assert 9 == len(sample_10_014_varA)
+    assert ['SH10-014', 'NC_011083', 140658, 'C', 'A', 'snp', 'SH10-014.vcf.gz', 'NC_011083:140658:C:A',
+            'A', 'missense_variant', 'MODERATE', 'murF', 'SEHA_RS01180', 'transcript', 'protein_coding',
+            'c.497C>A', 'p.Ala166Glu'] == sample_10_014_varA[
+        sample_10_014_varA['ANN.Annotation'] == 'missense_variant'].iloc[0].tolist()
 
-    assert 115 == len(sample_14_001)
-    assert ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'ANN.Annotation', 'ANN.Gene_Name',
-            'ANN.Gene_ID', 'ANN.Feature_Type', 'ANN.HGVS.c', 'ANN.HGVS.p', 'FILE'] == list(sample_14_001.columns)
-    assert ['SH14-001', 'NC_011083', 203200, 'C', 'T', 'snp',
-            'SH14-001.vcf.gz'] == sample_14_001[sample_14_001['POS'] == 203200].iloc[0].tolist()
+    # del
+    sample_10_014_varB = sample_10_014[sample_10_014['POS'] == 1125996]
+    assert 14 == len(sample_10_014_varB)
+    assert ['SH10-014', 'NC_011083', 1125996, 'CG', 'C', 'del', 'SH10-014.vcf.gz', 'NC_011083:1125996:CG:C',
+            'C', 'frameshift_variant', 'HIGH', 'SEHA_RS05995', 'SEHA_RS05995', 'transcript', 'protein_coding',
+            'c.418delG', 'p.Glu140fs'] == sample_10_014_varB[
+        sample_10_014_varB['ANN.Annotation'] == 'frameshift_variant'].iloc[0].tolist()
 
-    assert 107 == len(sample_14_014)
-    assert ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'ANN.Annotation', 'ANN.Gene_Name',
-            'ANN.Gene_ID', 'ANN.Feature_Type', 'ANN.HGVS.c', 'ANN.HGVS.p', 'FILE'] == list(sample_14_014.columns)
-    assert ['SH14-014', 'NC_011083', 298472, 'A', 'C', 'snp',
-            'SH14-014.vcf.gz'] == sample_14_014[sample_14_014['POS'] == 298472].iloc[0].tolist()
+    # ins
+    sample_10_014_varC = sample_10_014[sample_10_014['POS'] == 1246085]
+    assert 11 == len(sample_10_014_varC)
+    assert ['SH10-014', 'NC_011083', 1246085, 'C', 'CG', 'ins', 'SH10-014.vcf.gz', 'NC_011083:1246085:C:CG',
+            'CG', 'frameshift_variant', 'HIGH', 'mdtG', 'SEHA_RS06605', 'transcript', 'protein_coding',
+            'c.722dupC', 'p.Leu242fs'] == sample_10_014_varC[
+        sample_10_014_varC['ANN.Annotation'] == 'frameshift_variant'].iloc[0].tolist()
 
+    # complex
+    sample_10_014_varD = sample_10_014[sample_10_014['POS'] == 3535121]
+    assert 10 == len(sample_10_014_varD)
+    assert ['SH10-014', 'NC_011083', 3535121, 'CGCGA', 'TGTGG', 'complex', 'SH10-014.vcf.gz', 'NC_011083:3535121:CGCGA:TGTGG',
+            'TGTGG', 'missense_variant', 'MODERATE', 'oadA', 'SEHA_RS17780', 'transcript', 'protein_coding',
+            'c.1119_1123delTCGCGinsCCACA', 'p.ArgAla374HisThr'] == sample_10_014_varD[
+        sample_10_014_varD['ANN.Annotation'] == 'missense_variant'].iloc[0].tolist()
 
+    assert 1218 == len(sample_14_001)
+    assert ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE', 'VARIANT_ID',
+            'ANN.Allele', 'ANN.Annotation', 'ANN.Annotation_Impact', 'ANN.Gene_Name', 'ANN.Gene_ID',
+            'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p'] == list(sample_14_001.columns)
+    sample_14_001_var = sample_14_001[sample_14_001['POS'] == 140658]
+    assert 9 == len(sample_14_001_var)
+    assert ['SH14-001', 'NC_011083', 140658, 'C', 'A', 'snp', 'SH14-001.vcf.gz', 'NC_011083:140658:C:A',
+            'A', 'missense_variant', 'MODERATE', 'murF', 'SEHA_RS01180', 'transcript', 'protein_coding',
+            'c.497C>A', 'p.Ala166Glu'] == sample_14_001_var[
+        sample_14_001_var['ANN.Annotation'] == 'missense_variant'].iloc[0].tolist()
+
+    assert 1128 == len(sample_14_014)
+    assert ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE', 'VARIANT_ID',
+            'ANN.Allele', 'ANN.Annotation', 'ANN.Annotation_Impact', 'ANN.Gene_Name', 'ANN.Gene_ID',
+            'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p'] == list(sample_14_014.columns)
+    sample_14_014_var = sample_14_014[sample_14_014['POS'] == 298472]
+    assert 6 == len(sample_14_014_var)
+    assert ['SH14-014', 'NC_011083', 298472, 'A', 'C', 'snp', 'SH14-014.vcf.gz', 'NC_011083:298472:A:C',
+            'C', 'intergenic_region', 'MODIFIER', 'SEHA_RS01880-SEHA_RS01885', 'SEHA_RS01880-SEHA_RS01885',
+            'intergenic_region', 'n.298472A>C'] == sample_14_014_var[
+        sample_14_014_var['ANN.Annotation'] == 'intergenic_region'].drop(
+        ['ANN.Transcript_BioType', 'ANN.HGVS.p'], axis='columns').iloc[0].tolist()
+    assert {True} == set(sample_14_014_var[sample_14_014_var['ANN.Annotation'] == 'intergenic_region']\
+              [['ANN.Transcript_BioType', 'ANN.HGVS.p']].iloc[0].isna().tolist())
