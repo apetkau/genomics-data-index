@@ -194,7 +194,7 @@ class VcfSnpEffAnnotationParser:
 
         # Order and select first entry (use nth() instead of first() so that NA values are handled properly)
         vcf_df_with_annotations = vcf_df_with_annotations.sort_values(
-            ['ANN.Annotation_Impact', 'ANN.Annotation']).groupby('VARIANT_ID').nth(0).reset_index()
+            ['ANN.Annotation_Impact', 'ANN.Annotation', 'ANN.HGVS.c']).groupby('VARIANT_ID').nth(0).reset_index()
 
         # Merge back with original dataframe of variants to make sure I include those without annotations
         all_vcf_entries_grouped = vcf_df[non_annotation_columns + ['VARIANT_ID']].groupby('VARIANT_ID').first()
