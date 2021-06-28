@@ -19,6 +19,52 @@ class VcfSnpEffAnnotationParser:
              'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p']
     IMPACT_TYPE = CategoricalDtype(categories=['HIGH', 'MODERATE', 'LOW', 'MODIFIER'], ordered=True)
 
+    # Order of categories derived from list provided in <http://pcingola.github.io/SnpEff/adds/VCFannotationformat_v1.0.pdf>.
+    ANNOTATION_TYPE = CategoricalDtype(categories=[
+        "chromosome_number_variation",
+        "exon_loss_variant",
+        "frameshift_variant",
+        "stop_gained",
+        "stop_lost",
+        "start_lost",
+        "splice_acceptor_variant",
+        "splice_donor_variant",
+        "rare_amino_acid_variant",
+        "missense_variant",
+        "disruptive_inframe_insertion",
+        "conservative_inframe_insertion",
+        "disruptive_inframe_deletion",
+        "conservative_inframe_deletion",
+        "5_prime_UTR_truncation+exon_loss_variant",
+        "3_prime_UTR_truncation+exon_loss",
+        "splice_branch_variant",
+        "splice_region_variant",
+        "stop_retained_variant",
+        "initiator_codon_variant",
+        "synonymous_variant",
+        "initiator_codon_variant+non_canonical_start_codon",
+        "coding_sequence_variant",
+        "5_prime_UTR_variant",
+        "3_prime_UTR_variant",
+        "5_prime_UTR_premature_start_codon_gain_variant",
+        "upstream_gene_variant",
+        "downstream_gene_variant",
+        "TF_binding_site_variant",
+        "regulatory_region_variant",
+        "miRNA",
+        "custom",
+        "sequence_feature",
+        "conserved_intron_variant",
+        "intron_variant",
+        "intragenic_variant",
+        "conserved_intergenic_variant",
+        "intergenic_region",
+        "non_coding_exon_variant",
+        "nc_transcript_variant",
+        "gene_variant",
+        "chromosome",
+    ], ordered=True)
+
     def __init__(self):
         pass
 
@@ -137,13 +183,16 @@ class VcfSnpEffAnnotationParser:
         vcf_df_with_annotations['ANN.Annotation_Impact'] = vcf_df_with_annotations['ANN.Annotation_Impact'].astype(
             self.IMPACT_TYPE
         )
+        vcf_df_with_annotations['ANN.Annotation'] = vcf_df_with_annotations['ANN.Annotation'].astype(
+            self.ANNOTATION_TYPE
+        )
 
         # Remove annotations from being considered
         vcf_df_with_annotations = vcf_df_with_annotations[vcf_df_with_annotations['ANN.Allele'] == vcf_df_with_annotations['ALT']]
 
         # Order and select first entry
         vcf_df_with_annotations = vcf_df_with_annotations.sort_values(
-            ['ANN.Annotation_Impact']).groupby('VARIANT_ID').first().reset_index()
+            ['ANN.Annotation_Impact', 'ANN.Annotation']).groupby('VARIANT_ID').first().reset_index()
 
         # Merge back with original dataframe of variants to make sure I include those without annotations
         all_vcf_entries_grouped = vcf_df[non_annotation_columns + ['VARIANT_ID']].groupby('VARIANT_ID').first()
