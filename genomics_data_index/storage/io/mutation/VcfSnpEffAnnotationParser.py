@@ -123,8 +123,15 @@ class VcfSnpEffAnnotationParser:
         :param vcf_df: The dataframe of variants from a VCF file.
         :return: A new dataframe containing only rows with the selected annotations.
         """
-        vcf_df_without_annotations = vcf_df[vcf_df['ANN.Allele'].isna()]
-        vcf_df_with_annotations = vcf_df[~vcf_df['ANN.Allele'].isna()]
+        non_annotation_columns = ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE']
+        expected_columns_set = set(non_annotation_columns + self.ANNOTATION_COLUMNS + ['VARIANT_ID'])
+        actual_columns_set = set(vcf_df.columns.tolist())
+        if expected_columns_set != actual_columns_set:
+            raise Exception(f'Invalid columns for passed vcf_df.'
+                            f' Unique expected={expected_columns_set - actual_columns_set}.'
+                            f' Unique actual = {actual_columns_set - expected_columns_set}')
+
+        vcf_df_with_annotations = vcf_df.loc[~vcf_df['ANN.Allele'].isna()]
 
         # Set ordered types
         vcf_df_with_annotations['ANN.Annotation_Impact'] = vcf_df_with_annotations['ANN.Annotation_Impact'].astype(
@@ -138,4 +145,9 @@ class VcfSnpEffAnnotationParser:
         vcf_df_with_annotations = vcf_df_with_annotations.sort_values(
             ['ANN.Annotation_Impact']).groupby('VARIANT_ID').first().reset_index()
 
-        return pd.concat([vcf_df_without_annotations, vcf_df_with_annotations]).sort_values('POS')
+        # Merge back with original dataframe of variants to make sure I include those without annotations
+        all_vcf_entries_grouped = vcf_df[non_annotation_columns + ['VARIANT_ID']].groupby('VARIANT_ID').first()
+        return_vcf_df = all_vcf_entries_grouped.merge(vcf_df_with_annotations, how='left', left_on='VARIANT_ID', right_on='VARIANT_ID',
+                                   suffixes=(None, '_with_annotations'))
+
+        return return_vcf_df[non_annotation_columns + self.ANNOTATION_COLUMNS + ['VARIANT_ID']].sort_values('POS')

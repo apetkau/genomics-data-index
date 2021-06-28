@@ -105,13 +105,86 @@ def mock_vcf_df_with_ann_multiple_entries_single_sample() -> pd.DataFrame:
 @pytest.fixture
 def mock_vcf_df_single_sample_annotations() -> pd.DataFrame:
     return pd.DataFrame([
-        ['NC_011083', 140658, 'C', 'A', 'A', 'upstream_gene_variant', 'MODIFIER', 'mraY', 'SEHA_RS01185', 'transcript', 'protein_coding',
+        ['SampleA', 'NC_011083', 140658, 'C', 'A', 'snp', 'SampleA.vcf',
+         'A', 'upstream_gene_variant', 'MODIFIER', 'mraY', 'SEHA_RS01185', 'transcript', 'protein_coding',
             'c.-856C>A', pd.NA, 'NC_011083:140658:C:A'],
-        ['NC_011083', 140658, 'C', 'A', 'A', 'missense_variant', 'MODERATE', 'murF', 'SEHA_RS01180', 'transcript', 'protein_coding',
+        ['SampleA', 'NC_011083', 140658, 'C', 'A', 'snp', 'SampleA.vcf',
+         'A', 'missense_variant', 'MODERATE', 'murF', 'SEHA_RS01180', 'transcript', 'protein_coding',
             'c.497C>A', 'p.Ala166Glu', 'NC_011083:140658:C:A'],
-        ['NC_011083', 140658, 'C', 'A', 'A', 'upstream_gene_variant', 'MODIFIER', 'murD', 'SEHA_RS01190', 'transcript', 'protein_coding',
+        ['SampleA', 'NC_011083', 140658, 'C', 'A', 'snp', 'SampleA.vcf',
+         'A', 'upstream_gene_variant', 'MODIFIER', 'murD', 'SEHA_RS01190', 'transcript', 'protein_coding',
             'c.-1941C>A', pd.NA, 'NC_011083:140658:C:A']
-    ], columns=['CHROM', 'POS', 'REF', 'ALT',
+    ], columns=['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE',
+                'ANN.Allele', 'ANN.Annotation', 'ANN.Annotation_Impact', 'ANN.Gene_Name', 'ANN.Gene_ID',
+                'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p', 'VARIANT_ID'
+    ])
+
+
+@pytest.fixture
+def mock_vcf_df_multiple_sample_annotations() -> pd.DataFrame:
+    return pd.DataFrame([
+        ['SampleA', 'NC_011083', 140658, 'C', 'A', 'snp', 'SampleA.vcf',
+         'A', 'upstream_gene_variant', 'MODIFIER', 'mraY', 'SEHA_RS01185', 'transcript', 'protein_coding',
+            'c.-856C>A', pd.NA, 'NC_011083:140658:C:A'],
+        ['SampleA', 'NC_011083', 140658, 'C', 'A', 'snp', 'SampleA.vcf',
+         'A', 'missense_variant', 'MODERATE', 'murF', 'SEHA_RS01180', 'transcript', 'protein_coding',
+            'c.497C>A', 'p.Ala166Glu', 'NC_011083:140658:C:A'],
+        ['SampleA', 'NC_011083', 140658, 'C', 'A', 'snp', 'SampleA.vcf',
+         'A', 'upstream_gene_variant', 'MODIFIER', 'murD', 'SEHA_RS01190', 'transcript', 'protein_coding',
+            'c.-1941C>A', pd.NA, 'NC_011083:140658:C:A'],
+        ['SampleA', 'NC_011083', 203200, 'C', 'T', 'snp', 'SampleA.vcf',
+         'T', 'missense_variant', 'MODERATE', 'SEHA_RS01460', 'SEHA_RS01460', 'transcript',
+         'protein_coding', 'c.602C>T', 'p.Thr201Met', 'NC_011083:203200:C:T'],
+        ['SampleA', 'NC_011083', 203200, 'C', 'T', 'snp', 'SampleA.vcf',
+         'T', 'upstream_gene_variant', 'MODIFIER', 'SEHA_RS01455', 'SEHA_RS01455',
+         'transcript', 'protein_coding', 'c.-2172G>A', pd.NA, 'NC_011083:203200:C:T'],
+        ['SampleA', 'NC_011083', 203200, 'C', 'T', 'snp', 'SampleA.vcf',
+         'T', 'upstream_gene_variant', 'MODIFIER', 'SEHA_RS01455', 'SEHA_RS01455',
+         'transcript', 'protein_coding', 'c.-710G>A', pd.NA, 'NC_011083:203200:C:T'],
+    ], columns=['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE',
+                'ANN.Allele', 'ANN.Annotation', 'ANN.Annotation_Impact', 'ANN.Gene_Name', 'ANN.Gene_ID',
+                'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p', 'VARIANT_ID'
+    ])
+
+
+@pytest.fixture
+def mock_vcf_df_multiple_sample_one_empty() -> pd.DataFrame:
+    return pd.DataFrame([
+        ['SampleA', 'NC_011083', 140658, 'C', 'A', 'snp', 'SampleA.vcf',
+         'A', 'upstream_gene_variant', 'MODIFIER', 'mraY', 'SEHA_RS01185', 'transcript', 'protein_coding',
+            'c.-856C>A', pd.NA, 'NC_011083:140658:C:A'],
+        ['SampleA', 'NC_011083', 140658, 'C', 'A', 'snp', 'SampleA.vcf',
+         'A', 'missense_variant', 'MODERATE', 'murF', 'SEHA_RS01180', 'transcript', 'protein_coding',
+            'c.497C>A', 'p.Ala166Glu', 'NC_011083:140658:C:A'],
+        ['SampleA', 'NC_011083', 140658, 'C', 'A', 'snp', 'SampleA.vcf',
+         'A', 'upstream_gene_variant', 'MODIFIER', 'murD', 'SEHA_RS01190', 'transcript', 'protein_coding',
+            'c.-1941C>A', pd.NA, 'NC_011083:140658:C:A'],
+        ['SampleA', 'NC_011083', 203200, 'C', 'T', 'snp', 'SampleA.vcf'] + [pd.NA] * 9 + ['NC_011083:203200:C:T'],
+    ], columns=['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE',
+                'ANN.Allele', 'ANN.Annotation', 'ANN.Annotation_Impact', 'ANN.Gene_Name', 'ANN.Gene_ID',
+                'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p', 'VARIANT_ID'
+    ])
+
+
+@pytest.fixture
+def mock_vcf_df_multiple_sample_one_invalid() -> pd.DataFrame:
+    return pd.DataFrame([
+        ['SampleA', 'NC_011083', 140658, 'C', 'A', 'snp', 'SampleA.vcf',
+         'A', 'upstream_gene_variant', 'MODIFIER', 'mraY', 'SEHA_RS01185', 'transcript', 'protein_coding',
+            'c.-856C>A', pd.NA, 'NC_011083:140658:C:A'],
+        ['SampleA', 'NC_011083', 140658, 'C', 'A', 'snp', 'SampleA.vcf',
+         'A', 'missense_variant', 'MODERATE', 'murF', 'SEHA_RS01180', 'transcript', 'protein_coding',
+            'c.497C>A', 'p.Ala166Glu', 'NC_011083:140658:C:A'],
+        ['SampleA', 'NC_011083', 140658, 'C', 'A', 'snp', 'SampleA.vcf',
+         'A', 'upstream_gene_variant', 'MODIFIER', 'murD', 'SEHA_RS01190', 'transcript', 'protein_coding',
+            'c.-1941C>A', pd.NA, 'NC_011083:140658:C:A'],
+
+        # This one is invalid because snpeff 'Allele' refers to some other variant (indicating it's a compound variant)
+        # I want to ignore all compound variants because it would be very difficult to index them in my software.
+        ['SampleA', 'NC_011083', 203200, 'C', 'T', 'snp', 'SampleA.vcf',
+         'T:123456_A>T', 'missense_variant', 'MODERATE', 'SEHA_RS01460', 'SEHA_RS01460', 'transcript',
+         'protein_coding', 'c.602C>T', 'p.Thr201Met', 'NC_011083:203200:C:T'],
+    ], columns=['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE',
                 'ANN.Allele', 'ANN.Annotation', 'ANN.Annotation_Impact', 'ANN.Gene_Name', 'ANN.Gene_ID',
                 'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p', 'VARIANT_ID'
     ])
@@ -302,10 +375,64 @@ def test_select_variant_annotations_single_sample(vcf_snpeff_annotation_parser: 
                                                   mock_vcf_df_single_sample_annotations: pd.DataFrame):
     ann_entries_df = vcf_snpeff_annotation_parser.select_variant_annotations(mock_vcf_df_single_sample_annotations)
     assert mock_vcf_df_single_sample_annotations.columns.tolist() == ann_entries_df.columns.tolist()
-    assert ['CHROM', 'POS', 'REF', 'ALT',
+    assert ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE',
             'ANN.Allele', 'ANN.Annotation', 'ANN.Annotation_Impact', 'ANN.Gene_Name', 'ANN.Gene_ID',
             'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p', 'VARIANT_ID'] == list(ann_entries_df.columns)
     assert 1 == len(ann_entries_df)
-    assert ['NC_011083', 140658, 'C', 'A',
+    assert ['SampleA', 'NC_011083', 140658, 'C', 'A', 'snp', 'SampleA.vcf',
             'A', 'missense_variant', 'MODERATE', 'murF', 'SEHA_RS01180', 'transcript', 'protein_coding',
             'c.497C>A', 'p.Ala166Glu', 'NC_011083:140658:C:A'] == list(ann_entries_df.iloc[0])
+
+
+def test_select_variant_annotations_multiple_sample(vcf_snpeff_annotation_parser: VcfSnpEffAnnotationParser,
+                                                  mock_vcf_df_multiple_sample_annotations: pd.DataFrame):
+    ann_entries_df = vcf_snpeff_annotation_parser.select_variant_annotations(mock_vcf_df_multiple_sample_annotations)
+    assert mock_vcf_df_multiple_sample_annotations.columns.tolist() == ann_entries_df.columns.tolist()
+    assert ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE',
+            'ANN.Allele', 'ANN.Annotation', 'ANN.Annotation_Impact', 'ANN.Gene_Name', 'ANN.Gene_ID',
+            'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p', 'VARIANT_ID'] == list(ann_entries_df.columns)
+    assert 2 == len(ann_entries_df)
+    assert ['SampleA', 'NC_011083', 140658, 'C', 'A', 'snp', 'SampleA.vcf',
+            'A', 'missense_variant', 'MODERATE', 'murF', 'SEHA_RS01180', 'transcript', 'protein_coding',
+            'c.497C>A', 'p.Ala166Glu', 'NC_011083:140658:C:A'] == list(ann_entries_df.iloc[0])
+    assert ['SampleA', 'NC_011083', 203200, 'C', 'T', 'snp', 'SampleA.vcf',
+            'T', 'missense_variant', 'MODERATE', 'SEHA_RS01460', 'SEHA_RS01460', 'transcript', 'protein_coding',
+            'c.602C>T', 'p.Thr201Met', 'NC_011083:203200:C:T'] == list(ann_entries_df.iloc[1])
+
+
+def test_select_variant_annotations_one_no_annotation(vcf_snpeff_annotation_parser: VcfSnpEffAnnotationParser,
+                                                  mock_vcf_df_multiple_sample_one_empty: pd.DataFrame):
+    annotation_columns = ['ANN.Allele', 'ANN.Annotation', 'ANN.Annotation_Impact', 'ANN.Gene_Name', 'ANN.Gene_ID',
+            'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p']
+
+    ann_entries_df = vcf_snpeff_annotation_parser.select_variant_annotations(mock_vcf_df_multiple_sample_one_empty)
+    assert mock_vcf_df_multiple_sample_one_empty.columns.tolist() == ann_entries_df.columns.tolist()
+    assert ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE',
+            'ANN.Allele', 'ANN.Annotation', 'ANN.Annotation_Impact', 'ANN.Gene_Name', 'ANN.Gene_ID',
+            'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p', 'VARIANT_ID'] == list(ann_entries_df.columns)
+    assert 2 == len(ann_entries_df)
+    assert ['SampleA', 'NC_011083', 140658, 'C', 'A', 'snp', 'SampleA.vcf',
+            'A', 'missense_variant', 'MODERATE', 'murF', 'SEHA_RS01180', 'transcript', 'protein_coding',
+            'c.497C>A', 'p.Ala166Glu', 'NC_011083:140658:C:A'] == list(ann_entries_df.iloc[0])
+    assert ['SampleA', 'NC_011083', 203200, 'C', 'T', 'snp', 'SampleA.vcf',
+            'NC_011083:203200:C:T'] == list(ann_entries_df.drop(annotation_columns, axis='columns').iloc[1])
+    assert {True} == set(ann_entries_df[annotation_columns].iloc[1].isna().tolist())
+
+
+def test_select_variant_annotations_one_invalid_annotation(vcf_snpeff_annotation_parser: VcfSnpEffAnnotationParser,
+                                                  mock_vcf_df_multiple_sample_one_invalid: pd.DataFrame):
+    annotation_columns = ['ANN.Allele', 'ANN.Annotation', 'ANN.Annotation_Impact', 'ANN.Gene_Name', 'ANN.Gene_ID',
+            'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p']
+
+    ann_entries_df = vcf_snpeff_annotation_parser.select_variant_annotations(mock_vcf_df_multiple_sample_one_invalid)
+    assert mock_vcf_df_multiple_sample_one_invalid.columns.tolist() == ann_entries_df.columns.tolist()
+    assert ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE',
+            'ANN.Allele', 'ANN.Annotation', 'ANN.Annotation_Impact', 'ANN.Gene_Name', 'ANN.Gene_ID',
+            'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p', 'VARIANT_ID'] == list(ann_entries_df.columns)
+    assert 2 == len(ann_entries_df)
+    assert ['SampleA', 'NC_011083', 140658, 'C', 'A', 'snp', 'SampleA.vcf',
+            'A', 'missense_variant', 'MODERATE', 'murF', 'SEHA_RS01180', 'transcript', 'protein_coding',
+            'c.497C>A', 'p.Ala166Glu', 'NC_011083:140658:C:A'] == list(ann_entries_df.iloc[0])
+    assert ['SampleA', 'NC_011083', 203200, 'C', 'T', 'snp', 'SampleA.vcf',
+            'NC_011083:203200:C:T'] == list(ann_entries_df.drop(annotation_columns, axis='columns').iloc[1])
+    assert {True} == set(ann_entries_df[annotation_columns].iloc[1].isna().tolist())
