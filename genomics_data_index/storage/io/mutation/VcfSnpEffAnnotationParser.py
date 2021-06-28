@@ -1,7 +1,6 @@
 from typing import Dict, Any, List
 
-from pathlib import Path
-import vcf
+from pandas.api.types import CategoricalDtype
 import pandas as pd
 import logging
 
@@ -18,6 +17,7 @@ class VcfSnpEffAnnotationParser:
 
     ANNOTATION_COLUMNS = ['ANN.Allele', 'ANN.Annotation', 'ANN.Annotation_Impact', 'ANN.Gene_Name', 'ANN.Gene_ID',
              'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p']
+    IMPACT_TYPE = CategoricalDtype(categories=['HIGH', 'MODERATE', 'LOW', 'MODIFIER'], ordered=True)
 
     def __init__(self):
         pass
@@ -116,3 +116,26 @@ class VcfSnpEffAnnotationParser:
                 columns=self.ANNOTATION_COLUMNS + ['original_index', 'VARIANT_ID']).set_index('original_index')
 
         return vcf_df_with_keys
+
+    def select_variant_annotations(self, vcf_df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Given a dataframe containing variants from a VCF file, select the appropriate annotations.
+        :param vcf_df: The dataframe of variants from a VCF file.
+        :return: A new dataframe containing only rows with the selected annotations.
+        """
+        vcf_df_without_annotations = vcf_df[vcf_df['ANN.Allele'].isna()]
+        vcf_df_with_annotations = vcf_df[~vcf_df['ANN.Allele'].isna()]
+
+        # Set ordered types
+        vcf_df_with_annotations['ANN.Annotation_Impact'] = vcf_df_with_annotations['ANN.Annotation_Impact'].astype(
+            self.IMPACT_TYPE
+        )
+
+        # Remove annotations from being considered
+        vcf_df_with_annotations = vcf_df_with_annotations[vcf_df_with_annotations['ANN.Allele'] == vcf_df_with_annotations['ALT']]
+
+        # Order and select first entry
+        vcf_df_with_annotations = vcf_df_with_annotations.sort_values(
+            ['ANN.Annotation_Impact']).groupby('VARIANT_ID').first().reset_index()
+
+        return pd.concat([vcf_df_without_annotations, vcf_df_with_annotations]).sort_values('POS')
