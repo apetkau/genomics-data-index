@@ -43,7 +43,6 @@ snippy_all_dataframes = {
     'SampleC': data_dir / 'SampleC' / 'mutations-dataframe.all.tsv',
 }
 
-
 snpeff_sample_vcfs = {
     'SH10-014': snpeff_data_dir / 'SH10-014.vcf.gz',
     'SH14-001': snpeff_data_dir / 'SH14-001.vcf.gz',

@@ -1,8 +1,8 @@
+import logging
 from typing import Dict, Any, List
 
-from pandas.api.types import CategoricalDtype
 import pandas as pd
-import logging
+from pandas.api.types import CategoricalDtype
 
 logger = logging.getLogger(__name__)
 
@@ -14,9 +14,8 @@ class InvalidSnpEffVcfError(Exception):
 
 
 class VcfSnpEffAnnotationParser:
-
     ANNOTATION_COLUMNS = ['ANN.Allele', 'ANN.Annotation', 'ANN.Annotation_Impact', 'ANN.Gene_Name', 'ANN.Gene_ID',
-             'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p']
+                          'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p']
     IMPACT_TYPE = CategoricalDtype(categories=['HIGH', 'MODERATE', 'LOW', 'MODIFIER'], ordered=True)
 
     # Order of categories derived from list provided in <http://pcingola.github.io/SnpEff/adds/VCFannotationformat_v1.0.pdf>.
@@ -189,7 +188,8 @@ class VcfSnpEffAnnotationParser:
         )
 
         # Remove annotations from being considered
-        vcf_df_with_annotations = vcf_df_with_annotations[vcf_df_with_annotations['ANN.Allele'] == vcf_df_with_annotations['ALT']]
+        vcf_df_with_annotations = vcf_df_with_annotations[
+            vcf_df_with_annotations['ANN.Allele'] == vcf_df_with_annotations['ALT']]
 
         # Order and select first entry
         vcf_df_with_annotations = vcf_df_with_annotations.sort_values(
@@ -197,7 +197,8 @@ class VcfSnpEffAnnotationParser:
 
         # Merge back with original dataframe of variants to make sure I include those without annotations
         all_vcf_entries_grouped = vcf_df[non_annotation_columns + ['VARIANT_ID']].groupby('VARIANT_ID').first()
-        return_vcf_df = all_vcf_entries_grouped.merge(vcf_df_with_annotations, how='left', left_on='VARIANT_ID', right_on='VARIANT_ID',
-                                   suffixes=(None, '_with_annotations'))
+        return_vcf_df = all_vcf_entries_grouped.merge(vcf_df_with_annotations, how='left', left_on='VARIANT_ID',
+                                                      right_on='VARIANT_ID',
+                                                      suffixes=(None, '_with_annotations'))
 
         return return_vcf_df[non_annotation_columns + self.ANNOTATION_COLUMNS + ['VARIANT_ID']].sort_values('POS')
