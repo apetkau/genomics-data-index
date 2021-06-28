@@ -18,7 +18,8 @@ class VcfSnpEffAnnotationParser:
                           'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p']
     IMPACT_TYPE = CategoricalDtype(categories=['HIGH', 'MODERATE', 'LOW', 'MODIFIER'], ordered=True)
 
-    # Order of categories derived from list provided in <http://pcingola.github.io/SnpEff/adds/VCFannotationformat_v1.0.pdf>.
+    # Order of categories derived from list provided in <http://pcingola.github.io/SnpEff/adds/VCFannotationformat_v1.0.pdf>
+    # But has been modified a bit
     ANNOTATION_TYPE = CategoricalDtype(categories=[
         "chromosome_number_variation",
         "exon_loss_variant",
@@ -46,6 +47,8 @@ class VcfSnpEffAnnotationParser:
         "5_prime_UTR_variant",
         "3_prime_UTR_variant",
         "5_prime_UTR_premature_start_codon_gain_variant",
+        "intragenic_variant",
+        "intergenic_region",
         "upstream_gene_variant",
         "downstream_gene_variant",
         "TF_binding_site_variant",
@@ -55,9 +58,7 @@ class VcfSnpEffAnnotationParser:
         "sequence_feature",
         "conserved_intron_variant",
         "intron_variant",
-        "intragenic_variant",
         "conserved_intergenic_variant",
-        "intergenic_region",
         "non_coding_exon_variant",
         "nc_transcript_variant",
         "gene_variant",
@@ -191,9 +192,9 @@ class VcfSnpEffAnnotationParser:
         vcf_df_with_annotations = vcf_df_with_annotations[
             vcf_df_with_annotations['ANN.Allele'] == vcf_df_with_annotations['ALT']]
 
-        # Order and select first entry
+        # Order and select first entry (use nth() instead of first() so that NA values are handled properly)
         vcf_df_with_annotations = vcf_df_with_annotations.sort_values(
-            ['ANN.Annotation_Impact', 'ANN.Annotation']).groupby('VARIANT_ID').first().reset_index()
+            ['ANN.Annotation_Impact', 'ANN.Annotation']).groupby('VARIANT_ID').nth(0).reset_index()
 
         # Merge back with original dataframe of variants to make sure I include those without annotations
         all_vcf_entries_grouped = vcf_df[non_annotation_columns + ['VARIANT_ID']].groupby('VARIANT_ID').first()
@@ -201,4 +202,6 @@ class VcfSnpEffAnnotationParser:
                                                       right_on='VARIANT_ID',
                                                       suffixes=(None, '_with_annotations'))
 
-        return return_vcf_df[non_annotation_columns + self.ANNOTATION_COLUMNS + ['VARIANT_ID']].sort_values('POS')
+        return_vcf_df = return_vcf_df[non_annotation_columns + self.ANNOTATION_COLUMNS + ['VARIANT_ID']].sort_values('POS')
+
+        return return_vcf_df

@@ -336,3 +336,18 @@ def test_get_variants_table_snpeff_annotations_single_sample(
     assert ['SH10-014', 'NC_011083', 140658, 'C', 'A', 'SNP',
             'A', 'missense_variant', 'MODERATE', 'murF', 'SEHA_RS01180', 'transcript', 'protein_coding',
             'c.497C>A', 'p.Ala166Glu', 'NC_011083:140658:C:A'] == vcf_df_varA.iloc[0].tolist()
+
+    # Synonymous variant
+    vcf_df_varA = vcf_df[vcf_df['POS'] == 723772]
+    assert 1 == len(vcf_df_varA)
+    assert ['SH10-014', 'NC_011083', 723772, 'T', 'C', 'SNP',
+            'C', 'synonymous_variant', 'LOW', 'SEHA_RS03990', 'SEHA_RS03990', 'transcript', 'protein_coding',
+            'c.1638T>C', 'p.Cys546Cys', 'NC_011083:723772:T:C'] == vcf_df_varA.iloc[0].tolist()
+
+    # Intergenic variant
+    vcf_df_varA = vcf_df[vcf_df['POS'] == 1031571]
+    assert 1 == len(vcf_df_varA)
+    assert ['SH10-014', 'NC_011083', 1031571, 'T', 'C', 'SNP',
+            'C', 'intergenic_region', 'MODIFIER', 'SEHA_RS05505-SEHA_RS05515', 'SEHA_RS05505-SEHA_RS05515',
+            'intergenic_region', 'NA',
+            'n.1031571T>C', 'NA', 'NC_011083:1031571:T:C'] == vcf_df_varA.iloc[0].fillna('NA').tolist()
