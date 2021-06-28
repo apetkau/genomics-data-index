@@ -177,7 +177,8 @@ class VcfSnpEffAnnotationParser:
                             f' Unique expected={expected_columns_set - actual_columns_set}.'
                             f' Unique actual = {actual_columns_set - expected_columns_set}')
 
-        vcf_df_with_annotations = vcf_df.loc[~vcf_df['ANN.Allele'].isna()]
+        # Use .copy() to get rid of warnings like "A value is trying to be set on a copy of a slice from a DataFrame"
+        vcf_df_with_annotations = vcf_df[~vcf_df['ANN.Allele'].isna()].copy()
 
         # Set ordered types
         vcf_df_with_annotations['ANN.Annotation_Impact'] = vcf_df_with_annotations['ANN.Annotation_Impact'].astype(
