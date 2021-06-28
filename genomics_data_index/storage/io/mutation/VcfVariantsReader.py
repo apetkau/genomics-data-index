@@ -67,6 +67,7 @@ class VcfVariantsReader(NucleotideFeaturesReader):
         for sample in self._sample_files_map:
             vcf_file, index_file = self._sample_files_map[sample].get_vcf_file()
             frame = self.read_vcf(vcf_file, sample)
+            frame = self._snpeff_parser.select_variant_annotations(frame)
             frames.append(frame)
 
         return pd.concat(frames)

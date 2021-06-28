@@ -65,8 +65,19 @@ def variants_reader_empty(sample_dirs_empty) -> VcfVariantsReader:
 
 
 @pytest.fixture
-def variants_reader_default_no_data() -> VcfVariantsReader:
-    return VcfVariantsReader(sample_files_map={})
+def variants_reader_snpeff_annotations_single_sample() -> VcfVariantsReader:
+    tmp_dir = Path(tempfile.mkdtemp())
+    file_processor = SerialSampleFilesProcessor(tmp_dir)
+
+    vcfs_map = {
+        'SH10-014': snpeff_sample_vcfs['SH10-014']
+    }
+
+    data_package = NucleotideSampleDataPackage.create_from_sequence_masks(sample_vcf_map=vcfs_map,
+                                                                          masked_genomic_files_map=None,
+                                                                          sample_files_processor=file_processor)
+    processed_files = cast(Dict[str, NucleotideSampleData], data_package.process_all_data())
+    return VcfVariantsReader.create(processed_files)
 
 
 @pytest.fixture
@@ -84,6 +95,11 @@ def variants_reader_empty_masks(sample_dirs) -> VcfVariantsReader:
                                                                           sample_files_processor=file_processor)
     processed_files = cast(Dict[str, NucleotideSampleData], data_package.process_all_data())
     return VcfVariantsReader.create(processed_files)
+
+
+@pytest.fixture
+def variants_reader_default_no_data() -> VcfVariantsReader:
+    return VcfVariantsReader(sample_files_map={})
 
 
 def variants_reader_from_snippy_internal(sample_dirs) -> VcfVariantsReader:
@@ -298,3 +314,23 @@ def test_read_snpeff(variants_reader_default_no_data: VcfVariantsReader):
         ['ANN.Transcript_BioType', 'ANN.HGVS.p'], axis='columns').iloc[0].tolist()
     assert {True} == set(sample_14_014_var[sample_14_014_var['ANN.Annotation'] == 'intergenic_region']\
               [['ANN.Transcript_BioType', 'ANN.HGVS.p']].iloc[0].isna().tolist())
+
+
+def test_get_variants_table_snpeff_annotations_single_sample(variants_reader_snpeff_annotations_single_sample: VcfVariantsReader):
+    vr = variants_reader_snpeff_annotations_single_sample
+    vcf_df = vr.get_features_table()
+
+    assert 139 == len(vcf_df)
+    assert ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE',
+            'ANN.Allele', 'ANN.Annotation', 'ANN.Annotation_Impact', 'ANN.Gene_Name', 'ANN.Gene_ID',
+            'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p', 'VARIANT_ID'] == list(vcf_df.columns)
+
+    # Get rid of 'FILE' since these are processed files
+    vcf_df = vcf_df.drop(columns='FILE')
+
+    # # missense variant
+    vcf_df_varA = vcf_df[vcf_df['POS'] == 140658]
+    assert 1 == len(vcf_df_varA)
+    assert ['SH10-014', 'NC_011083', 140658, 'C', 'A', 'SNP',
+            'A', 'missense_variant', 'MODERATE', 'murF', 'SEHA_RS01180', 'transcript', 'protein_coding',
+            'c.497C>A', 'p.Ala166Glu', 'NC_011083:140658:C:A'] == vcf_df_varA.iloc[0].tolist()
