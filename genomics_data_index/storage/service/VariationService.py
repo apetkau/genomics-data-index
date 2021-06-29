@@ -116,8 +116,17 @@ class VariationService(FeatureService):
         return features_df.apply(lambda x: sample_name_ids[x['SAMPLE']], axis='columns')
 
     def _create_feature_object(self, features_df: pd.DataFrame):
-        return NucleotideVariantsSamples(spdi=features_df['_FEATURE_ID'], var_type=features_df['TYPE'],
-                                         sample_ids=features_df['_SAMPLE_ID'])
+        return NucleotideVariantsSamples(spdi=features_df['_FEATURE_ID'],
+                                         var_type=features_df['TYPE'],
+                                         sample_ids=features_df['_SAMPLE_ID'],
+                                         annotation=features_df['ANN.Annotation'],
+                                         annotation_impact=features_df['ANN.Annotation_Impact'],
+                                         annotation_gene_name=features_df['ANN.Gene_Name'],
+                                         annotation_gene_id=features_df['ANN.Gene_ID'],
+                                         annotation_feature_type=features_df['ANN.Feature_Type'],
+                                         annotation_transcript_biotype=features_df['ANN.Transcript_BioType'],
+                                         annotation_hgvs_c=features_df['ANN.HGVS.c'],
+                                         annotation_hgvs_p=features_df['ANN.HGVS.p'])
 
     def get_correct_data_package(self) -> Any:
         return NucleotideSampleDataPackage
@@ -126,7 +135,10 @@ class VariationService(FeatureService):
         return NucleotideSampleData
 
     def aggregate_feature_column(self) -> Dict[str, Any]:
-        return {'TYPE': 'first', '_SAMPLE_ID': SampleSet}
+        return {'TYPE': 'first', '_SAMPLE_ID': SampleSet,
+                'ANN.Annotation': 'first', 'ANN.Annotation_Impact': 'first',
+                'ANN.Gene_Name': 'first', 'ANN.Gene_ID': 'first', 'ANN.Feature_Type': 'first',
+                'ANN.Transcript_BioType': 'first', 'ANN.HGVS.c': 'first', 'ANN.HGVS.p': 'first'}
 
     def check_samples_have_features(self, sample_names: Set[str], feature_scope_name: str) -> bool:
         samples_with_variants = {sample.name for sample in

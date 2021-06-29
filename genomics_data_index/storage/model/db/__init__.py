@@ -35,10 +35,33 @@ class NucleotideVariantsSamples(Base):
     var_type = Column(String(255))
     _sample_ids = Column(LargeBinary(length=MAX_SAMPLE_SET_BYTES))
 
-    def __init__(self, spdi: str = None, var_type: str = None, sample_ids: SampleSet = None):
+    # Annotation/effect information
+    annotation = Column(String(255))
+    annotation_impact = Column(String(255))
+    annotation_gene_name = Column(String(255))
+    annotation_gene_id = Column(String(255))
+    annotation_feature_type = Column(String(255))
+    annotation_transcript_biotype = Column(String(255))
+    annotation_hgvs_c = Column(String(255))
+    annotation_hgvs_p = Column(String(255))
+
+    def __init__(self, spdi: str = None, var_type: str = None, sample_ids: SampleSet = None,
+                 annotation: str = None, annotation_impact: str = None, annotation_gene_name: str = None,
+                 annotation_gene_id: str = None, annotation_feature_type: str = None,
+                 annotation_transcript_biotype: str = None, annotation_hgvs_c: str = None,
+                 annotation_hgvs_p: str = None):
         self.spdi = spdi
         self.var_type = var_type
         self.sample_ids = sample_ids
+
+        self.annotation = annotation
+        self.annotation_impact = annotation_impact
+        self.annotation_gene_name = annotation_gene_name
+        self.annotation_gene_id = annotation_gene_id
+        self.annotation_feature_type = annotation_feature_type
+        self.annotation_transcript_biotype = annotation_transcript_biotype
+        self.annotation_hgvs_c = annotation_hgvs_c
+        self.annotation_hgvs_p = annotation_hgvs_p
 
     @hybrid_property
     def spdi(self) -> str:
