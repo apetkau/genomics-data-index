@@ -80,6 +80,17 @@ def variants_reader_snpeff_annotations_single_sample() -> VcfVariantsReader:
 
 
 @pytest.fixture
+def variants_reader_snpeff_annotations_multiple_samples() -> VcfVariantsReader:
+    tmp_dir = Path(tempfile.mkdtemp())
+    file_processor = SerialSampleFilesProcessor(tmp_dir)
+    data_package = NucleotideSampleDataPackage.create_from_sequence_masks(sample_vcf_map=snpeff_sample_vcfs,
+                                                                          masked_genomic_files_map=None,
+                                                                          sample_files_processor=file_processor)
+    processed_files = cast(Dict[str, NucleotideSampleData], data_package.process_all_data())
+    return VcfVariantsReader.create(processed_files)
+
+
+@pytest.fixture
 def variants_reader_empty_masks(sample_dirs) -> VcfVariantsReader:
     sample_vcf_map = {}
     for d in sample_dirs:
@@ -393,3 +404,36 @@ def test_get_variants_table_snpeff_annotations_single_sample(
             'G', 'conservative_inframe_deletion', 'MODERATE', 'tyrB', 'SEHA_RS22180',
             'transcript', 'protein_coding',
             'c.157_162delGAAGCC', 'p.Glu53_Ala54del', 'NC_011083:4465400:GGCCGAA:G'] == vcf_df_varA.iloc[0].fillna('NA').tolist()
+
+
+def test_get_variants_table_snpeff_annotations_multiple_samples(
+        variants_reader_snpeff_annotations_multiple_samples: VcfVariantsReader):
+    vr = variants_reader_snpeff_annotations_multiple_samples
+    vcf_df = vr.get_features_table()
+
+    assert 361 == len(vcf_df)
+    assert ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE',
+            'ANN.Allele', 'ANN.Annotation', 'ANN.Annotation_Impact', 'ANN.Gene_Name', 'ANN.Gene_ID',
+            'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p', 'VARIANT_ID'] == list(
+        vcf_df.columns)
+
+    # Get rid of 'FILE' since these are processed files
+    vcf_df = vcf_df.drop(columns='FILE')
+
+    # disruptive inframe deletion
+    vcf_df_varA = vcf_df[vcf_df['POS'] == 3167187]
+    assert 3 == len(vcf_df_varA)
+    vcf_df_varA = vcf_df_varA.set_index('SAMPLE')
+    assert ['NC_011083', 3167187, 'AACCACGACCACGACCACGACCACGACCACGACCACGACCACGACCACG', 'A', 'INDEL',
+            'A', 'disruptive_inframe_deletion', 'MODERATE', 'SEHA_RS15905', 'SEHA_RS15905', 'transcript', 'protein_coding',
+            'c.417_464delCGACCACGACCACGACCACGACCACGACCACGACCACGACCACGACCA', 'p.Asp140_His155del',
+            'NC_011083:3167187:AACCACGACCACGACCACGACCACGACCACGACCACGACCACGACCACG:A'] == vcf_df_varA.loc['SH10-014'].tolist()
+    assert ['NC_011083', 3167187, 'AACCACGACCACGACCACGACCACGACCACGACCACG', 'A', 'INDEL',
+            'A', 'disruptive_inframe_deletion', 'MODERATE', 'SEHA_RS15905', 'SEHA_RS15905', 'transcript', 'protein_coding',
+            'c.429_464delCGACCACGACCACGACCACGACCACGACCACGACCA', 'p.Asp144_His155del',
+            'NC_011083:3167187:AACCACGACCACGACCACGACCACGACCACGACCACG:A'] == vcf_df_varA.loc['SH14-001'].tolist()
+    assert ['NC_011083', 3167187, 'AACCACGACCACGACCACGACCACGACCACGACCACG', 'A', 'INDEL',
+            'A', 'disruptive_inframe_deletion', 'MODERATE', 'SEHA_RS15905', 'SEHA_RS15905', 'transcript', 'protein_coding',
+            'c.429_464delCGACCACGACCACGACCACGACCACGACCACGACCA', 'p.Asp144_His155del',
+            'NC_011083:3167187:AACCACGACCACGACCACGACCACGACCACGACCACG:A'] == vcf_df_varA.loc['SH14-014'].tolist()
+
