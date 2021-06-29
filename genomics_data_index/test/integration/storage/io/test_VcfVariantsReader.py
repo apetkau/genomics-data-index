@@ -379,7 +379,6 @@ def test_get_variants_table_snpeff_annotations_single_sample(
             'transcript', 'protein_coding',
             'c.335delT', 'p.Leu112fs', 'NC_011083:1770751:CA:C'] == vcf_df_varA.iloc[0].fillna('NA').tolist()
 
-
     # stop gained variant
     vcf_df_varA = vcf_df[vcf_df['POS'] == 4882099]
     assert 1 == len(vcf_df_varA)
@@ -387,7 +386,6 @@ def test_get_variants_table_snpeff_annotations_single_sample(
             'T', 'stop_gained', 'HIGH', 'SEHA_RS24155', 'SEHA_RS24155',
             'transcript', 'protein_coding',
             'c.1287G>A', 'p.Trp429*', 'NC_011083:4882099:C:T'] == vcf_df_varA.iloc[0].fillna('NA').tolist()
-
 
     # stop lost variant
     vcf_df_varA = vcf_df[vcf_df['POS'] == 4824790]
@@ -403,7 +401,8 @@ def test_get_variants_table_snpeff_annotations_single_sample(
     assert ['SH10-014', 'NC_011083', 4465400, 'GGCCGAA', 'G', 'INDEL',
             'G', 'conservative_inframe_deletion', 'MODERATE', 'tyrB', 'SEHA_RS22180',
             'transcript', 'protein_coding',
-            'c.157_162delGAAGCC', 'p.Glu53_Ala54del', 'NC_011083:4465400:GGCCGAA:G'] == vcf_df_varA.iloc[0].fillna('NA').tolist()
+            'c.157_162delGAAGCC', 'p.Glu53_Ala54del', 'NC_011083:4465400:GGCCGAA:G'] == vcf_df_varA.iloc[0].fillna(
+        'NA').tolist()
 
 
 def test_get_variants_table_snpeff_annotations_multiple_samples(
@@ -425,15 +424,18 @@ def test_get_variants_table_snpeff_annotations_multiple_samples(
     assert 3 == len(vcf_df_varA)
     vcf_df_varA = vcf_df_varA.set_index('SAMPLE')
     assert ['NC_011083', 3167187, 'AACCACGACCACGACCACGACCACGACCACGACCACGACCACGACCACG', 'A', 'INDEL',
-            'A', 'disruptive_inframe_deletion', 'MODERATE', 'SEHA_RS15905', 'SEHA_RS15905', 'transcript', 'protein_coding',
+            'A', 'disruptive_inframe_deletion', 'MODERATE', 'SEHA_RS15905', 'SEHA_RS15905', 'transcript',
+            'protein_coding',
             'c.417_464delCGACCACGACCACGACCACGACCACGACCACGACCACGACCACGACCA', 'p.Asp140_His155del',
-            'NC_011083:3167187:AACCACGACCACGACCACGACCACGACCACGACCACGACCACGACCACG:A'] == vcf_df_varA.loc['SH10-014'].tolist()
+            'NC_011083:3167187:AACCACGACCACGACCACGACCACGACCACGACCACGACCACGACCACG:A'] == vcf_df_varA.loc[
+               'SH10-014'].tolist()
     assert ['NC_011083', 3167187, 'AACCACGACCACGACCACGACCACGACCACGACCACG', 'A', 'INDEL',
-            'A', 'disruptive_inframe_deletion', 'MODERATE', 'SEHA_RS15905', 'SEHA_RS15905', 'transcript', 'protein_coding',
+            'A', 'disruptive_inframe_deletion', 'MODERATE', 'SEHA_RS15905', 'SEHA_RS15905', 'transcript',
+            'protein_coding',
             'c.429_464delCGACCACGACCACGACCACGACCACGACCACGACCA', 'p.Asp144_His155del',
             'NC_011083:3167187:AACCACGACCACGACCACGACCACGACCACGACCACG:A'] == vcf_df_varA.loc['SH14-001'].tolist()
     assert ['NC_011083', 3167187, 'AACCACGACCACGACCACGACCACGACCACGACCACG', 'A', 'INDEL',
-            'A', 'disruptive_inframe_deletion', 'MODERATE', 'SEHA_RS15905', 'SEHA_RS15905', 'transcript', 'protein_coding',
+            'A', 'disruptive_inframe_deletion', 'MODERATE', 'SEHA_RS15905', 'SEHA_RS15905', 'transcript',
+            'protein_coding',
             'c.429_464delCGACCACGACCACGACCACGACCACGACCACGACCA', 'p.Asp144_His155del',
             'NC_011083:3167187:AACCACGACCACGACCACGACCACGACCACGACCACG:A'] == vcf_df_varA.loc['SH14-014'].tolist()
-

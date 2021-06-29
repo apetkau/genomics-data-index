@@ -202,6 +202,7 @@ class VcfSnpEffAnnotationParser:
                                                       right_on='VARIANT_ID',
                                                       suffixes=(None, '_with_annotations'))
 
-        return_vcf_df = return_vcf_df[non_annotation_columns + self.ANNOTATION_COLUMNS + ['VARIANT_ID']].sort_values('POS')
+        return_vcf_df = return_vcf_df[non_annotation_columns + self.ANNOTATION_COLUMNS + ['VARIANT_ID']].sort_values(
+            'POS')
 
         return return_vcf_df

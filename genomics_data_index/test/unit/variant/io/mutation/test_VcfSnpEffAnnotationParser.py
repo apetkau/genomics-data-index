@@ -412,8 +412,9 @@ def test_select_variant_annotations_single_sample(vcf_snpeff_annotation_parser: 
 
 
 def test_select_variant_annotations_some_na_values(vcf_snpeff_annotation_parser: VcfSnpEffAnnotationParser,
-                                                  mock_vcf_df_single_sample_annotations_some_na_values: pd.DataFrame):
-    ann_entries_df = vcf_snpeff_annotation_parser.select_variant_annotations(mock_vcf_df_single_sample_annotations_some_na_values)
+                                                   mock_vcf_df_single_sample_annotations_some_na_values: pd.DataFrame):
+    ann_entries_df = vcf_snpeff_annotation_parser.select_variant_annotations(
+        mock_vcf_df_single_sample_annotations_some_na_values)
     assert mock_vcf_df_single_sample_annotations_some_na_values.columns.tolist() == ann_entries_df.columns.tolist()
     assert ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE',
             'ANN.Allele', 'ANN.Annotation', 'ANN.Annotation_Impact', 'ANN.Gene_Name', 'ANN.Gene_ID',
