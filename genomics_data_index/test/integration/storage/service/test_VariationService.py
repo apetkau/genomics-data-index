@@ -133,6 +133,112 @@ def test_insert_variants_examine_variation(database, snippy_nucleotide_data_pack
     assert {sample_name_ids['SampleC']} == set(v.sample_ids)
 
 
+def test_insert_variants_examine_variation_annotations(database, snpeff_nucleotide_data_package,
+                                                       reference_service_with_snpeff_data,
+                                                       sample_service, filesystem_storage):
+    variation_service = VariationService(database_connection=database,
+                                         reference_service=reference_service_with_snpeff_data,
+                                         sample_service=sample_service,
+                                         variation_dir=filesystem_storage.variation_dir)
+    session = database.get_session()
+
+    variation_service.insert(feature_scope_name='NC_011083', data_package=snpeff_nucleotide_data_package)
+
+    sample_name_ids = sample_service.find_sample_name_ids({'SH10-014', 'SH14-001', 'SH14-014'})
+    assert 3 == len(sample_name_ids.values())
+
+    assert 3 == session.query(SampleNucleotideVariation).count(), 'Incorrect number of SampleSequences'
+
+    assert 177 == session.query(NucleotideVariantsSamples).count(), 'Incorrect number of storage entries'
+
+    # SNV/SNP
+    v: NucleotideVariantsSamples = session.query(NucleotideVariantsSamples).get({
+        'sequence': 'NC_011083',
+        'position': 602110,
+        'deletion': len('T'),
+        'insertion': 'G'
+    })
+    assert v is not None, 'Particular storage does not exist'
+    assert 'SNP' == v.var_type, 'Type is incorrect'
+    assert {sample_name_ids['SH10-014'], sample_name_ids['SH14-001'],
+            sample_name_ids['SH14-014']} == set(v.sample_ids)
+
+    assert 'missense_variant' == v.annotation
+    assert 'MODERATE' == v.annotation_impact
+    assert 'SEHA_RS03410' == v.annotation_gene_id
+    assert 'SEHA_RS03410' == v.annotation_gene_name
+    assert 'transcript' == v.annotation_feature_type
+    assert 'protein_coding' == v.annotation_transcript_biotype
+    assert 'c.1229T>G' == v.annotation_hgvs_c
+    assert 'p.Leu410Arg' == v.annotation_hgvs_p
+
+
+    # Deletion
+    v: NucleotideVariantsSamples = session.query(NucleotideVariantsSamples).get({
+        'sequence': 'NC_011083',
+        'position': 833114,
+        'deletion': len('GT'),
+        'insertion': 'G'
+    })
+    assert v is not None, 'Particular storage does not exist'
+    assert 'INDEL' == v.var_type, 'Type is incorrect'
+    assert {sample_name_ids['SH14-001'],
+            sample_name_ids['SH14-014']} == set(v.sample_ids)
+
+    assert 'frameshift_variant' == v.annotation
+    assert 'HIGH' == v.annotation_impact
+    assert 'SEHA_RS04540' == v.annotation_gene_id
+    assert 'glf' == v.annotation_gene_name
+    assert 'transcript' == v.annotation_feature_type
+    assert 'protein_coding' == v.annotation_transcript_biotype
+    assert 'c.696delT' == v.annotation_hgvs_c
+    assert 'p.Phe232fs' == v.annotation_hgvs_p
+
+
+    # Insertion
+    v: NucleotideVariantsSamples = session.query(NucleotideVariantsSamples).get({
+        'sequence': 'NC_011083',
+        'position': 2380144,
+        'deletion': len('A'),
+        'insertion': 'AATTTTAT'
+    })
+    assert v is not None, 'Particular storage does not exist'
+    assert 'INDEL' == v.var_type, 'Type is incorrect'
+    assert {sample_name_ids['SH14-001'],
+            sample_name_ids['SH14-014']} == set(v.sample_ids)
+
+    assert 'frameshift_variant' == v.annotation
+    assert 'HIGH' == v.annotation_impact
+    assert 'SEHA_RS12315' == v.annotation_gene_id
+    assert 'SEHA_RS12315' == v.annotation_gene_name
+    assert 'transcript' == v.annotation_feature_type
+    assert 'protein_coding' == v.annotation_transcript_biotype
+    assert 'c.431_437dupTTTATAT' == v.annotation_hgvs_c
+    assert 'p.Ter149fs' == v.annotation_hgvs_p
+
+
+    # MNP
+    v: NucleotideVariantsSamples = session.query(NucleotideVariantsSamples).get({
+        'sequence': 'NC_011083',
+        'position': 3535656,
+        'deletion': len('CTCAAAA'),
+        'insertion': 'GTCATAG'
+    })
+    assert v is not None, 'Particular storage does not exist'
+    assert 'MNP' == v.var_type, 'Type is incorrect'
+    assert {sample_name_ids['SH14-001'],
+            sample_name_ids['SH10-014']} == set(v.sample_ids)
+
+    assert 'missense_variant' == v.annotation
+    assert 'MODERATE' == v.annotation_impact
+    assert 'SEHA_RS17780' == v.annotation_gene_id
+    assert 'oadA' == v.annotation_gene_name
+    assert 'transcript' == v.annotation_feature_type
+    assert 'protein_coding' == v.annotation_transcript_biotype
+    assert 'c.582_588delTTTTGAGinsCTATGAC' == v.annotation_hgvs_c
+    assert 'p.PheGlu195TyrAsp' == v.annotation_hgvs_p
+
+
 def test_insert_variants_regular_vcf_reader_examine_variation(database, regular_nucleotide_data_package,
                                                               reference_service_with_data,
                                                               sample_service, filesystem_storage):

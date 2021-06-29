@@ -8,7 +8,7 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 from genomics_data_index.test.integration import sample_dirs, reference_file, regular_vcf_dir, data_dir
 from genomics_data_index.test.integration import mlst_file_single_scheme, basic_mlst_file, mlst_file_unknown
-from genomics_data_index.test.integration import sourmash_signatures
+from genomics_data_index.test.integration import sourmash_signatures, snpeff_sample_vcfs, reference_file_snpeff
 from genomics_data_index.storage.service import DatabaseConnection
 from genomics_data_index.storage.service.ReferenceService import ReferenceService
 from genomics_data_index.storage.service.VariationService import VariationService
@@ -73,8 +73,23 @@ def regular_nucleotide_data_package() -> NucleotideSampleDataPackage:
 
 
 @pytest.fixture
+def snpeff_nucleotide_data_package() -> NucleotideSampleDataPackage:
+    tmp_dir = Path(tempfile.mkdtemp())
+    return NucleotideSampleDataPackage.create_from_sequence_masks(sample_vcf_map=snpeff_sample_vcfs,
+                                                                  masked_genomic_files_map=None,
+                                                                  sample_files_processor=SerialSampleFilesProcessor(
+                                                                      tmp_dir))
+
+
+@pytest.fixture
 def reference_service_with_data(reference_service) -> ReferenceService:
     reference_service.add_reference_genome(reference_file)
+    return reference_service
+
+
+@pytest.fixture
+def reference_service_with_snpeff_data(reference_service) -> ReferenceService:
+    reference_service.add_reference_genome(reference_file_snpeff)
     return reference_service
 
 

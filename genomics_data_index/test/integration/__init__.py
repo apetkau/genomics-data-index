@@ -13,6 +13,7 @@ consensus_dir = root_data_dir / 'consensus'
 sourmash_dir = root_data_dir / 'sourmash'
 sample_dirs = [data_dir / d for d in listdir(data_dir) if path.isdir(data_dir / d)]
 reference_file = data_dir / 'genome.fasta.gz'
+reference_file_snpeff = snpeff_data_dir / 'NC_011083.fasta.gz'
 tree_file = data_dir / 'tree.tre'
 basic_mlst_file = mlst_dir / 'mlst-basic.tsv'
 mlst_file_unknown = mlst_dir / 'mlst-unknown.tsv'
