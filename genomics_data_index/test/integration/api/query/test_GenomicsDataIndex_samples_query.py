@@ -1893,6 +1893,25 @@ def test_summary_features_kindmutations_annotations(loaded_database_connection_a
     assert 177 == len(mutations_df)
 
 
+    ## Test unique
+    mutations_df = q.isa('SH10-014').summary_features(selection='unique', ignore_annotations=False)
+
+    ## Convert percent to int to make it easier to compare in assert statements
+    mutations_df['Percent'] = mutations_df['Percent'].astype(int)
+
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion',
+            'Count', 'Total', 'Percent', 'Annotation', 'Annotation_Impact',
+            'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
+            'HGVS.c', 'HGVS.p', 'ID_HGVS.c', 'ID_HGVS.p'] == list(mutations_df.columns)
+    assert 60 == len(mutations_df)
+
+    ## missense variant
+    assert ['NC_011083', 2049576, 'A', 'C', 1, 1, 100,
+            'missense_variant', 'MODERATE', 'cutC', 'SEHA_RS10675', 'transcript', 'protein_coding',
+            'c.536T>G', 'p.Val179Gly',
+            'hgvs:cutC:c.536T>G', 'hgvs:cutC:p.Val179Gly'] == list(mutations_df.loc['NC_011083:2049576:A:C'])
+
+
 def test_summary_features_two(loaded_database_connection: DataIndexConnection):
     dfB = pd.read_csv(snippy_all_dataframes['SampleB'], sep='\t')
     dfC = pd.read_csv(snippy_all_dataframes['SampleC'], sep='\t')
