@@ -216,6 +216,12 @@ class SamplesQueryIndex(SamplesQuery):
         annotation_data = []
         for mutation_id in id_to_nucleotide_variants_samples:
             variants_samples = id_to_nucleotide_variants_samples[mutation_id]
+
+            id_hgvs_c = NucleotideMutationTranslater.to_hgvs_id(gene_name=variants_samples.annotation_gene_name,
+                                                                hgvs=variants_samples.annotation_hgvs_c)
+            id_hgvs_p = NucleotideMutationTranslater.to_hgvs_id(gene_name=variants_samples.annotation_gene_name,
+                                                                hgvs=variants_samples.annotation_hgvs_p)
+
             annotation_data.append([mutation_id,
                                     variants_samples.annotation,
                                     variants_samples.annotation_impact,
@@ -224,7 +230,9 @@ class SamplesQueryIndex(SamplesQuery):
                                     variants_samples.annotation_feature_type,
                                     variants_samples.annotation_transcript_biotype,
                                     variants_samples.annotation_hgvs_c,
-                                    variants_samples.annotation_hgvs_p])
+                                    variants_samples.annotation_hgvs_p,
+                                    id_hgvs_c,
+                                    id_hgvs_p])
 
         annotation_df = pd.DataFrame(data=annotation_data,
                                      columns=['Mutation',
@@ -236,6 +244,8 @@ class SamplesQueryIndex(SamplesQuery):
                                               'Transcript_BioType',
                                               'HGVS.c',
                                               'HGVS.p',
+                                              'ID_HGVS.c',
+                                              'ID_HGVS.p',
                                               ]).set_index('Mutation')
 
         return features_df.merge(annotation_df, how='left', left_index=True, right_index=True)
