@@ -223,16 +223,16 @@ class SamplesQueryIndex(SamplesQuery):
                                                                 hgvs=variants_samples.annotation_hgvs_p)
 
             annotation_data.append([mutation_id,
-                                    variants_samples.annotation,
-                                    variants_samples.annotation_impact,
-                                    variants_samples.annotation_gene_name,
-                                    variants_samples.annotation_gene_id,
-                                    variants_samples.annotation_feature_type,
-                                    variants_samples.annotation_transcript_biotype,
-                                    variants_samples.annotation_hgvs_c,
-                                    variants_samples.annotation_hgvs_p,
-                                    id_hgvs_c,
-                                    id_hgvs_p])
+                                    variants_samples.annotation if variants_samples.annotation is not None else pd.NA,
+                                    variants_samples.annotation_impact if variants_samples.annotation_impact is not None else pd.NA,
+                                    variants_samples.annotation_gene_name if variants_samples.annotation_gene_name is not None else pd.NA,
+                                    variants_samples.annotation_gene_id if variants_samples.annotation_gene_id is not None else pd.NA,
+                                    variants_samples.annotation_feature_type if variants_samples.annotation_feature_type is not None else pd.NA,
+                                    variants_samples.annotation_transcript_biotype if variants_samples.annotation_transcript_biotype is not None else pd.NA,
+                                    variants_samples.annotation_hgvs_c if variants_samples.annotation_hgvs_c is not None else pd.NA,
+                                    variants_samples.annotation_hgvs_p if variants_samples.annotation_hgvs_p is not None else pd.NA,
+                                    id_hgvs_c if id_hgvs_c is not None else pd.NA,
+                                    id_hgvs_p if id_hgvs_p is not None else pd.NA])
 
         annotation_df = pd.DataFrame(data=annotation_data,
                                      columns=['Mutation',
