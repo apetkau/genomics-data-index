@@ -242,7 +242,8 @@ class SamplesQueryIndex(SamplesQuery):
 
     def tofeaturesset(self, kind: str = 'mutations', selection: str = 'all',
                       ncores: int = 1) -> Set[str]:
-        return set(self.summary_features(kind=kind, selection=selection, ncores=ncores).index)
+        return set(self.summary_features(kind=kind, selection=selection, ncores=ncores,
+                                         ignore_annotations=True).index)
 
     def and_(self, other):
         if isinstance(other, SamplesQuery):

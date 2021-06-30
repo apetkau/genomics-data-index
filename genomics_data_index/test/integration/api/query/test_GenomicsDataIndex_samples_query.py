@@ -1680,7 +1680,7 @@ def test_summary_features_kindmutations(loaded_database_connection: DataIndexCon
     expected_df['Total'] = 9
     expected_df['Percent'] = 100 * (expected_df['Count'] / expected_df['Total'])
 
-    mutations_df = query(loaded_database_connection).summary_features()
+    mutations_df = query(loaded_database_connection).summary_features(ignore_annotations=True)
     mutations_df = mutations_df.sort_index()
 
     assert len(expected_df) == len(mutations_df)
@@ -1710,7 +1710,7 @@ def test_summary_features_kindmutations_unique(loaded_database_connection: DataI
 
     q = query(loaded_database_connection)
 
-    mutations_df = q.isa('SampleA').summary_features(selection='unique')
+    mutations_df = q.isa('SampleA').summary_features(selection='unique', ignore_annotations=True)
     mutations_df = mutations_df.sort_index()
 
     assert len(expected_df) == len(mutations_df)
@@ -1733,7 +1733,7 @@ def test_summary_features_kindmutations_unique(loaded_database_connection: DataI
     expected_df['Total'] = 1
     expected_df['Percent'] = 100 * (expected_df['Count'] / expected_df['Total'])
 
-    mutations_df = q.isa('SampleB').summary_features(selection='unique')
+    mutations_df = q.isa('SampleB').summary_features(selection='unique', ignore_annotations=True)
     mutations_df = mutations_df.sort_index()
 
     assert len(expected_df) == len(mutations_df)
@@ -1755,7 +1755,7 @@ def test_summary_features_kindmutations_unique(loaded_database_connection: DataI
     expected_df['Total'] = 1
     expected_df['Percent'] = 100 * (expected_df['Count'] / expected_df['Total'])
 
-    mutations_df = q.isa('SampleC').summary_features(selection='unique')
+    mutations_df = q.isa('SampleC').summary_features(selection='unique', ignore_annotations=True)
     mutations_df = mutations_df.sort_index()
 
     assert len(expected_df) == len(mutations_df)
@@ -1777,7 +1777,7 @@ def test_summary_features_kindmutations_unique(loaded_database_connection: DataI
     expected_df['Total'] = 2
     expected_df['Percent'] = 100 * (expected_df['Count'] / expected_df['Total'])
 
-    mutations_df = q.isin(['SampleB', 'SampleC']).summary_features(selection='unique')
+    mutations_df = q.isin(['SampleB', 'SampleC']).summary_features(selection='unique', ignore_annotations=True)
     mutations_df = mutations_df.sort_index()
 
     assert len(expected_df) == len(mutations_df)
@@ -1802,7 +1802,7 @@ def test_summary_features_kindmutations_unique(loaded_database_connection: DataI
     expected_df['Total'] = 3
     expected_df['Percent'] = 100 * (expected_df['Count'] / expected_df['Total'])
 
-    mutations_df = q.isin(['SampleA', 'SampleB', 'SampleC']).summary_features(selection='unique')
+    mutations_df = q.isin(['SampleA', 'SampleB', 'SampleC']).summary_features(selection='unique', ignore_annotations=True)
     mutations_df = mutations_df.sort_index()
 
     assert len(expected_df) == len(mutations_df)
@@ -1816,7 +1816,7 @@ def test_summary_features_kindmutations_unique(loaded_database_connection: DataI
     assert math.isclose(100 * (1 / 3), mutations_df.loc['reference:3656:CATT:C', 'Percent'])
 
     # Unique to None
-    mutations_df = q.isin([]).summary_features(selection='unique')
+    mutations_df = q.isin([]).summary_features(selection='unique', ignore_annotations=True)
     mutations_df = mutations_df.sort_index()
 
     assert 0 == len(mutations_df)
