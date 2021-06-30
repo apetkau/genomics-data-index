@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Union, List, Set, Tuple
+from typing import Union, List, Set, Tuple, Dict
 
 import numpy as np
 import pandas as pd
@@ -16,6 +16,8 @@ from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.QueryFeature import QueryFeature
 from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
 from genomics_data_index.storage.model.QueryFeatureMutation import QueryFeatureMutation
+from genomics_data_index.storage.model.NucleotideMutationTranslater import NucleotideMutationTranslater
+from genomics_data_index.storage.model.db import NucleotideVariantsSamples
 from genomics_data_index.storage.service.KmerService import KmerService
 
 logger = logging.getLogger(__name__)
@@ -159,7 +161,8 @@ class SamplesQueryIndex(SamplesQuery):
     def _summary_features_mutations(self, kind: str, selection: str = 'all',
                                     ncores: int = 1,
                                     batch_size: int = 500,
-                                    mutation_type: str = 'all') -> pd.DataFrame:
+                                    mutation_type: str = 'all',
+                                    ignore_annotations: bool = False) -> pd.DataFrame:
         if selection not in self.FEATURES_SELECTIONS:
             raise Exception(f'selection=[{selection}] is unknown. Must be one of {self.FEATURES_SELECTIONS}')
 
@@ -171,8 +174,9 @@ class SamplesQueryIndex(SamplesQuery):
                                                                      )
         features_all_df['Total'] = len(self)
         features_all_df['Percent'] = 100 * (features_all_df['Count'] / features_all_df['Total'])
+
         if selection == 'all':
-            return features_all_df
+            features_results_df = features_all_df
         elif selection == 'unique':
             features_complement_df = self.complement().summary_features(kind=kind, selection='all',
                                                                         ncores=ncores, batch_size=batch_size,
@@ -188,10 +192,53 @@ class SamplesQueryIndex(SamplesQuery):
                 'Total_x': 'Total',
                 'Percent_x': 'Percent',
             }, axis='columns')
-            return features_merged_df[['Sequence', 'Position', 'Deletion', 'Insertion',
-                                       'Count', 'Total', 'Percent']]
+            features_results_df = features_merged_df[['Sequence', 'Position', 'Deletion', 'Insertion',
+                                                      'Count', 'Total', 'Percent']]
         else:
             raise Exception(f'selection=[{selection}] is unknown. Must be one of {self.FEATURES_SELECTIONS}')
+
+        if not ignore_annotations:
+            features_results_df = self._append_mutation_annotations(features_results_df)
+
+        return features_results_df
+
+    def _append_mutation_annotations(self, features_df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Adds annotations to the mutations stored within the passed dataframe.
+        :param features_df: The dataframe to add annotations.
+        :return: A new dataframe with mutation annotations.
+        """
+        mutation_ids = features_df.index.tolist()
+        query_features = [QueryFeatureMutation(i) for i in mutation_ids]
+        id_to_nucleotide_variants_samples: Dict[str, NucleotideVariantsSamples] = \
+            self._query_connection.sample_service.get_variants_samples_by_variation_features(query_features)
+
+        annotation_data = []
+        for mutation_id in id_to_nucleotide_variants_samples:
+            variants_samples = id_to_nucleotide_variants_samples[mutation_id]
+            annotation_data.append([mutation_id,
+                                    variants_samples.annotation,
+                                    variants_samples.annotation_impact,
+                                    variants_samples.annotation_gene_name,
+                                    variants_samples.annotation_gene_id,
+                                    variants_samples.annotation_feature_type,
+                                    variants_samples.annotation_transcript_biotype,
+                                    variants_samples.annotation_hgvs_c,
+                                    variants_samples.annotation_hgvs_p])
+
+        annotation_df = pd.DataFrame(data=annotation_data,
+                                     columns=['Mutation',
+                                              'Annotation',
+                                              'Annotation_Impact',
+                                              'Gene_Name',
+                                              'Gene_ID',
+                                              'Feature_Type',
+                                              'Transcript_BioType',
+                                              'HGVS.c',
+                                              'HGVS.p',
+                                              ]).set_index('Mutation')
+
+        return features_df.merge(annotation_df, how='left', left_index=True, right_index=True)
 
     def tofeaturesset(self, kind: str = 'mutations', selection: str = 'all',
                       ncores: int = 1) -> Set[str]:

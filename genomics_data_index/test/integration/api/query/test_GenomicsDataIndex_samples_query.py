@@ -1824,6 +1824,70 @@ def test_summary_features_kindmutations_unique(loaded_database_connection: DataI
             'Count', 'Total', 'Percent'] == list(mutations_df.columns)
 
 
+def test_summary_features_kindmutations_annotations(loaded_database_connection_annotations: DataIndexConnection):
+    q = query(loaded_database_connection_annotations)
+
+    # 1 sample
+    mutations_df = q.isa('SH10-014').summary_features(ignore_annotations=False)
+
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion',
+            'Count', 'Total', 'Percent', 'Annotation', 'Annotation_Impact',
+            'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
+            'HGVS.c', 'HGVS.p'] == list(mutations_df.columns)
+    assert 139 == len(mutations_df)
+
+    ## Convert percent to int to make it easier to compare in assert statements
+    mutations_df['Percent'] = mutations_df['Percent'].astype(int)
+
+    ## missense variant
+    assert ['NC_011083', 140658, 'C', 'A', 1, 1, 100,
+            'missense_variant', 'MODERATE', 'murF', 'SEHA_RS01180', 'transcript', 'protein_coding',
+            'c.497C>A', 'p.Ala166Glu'] == list(mutations_df.loc['NC_011083:140658:C:A'])
+
+    ## inframe deletion
+    assert ['NC_011083', 4465400, 'GGCCGAA', 'G', 1, 1, 100,
+            'conservative_inframe_deletion', 'MODERATE', 'tyrB', 'SEHA_RS22180', 'transcript', 'protein_coding',
+            'c.157_162delGAAGCC', 'p.Glu53_Ala54del'] == list(mutations_df.loc['NC_011083:4465400:GGCCGAA:G'])
+
+    ## Intergenic variant (with some NA values in fields)
+    assert ['NC_011083', 4555461, 'T', 'TC', 1, 1, 100,
+            'intergenic_region', 'MODIFIER', 'SEHA_RS22510-SEHA_RS26685', 'SEHA_RS22510-SEHA_RS26685',
+            'intergenic_region', 'NA',
+            'n.4555461_4555462insC', 'NA'] == list(mutations_df.loc['NC_011083:4555461:T:TC'].fillna('NA'))
+
+
+    # 3 samples
+    mutations_df = q.isin(['SH10-014', 'SH14-001', 'SH14-014']).summary_features(ignore_annotations=False)
+
+    ## Convert percent to int to make it easier to compare in assert statements
+    mutations_df['Percent'] = mutations_df['Percent'].astype(int)
+
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion',
+            'Count', 'Total', 'Percent', 'Annotation', 'Annotation_Impact',
+            'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
+            'HGVS.c', 'HGVS.p'] == list(mutations_df.columns)
+    assert 177 == len(mutations_df)
+
+    ## missense variant (3/3)
+    assert ['NC_011083', 140658, 'C', 'A', 3, 3, 100,
+            'missense_variant', 'MODERATE', 'murF', 'SEHA_RS01180', 'transcript', 'protein_coding',
+            'c.497C>A', 'p.Ala166Glu'] == list(mutations_df.loc['NC_011083:140658:C:A'])
+
+    ## Intergenic variant (1/3)
+    assert ['NC_011083', 4555461, 'T', 'TC', 1, 3, 33,
+            'intergenic_region', 'MODIFIER', 'SEHA_RS22510-SEHA_RS26685', 'SEHA_RS22510-SEHA_RS26685',
+            'intergenic_region', 'NA',
+            'n.4555461_4555462insC', 'NA'] == list(mutations_df.loc['NC_011083:4555461:T:TC'].fillna('NA'))
+
+
+    # Test ignore annotations
+    mutations_df = q.isin(['SH10-014', 'SH14-001', 'SH14-014']).summary_features(ignore_annotations=True)
+
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion',
+            'Count', 'Total', 'Percent'] == list(mutations_df.columns)
+    assert 177 == len(mutations_df)
+
+
 def test_summary_features_two(loaded_database_connection: DataIndexConnection):
     dfB = pd.read_csv(snippy_all_dataframes['SampleB'], sep='\t')
     dfC = pd.read_csv(snippy_all_dataframes['SampleC'], sep='\t')
