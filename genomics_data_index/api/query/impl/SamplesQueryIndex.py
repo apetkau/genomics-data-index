@@ -217,13 +217,6 @@ class SamplesQueryIndex(SamplesQuery):
         for mutation_id in id_to_nucleotide_variants_samples:
             variants_samples = id_to_nucleotide_variants_samples[mutation_id]
 
-            id_hgvs_c = NucleotideMutationTranslater.to_hgvs_id(sequence_name=variants_samples.sequence,
-                                                                gene=variants_samples.annotation_gene_id,
-                                                                variant=variants_samples.annotation_hgvs_c)
-            id_hgvs_p = NucleotideMutationTranslater.to_hgvs_id(sequence_name=variants_samples.sequence,
-                                                                gene=variants_samples.annotation_gene_id,
-                                                                variant=variants_samples.annotation_hgvs_p)
-
             annotation_data.append([mutation_id,
                                     variants_samples.annotation if variants_samples.annotation is not None else pd.NA,
                                     variants_samples.annotation_impact if variants_samples.annotation_impact is not None else pd.NA,
@@ -233,8 +226,9 @@ class SamplesQueryIndex(SamplesQuery):
                                     variants_samples.annotation_transcript_biotype if variants_samples.annotation_transcript_biotype is not None else pd.NA,
                                     variants_samples.annotation_hgvs_c if variants_samples.annotation_hgvs_c is not None else pd.NA,
                                     variants_samples.annotation_hgvs_p if variants_samples.annotation_hgvs_p is not None else pd.NA,
-                                    id_hgvs_c if id_hgvs_c is not None else pd.NA,
-                                    id_hgvs_p if id_hgvs_p is not None else pd.NA])
+                                    variants_samples.id_hgvs_c if variants_samples.id_hgvs_c is not None else pd.NA,
+                                    variants_samples.id_hgvs_p if variants_samples.id_hgvs_p is not None else pd.NA,
+                                    ])
 
         annotation_df = pd.DataFrame(data=annotation_data,
                                      columns=['Mutation',
