@@ -145,9 +145,10 @@ class VariationService(FeatureService):
         columns = ['ANN.Annotation', 'ANN.Annotation_Impact', 'ANN.Gene_Name', 'ANN.Gene_ID',
                    'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p']
 
-        # Convert to 'str' to avoid treating NA as floats when annotation information is missing
-        features_df[columns] = features_df[columns].apply(lambda x: x.astype('str'))
-        
+        # Convert NA to None to properly save in database
+        features_df[columns] = features_df[columns].apply(lambda x: x.astype('object'))
+        features_df[columns] = features_df[columns].where(pd.notnull(features_df[columns]), None)
+
         return features_df
 
     def check_samples_have_features(self, sample_names: Set[str], feature_scope_name: str) -> bool:
