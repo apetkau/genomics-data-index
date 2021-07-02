@@ -103,6 +103,8 @@ def test_insert_variants_examine_variation(database, snippy_nucleotide_data_pack
     })
     assert v is not None, 'Particular storage does not exist'
     assert 'SNP' == v.var_type, 'Type is incorrect'
+    assert v.id_hgvs_c is None
+    assert v.id_hgvs_p is None
     assert {sample_name_ids['SampleA']} == set(v.sample_ids)
 
     v = session.query(NucleotideVariantsSamples).get({
@@ -121,6 +123,8 @@ def test_insert_variants_examine_variation(database, snippy_nucleotide_data_pack
         'insertion': 'C'
     })
     assert 'INDEL' == v.var_type, 'Type is incorrect'
+    assert v.id_hgvs_c is None
+    assert v.id_hgvs_p is None
     assert {sample_name_ids['SampleB']} == set(v.sample_ids)
 
     v = session.query(NucleotideVariantsSamples).get({
@@ -130,6 +134,8 @@ def test_insert_variants_examine_variation(database, snippy_nucleotide_data_pack
         'insertion': 'TTGA'
     })
     assert 'OTHER' == v.var_type, 'Type is incorrect'
+    assert v.id_hgvs_c is None
+    assert v.id_hgvs_p is None
     assert {sample_name_ids['SampleC']} == set(v.sample_ids)
 
 
@@ -171,6 +177,8 @@ def test_insert_variants_examine_variation_annotations(database, snpeff_nucleoti
     assert 'protein_coding' == v.annotation_transcript_biotype
     assert 'c.1229T>G' == v.annotation_hgvs_c
     assert 'p.Leu410Arg' == v.annotation_hgvs_p
+    assert 'hgvs:NC_011083:SEHA_RS03410:c.1229T>G' == v.id_hgvs_c
+    assert 'hgvs:NC_011083:SEHA_RS03410:p.Leu410Arg' == v.id_hgvs_p
 
 
     # Deletion
@@ -193,6 +201,8 @@ def test_insert_variants_examine_variation_annotations(database, snpeff_nucleoti
     assert 'protein_coding' == v.annotation_transcript_biotype
     assert 'c.696delT' == v.annotation_hgvs_c
     assert 'p.Phe232fs' == v.annotation_hgvs_p
+    assert 'hgvs:NC_011083:SEHA_RS04540:c.696delT' == v.id_hgvs_c
+    assert 'hgvs:NC_011083:SEHA_RS04540:p.Phe232fs' == v.id_hgvs_p
 
 
     # Insertion
@@ -215,6 +225,8 @@ def test_insert_variants_examine_variation_annotations(database, snpeff_nucleoti
     assert 'protein_coding' == v.annotation_transcript_biotype
     assert 'c.431_437dupTTTATAT' == v.annotation_hgvs_c
     assert 'p.Ter149fs' == v.annotation_hgvs_p
+    assert 'hgvs:NC_011083:SEHA_RS12315:c.431_437dupTTTATAT' == v.id_hgvs_c
+    assert 'hgvs:NC_011083:SEHA_RS12315:p.Ter149fs' == v.id_hgvs_p
 
 
     # MNP
@@ -237,6 +249,8 @@ def test_insert_variants_examine_variation_annotations(database, snpeff_nucleoti
     assert 'protein_coding' == v.annotation_transcript_biotype
     assert 'c.582_588delTTTTGAGinsCTATGAC' == v.annotation_hgvs_c
     assert 'p.PheGlu195TyrAsp' == v.annotation_hgvs_p
+    assert 'hgvs:NC_011083:SEHA_RS17780:c.582_588delTTTTGAGinsCTATGAC' == v.id_hgvs_c
+    assert 'hgvs:NC_011083:SEHA_RS17780:p.PheGlu195TyrAsp' == v.id_hgvs_p
 
 
 def test_insert_variants_regular_vcf_reader_examine_variation(database, regular_nucleotide_data_package,

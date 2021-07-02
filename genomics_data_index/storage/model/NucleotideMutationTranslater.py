@@ -66,7 +66,7 @@ class NucleotideMutationTranslater:
         return QueryFeatureMutation(new_id)
 
     @classmethod
-    def to_hgvs_id(cls, sequence_name: str, gene_name: Optional[str], variant: str) -> Optional[str]:
+    def to_hgvs_id(cls, sequence_name: str, gene: Optional[str], variant: str) -> Optional[str]:
         return QueryFeatureHGVS.create(sequence_name=sequence_name,
-                                       gene_name=gene_name,
+                                       gene=gene,
                                        variant=variant).id
