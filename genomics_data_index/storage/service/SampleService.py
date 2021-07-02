@@ -102,7 +102,11 @@ class SampleService:
         return results_df
 
     def count_samples_associated_with_reference(self, reference_name: str) -> int:
-        return len(self.get_samples_associated_with_reference(reference_name))
+        return self._connection.get_session().query(Sample) \
+            .join(Sample.sample_nucleotide_variation) \
+            .join(SampleNucleotideVariation.reference) \
+            .filter(Reference.name == reference_name) \
+            .count()
 
     def count_samples_associated_with_mlst_scheme(self, scheme_name: str) -> int:
         return len(self.get_samples_with_mlst_alleles(scheme_name))
