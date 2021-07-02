@@ -140,6 +140,16 @@ class VariationService(FeatureService):
                 'ANN.Gene_Name': 'first', 'ANN.Gene_ID': 'first', 'ANN.Feature_Type': 'first',
                 'ANN.Transcript_BioType': 'first', 'ANN.HGVS.c': 'first', 'ANN.HGVS.p': 'first'}
 
+    def _modify_df_types(self, features_df: pd.DataFrame) -> pd.DataFrame:
+        features_df = features_df.copy()
+        columns = ['ANN.Annotation', 'ANN.Annotation_Impact', 'ANN.Gene_Name', 'ANN.Gene_ID',
+                   'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p']
+
+        # Convert to 'str' to avoid treating NA as floats when annotation information is missing
+        features_df[columns] = features_df[columns].apply(lambda x: x.astype('str'))
+        
+        return features_df
+
     def check_samples_have_features(self, sample_names: Set[str], feature_scope_name: str) -> bool:
         samples_with_variants = {sample.name for sample in
                                  self._sample_service.get_samples_with_variants(feature_scope_name)}

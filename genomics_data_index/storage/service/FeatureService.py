@@ -52,13 +52,17 @@ class FeatureService(abc.ABC):
     def aggregate_feature_column(self) -> Dict[str, Any]:
         pass
 
+    def _modify_df_types(self, features_df: pd.DataFrame) -> pd.DataFrame:
+        return features_df
+
     def _create_feature_objects(self, features_df: pd.DataFrame, sample_names: Set[str]) -> List[Any]:
         sample_name_ids = self._sample_service.find_sample_name_ids(sample_names)
 
         features_df['_FEATURE_ID'] = features_df.apply(self._create_feature_identifier, axis='columns')
         features_df['_SAMPLE_ID'] = self._get_sample_id_series(features_df, sample_name_ids)
 
-        index_df = features_df.groupby('_FEATURE_ID').agg(self.aggregate_feature_column()).reset_index()
+        index_df = features_df.groupby('_FEATURE_ID').agg(self.aggregate_feature_column())
+        index_df = self._modify_df_types(index_df).reset_index()
 
         return index_df.apply(self._create_feature_object, axis='columns').tolist()
 
