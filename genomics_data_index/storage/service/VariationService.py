@@ -15,6 +15,7 @@ from genomics_data_index.storage.io.mutation.VcfVariantsReader import VcfVariant
 from genomics_data_index.storage.model.db import NucleotideVariantsSamples, SampleNucleotideVariation, Sample
 from genomics_data_index.storage.service import DatabaseConnection
 from genomics_data_index.storage.service.FeatureService import FeatureService
+from genomics_data_index.storage.model.QueryFeatureMutation import QueryFeatureMutation
 from genomics_data_index.storage.service.ReferenceService import ReferenceService
 from genomics_data_index.storage.service.SampleService import SampleService
 
@@ -98,6 +99,54 @@ class VariationService(FeatureService):
         })
 
         return mutation_df.set_index('Mutation')
+
+    def append_mutation_annotations(self, features_df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Adds annotations to the mutations stored within the passed dataframe.
+        :param features_df: The dataframe to add annotations.
+                            Assumes the index of the dataframe contains the SPDI identifier.
+        :return: A new dataframe with mutation annotations.
+        """
+        if features_df.index.name != 'Mutation':
+            raise Exception(f'Index name not equal to "Mutation" for features_df={features_df}')
+
+        mutation_ids = features_df.index.tolist()
+        query_features = [QueryFeatureMutation(i) for i in mutation_ids]
+        id_to_nucleotide_variants_samples: Dict[str, NucleotideVariantsSamples] = \
+            self._sample_service.get_variants_samples_by_variation_features(query_features)
+
+        annotation_data = []
+        for mutation_id in id_to_nucleotide_variants_samples:
+            variants_samples = id_to_nucleotide_variants_samples[mutation_id]
+
+            annotation_data.append([mutation_id,
+                                    variants_samples.annotation if variants_samples.annotation is not None else pd.NA,
+                                    variants_samples.annotation_impact if variants_samples.annotation_impact is not None else pd.NA,
+                                    variants_samples.annotation_gene_name if variants_samples.annotation_gene_name is not None else pd.NA,
+                                    variants_samples.annotation_gene_id if variants_samples.annotation_gene_id is not None else pd.NA,
+                                    variants_samples.annotation_feature_type if variants_samples.annotation_feature_type is not None else pd.NA,
+                                    variants_samples.annotation_transcript_biotype if variants_samples.annotation_transcript_biotype is not None else pd.NA,
+                                    variants_samples.annotation_hgvs_c if variants_samples.annotation_hgvs_c is not None else pd.NA,
+                                    variants_samples.annotation_hgvs_p if variants_samples.annotation_hgvs_p is not None else pd.NA,
+                                    variants_samples.id_hgvs_c if variants_samples.id_hgvs_c is not None else pd.NA,
+                                    variants_samples.id_hgvs_p if variants_samples.id_hgvs_p is not None else pd.NA,
+                                    ])
+
+        annotation_df = pd.DataFrame(data=annotation_data,
+                                     columns=['Mutation',
+                                              'Annotation',
+                                              'Annotation_Impact',
+                                              'Gene_Name',
+                                              'Gene_ID',
+                                              'Feature_Type',
+                                              'Transcript_BioType',
+                                              'HGVS.c',
+                                              'HGVS.p',
+                                              'ID_HGVS.c',
+                                              'ID_HGVS.p',
+                                              ]).set_index('Mutation')
+
+        return features_df.merge(annotation_df, how='left', left_index=True, right_index=True)
 
     def get_variants_ordered(self, sequence_name: str, type: str = 'SNP') -> List[NucleotideVariantsSamples]:
         return self._connection.get_session().query(NucleotideVariantsSamples) \

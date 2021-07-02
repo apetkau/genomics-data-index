@@ -16,7 +16,6 @@ from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.QueryFeature import QueryFeature
 from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
 from genomics_data_index.storage.model.QueryFeatureMutation import QueryFeatureMutation
-from genomics_data_index.storage.model.NucleotideMutationTranslater import NucleotideMutationTranslater
 from genomics_data_index.storage.model.db import NucleotideVariantsSamples
 from genomics_data_index.storage.service.KmerService import KmerService
 
@@ -198,53 +197,9 @@ class SamplesQueryIndex(SamplesQuery):
             raise Exception(f'selection=[{selection}] is unknown. Must be one of {self.FEATURES_SELECTIONS}')
 
         if not ignore_annotations:
-            features_results_df = self._append_mutation_annotations(features_results_df)
+            features_results_df = vs.append_mutation_annotations(features_results_df)
 
         return features_results_df
-
-    def _append_mutation_annotations(self, features_df: pd.DataFrame) -> pd.DataFrame:
-        """
-        Adds annotations to the mutations stored within the passed dataframe.
-        :param features_df: The dataframe to add annotations.
-        :return: A new dataframe with mutation annotations.
-        """
-        mutation_ids = features_df.index.tolist()
-        query_features = [QueryFeatureMutation(i) for i in mutation_ids]
-        id_to_nucleotide_variants_samples: Dict[str, NucleotideVariantsSamples] = \
-            self._query_connection.sample_service.get_variants_samples_by_variation_features(query_features)
-
-        annotation_data = []
-        for mutation_id in id_to_nucleotide_variants_samples:
-            variants_samples = id_to_nucleotide_variants_samples[mutation_id]
-
-            annotation_data.append([mutation_id,
-                                    variants_samples.annotation if variants_samples.annotation is not None else pd.NA,
-                                    variants_samples.annotation_impact if variants_samples.annotation_impact is not None else pd.NA,
-                                    variants_samples.annotation_gene_name if variants_samples.annotation_gene_name is not None else pd.NA,
-                                    variants_samples.annotation_gene_id if variants_samples.annotation_gene_id is not None else pd.NA,
-                                    variants_samples.annotation_feature_type if variants_samples.annotation_feature_type is not None else pd.NA,
-                                    variants_samples.annotation_transcript_biotype if variants_samples.annotation_transcript_biotype is not None else pd.NA,
-                                    variants_samples.annotation_hgvs_c if variants_samples.annotation_hgvs_c is not None else pd.NA,
-                                    variants_samples.annotation_hgvs_p if variants_samples.annotation_hgvs_p is not None else pd.NA,
-                                    variants_samples.id_hgvs_c if variants_samples.id_hgvs_c is not None else pd.NA,
-                                    variants_samples.id_hgvs_p if variants_samples.id_hgvs_p is not None else pd.NA,
-                                    ])
-
-        annotation_df = pd.DataFrame(data=annotation_data,
-                                     columns=['Mutation',
-                                              'Annotation',
-                                              'Annotation_Impact',
-                                              'Gene_Name',
-                                              'Gene_ID',
-                                              'Feature_Type',
-                                              'Transcript_BioType',
-                                              'HGVS.c',
-                                              'HGVS.p',
-                                              'ID_HGVS.c',
-                                              'ID_HGVS.p',
-                                              ]).set_index('Mutation')
-
-        return features_df.merge(annotation_df, how='left', left_index=True, right_index=True)
 
     def tofeaturesset(self, kind: str = 'mutations', selection: str = 'all',
                       ncores: int = 1) -> Set[str]:
