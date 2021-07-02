@@ -48,6 +48,14 @@ class VariationService(FeatureService):
 
         return {m.spdi: len(m.sample_ids) for m in mutations}
 
+    def get_variants_on_reference(self, reference_name: str, include_unknown: bool) -> Dict[str, int]:
+        reference_sequence_names = self._reference_sequence_names(reference_name)
+        mutations = self._connection.get_session().query(NucleotideVariantsSamples) \
+            .filter(NucleotideVariantsSamples.sequence.in_(reference_sequence_names)) \
+            .all()
+
+        return {m.spdi: m for m in mutations}
+
     def count_mutations_in_sample_ids_dataframe(self, sample_ids: Union[SampleSet, List[int]],
                                                 ncores: int = 1,
                                                 batch_size: int = 50,

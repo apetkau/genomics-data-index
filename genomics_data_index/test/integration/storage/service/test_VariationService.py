@@ -77,6 +77,29 @@ def test_summarize_variants(database, snippy_nucleotide_data_package, reference_
     assert 2 == mutation_counts['reference:3897:5:G']
 
 
+def test_get_variants_on_reference(database, snippy_nucleotide_data_package, reference_service_with_data,
+                            sample_service, filesystem_storage):
+    variation_service = VariationService(database_connection=database,
+                                         reference_service=reference_service_with_data,
+                                         sample_service=sample_service,
+                                         variation_dir=filesystem_storage.variation_dir)
+    variation_service.insert(feature_scope_name='genome', data_package=snippy_nucleotide_data_package)
+
+    mutations = variation_service.get_variants_on_reference('genome', include_unknown=False)
+    assert 112 == len(mutations)
+    assert 2 == len(mutations['reference:839:1:G'].sample_ids)
+    assert 839 == mutations['reference:839:1:G'].position
+
+    assert 1 == len(mutations['reference:866:9:G'].sample_ids)
+    assert 866 == mutations['reference:866:9:G'].position
+
+    assert 1 == len(mutations['reference:1048:1:G'].sample_ids)
+    assert 1048 == mutations['reference:1048:1:G'].position
+
+    assert 2 == len(mutations['reference:3897:5:G'].sample_ids)
+    assert 3897 == mutations['reference:3897:5:G'].position
+
+
 def test_insert_variants_examine_variation(database, snippy_nucleotide_data_package, reference_service_with_data,
                                            sample_service, filesystem_storage):
     variation_service = VariationService(database_connection=database,
