@@ -14,6 +14,7 @@ from genomics_data_index.api.query.impl.TreeSamplesQueryFactory import TreeSampl
 from genomics_data_index.configuration.Project import Project
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
 from genomics_data_index.storage.model.NucleotideMutationTranslater import NucleotideMutationTranslater
+from genomics_data_index.storage.service.VariationService import VariationService
 
 logger = logging.getLogger(__name__)
 
@@ -89,13 +90,14 @@ class GenomicsDataIndex:
                                                                      include_unknown=include_unknown)
 
     def mutations_summary(self, reference_genome: str, id_type: str = 'spdi_ref',
-                          include_unknown: bool = False) -> pd.DataFrame:
+                          include_unknown: bool = False, ignore_annotations: bool = False) -> pd.DataFrame:
         """
         Summarizes all mutations stored in this index relative to the passed reference genome.
 
         :param reference_genome: The reference genome.
         :param id_type: The type of identifier to use.
         :param include_unknown: Whether or not unknown mutations should be included.
+        :param ignore_annotations: Whether or not mutation annotations should be ignored.
 
         :return: A summary of all mutations in this index as a DataFrame.
         """
@@ -103,25 +105,35 @@ class GenomicsDataIndex:
         if id_type not in self.MUTATION_ID_TYPES:
             raise Exception(f'id_type={id_type} must be one of {self.MUTATION_ID_TYPES}')
 
-        vs = self._connection.variation_service
-        mutation_counts = vs.mutation_counts_on_reference(reference_genome,
-                                                          include_unknown=include_unknown)
+        vs: VariationService = self._connection.variation_service
+        mutations = vs.get_variants_on_reference(reference_genome, include_unknown=include_unknown)
+
         if id_type == 'spdi_ref':
-            translated_ids = rs.translate_spdi(mutation_counts.keys(), to=id_type)
-            mutation_counts = {translated_ids[m]: mutation_counts[m] for m in mutation_counts}
+            translated_ids = rs.translate_spdi(mutations.keys(), to=id_type)
+            mutations = {translated_ids[m]: mutations[m] for m in mutations}
             convert_deletion = False
         else:
             convert_deletion = True
 
+        total_samples = self._connection.sample_service.count_samples_associated_with_reference(reference_genome)
+
         data = []
-        for mutation in mutation_counts:
+        for mutation in mutations:
             seq, pos, deletion, insertion = NucleotideMutationTranslater.from_spdi(mutation,
                                                                                    convert_deletion=convert_deletion)
-            data.append([mutation, seq, pos, deletion, insertion, mutation_counts[mutation]])
+            count = len(mutations[mutation].sample_ids)
+            data.append([mutation, seq, pos, deletion, insertion, count, total_samples])
 
-        return pd.DataFrame(data,
+        features_df = pd.DataFrame(data,
                             columns=['Mutation', 'Sequence', 'Position',
-                                     'Deletion', 'Insertion', 'Count']).set_index('Mutation')
+                                     'Deletion', 'Insertion', 'Count', 'Total']).set_index('Mutation')
+
+        features_df['Percent'] = 100 * (features_df['Count'] / features_df['Total'])
+
+        if not ignore_annotations:
+            features_df = vs.append_mutation_annotations(features_df)
+
+        return features_df
 
     def db_size(self, unit: str = 'B') -> pd.DataFrame:
         """

@@ -73,6 +73,11 @@ def loaded_database_genomic_data_store(loaded_database_connection):
 
 
 @pytest.fixture
+def loaded_database_genomic_data_store_annotations(loaded_database_connection_annotations):
+    return GenomicsDataIndex(connection=loaded_database_connection_annotations)
+
+
+@pytest.fixture
 def loaded_database_connection_with_built_tree() -> DataIndexConnection:
     tmp_dir = Path(tempfile.mkdtemp())
     database_connection = DataIndexConnection.connect(database_connection='sqlite:///:memory:',
