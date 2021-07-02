@@ -1843,20 +1843,20 @@ def test_summary_features_kindmutations_annotations(loaded_database_connection_a
     assert ['NC_011083', 140658, 'C', 'A', 1, 1, 100,
             'missense_variant', 'MODERATE', 'murF', 'SEHA_RS01180', 'transcript', 'protein_coding',
             'c.497C>A', 'p.Ala166Glu',
-            'hgvs:murF:c.497C>A', 'hgvs:murF:p.Ala166Glu'] == list(mutations_df.loc['NC_011083:140658:C:A'])
+            'hgvs:NC_011083:murF:c.497C>A', 'hgvs:NC_011083:murF:p.Ala166Glu'] == list(mutations_df.loc['NC_011083:140658:C:A'])
 
     ## inframe deletion
     assert ['NC_011083', 4465400, 'GGCCGAA', 'G', 1, 1, 100,
             'conservative_inframe_deletion', 'MODERATE', 'tyrB', 'SEHA_RS22180', 'transcript', 'protein_coding',
             'c.157_162delGAAGCC', 'p.Glu53_Ala54del',
-            'hgvs:tyrB:c.157_162delGAAGCC', 'hgvs:tyrB:p.Glu53_Ala54del'] == list(mutations_df.loc['NC_011083:4465400:GGCCGAA:G'])
+            'hgvs:NC_011083:tyrB:c.157_162delGAAGCC', 'hgvs:NC_011083:tyrB:p.Glu53_Ala54del'] == list(mutations_df.loc['NC_011083:4465400:GGCCGAA:G'])
 
     ## Intergenic variant (with some NA values in fields)
     assert ['NC_011083', 4555461, 'T', 'TC', 1, 1, 100,
             'intergenic_region', 'MODIFIER', 'SEHA_RS22510-SEHA_RS26685', 'SEHA_RS22510-SEHA_RS26685',
             'intergenic_region', 'NA',
             'n.4555461_4555462insC', 'NA',
-            'hgvs:SEHA_RS22510-SEHA_RS26685:n.4555461_4555462insC', 'NA'] == list(mutations_df.loc['NC_011083:4555461:T:TC'].fillna('NA'))
+            'hgvs:NC_011083:SEHA_RS22510-SEHA_RS26685:n.4555461_4555462insC', 'NA'] == list(mutations_df.loc['NC_011083:4555461:T:TC'].fillna('NA'))
 
 
     # 3 samples
@@ -1875,14 +1875,14 @@ def test_summary_features_kindmutations_annotations(loaded_database_connection_a
     assert ['NC_011083', 140658, 'C', 'A', 3, 3, 100,
             'missense_variant', 'MODERATE', 'murF', 'SEHA_RS01180', 'transcript', 'protein_coding',
             'c.497C>A', 'p.Ala166Glu',
-            'hgvs:murF:c.497C>A', 'hgvs:murF:p.Ala166Glu'] == list(mutations_df.loc['NC_011083:140658:C:A'])
+            'hgvs:NC_011083:murF:c.497C>A', 'hgvs:NC_011083:murF:p.Ala166Glu'] == list(mutations_df.loc['NC_011083:140658:C:A'])
 
     ## Intergenic variant (1/3)
     assert ['NC_011083', 4555461, 'T', 'TC', 1, 3, 33,
             'intergenic_region', 'MODIFIER', 'SEHA_RS22510-SEHA_RS26685', 'SEHA_RS22510-SEHA_RS26685',
             'intergenic_region', 'NA',
             'n.4555461_4555462insC', 'NA',
-            'hgvs:SEHA_RS22510-SEHA_RS26685:n.4555461_4555462insC', 'NA'] == list(mutations_df.loc['NC_011083:4555461:T:TC'].fillna('NA'))
+            'hgvs:NC_011083:SEHA_RS22510-SEHA_RS26685:n.4555461_4555462insC', 'NA'] == list(mutations_df.loc['NC_011083:4555461:T:TC'].fillna('NA'))
 
 
     # Test ignore annotations
@@ -1909,7 +1909,7 @@ def test_summary_features_kindmutations_annotations(loaded_database_connection_a
     assert ['NC_011083', 2049576, 'A', 'C', 1, 1, 100,
             'missense_variant', 'MODERATE', 'cutC', 'SEHA_RS10675', 'transcript', 'protein_coding',
             'c.536T>G', 'p.Val179Gly',
-            'hgvs:cutC:c.536T>G', 'hgvs:cutC:p.Val179Gly'] == list(mutations_df.loc['NC_011083:2049576:A:C'])
+            'hgvs:NC_011083:cutC:c.536T>G', 'hgvs:NC_011083:cutC:p.Val179Gly'] == list(mutations_df.loc['NC_011083:2049576:A:C'])
 
 
 def test_summary_features_two(loaded_database_connection: DataIndexConnection):

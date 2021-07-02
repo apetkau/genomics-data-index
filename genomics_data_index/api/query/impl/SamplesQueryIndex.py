@@ -217,10 +217,12 @@ class SamplesQueryIndex(SamplesQuery):
         for mutation_id in id_to_nucleotide_variants_samples:
             variants_samples = id_to_nucleotide_variants_samples[mutation_id]
 
-            id_hgvs_c = NucleotideMutationTranslater.to_hgvs_id(gene=variants_samples.annotation_gene_name,
-                                                                hgvs=variants_samples.annotation_hgvs_c)
-            id_hgvs_p = NucleotideMutationTranslater.to_hgvs_id(gene=variants_samples.annotation_gene_name,
-                                                                hgvs=variants_samples.annotation_hgvs_p)
+            id_hgvs_c = NucleotideMutationTranslater.to_hgvs_id(sequence_name=variants_samples.sequence,
+                                                                gene=variants_samples.annotation_gene_name,
+                                                                variant=variants_samples.annotation_hgvs_c)
+            id_hgvs_p = NucleotideMutationTranslater.to_hgvs_id(sequence_name=variants_samples.sequence,
+                                                                gene=variants_samples.annotation_gene_name,
+                                                                variant=variants_samples.annotation_hgvs_p)
 
             annotation_data.append([mutation_id,
                                     variants_samples.annotation if variants_samples.annotation is not None else pd.NA,
