@@ -65,6 +65,10 @@ class QueryFeatureHGVS(QueryFeature):
 
     @classmethod
     def create(cls, sequence_name: str, gene: Optional[str], variant: str) -> QueryFeatureHGVS:
+        # If variant is given as nucleotide coordinates with respect to the sequence 'n.' then ignore gene id
+        if variant is not None and variant.startswith('n.'):
+            gene = None
+
         return QueryFeatureHGVS(sequence_name=sequence_name, gene=gene, variant=variant)
 
     @classmethod

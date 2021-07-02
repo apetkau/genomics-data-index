@@ -84,5 +84,6 @@ def test_to_db_feature():
 
 
 def test_to_hgvs_id():
-    assert 'hgvs:NC_011083:murF:p.Ala166Glu' == NucleotideMutationTranslater.to_hgvs_id('NC_011083', 'murF', 'p.Ala166Glu')
+    assert 'hgvs:NC_011083:SEHA_RS01180:p.Ala166Glu' == NucleotideMutationTranslater.to_hgvs_id('NC_011083', 'SEHA_RS01180', 'p.Ala166Glu')
     assert 'hgvs:NC_011083:n.1031571T>C' == NucleotideMutationTranslater.to_hgvs_id('NC_011083', None, 'n.1031571T>C')
+    assert 'hgvs:NC_011083:n.1031571T>C' == NucleotideMutationTranslater.to_hgvs_id('NC_011083', 'gene_name', 'n.1031571T>C')
