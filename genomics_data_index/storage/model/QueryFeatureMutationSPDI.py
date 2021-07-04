@@ -3,10 +3,10 @@ from __future__ import annotations
 from typing import Union
 
 from genomics_data_index.storage.model import NUCLEOTIDE_UNKNOWN
-from genomics_data_index.storage.model.QueryFeature import QueryFeature
+from genomics_data_index.storage.model.QueryFeatureMutation import QueryFeatureMutation
 
 
-class QueryFeatureMutationSPDI(QueryFeature):
+class QueryFeatureMutationSPDI(QueryFeatureMutation):
 
     def __init__(self, spdi: str):
         super().__init__()

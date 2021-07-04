@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from typing import Optional
 
-from genomics_data_index.storage.model.QueryFeature import QueryFeature
+from genomics_data_index.storage.model.QueryFeatureMutation import QueryFeatureMutation
 
 
-class QueryFeatureHGVS(QueryFeature):
+class QueryFeatureHGVS(QueryFeatureMutation):
 
     def __init__(self, sequence_name: str, gene: Optional[str], variant: str):
         super().__init__()
