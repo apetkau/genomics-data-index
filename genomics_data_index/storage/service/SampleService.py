@@ -6,7 +6,7 @@ from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.NucleotideMutationTranslater import NucleotideMutationTranslater
 from genomics_data_index.storage.model.QueryFeature import QueryFeature
 from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
-from genomics_data_index.storage.model.QueryFeatureMutation import QueryFeatureMutation
+from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
 from genomics_data_index.storage.model.db import NucleotideVariantsSamples, Reference, ReferenceSequence, MLSTScheme, \
     SampleMLSTAlleles, MLSTAllelesSamples, Sample
 from genomics_data_index.storage.model.db import SampleNucleotideVariation
@@ -154,7 +154,7 @@ class SampleService:
             .filter(Sample.id.in_(sample_ids)) \
             .all()
 
-    def get_variants_samples_by_variation_features(self, features: List[QueryFeatureMutation]) -> Dict[
+    def get_variants_samples_by_variation_features(self, features: List[QueryFeatureMutationSPDI]) -> Dict[
         str, NucleotideVariantsSamples]:
         standardized_features_to_input_feature = {}
         standardized_features_ids = set()
@@ -189,8 +189,8 @@ class SampleService:
     def find_sample_sets_by_features(self, features: List[QueryFeature]) -> Dict[str, SampleSet]:
         feature_type = self._get_feature_type(features)
 
-        if feature_type == 'QueryFeatureMutation':
-            features = cast(List[QueryFeatureMutation], features)
+        if feature_type == 'QueryFeatureMutationSPDI':
+            features = cast(List[QueryFeatureMutationSPDI], features)
             variants_dict = self.get_variants_samples_by_variation_features(features)
 
             return {id: variants_dict[id].sample_ids for id in variants_dict}
@@ -205,8 +205,8 @@ class SampleService:
     def find_samples_by_features(self, features: List[QueryFeature]) -> Dict[str, List[Sample]]:
         feature_type = self._get_feature_type(features)
 
-        if feature_type == 'QueryFeatureMutation':
-            features = cast(List[QueryFeatureMutation], features)
+        if feature_type == 'QueryFeatureMutationSPDI':
+            features = cast(List[QueryFeatureMutationSPDI], features)
             variants_dict = self.get_variants_samples_by_variation_features(features)
 
             return {id: self.find_samples_by_ids(variants_dict[id].sample_ids) for id in variants_dict}
@@ -221,7 +221,7 @@ class SampleService:
     def count_samples_by_features(self, features: List[QueryFeature]) -> Dict[str, List[Sample]]:
         feature_type = self._get_feature_type(features)
 
-        if feature_type == 'QueryFeatureMutation':
+        if feature_type == 'QueryFeatureMutationSPDI':
             variants_dict = self.get_variants_samples_by_variation_features(features)
 
             return {id: len(variants_dict[id].sample_ids) for id in variants_dict}

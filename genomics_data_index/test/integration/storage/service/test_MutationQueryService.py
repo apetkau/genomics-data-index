@@ -3,7 +3,7 @@ import math
 import pandas as pd
 import pytest
 
-from genomics_data_index.storage.model.QueryFeatureMutation import QueryFeatureMutation
+from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
 from genomics_data_index.storage.model.db import Sample
 from genomics_data_index.storage.service.MutationQueryService import MutationQueryService
 
@@ -65,7 +65,7 @@ def test_find_matchesAB(mutation_query_service: MutationQueryService):
 def test_find_by_features(database, mutation_query_service: MutationQueryService):
     sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
 
-    matches_df = mutation_query_service.find_by_features([QueryFeatureMutation('reference:5061:G:A')])
+    matches_df = mutation_query_service.find_by_features([QueryFeatureMutationSPDI('reference:5061:G:A')])
 
     assert ['Type', 'Feature', 'Sample Name', 'Sample ID', 'Status'] == list(matches_df.columns.tolist())
 
@@ -78,7 +78,7 @@ def test_find_by_features(database, mutation_query_service: MutationQueryService
 
 
 def test_count_by_features(mutation_query_service: MutationQueryService):
-    matches_df = mutation_query_service.count_by_features([QueryFeatureMutation('reference:5061:G:A')],
+    matches_df = mutation_query_service.count_by_features([QueryFeatureMutationSPDI('reference:5061:G:A')],
                                                           include_unknown=False)
 
     assert ['Type', 'Feature', 'Present', 'Absent', 'Unknown', 'Total',
@@ -99,7 +99,7 @@ def test_find_by_features_2_results(database, mutation_query_service: MutationQu
     sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
     sampleC = database.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
 
-    matches_df = mutation_query_service.find_by_features([QueryFeatureMutation('reference:3063:A:ATGCAGC')])
+    matches_df = mutation_query_service.find_by_features([QueryFeatureMutationSPDI('reference:3063:A:ATGCAGC')])
 
     assert ['Type', 'Feature', 'Sample Name', 'Sample ID', 'Status'] == list(matches_df.columns.tolist())
 
@@ -112,7 +112,7 @@ def test_find_by_features_2_results(database, mutation_query_service: MutationQu
 
 
 def test_count_by_features_2_results(mutation_query_service: MutationQueryService):
-    matches_df = mutation_query_service.count_by_features([QueryFeatureMutation('reference:3063:A:ATGCAGC')],
+    matches_df = mutation_query_service.count_by_features([QueryFeatureMutationSPDI('reference:3063:A:ATGCAGC')],
                                                           include_unknown=False)
 
     assert ['Type', 'Feature', 'Present', 'Absent', 'Unknown', 'Total',
@@ -133,8 +133,8 @@ def test_find_by_features_2_features(database, mutation_query_service: MutationQ
     sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
     sampleC = database.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
 
-    matches_df = mutation_query_service.find_by_features([QueryFeatureMutation('reference:5061:G:A'),
-                                                          QueryFeatureMutation('reference:3063:A:ATGCAGC')])
+    matches_df = mutation_query_service.find_by_features([QueryFeatureMutationSPDI('reference:5061:G:A'),
+                                                          QueryFeatureMutationSPDI('reference:3063:A:ATGCAGC')])
 
     assert ['Type', 'Feature', 'Sample Name', 'Sample ID', 'Status'] == list(matches_df.columns.tolist())
 
@@ -148,8 +148,8 @@ def test_find_by_features_2_features(database, mutation_query_service: MutationQ
 
 
 def test_count_by_features_2_features(mutation_query_service: MutationQueryService):
-    matches_df = mutation_query_service.count_by_features([QueryFeatureMutation('reference:5061:G:A'),
-                                                           QueryFeatureMutation('reference:3063:A:ATGCAGC')],
+    matches_df = mutation_query_service.count_by_features([QueryFeatureMutationSPDI('reference:5061:G:A'),
+                                                           QueryFeatureMutationSPDI('reference:3063:A:ATGCAGC')],
                                                           include_unknown=False)
 
     assert ['Type', 'Feature', 'Present', 'Absent', 'Unknown', 'Total',
@@ -176,7 +176,7 @@ def test_find_by_features_unknown(database, mutation_query_service: MutationQuer
     sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
     sampleC = database.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
 
-    matches_df = mutation_query_service.find_by_features([QueryFeatureMutation('reference:190:A:G')],
+    matches_df = mutation_query_service.find_by_features([QueryFeatureMutationSPDI('reference:190:A:G')],
                                                          include_unknown=True)
 
     assert ['Type', 'Feature', 'Sample Name', 'Sample ID', 'Status'] == list(matches_df.columns.tolist())
@@ -188,7 +188,7 @@ def test_find_by_features_unknown(database, mutation_query_service: MutationQuer
     assert ['Unknown', 'Present', 'Unknown'] == matches_df['Status'].tolist()
     assert len(matches_df) == 3
 
-    matches_df = mutation_query_service.find_by_features([QueryFeatureMutation('reference:190:A:G')],
+    matches_df = mutation_query_service.find_by_features([QueryFeatureMutationSPDI('reference:190:A:G')],
                                                          include_unknown=False)
     assert ['Type', 'Feature', 'Sample Name', 'Sample ID', 'Status'] == list(matches_df.columns.tolist())
 
@@ -201,7 +201,7 @@ def test_find_by_features_unknown(database, mutation_query_service: MutationQuer
 
 
 def test_count_by_features_unknown(mutation_query_service: MutationQueryService):
-    matches_df = mutation_query_service.count_by_features([QueryFeatureMutation('reference:190:A:G')],
+    matches_df = mutation_query_service.count_by_features([QueryFeatureMutationSPDI('reference:190:A:G')],
                                                           include_unknown=True)
 
     assert ['Type', 'Feature', 'Present', 'Absent', 'Unknown', 'Total',
@@ -223,8 +223,8 @@ def test_find_by_features_found_unknown(database, mutation_query_service: Mutati
     sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
     sampleC = database.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
 
-    matches_df = mutation_query_service.find_by_features([QueryFeatureMutation('reference:5061:G:A'),
-                                                          QueryFeatureMutation('reference:190:A:G')],
+    matches_df = mutation_query_service.find_by_features([QueryFeatureMutationSPDI('reference:5061:G:A'),
+                                                          QueryFeatureMutationSPDI('reference:190:A:G')],
                                                          include_unknown=True)
 
     assert ['Type', 'Feature', 'Sample Name', 'Sample ID', 'Status'] == list(matches_df.columns.tolist())
@@ -242,8 +242,8 @@ def test_find_by_features_found_unknown(database, mutation_query_service: Mutati
 
 
 def test_count_by_features_found_unknown(mutation_query_service: MutationQueryService):
-    matches_df = mutation_query_service.count_by_features([QueryFeatureMutation('reference:5061:G:A'),
-                                                           QueryFeatureMutation('reference:190:A:G')],
+    matches_df = mutation_query_service.count_by_features([QueryFeatureMutationSPDI('reference:5061:G:A'),
+                                                           QueryFeatureMutationSPDI('reference:190:A:G')],
                                                           include_unknown=True)
 
     assert ['Type', 'Feature', 'Present', 'Absent', 'Unknown', 'Total',

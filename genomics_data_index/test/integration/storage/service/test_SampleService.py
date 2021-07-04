@@ -1,6 +1,6 @@
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
-from genomics_data_index.storage.model.QueryFeatureMutation import QueryFeatureMutation
+from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
 from genomics_data_index.storage.model.db import Sample
 from genomics_data_index.storage.service.SampleService import SampleService
 
@@ -154,7 +154,7 @@ def test_find_samples_by_ids_3_samples(sample_service, variation_service):
 def test_find_samples_by_features_variations(database, sample_service, variation_service):
     sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
 
-    variant_samples = sample_service.find_samples_by_features([QueryFeatureMutation('reference:5061:G:A')])
+    variant_samples = sample_service.find_samples_by_features([QueryFeatureMutationSPDI('reference:5061:G:A')])
 
     assert f'reference:5061:G:A' in variant_samples
     assert {'SampleB'} == {s.name for s in variant_samples[f'reference:5061:G:A']}
@@ -164,7 +164,7 @@ def test_find_samples_by_features_variations(database, sample_service, variation
 def test_find_sample_sets_by_features_variations(database, sample_service, variation_service):
     sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
 
-    sample_sets = sample_service.find_sample_sets_by_features([QueryFeatureMutation('reference:5061:G:A')])
+    sample_sets = sample_service.find_sample_sets_by_features([QueryFeatureMutationSPDI('reference:5061:G:A')])
 
     assert f'reference:5061:G:A' in sample_sets
     assert {sampleB.id} == set(sample_sets[f'reference:5061:G:A'])
@@ -174,7 +174,7 @@ def test_find_sample_sets_by_features_variations_two_samples(database, sample_se
     sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
     sampleC = database.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
 
-    variant_samples = sample_service.find_sample_sets_by_features([QueryFeatureMutation('reference:4975:T:C')])
+    variant_samples = sample_service.find_sample_sets_by_features([QueryFeatureMutationSPDI('reference:4975:T:C')])
 
     assert {'reference:4975:T:C'} == set(variant_samples.keys())
     assert {sampleC.id, sampleB.id} == set(variant_samples[f'reference:4975:T:C'])
@@ -184,7 +184,7 @@ def test_find_sample_sets_by_features_variations_two_samples(database, sample_se
 def test_find_samples_by_features_variations_numeric_deletion(database, sample_service, variation_service):
     sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
 
-    variant_samples = sample_service.find_samples_by_features([QueryFeatureMutation('reference:5061:1:A')])
+    variant_samples = sample_service.find_samples_by_features([QueryFeatureMutationSPDI('reference:5061:1:A')])
 
     assert f'reference:5061:1:A' in variant_samples
     assert {'SampleB'} == {s.name for s in variant_samples[f'reference:5061:1:A']}
@@ -192,7 +192,7 @@ def test_find_samples_by_features_variations_numeric_deletion(database, sample_s
 
 
 def test_count_samples_by_variation_features_single_feature(sample_service, variation_service):
-    features = [QueryFeatureMutation('reference:5061:G:A')]
+    features = [QueryFeatureMutationSPDI('reference:5061:G:A')]
 
     variant_counts = sample_service.count_samples_by_features(features)
 
@@ -201,7 +201,7 @@ def test_count_samples_by_variation_features_single_feature(sample_service, vari
 
 
 def test_count_samples_by_variation_features_multiple_features(sample_service, variation_service):
-    features = [QueryFeatureMutation('reference:5061:G:A'), QueryFeatureMutation('reference:3063:A:ATGCAGC')]
+    features = [QueryFeatureMutationSPDI('reference:5061:G:A'), QueryFeatureMutationSPDI('reference:3063:A:ATGCAGC')]
 
     variant_counts = sample_service.count_samples_by_features(features)
 
@@ -211,7 +211,7 @@ def test_count_samples_by_variation_features_multiple_features(sample_service, v
 
 
 def test_count_samples_by_variation_features_multiple_features_numeric_deletion(sample_service, variation_service):
-    features = [QueryFeatureMutation('reference:5061:1:A'), QueryFeatureMutation('reference:3063:1:ATGCAGC')]
+    features = [QueryFeatureMutationSPDI('reference:5061:1:A'), QueryFeatureMutationSPDI('reference:3063:1:ATGCAGC')]
 
     variant_counts = sample_service.count_samples_by_features(features)
 

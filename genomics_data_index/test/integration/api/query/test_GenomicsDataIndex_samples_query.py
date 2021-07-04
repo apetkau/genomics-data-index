@@ -13,7 +13,7 @@ from genomics_data_index.api.query.impl.TreeSamplesQuery import TreeSamplesQuery
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
-from genomics_data_index.storage.model.QueryFeatureMutation import QueryFeatureMutation
+from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
 from genomics_data_index.storage.model.db import Sample
 from genomics_data_index.test.integration import snippy_all_dataframes, data_dir
 
@@ -340,7 +340,7 @@ def test_query_single_mutation(loaded_database_connection: DataIndexConnection):
     db = loaded_database_connection.database
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
 
-    query_result = query(loaded_database_connection).hasa(QueryFeatureMutation('reference:5061:G:A'))
+    query_result = query(loaded_database_connection).hasa(QueryFeatureMutationSPDI('reference:5061:G:A'))
     assert 1 == len(query_result)
     assert {sampleB.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)
@@ -351,7 +351,7 @@ def test_query_single_mutation_complement(loaded_database_connection: DataIndexC
     db = loaded_database_connection.database
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
 
-    query_result = query(loaded_database_connection).hasa(QueryFeatureMutation('reference:5061:G:A'))
+    query_result = query(loaded_database_connection).hasa(QueryFeatureMutationSPDI('reference:5061:G:A'))
     assert 1 == len(query_result)
     assert {sampleB.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)
@@ -396,7 +396,7 @@ def test_query_single_mutation_two_samples(loaded_database_connection: DataIndex
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
     sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
 
-    query_result = query(loaded_database_connection).hasa(QueryFeatureMutation('reference:839:C:G'))
+    query_result = query(loaded_database_connection).hasa(QueryFeatureMutationSPDI('reference:839:C:G'))
     assert 2 == len(query_result)
     assert {sampleB.id, sampleC.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)
@@ -407,7 +407,7 @@ def test_query_single_mutation_two_samples_kmer_one_sample(loaded_database_conne
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
     sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
 
-    query_result = query(loaded_database_connection).hasa(QueryFeatureMutation('reference:839:C:G'))
+    query_result = query(loaded_database_connection).hasa(QueryFeatureMutationSPDI('reference:839:C:G'))
     assert 2 == len(query_result)
     assert {sampleB.id, sampleC.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)
@@ -437,7 +437,7 @@ def test_query_single_mutation_two_samples_complement(loaded_database_connection
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
     sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
 
-    query_result = query(loaded_database_connection).hasa(QueryFeatureMutation('reference:839:C:G'))
+    query_result = query(loaded_database_connection).hasa(QueryFeatureMutationSPDI('reference:839:C:G'))
     assert 2 == len(query_result)
     assert {sampleB.id, sampleC.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)
@@ -450,7 +450,7 @@ def test_query_single_mutation_two_samples_complement(loaded_database_connection
 
 
 def test_query_single_mutation_no_results(loaded_database_connection: DataIndexConnection):
-    query_result = query(loaded_database_connection).hasa(QueryFeatureMutation('reference:1:1:A'))
+    query_result = query(loaded_database_connection).hasa(QueryFeatureMutationSPDI('reference:1:1:A'))
     assert 0 == len(query_result)
     assert query_result.is_empty()
     assert 9 == len(query_result.universe_set)
@@ -461,8 +461,8 @@ def test_query_chained_mutation(loaded_database_connection: DataIndexConnection)
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
 
     query_result = query(loaded_database_connection).hasa(
-        QueryFeatureMutation('reference:839:C:G')).hasa(
-        QueryFeatureMutation('reference:5061:G:A'))
+        QueryFeatureMutationSPDI('reference:839:C:G')).hasa(
+        QueryFeatureMutationSPDI('reference:5061:G:A'))
     assert 1 == len(query_result)
     assert {sampleB.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)

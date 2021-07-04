@@ -1,7 +1,7 @@
 import pytest
 
 from genomics_data_index.storage.model.NucleotideMutationTranslater import NucleotideMutationTranslater
-from genomics_data_index.storage.model.QueryFeatureMutation import QueryFeatureMutation
+from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
 
 
 def test_to_spdi_position():
@@ -76,11 +76,11 @@ def test_from_spdi_insertion():
 
 
 def test_to_db_feature():
-    assert 'seq:1:1:T' == NucleotideMutationTranslater.to_db_feature(QueryFeatureMutation('seq:1:A:T')).id
-    assert 'seq:1:1:T' == NucleotideMutationTranslater.to_db_feature(QueryFeatureMutation('seq:1:1:T')).id
-    assert 'seq:1:2:T' == NucleotideMutationTranslater.to_db_feature(QueryFeatureMutation('seq:1:AT:T')).id
-    assert 'seq:1:2:T' == NucleotideMutationTranslater.to_db_feature(QueryFeatureMutation('seq:1:2:T')).id
-    assert 'seq:10:2:TA' == NucleotideMutationTranslater.to_db_feature(QueryFeatureMutation('seq:10:AT:TA')).id
+    assert 'seq:1:1:T' == NucleotideMutationTranslater.to_db_feature(QueryFeatureMutationSPDI('seq:1:A:T')).id
+    assert 'seq:1:1:T' == NucleotideMutationTranslater.to_db_feature(QueryFeatureMutationSPDI('seq:1:1:T')).id
+    assert 'seq:1:2:T' == NucleotideMutationTranslater.to_db_feature(QueryFeatureMutationSPDI('seq:1:AT:T')).id
+    assert 'seq:1:2:T' == NucleotideMutationTranslater.to_db_feature(QueryFeatureMutationSPDI('seq:1:2:T')).id
+    assert 'seq:10:2:TA' == NucleotideMutationTranslater.to_db_feature(QueryFeatureMutationSPDI('seq:10:AT:TA')).id
 
 
 def test_to_hgvs_id():

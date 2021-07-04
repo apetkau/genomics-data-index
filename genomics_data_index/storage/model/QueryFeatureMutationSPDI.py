@@ -6,7 +6,7 @@ from genomics_data_index.storage.model import NUCLEOTIDE_UNKNOWN
 from genomics_data_index.storage.model.QueryFeature import QueryFeature
 
 
-class QueryFeatureMutation(QueryFeature):
+class QueryFeatureMutationSPDI(QueryFeature):
 
     def __init__(self, spdi: str):
         super().__init__()
@@ -91,7 +91,7 @@ class QueryFeatureMutation(QueryFeature):
         return False
 
     def to_unknown(self) -> QueryFeature:
-        return QueryFeatureMutation(':'.join([
+        return QueryFeatureMutationSPDI(':'.join([
             self._seq_name,
             self._pos,
             self._ref,
