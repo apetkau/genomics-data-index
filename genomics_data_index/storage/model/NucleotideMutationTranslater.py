@@ -1,6 +1,7 @@
-from typing import Union, Tuple
+from typing import Union, Tuple, Optional
 
 from genomics_data_index.storage.model.QueryFeatureMutation import QueryFeatureMutation
+from genomics_data_index.storage.model.QueryFeatureHGVS import QueryFeatureHGVS
 
 
 class NucleotideMutationTranslater:
@@ -63,3 +64,9 @@ class NucleotideMutationTranslater:
     def to_db_feature(cls, feature: QueryFeatureMutation) -> QueryFeatureMutation:
         new_id = cls.to_spdi(feature.scope, feature.position, feature.ref, feature.alt)
         return QueryFeatureMutation(new_id)
+
+    @classmethod
+    def to_hgvs_id(cls, sequence_name: str, gene: Optional[str], variant: str) -> Optional[str]:
+        return QueryFeatureHGVS.create(sequence_name=sequence_name,
+                                       gene=gene,
+                                       variant=variant).id

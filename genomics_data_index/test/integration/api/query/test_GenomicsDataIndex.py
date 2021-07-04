@@ -25,25 +25,123 @@ def test_summaries_loaded_data(loaded_database_genomic_data_store: GenomicsDataI
 
     # Mutations
     assert 112 == gds.count_mutations('genome')
-    ms = gds.mutations_summary('genome', id_type='spdi')
-    print(ms)
+    ms = gds.mutations_summary('genome', id_type='spdi', ignore_annotations=True)
     assert 112 == len(ms)
     assert 'Mutation' == ms.index.name
-    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Count'] == list(ms.columns)
-    assert ['reference', 839, 1, 'G', 2] == ms.loc['reference:839:1:G'].values.tolist()
-    assert ['reference', 866, 9, 'G', 1] == ms.loc['reference:866:9:G'].values.tolist()
-    assert ['reference', 1048, 1, 'G', 1] == ms.loc['reference:1048:1:G'].values.tolist()
-    assert ['reference', 3897, 5, 'G', 2] == ms.loc['reference:3897:5:G'].values.tolist()
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Count', 'Total', 'Percent'] == list(ms.columns)
 
-    ms = gds.mutations_summary('genome', id_type='spdi_ref')
-    print(ms)
+    # Convert percent to int to make it easier to compare in assert statements
+    ms['Percent'] = ms['Percent'].astype(int)
+
+    assert ['reference', 839, 1, 'G', 2, 3, 66] == ms.loc['reference:839:1:G'].values.tolist()
+    assert ['reference', 866, 9, 'G', 1, 3, 33] == ms.loc['reference:866:9:G'].values.tolist()
+    assert ['reference', 1048, 1, 'G', 1, 3, 33] == ms.loc['reference:1048:1:G'].values.tolist()
+    assert ['reference', 3897, 5, 'G', 2, 3, 66] == ms.loc['reference:3897:5:G'].values.tolist()
+
+    ms = gds.mutations_summary('genome', id_type='spdi_ref', ignore_annotations=True)
     assert 112 == len(ms)
     assert 'Mutation' == ms.index.name
-    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Count'] == list(ms.columns)
-    assert ['reference', 839, 'C', 'G', 2] == ms.loc['reference:839:C:G'].values.tolist()
-    assert ['reference', 866, 'GCCAGATCC', 'G', 1] == ms.loc['reference:866:GCCAGATCC:G'].values.tolist()
-    assert ['reference', 1048, 'C', 'G', 1] == ms.loc['reference:1048:C:G'].values.tolist()
-    assert ['reference', 3897, 'GCGCA', 'G', 2] == ms.loc['reference:3897:GCGCA:G'].values.tolist()
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Count', 'Total', 'Percent'] == list(ms.columns)
+
+    # Convert percent to int to make it easier to compare in assert statements
+    ms['Percent'] = ms['Percent'].astype(int)
+
+    assert ['reference', 839, 'C', 'G', 2, 3, 66] == ms.loc['reference:839:C:G'].values.tolist()
+    assert ['reference', 866, 'GCCAGATCC', 'G', 1, 3, 33] == ms.loc['reference:866:GCCAGATCC:G'].values.tolist()
+    assert ['reference', 1048, 'C', 'G', 1, 3, 33] == ms.loc['reference:1048:C:G'].values.tolist()
+    assert ['reference', 3897, 'GCGCA', 'G', 2, 3, 66] == ms.loc['reference:3897:GCGCA:G'].values.tolist()
+
+    # Include annotations (which should all be empty)
+    ms = gds.mutations_summary('genome', id_type='spdi', ignore_annotations=False)
+    assert 112 == len(ms)
+    assert 'Mutation' == ms.index.name
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion',
+            'Count', 'Total', 'Percent', 'Annotation', 'Annotation_Impact',
+            'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
+            'HGVS.c', 'HGVS.p', 'ID_HGVS.c', 'ID_HGVS.p'] == list(ms.columns)
+
+    # Convert percent to int to make it easier to compare in assert statements
+    ms['Percent'] = ms['Percent'].astype(int)
+
+    assert ['reference', 839, 1, 'G', 2, 3, 66] + ['NA']*10 == ms.loc['reference:839:1:G'].fillna('NA').values.tolist()
+
+
+def test_summaries_variant_annotations(loaded_database_genomic_data_store_annotations: GenomicsDataIndex):
+    gds = loaded_database_genomic_data_store_annotations
+
+    # Samples
+    assert 3 == gds.count_samples()
+    assert {'SH10-014', 'SH14-014', 'SH14-001'} == set(gds.sample_names())
+
+    # References
+    assert 1 == gds.count_references()
+    assert ['NC_011083'] == gds.reference_names()
+
+    # Mutations
+    assert 177 == gds.count_mutations('NC_011083')
+
+    # spdi
+    ms = gds.mutations_summary('NC_011083', id_type='spdi', ignore_annotations=False)
+    assert 177 == len(ms)
+    assert 'Mutation' == ms.index.name
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion',
+            'Count', 'Total', 'Percent', 'Annotation', 'Annotation_Impact',
+            'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
+            'HGVS.c', 'HGVS.p', 'ID_HGVS.c', 'ID_HGVS.p'] == list(ms.columns)
+
+    ## Convert percent to int to make it easier to compare in assert statements
+    ms['Percent'] = ms['Percent'].astype(int)
+
+    ## missense variant
+    assert ['NC_011083', 140658, 1, 'A', 3, 3, 100,
+            'missense_variant', 'MODERATE', 'murF', 'SEHA_RS01180', 'transcript', 'protein_coding',
+            'c.497C>A', 'p.Ala166Glu',
+            'hgvs:NC_011083:SEHA_RS01180:c.497C>A', 'hgvs:NC_011083:SEHA_RS01180:p.Ala166Glu'] == list(ms.loc['NC_011083:140658:1:A'])
+
+    ## inframe deletion
+    assert ['NC_011083', 4465400, len('GGCCGAA'), 'G', 3, 3, 100,
+            'conservative_inframe_deletion', 'MODERATE', 'tyrB', 'SEHA_RS22180', 'transcript', 'protein_coding',
+            'c.157_162delGAAGCC', 'p.Glu53_Ala54del',
+            'hgvs:NC_011083:SEHA_RS22180:c.157_162delGAAGCC', 'hgvs:NC_011083:SEHA_RS22180:p.Glu53_Ala54del'] == list(ms.loc['NC_011083:4465400:7:G'])
+
+    ## Intergenic variant (with some NA values in fields)
+    assert ['NC_011083', 4555461, len('T'), 'TC', 1, 3, 33,
+            'intergenic_region', 'MODIFIER', 'SEHA_RS22510-SEHA_RS26685', 'SEHA_RS22510-SEHA_RS26685',
+            'intergenic_region', 'NA',
+            'n.4555461_4555462insC', 'NA',
+            'hgvs:NC_011083:n.4555461_4555462insC', 'NA'] == list(ms.loc['NC_011083:4555461:1:TC'].fillna('NA'))
+
+
+    # spdi_ref
+    ms = gds.mutations_summary('NC_011083', id_type='spdi_ref')
+    assert 177 == len(ms)
+    assert 'Mutation' == ms.index.name
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion',
+            'Count', 'Total', 'Percent', 'Annotation', 'Annotation_Impact',
+            'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
+            'HGVS.c', 'HGVS.p', 'ID_HGVS.c', 'ID_HGVS.p'] == list(ms.columns)
+
+    ## Convert percent to int to make it easier to compare in assert statements
+    ms['Percent'] = ms['Percent'].astype(int)
+
+    ## missense variant
+    assert ['NC_011083', 140658, 'C', 'A', 3, 3, 100,
+            'missense_variant', 'MODERATE', 'murF', 'SEHA_RS01180', 'transcript', 'protein_coding',
+            'c.497C>A', 'p.Ala166Glu',
+            'hgvs:NC_011083:SEHA_RS01180:c.497C>A', 'hgvs:NC_011083:SEHA_RS01180:p.Ala166Glu'] == list(ms.loc['NC_011083:140658:C:A'])
+
+    ## inframe deletion
+    assert ['NC_011083', 4465400, 'GGCCGAA', 'G', 3, 3, 100,
+            'conservative_inframe_deletion', 'MODERATE', 'tyrB', 'SEHA_RS22180', 'transcript', 'protein_coding',
+            'c.157_162delGAAGCC', 'p.Glu53_Ala54del',
+            'hgvs:NC_011083:SEHA_RS22180:c.157_162delGAAGCC', 'hgvs:NC_011083:SEHA_RS22180:p.Glu53_Ala54del'] == list(ms.loc['NC_011083:4465400:GGCCGAA:G'])
+
+    ## Intergenic variant (with some NA values in fields)
+    assert ['NC_011083', 4555461, 'T', 'TC', 1, 3, 33,
+            'intergenic_region', 'MODIFIER', 'SEHA_RS22510-SEHA_RS26685', 'SEHA_RS22510-SEHA_RS26685',
+            'intergenic_region', 'NA',
+            'n.4555461_4555462insC', 'NA',
+            'hgvs:NC_011083:n.4555461_4555462insC', 'NA'] == list(ms.loc['NC_011083:4555461:T:TC'].fillna('NA'))
 
 
 def test_connect_to_project_from_dir():

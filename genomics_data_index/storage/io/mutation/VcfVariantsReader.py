@@ -10,6 +10,7 @@ from genomics_data_index.storage.MaskedGenomicRegions import MaskedGenomicRegion
 from genomics_data_index.storage.io.SampleData import SampleData
 from genomics_data_index.storage.io.mutation.NucleotideFeaturesReader import NucleotideFeaturesReader
 from genomics_data_index.storage.io.mutation.NucleotideSampleData import NucleotideSampleData
+from genomics_data_index.storage.io.mutation.VcfSnpEffAnnotationParser import VcfSnpEffAnnotationParser
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +20,7 @@ class VcfVariantsReader(NucleotideFeaturesReader):
     def __init__(self, sample_files_map: Dict[str, NucleotideSampleData]):
         super().__init__()
         self._sample_files_map = sample_files_map
+        self._snpeff_parser = VcfSnpEffAnnotationParser()
 
     def _fix_df_columns(self, vcf_df: pd.DataFrame) -> pd.DataFrame:
         # If no data, I still want certain column names so that rest of code still works
@@ -43,13 +45,19 @@ class VcfVariantsReader(NucleotideFeaturesReader):
         out['REF'] = out['REF'].map(self._fix_ref)
         out['TYPE'] = self._get_type(out)
 
+        snpeff_headers = self._snpeff_parser.parse_annotation_headers(vcf_info=reader.infos)
+        ann_df = self._snpeff_parser.parse_annotation_entries(vcf_ann_headers=snpeff_headers, vcf_df=out)
+        out = out.merge(ann_df, how='left', left_index=True, right_index=True)
+
         out = self._drop_extra_columns(out)
 
         out['FILE'] = os.path.basename(file)
         cols = out.columns.tolist()
         out['SAMPLE'] = sample_name
         out = out.reindex(columns=['SAMPLE'] + cols)
-        return out
+        return out.loc[:,
+               ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT',
+                'TYPE', 'FILE', 'VARIANT_ID'] + self._snpeff_parser.ANNOTATION_COLUMNS]
 
     def _get_type(self, vcf_df: pd.DataFrame) -> pd.Series:
         return vcf_df['INFO'].map(lambda x: x['TYPE'][0])
@@ -59,6 +67,7 @@ class VcfVariantsReader(NucleotideFeaturesReader):
         for sample in self._sample_files_map:
             vcf_file, index_file = self._sample_files_map[sample].get_vcf_file()
             frame = self.read_vcf(vcf_file, sample)
+            frame = self._snpeff_parser.select_variant_annotations(frame)
             frames.append(frame)
 
         return pd.concat(frames)

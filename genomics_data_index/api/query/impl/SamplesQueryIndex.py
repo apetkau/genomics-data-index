@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Union, List, Set, Tuple
+from typing import Union, List, Set, Tuple, Dict
 
 import numpy as np
 import pandas as pd
@@ -16,6 +16,7 @@ from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.QueryFeature import QueryFeature
 from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
 from genomics_data_index.storage.model.QueryFeatureMutation import QueryFeatureMutation
+from genomics_data_index.storage.model.db import NucleotideVariantsSamples
 from genomics_data_index.storage.service.KmerService import KmerService
 
 logger = logging.getLogger(__name__)
@@ -159,7 +160,8 @@ class SamplesQueryIndex(SamplesQuery):
     def _summary_features_mutations(self, kind: str, selection: str = 'all',
                                     ncores: int = 1,
                                     batch_size: int = 500,
-                                    mutation_type: str = 'all') -> pd.DataFrame:
+                                    mutation_type: str = 'all',
+                                    ignore_annotations: bool = False) -> pd.DataFrame:
         if selection not in self.FEATURES_SELECTIONS:
             raise Exception(f'selection=[{selection}] is unknown. Must be one of {self.FEATURES_SELECTIONS}')
 
@@ -171,8 +173,9 @@ class SamplesQueryIndex(SamplesQuery):
                                                                      )
         features_all_df['Total'] = len(self)
         features_all_df['Percent'] = 100 * (features_all_df['Count'] / features_all_df['Total'])
+
         if selection == 'all':
-            return features_all_df
+            features_results_df = features_all_df
         elif selection == 'unique':
             features_complement_df = self.complement().summary_features(kind=kind, selection='all',
                                                                         ncores=ncores, batch_size=batch_size,
@@ -188,14 +191,20 @@ class SamplesQueryIndex(SamplesQuery):
                 'Total_x': 'Total',
                 'Percent_x': 'Percent',
             }, axis='columns')
-            return features_merged_df[['Sequence', 'Position', 'Deletion', 'Insertion',
-                                       'Count', 'Total', 'Percent']]
+            features_results_df = features_merged_df[['Sequence', 'Position', 'Deletion', 'Insertion',
+                                                      'Count', 'Total', 'Percent']]
         else:
             raise Exception(f'selection=[{selection}] is unknown. Must be one of {self.FEATURES_SELECTIONS}')
 
+        if not ignore_annotations:
+            features_results_df = vs.append_mutation_annotations(features_results_df)
+
+        return features_results_df
+
     def tofeaturesset(self, kind: str = 'mutations', selection: str = 'all',
                       ncores: int = 1) -> Set[str]:
-        return set(self.summary_features(kind=kind, selection=selection, ncores=ncores).index)
+        return set(self.summary_features(kind=kind, selection=selection, ncores=ncores,
+                                         ignore_annotations=True).index)
 
     def and_(self, other):
         if isinstance(other, SamplesQuery):

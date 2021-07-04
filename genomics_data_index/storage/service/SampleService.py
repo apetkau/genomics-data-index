@@ -102,7 +102,11 @@ class SampleService:
         return results_df
 
     def count_samples_associated_with_reference(self, reference_name: str) -> int:
-        return len(self.get_samples_associated_with_reference(reference_name))
+        return self._connection.get_session().query(Sample) \
+            .join(Sample.sample_nucleotide_variation) \
+            .join(SampleNucleotideVariation.reference) \
+            .filter(Reference.name == reference_name) \
+            .count()
 
     def count_samples_associated_with_mlst_scheme(self, scheme_name: str) -> int:
         return len(self.get_samples_with_mlst_alleles(scheme_name))
@@ -150,7 +154,7 @@ class SampleService:
             .filter(Sample.id.in_(sample_ids)) \
             .all()
 
-    def _get_variants_samples_by_variation_features(self, features: List[QueryFeatureMutation]) -> Dict[
+    def get_variants_samples_by_variation_features(self, features: List[QueryFeatureMutation]) -> Dict[
         str, NucleotideVariantsSamples]:
         standardized_features_to_input_feature = {}
         standardized_features_ids = set()
@@ -187,7 +191,7 @@ class SampleService:
 
         if feature_type == 'QueryFeatureMutation':
             features = cast(List[QueryFeatureMutation], features)
-            variants_dict = self._get_variants_samples_by_variation_features(features)
+            variants_dict = self.get_variants_samples_by_variation_features(features)
 
             return {id: variants_dict[id].sample_ids for id in variants_dict}
         elif feature_type == 'QueryFeatureMLST':
@@ -203,7 +207,7 @@ class SampleService:
 
         if feature_type == 'QueryFeatureMutation':
             features = cast(List[QueryFeatureMutation], features)
-            variants_dict = self._get_variants_samples_by_variation_features(features)
+            variants_dict = self.get_variants_samples_by_variation_features(features)
 
             return {id: self.find_samples_by_ids(variants_dict[id].sample_ids) for id in variants_dict}
         elif feature_type == 'QueryFeatureMLST':
@@ -218,7 +222,7 @@ class SampleService:
         feature_type = self._get_feature_type(features)
 
         if feature_type == 'QueryFeatureMutation':
-            variants_dict = self._get_variants_samples_by_variation_features(features)
+            variants_dict = self.get_variants_samples_by_variation_features(features)
 
             return {id: len(variants_dict[id].sample_ids) for id in variants_dict}
         elif feature_type == 'QueryFeatureMLST':

@@ -5,6 +5,7 @@ from typing import List
 root_data_dir = Path(path.dirname(__file__), 'data')
 mlst_dir = root_data_dir / 'mlst'
 data_dir = root_data_dir / 'snippy'
+snpeff_data_dir = root_data_dir / 'snpeff-vcf'
 extra_snippy_dir = root_data_dir / 'extra-snippy-samples'
 regular_vcf_dir = root_data_dir / 'regular-vcf'
 variation_dir = root_data_dir / 'variation'
@@ -12,6 +13,7 @@ consensus_dir = root_data_dir / 'consensus'
 sourmash_dir = root_data_dir / 'sourmash'
 sample_dirs = [data_dir / d for d in listdir(data_dir) if path.isdir(data_dir / d)]
 reference_file = data_dir / 'genome.fasta.gz'
+reference_file_snpeff = snpeff_data_dir / 'NC_011083.fasta.gz'
 tree_file = data_dir / 'tree.tre'
 basic_mlst_file = mlst_dir / 'mlst-basic.tsv'
 mlst_file_unknown = mlst_dir / 'mlst-unknown.tsv'
@@ -40,6 +42,12 @@ snippy_all_dataframes = {
     'SampleA': data_dir / 'SampleA' / 'mutations-dataframe.all.tsv',
     'SampleB': data_dir / 'SampleB' / 'mutations-dataframe.all.tsv',
     'SampleC': data_dir / 'SampleC' / 'mutations-dataframe.all.tsv',
+}
+
+snpeff_sample_vcfs = {
+    'SH10-014': snpeff_data_dir / 'SH10-014.vcf.gz',
+    'SH14-001': snpeff_data_dir / 'SH14-001.vcf.gz',
+    'SH14-014': snpeff_data_dir / 'SH14-014.vcf.gz',
 }
 
 
