@@ -6,6 +6,7 @@
 * [api]: Adding ability to summarize only features unique to a selected set (for `q.summary_features()`).
 * [api]: Adding `Total` and `Percent` columns to `q.summary_features()` dataframe.
 * [analysis]: Added ability to load VCF files with [SnpEff](http://pcingola.github.io/SnpEff/) annotations and associte these with the nucleotide identifiers.
+    * `summary_features()` and `hasa()` works with the SnpEff variant identifiers (HGVS).
 
 # 0.1.0
 
