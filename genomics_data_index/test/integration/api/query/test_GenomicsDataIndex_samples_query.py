@@ -14,6 +14,7 @@ from genomics_data_index.configuration.connector.DataIndexConnection import Data
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
 from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
+from genomics_data_index.storage.model.QueryFeatureHGVS import QueryFeatureHGVS
 from genomics_data_index.storage.model.db import Sample
 from genomics_data_index.test.integration import snippy_all_dataframes, data_dir
 
@@ -345,6 +346,62 @@ def test_query_single_mutation(loaded_database_connection: DataIndexConnection):
     assert {sampleB.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)
     assert not query_result.has_tree()
+
+
+def test_query_mutation_hgvs(loaded_database_connection_annotations: DataIndexConnection):
+    db = loaded_database_connection_annotations.database
+    sample_sh14_001 = db.get_session().query(Sample).filter(Sample.name == 'SH14-001').one()
+    sample_sh14_014 = db.get_session().query(Sample).filter(Sample.name == 'SH14-014').one()
+    sample_sh10_014 = db.get_session().query(Sample).filter(Sample.name == 'SH10-014').one()
+
+    # hgvs c (nucleotide)
+    ## Test using QueryFeature object
+    query_result = query(loaded_database_connection_annotations).hasa(QueryFeatureHGVS.create_from_id('hgvs:NC_011083:SEHA_RS04550:p.Ile224fs'))
+    assert 2 == len(query_result)
+    assert {sample_sh14_001.id, sample_sh14_014.id} == set(query_result.sample_set)
+    assert 3 == len(query_result.universe_set)
+    assert not query_result.has_tree()
+
+    ## Test using string
+    query_result = query(loaded_database_connection_annotations).hasa('hgvs:NC_011083:SEHA_RS04550:p.Ile224fs')
+    assert 2 == len(query_result)
+    assert {sample_sh14_001.id, sample_sh14_014.id} == set(query_result.sample_set)
+    assert 3 == len(query_result.universe_set)
+    assert not query_result.has_tree()
+
+    # hgvs p (protein)
+    ## Test using QueryFeature object
+    query_result = query(loaded_database_connection_annotations).hasa(QueryFeatureHGVS.create_from_id('hgvs:NC_011083:SEHA_RS04550:c.670dupA'))
+    assert 2 == len(query_result)
+    assert {sample_sh14_001.id, sample_sh14_014.id} == set(query_result.sample_set)
+    assert 3 == len(query_result.universe_set)
+    assert not query_result.has_tree()
+
+    ## Test using string
+    query_result = query(loaded_database_connection_annotations).hasa('hgvs:NC_011083:SEHA_RS04550:c.670dupA')
+    assert 2 == len(query_result)
+    assert {sample_sh14_001.id, sample_sh14_014.id} == set(query_result.sample_set)
+    assert 3 == len(query_result.universe_set)
+    assert not query_result.has_tree()
+
+    # hgvs n (nucleotide)
+    ## Test using QueryFeature object
+    query_result = query(loaded_database_connection_annotations).hasa(QueryFeatureHGVS.create_from_id('hgvs:NC_011083:n.882634G>A'))
+    assert 1 == len(query_result)
+    assert {sample_sh10_014.id} == set(query_result.sample_set)
+    assert 3 == len(query_result.universe_set)
+    assert not query_result.has_tree()
+
+    ## Test using string
+    query_result = query(loaded_database_connection_annotations).hasa('hgvs:NC_011083:n.882634G>A')
+    assert 1 == len(query_result)
+    assert {sample_sh10_014.id} == set(query_result.sample_set)
+    assert 3 == len(query_result.universe_set)
+    assert not query_result.has_tree()
+
+    # Test find no results
+    query_result = query(loaded_database_connection_annotations).hasa(QueryFeatureHGVS.create_from_id('hgvs:NC_011083:SEHA_RS04550:p.none'))
+    assert 0 == len(query_result)
 
 
 def test_query_single_mutation_complement(loaded_database_connection: DataIndexConnection):
