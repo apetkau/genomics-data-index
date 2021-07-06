@@ -1,4 +1,4 @@
-from typing import List, Dict, Set, Union, cast
+from typing import List, Dict, Set, Union, cast, Type
 
 import pandas as pd
 from genomics_data_index.storage.model.QueryFeatureMutation import QueryFeatureMutation
@@ -214,8 +214,8 @@ class SampleService:
 
         return mlst_alleles
 
-    def _get_feature_type(self, features: List[QueryFeature]) -> str:
-        feature_types = {type(f).__name__ for f in features}
+    def _get_feature_type(self, features: List[QueryFeature]) -> Type[QueryFeature]:
+        feature_types = {f.__class__ for f in features}
 
         if len(feature_types) != 1:
             raise Exception(f'Should only be one feature type but instead got: {feature_types}.')
@@ -225,12 +225,12 @@ class SampleService:
     def find_sample_sets_by_features(self, features: List[QueryFeature]) -> Dict[str, SampleSet]:
         feature_type = self._get_feature_type(features)
 
-        if feature_type == 'QueryFeatureMutationSPDI':
-            features = cast(List[QueryFeatureMutationSPDI], features)
+        if issubclass(feature_type, QueryFeatureMutation):
+            features = cast(List[QueryFeatureMutation], features)
             variants_dict = self.get_variants_samples_by_variation_features(features)
 
             return {id: variants_dict[id].sample_ids for id in variants_dict}
-        elif feature_type == 'QueryFeatureMLST':
+        elif issubclass(feature_type, QueryFeatureMLST):
             features = cast(List[QueryFeatureMLST], features)
             mlst_alleles = self._get_mlst_samples_by_mlst_features(features)
 
@@ -241,12 +241,12 @@ class SampleService:
     def find_samples_by_features(self, features: List[QueryFeature]) -> Dict[str, List[Sample]]:
         feature_type = self._get_feature_type(features)
 
-        if feature_type == 'QueryFeatureMutationSPDI':
-            features = cast(List[QueryFeatureMutationSPDI], features)
+        if issubclass(feature_type, QueryFeatureMutation):
+            features = cast(List[QueryFeatureMutation], features)
             variants_dict = self.get_variants_samples_by_variation_features(features)
 
             return {id: self.find_samples_by_ids(variants_dict[id].sample_ids) for id in variants_dict}
-        elif feature_type == 'QueryFeatureMLST':
+        elif issubclass(feature_type, QueryFeatureMLST):
             features = cast(List[QueryFeatureMLST], features)
             mlst_alleles = self._get_mlst_samples_by_mlst_features(features)
 
@@ -257,11 +257,13 @@ class SampleService:
     def count_samples_by_features(self, features: List[QueryFeature]) -> Dict[str, List[Sample]]:
         feature_type = self._get_feature_type(features)
 
-        if feature_type == 'QueryFeatureMutationSPDI':
+        if issubclass(feature_type, QueryFeatureMutation):
+            features = cast(List[QueryFeatureMutation], features)
             variants_dict = self.get_variants_samples_by_variation_features(features)
 
             return {id: len(variants_dict[id].sample_ids) for id in variants_dict}
-        elif feature_type == 'QueryFeatureMLST':
+        elif issubclass(feature_type, QueryFeatureMLST):
+            features = cast(List[QueryFeatureMLST], features)
             mlst_alleles = self._get_mlst_samples_by_mlst_features(features)
 
             allele_id_to_count = {a.sla: len(a.sample_ids) for a in mlst_alleles}
