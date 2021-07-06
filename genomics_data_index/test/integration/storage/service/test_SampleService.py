@@ -474,3 +474,28 @@ def test_get_variants_samples_by_variation_features_only_hgvs_cp_spdi(database, 
     assert 'NC_011083:835147:C:CA' in feature_id_nucleotide_samples
     assert {sample_sh14_001.id, sample_sh14_014.id} == set(feature_id_nucleotide_samples['NC_011083:835147:C:CA'].sample_ids)
 
+
+def test_get_variants_samples_by_variation_features_both_hgvs_spdi(database, sample_service_snpeff_annotations):
+    sample_sh14_001 = database.get_session().query(Sample).filter(Sample.name == 'SH14-001').one()
+    sample_sh14_014 = database.get_session().query(Sample).filter(Sample.name == 'SH14-014').one()
+    sample_sh10_014 = database.get_session().query(Sample).filter(Sample.name == 'SH10-014').one()
+
+    features = [QueryFeatureHGVS.create_from_id('hgvs:NC_011083:SEHA_RS04550:c.670dupA'),
+                QueryFeatureHGVS.create_from_id('hgvs:NC_011083:n.882634G>A'),
+                QueryFeatureHGVS.create_from_id('hgvs:NC_011083:SEHA_RS04550:p.Ile224fs'),
+                QueryFeatureMutationSPDI('NC_011083:835147:C:CA')]
+    feature_id_nucleotide_samples = sample_service_snpeff_annotations.get_variants_samples_by_variation_features(features)
+
+    assert 4 == len(feature_id_nucleotide_samples)
+    assert {sample_sh14_001.id, sample_sh14_014.id} == set(feature_id_nucleotide_samples['hgvs:NC_011083:SEHA_RS04550:c.670dupA'].sample_ids)
+    assert {sample_sh14_001.id, sample_sh14_014.id} == set(feature_id_nucleotide_samples['hgvs:NC_011083:SEHA_RS04550:p.Ile224fs'].sample_ids)
+    assert {sample_sh10_014.id} == set(feature_id_nucleotide_samples['hgvs:NC_011083:n.882634G>A'].sample_ids)
+    assert {sample_sh14_001.id, sample_sh14_014.id} == set(feature_id_nucleotide_samples['NC_011083:835147:C:CA'].sample_ids)
+
+
+def test_get_variants_samples_by_variation_features_no_matches(database, sample_service_snpeff_annotations):
+    features = [QueryFeatureHGVS.create_from_id('hgvs:NC_011083:n.unknown')]
+
+    feature_id_nucleotide_samples = sample_service_snpeff_annotations.get_variants_samples_by_variation_features(features)
+
+    assert 0 == len(feature_id_nucleotide_samples)
