@@ -24,6 +24,7 @@ def test_create_from_id():
     assert not f.is_nucleotide()
     assert f.is_protein()
 
+
 def test_create():
     f = QueryFeatureHGVS.create('NC_011083', 'SEHA_RS01180', 'c.497C>A')
     assert 'hgvs:NC_011083:SEHA_RS01180:c.497C>A' == f.id

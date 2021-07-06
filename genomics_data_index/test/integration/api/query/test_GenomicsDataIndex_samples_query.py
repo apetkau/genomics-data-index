@@ -12,9 +12,9 @@ from genomics_data_index.api.query.impl.MutationTreeSamplesQuery import Mutation
 from genomics_data_index.api.query.impl.TreeSamplesQuery import TreeSamplesQuery
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
 from genomics_data_index.storage.SampleSet import SampleSet
+from genomics_data_index.storage.model.QueryFeatureHGVS import QueryFeatureHGVS
 from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
 from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
-from genomics_data_index.storage.model.QueryFeatureHGVS import QueryFeatureHGVS
 from genomics_data_index.storage.model.db import Sample
 from genomics_data_index.test.integration import snippy_all_dataframes, data_dir
 
@@ -356,7 +356,8 @@ def test_query_mutation_hgvs(loaded_database_connection_annotations: DataIndexCo
 
     # hgvs c (nucleotide)
     ## Test using QueryFeature object
-    query_result = query(loaded_database_connection_annotations).hasa(QueryFeatureHGVS.create_from_id('hgvs:NC_011083:SEHA_RS04550:p.Ile224fs'))
+    query_result = query(loaded_database_connection_annotations).hasa(
+        QueryFeatureHGVS.create_from_id('hgvs:NC_011083:SEHA_RS04550:p.Ile224fs'))
     assert 2 == len(query_result)
     assert {sample_sh14_001.id, sample_sh14_014.id} == set(query_result.sample_set)
     assert 3 == len(query_result.universe_set)
@@ -371,7 +372,8 @@ def test_query_mutation_hgvs(loaded_database_connection_annotations: DataIndexCo
 
     # hgvs p (protein)
     ## Test using QueryFeature object
-    query_result = query(loaded_database_connection_annotations).hasa(QueryFeatureHGVS.create_from_id('hgvs:NC_011083:SEHA_RS04550:c.670dupA'))
+    query_result = query(loaded_database_connection_annotations).hasa(
+        QueryFeatureHGVS.create_from_id('hgvs:NC_011083:SEHA_RS04550:c.670dupA'))
     assert 2 == len(query_result)
     assert {sample_sh14_001.id, sample_sh14_014.id} == set(query_result.sample_set)
     assert 3 == len(query_result.universe_set)
@@ -386,7 +388,8 @@ def test_query_mutation_hgvs(loaded_database_connection_annotations: DataIndexCo
 
     # hgvs n (nucleotide)
     ## Test using QueryFeature object
-    query_result = query(loaded_database_connection_annotations).hasa(QueryFeatureHGVS.create_from_id('hgvs:NC_011083:n.882634G>A'))
+    query_result = query(loaded_database_connection_annotations).hasa(
+        QueryFeatureHGVS.create_from_id('hgvs:NC_011083:n.882634G>A'))
     assert 1 == len(query_result)
     assert {sample_sh10_014.id} == set(query_result.sample_set)
     assert 3 == len(query_result.universe_set)
@@ -400,7 +403,8 @@ def test_query_mutation_hgvs(loaded_database_connection_annotations: DataIndexCo
     assert not query_result.has_tree()
 
     # Test find no results
-    query_result = query(loaded_database_connection_annotations).hasa(QueryFeatureHGVS.create_from_id('hgvs:NC_011083:SEHA_RS04550:p.none'))
+    query_result = query(loaded_database_connection_annotations).hasa(
+        QueryFeatureHGVS.create_from_id('hgvs:NC_011083:SEHA_RS04550:p.none'))
     assert 0 == len(query_result)
 
 
@@ -1859,7 +1863,8 @@ def test_summary_features_kindmutations_unique(loaded_database_connection: DataI
     expected_df['Total'] = 3
     expected_df['Percent'] = 100 * (expected_df['Count'] / expected_df['Total'])
 
-    mutations_df = q.isin(['SampleA', 'SampleB', 'SampleC']).summary_features(selection='unique', ignore_annotations=True)
+    mutations_df = q.isin(['SampleA', 'SampleB', 'SampleC']).summary_features(selection='unique',
+                                                                              ignore_annotations=True)
     mutations_df = mutations_df.sort_index()
 
     assert len(expected_df) == len(mutations_df)
@@ -1900,21 +1905,23 @@ def test_summary_features_kindmutations_annotations(loaded_database_connection_a
     assert ['NC_011083', 140658, 'C', 'A', 1, 1, 100,
             'missense_variant', 'MODERATE', 'murF', 'SEHA_RS01180', 'transcript', 'protein_coding',
             'c.497C>A', 'p.Ala166Glu',
-            'hgvs:NC_011083:SEHA_RS01180:c.497C>A', 'hgvs:NC_011083:SEHA_RS01180:p.Ala166Glu'] == list(mutations_df.loc['NC_011083:140658:C:A'])
+            'hgvs:NC_011083:SEHA_RS01180:c.497C>A', 'hgvs:NC_011083:SEHA_RS01180:p.Ala166Glu'] == list(
+        mutations_df.loc['NC_011083:140658:C:A'])
 
     ## inframe deletion
     assert ['NC_011083', 4465400, 'GGCCGAA', 'G', 1, 1, 100,
             'conservative_inframe_deletion', 'MODERATE', 'tyrB', 'SEHA_RS22180', 'transcript', 'protein_coding',
             'c.157_162delGAAGCC', 'p.Glu53_Ala54del',
-            'hgvs:NC_011083:SEHA_RS22180:c.157_162delGAAGCC', 'hgvs:NC_011083:SEHA_RS22180:p.Glu53_Ala54del'] == list(mutations_df.loc['NC_011083:4465400:GGCCGAA:G'])
+            'hgvs:NC_011083:SEHA_RS22180:c.157_162delGAAGCC', 'hgvs:NC_011083:SEHA_RS22180:p.Glu53_Ala54del'] == list(
+        mutations_df.loc['NC_011083:4465400:GGCCGAA:G'])
 
     ## Intergenic variant (with some NA values in fields)
     assert ['NC_011083', 4555461, 'T', 'TC', 1, 1, 100,
             'intergenic_region', 'MODIFIER', 'SEHA_RS22510-SEHA_RS26685', 'SEHA_RS22510-SEHA_RS26685',
             'intergenic_region', 'NA',
             'n.4555461_4555462insC', 'NA',
-            'hgvs:NC_011083:n.4555461_4555462insC', 'NA'] == list(mutations_df.loc['NC_011083:4555461:T:TC'].fillna('NA'))
-
+            'hgvs:NC_011083:n.4555461_4555462insC', 'NA'] == list(
+        mutations_df.loc['NC_011083:4555461:T:TC'].fillna('NA'))
 
     # 3 samples
     mutations_df = q.isin(['SH10-014', 'SH14-001', 'SH14-014']).summary_features(ignore_annotations=False)
@@ -1932,15 +1939,16 @@ def test_summary_features_kindmutations_annotations(loaded_database_connection_a
     assert ['NC_011083', 140658, 'C', 'A', 3, 3, 100,
             'missense_variant', 'MODERATE', 'murF', 'SEHA_RS01180', 'transcript', 'protein_coding',
             'c.497C>A', 'p.Ala166Glu',
-            'hgvs:NC_011083:SEHA_RS01180:c.497C>A', 'hgvs:NC_011083:SEHA_RS01180:p.Ala166Glu'] == list(mutations_df.loc['NC_011083:140658:C:A'])
+            'hgvs:NC_011083:SEHA_RS01180:c.497C>A', 'hgvs:NC_011083:SEHA_RS01180:p.Ala166Glu'] == list(
+        mutations_df.loc['NC_011083:140658:C:A'])
 
     ## Intergenic variant (1/3)
     assert ['NC_011083', 4555461, 'T', 'TC', 1, 3, 33,
             'intergenic_region', 'MODIFIER', 'SEHA_RS22510-SEHA_RS26685', 'SEHA_RS22510-SEHA_RS26685',
             'intergenic_region', 'NA',
             'n.4555461_4555462insC', 'NA',
-            'hgvs:NC_011083:n.4555461_4555462insC', 'NA'] == list(mutations_df.loc['NC_011083:4555461:T:TC'].fillna('NA'))
-
+            'hgvs:NC_011083:n.4555461_4555462insC', 'NA'] == list(
+        mutations_df.loc['NC_011083:4555461:T:TC'].fillna('NA'))
 
     # Test ignore annotations
     mutations_df = q.isin(['SH10-014', 'SH14-001', 'SH14-014']).summary_features(ignore_annotations=True)
@@ -1948,7 +1956,6 @@ def test_summary_features_kindmutations_annotations(loaded_database_connection_a
     assert ['Sequence', 'Position', 'Deletion', 'Insertion',
             'Count', 'Total', 'Percent'] == list(mutations_df.columns)
     assert 177 == len(mutations_df)
-
 
     ## Test unique
     mutations_df = q.isa('SH10-014').summary_features(selection='unique', ignore_annotations=False)
@@ -1966,7 +1973,8 @@ def test_summary_features_kindmutations_annotations(loaded_database_connection_a
     assert ['NC_011083', 2049576, 'A', 'C', 1, 1, 100,
             'missense_variant', 'MODERATE', 'cutC', 'SEHA_RS10675', 'transcript', 'protein_coding',
             'c.536T>G', 'p.Val179Gly',
-            'hgvs:NC_011083:SEHA_RS10675:c.536T>G', 'hgvs:NC_011083:SEHA_RS10675:p.Val179Gly'] == list(mutations_df.loc['NC_011083:2049576:A:C'])
+            'hgvs:NC_011083:SEHA_RS10675:c.536T>G', 'hgvs:NC_011083:SEHA_RS10675:p.Val179Gly'] == list(
+        mutations_df.loc['NC_011083:2049576:A:C'])
 
 
 def test_summary_features_two(loaded_database_connection: DataIndexConnection):
