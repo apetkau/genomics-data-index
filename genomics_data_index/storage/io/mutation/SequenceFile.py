@@ -4,9 +4,19 @@ from mimetypes import guess_type
 from os.path import basename, splitext
 from pathlib import Path
 from typing import Tuple, List
+import logging
+from os import path
+import shutil
 
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
+
+
+logger = logging.getLogger(__name__)
+
+
+config_dir = Path(path.dirname(__file__), 'config')
+snpeff_config_template = config_dir / 'snpEff.config'
 
 
 class SequenceFile:
@@ -40,3 +50,13 @@ class SequenceFile:
             ref_name = splitext(basename(self._file))[0]
 
         return ref_name
+
+    def create_snpeff_database(self, database_dir: Path) -> Path:
+        logger.debug(f'Setting up snpeff database in [{database_dir}]')
+
+        snpeff_config_path = database_dir / snpeff_config_template.name
+        shutil.copy(snpeff_config_template, snpeff_config_path)
+
+        logger.debug(f'Writing snpeff config file [{snpeff_config_path}]')
+
+        return snpeff_config_path
