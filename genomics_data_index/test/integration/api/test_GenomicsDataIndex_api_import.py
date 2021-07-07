@@ -10,7 +10,7 @@ import genomics_data_index.api as gdi
 
 from genomics_data_index.test.integration import reference_file, sample_dirs, basic_mlst_file
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
-from genomics_data_index.storage.model.QueryFeatureMutation import QueryFeatureMutation
+from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
 from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
 from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
 from genomics_data_index.storage.io.mlst.MLSTSampleDataPackage import MLSTSampleDataPackage
@@ -46,12 +46,12 @@ def test_query_single_mutation(loaded_genomics_index: gdi.GenomicsDataIndex):
     sample1 = db.get_session().query(Sample).filter(Sample.name == 'CFSAN002349').one()
     sample2 = db.get_session().query(Sample).filter(Sample.name == 'CFSAN023463').one()
 
-    query_result = gi.samples_query().hasa(QueryFeatureMutation('reference:5061:G:A'))
+    query_result = gi.samples_query().hasa(QueryFeatureMutationSPDI('reference:5061:G:A'))
     assert 1 == len(query_result)
     assert {sampleB.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)
 
-    query_result = gi.samples_query().hasa(QueryFeatureMutation('reference:5061:G:A'))
+    query_result = gi.samples_query().hasa(QueryFeatureMutationSPDI('reference:5061:G:A'))
     assert 1 == len(query_result)
     assert {sampleB.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)

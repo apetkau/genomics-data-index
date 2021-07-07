@@ -1,6 +1,7 @@
 from genomics_data_index.storage.SampleSet import SampleSet
+from genomics_data_index.storage.model.QueryFeatureHGVS import QueryFeatureHGVS
 from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
-from genomics_data_index.storage.model.QueryFeatureMutation import QueryFeatureMutation
+from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
 from genomics_data_index.storage.model.db import Sample
 from genomics_data_index.storage.service.SampleService import SampleService
 
@@ -154,27 +155,84 @@ def test_find_samples_by_ids_3_samples(sample_service, variation_service):
 def test_find_samples_by_features_variations(database, sample_service, variation_service):
     sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
 
-    variant_samples = sample_service.find_samples_by_features([QueryFeatureMutation('reference:5061:G:A')])
+    variant_samples = sample_service.find_samples_by_features([QueryFeatureMutationSPDI('reference:5061:G:A')])
 
     assert f'reference:5061:G:A' in variant_samples
     assert {'SampleB'} == {s.name for s in variant_samples[f'reference:5061:G:A']}
     assert {sampleB.id} == {s.id for s in variant_samples[f'reference:5061:G:A']}
 
 
+def test_find_samples_by_features_variations_hgvs(database, sample_service_snpeff_annotations):
+    sample_sh14_001 = database.get_session().query(Sample).filter(Sample.name == 'SH14-001').one()
+    sample_sh14_014 = database.get_session().query(Sample).filter(Sample.name == 'SH14-014').one()
+
+    # hgvs c (nucleotide)
+    features = [QueryFeatureHGVS.create_from_id('hgvs:NC_011083:SEHA_RS04550:c.670dupA')]
+    variant_samples = sample_service_snpeff_annotations.find_samples_by_features(features)
+    assert 1 == len(variant_samples)
+    assert 'hgvs:NC_011083:SEHA_RS04550:c.670dupA' in variant_samples
+    assert {'SH14-001', 'SH14-014'} == {s.name for s in variant_samples['hgvs:NC_011083:SEHA_RS04550:c.670dupA']}
+    assert {sample_sh14_001.id, sample_sh14_014.id} == {s.id for s in
+                                                        variant_samples['hgvs:NC_011083:SEHA_RS04550:c.670dupA']}
+
+    # hgvs p (protein)
+    features = [QueryFeatureHGVS.create_from_id('hgvs:NC_011083:SEHA_RS04550:p.Ile224fs')]
+    variant_samples = sample_service_snpeff_annotations.find_samples_by_features(features)
+    assert 1 == len(variant_samples)
+    assert 'hgvs:NC_011083:SEHA_RS04550:p.Ile224fs' in variant_samples
+    assert {'SH14-001', 'SH14-014'} == {s.name for s in variant_samples['hgvs:NC_011083:SEHA_RS04550:p.Ile224fs']}
+    assert {sample_sh14_001.id, sample_sh14_014.id} == {s.id for s in
+                                                        variant_samples['hgvs:NC_011083:SEHA_RS04550:p.Ile224fs']}
+
+    # spdi
+    features = [QueryFeatureMutationSPDI('NC_011083:835147:C:CA')]
+    variant_samples = sample_service_snpeff_annotations.find_samples_by_features(features)
+    assert 1 == len(variant_samples)
+    assert 'NC_011083:835147:C:CA' in variant_samples
+    assert {'SH14-001', 'SH14-014'} == {s.name for s in variant_samples['NC_011083:835147:C:CA']}
+    assert {sample_sh14_001.id, sample_sh14_014.id} == {s.id for s in variant_samples['NC_011083:835147:C:CA']}
+
+
 def test_find_sample_sets_by_features_variations(database, sample_service, variation_service):
     sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
 
-    sample_sets = sample_service.find_sample_sets_by_features([QueryFeatureMutation('reference:5061:G:A')])
+    sample_sets = sample_service.find_sample_sets_by_features([QueryFeatureMutationSPDI('reference:5061:G:A')])
 
     assert f'reference:5061:G:A' in sample_sets
     assert {sampleB.id} == set(sample_sets[f'reference:5061:G:A'])
+
+
+def test_find_sample_sets_by_features_variations_hgvs(database, sample_service_snpeff_annotations):
+    sample_sh14_001 = database.get_session().query(Sample).filter(Sample.name == 'SH14-001').one()
+    sample_sh14_014 = database.get_session().query(Sample).filter(Sample.name == 'SH14-014').one()
+
+    # hgvs c (nucleotide)
+    features = [QueryFeatureHGVS.create_from_id('hgvs:NC_011083:SEHA_RS04550:c.670dupA')]
+    sample_sets = sample_service_snpeff_annotations.find_sample_sets_by_features(features)
+    assert 1 == len(sample_sets)
+    assert 'hgvs:NC_011083:SEHA_RS04550:c.670dupA' in sample_sets
+    assert {sample_sh14_001.id, sample_sh14_014.id} == set(sample_sets['hgvs:NC_011083:SEHA_RS04550:c.670dupA'])
+
+    # hgvs p (protein)
+    features = [QueryFeatureHGVS.create_from_id('hgvs:NC_011083:SEHA_RS04550:p.Ile224fs')]
+    sample_sets = sample_service_snpeff_annotations.find_sample_sets_by_features(features)
+    assert 1 == len(sample_sets)
+    assert 'hgvs:NC_011083:SEHA_RS04550:p.Ile224fs' in sample_sets
+    assert {sample_sh14_001.id, sample_sh14_014.id} == set(sample_sets['hgvs:NC_011083:SEHA_RS04550:p.Ile224fs'])
+
+    # spdi
+    features = [QueryFeatureMutationSPDI('NC_011083:835147:C:CA')]
+    sample_sets = sample_service_snpeff_annotations.find_sample_sets_by_features(features)
+    assert 1 == len(sample_sets)
+    assert 'NC_011083:835147:C:CA' in sample_sets
+    assert {sample_sh14_001.id, sample_sh14_014.id} == set(sample_sets['NC_011083:835147:C:CA'])
 
 
 def test_find_sample_sets_by_features_variations_two_samples(database, sample_service, variation_service):
     sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
     sampleC = database.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
 
-    variant_samples = sample_service.find_sample_sets_by_features([QueryFeatureMutation('reference:4975:T:C')])
+    variant_samples = sample_service.find_sample_sets_by_features([QueryFeatureMutationSPDI('reference:4975:T:C')])
 
     assert {'reference:4975:T:C'} == set(variant_samples.keys())
     assert {sampleC.id, sampleB.id} == set(variant_samples[f'reference:4975:T:C'])
@@ -184,7 +242,7 @@ def test_find_sample_sets_by_features_variations_two_samples(database, sample_se
 def test_find_samples_by_features_variations_numeric_deletion(database, sample_service, variation_service):
     sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
 
-    variant_samples = sample_service.find_samples_by_features([QueryFeatureMutation('reference:5061:1:A')])
+    variant_samples = sample_service.find_samples_by_features([QueryFeatureMutationSPDI('reference:5061:1:A')])
 
     assert f'reference:5061:1:A' in variant_samples
     assert {'SampleB'} == {s.name for s in variant_samples[f'reference:5061:1:A']}
@@ -192,7 +250,7 @@ def test_find_samples_by_features_variations_numeric_deletion(database, sample_s
 
 
 def test_count_samples_by_variation_features_single_feature(sample_service, variation_service):
-    features = [QueryFeatureMutation('reference:5061:G:A')]
+    features = [QueryFeatureMutationSPDI('reference:5061:G:A')]
 
     variant_counts = sample_service.count_samples_by_features(features)
 
@@ -201,7 +259,7 @@ def test_count_samples_by_variation_features_single_feature(sample_service, vari
 
 
 def test_count_samples_by_variation_features_multiple_features(sample_service, variation_service):
-    features = [QueryFeatureMutation('reference:5061:G:A'), QueryFeatureMutation('reference:3063:A:ATGCAGC')]
+    features = [QueryFeatureMutationSPDI('reference:5061:G:A'), QueryFeatureMutationSPDI('reference:3063:A:ATGCAGC')]
 
     variant_counts = sample_service.count_samples_by_features(features)
 
@@ -211,13 +269,22 @@ def test_count_samples_by_variation_features_multiple_features(sample_service, v
 
 
 def test_count_samples_by_variation_features_multiple_features_numeric_deletion(sample_service, variation_service):
-    features = [QueryFeatureMutation('reference:5061:1:A'), QueryFeatureMutation('reference:3063:1:ATGCAGC')]
+    features = [QueryFeatureMutationSPDI('reference:5061:1:A'), QueryFeatureMutationSPDI('reference:3063:1:ATGCAGC')]
 
     variant_counts = sample_service.count_samples_by_features(features)
 
     assert 2 == len(variant_counts)
     assert 1 == variant_counts[f'reference:5061:1:A']
     assert 2 == variant_counts[f'reference:3063:1:ATGCAGC']
+
+
+def test_count_samples_by_features_variations_hgvs_multiple_features(database, sample_service_snpeff_annotations):
+    features = [QueryFeatureHGVS.create_from_id('hgvs:NC_011083:SEHA_RS04550:p.Ile224fs'),
+                QueryFeatureHGVS.create_from_id('hgvs:NC_011083:n.882634G>A')]
+    variant_counts = sample_service_snpeff_annotations.count_samples_by_features(features)
+    assert 2 == len(variant_counts)
+    assert 1 == variant_counts['hgvs:NC_011083:n.882634G>A']
+    assert 2 == variant_counts['hgvs:NC_011083:SEHA_RS04550:p.Ile224fs']
 
 
 def test_get_samples_with_mlst_alleles(sample_service, mlst_service_loaded):
@@ -425,5 +492,87 @@ def test_get_all_sample_ids(database, sample_service, variation_service):
     assert {sampleA.id, sampleB.id, sampleC.id} == set(sample_service.get_all_sample_ids())
 
 
-def test_get_all_sample_ids_empty_db(database, sample_service):
-    assert set() == set(sample_service.get_all_sample_ids())
+def test_get_variants_samples_by_variation_features_only_spdi(database, sample_service, variation_service):
+    sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+
+    feature_id_nucleotide_samples = sample_service.get_variants_samples_by_variation_features(
+        [QueryFeatureMutationSPDI('reference:5061:G:A')])
+
+    assert 1 == len(feature_id_nucleotide_samples)
+    assert f'reference:5061:G:A' in feature_id_nucleotide_samples
+    assert {sampleB.id} == set(feature_id_nucleotide_samples[f'reference:5061:G:A'].sample_ids)
+
+
+def test_get_variants_samples_by_variation_features_only_hgvs_c(database, sample_service_snpeff_annotations):
+    sample_sh10_014 = database.get_session().query(Sample).filter(Sample.name == 'SH10-014').one()
+    features = [QueryFeatureHGVS.create_from_id('hgvs:NC_011083:n.882634G>A')]
+
+    feature_id_nucleotide_samples = sample_service_snpeff_annotations.get_variants_samples_by_variation_features(
+        features)
+
+    assert 1 == len(feature_id_nucleotide_samples)
+    assert 'hgvs:NC_011083:n.882634G>A' in feature_id_nucleotide_samples
+    assert {sample_sh10_014.id} == set(feature_id_nucleotide_samples['hgvs:NC_011083:n.882634G>A'].sample_ids)
+
+
+def test_get_variants_samples_by_variation_features_only_hgvs_cp_spdi(database, sample_service_snpeff_annotations):
+    sample_sh14_001 = database.get_session().query(Sample).filter(Sample.name == 'SH14-001').one()
+    sample_sh14_014 = database.get_session().query(Sample).filter(Sample.name == 'SH14-014').one()
+
+    # hgvs c (nucleotide)
+    features = [QueryFeatureHGVS.create_from_id('hgvs:NC_011083:SEHA_RS04550:c.670dupA')]
+    feature_id_nucleotide_samples = sample_service_snpeff_annotations.get_variants_samples_by_variation_features(
+        features)
+    assert 1 == len(feature_id_nucleotide_samples)
+    assert 'hgvs:NC_011083:SEHA_RS04550:c.670dupA' in feature_id_nucleotide_samples
+    assert {sample_sh14_001.id, sample_sh14_014.id} == set(
+        feature_id_nucleotide_samples['hgvs:NC_011083:SEHA_RS04550:c.670dupA'].sample_ids)
+
+    # hgvs p (protein)
+    features = [QueryFeatureHGVS.create_from_id('hgvs:NC_011083:SEHA_RS04550:p.Ile224fs')]
+    feature_id_nucleotide_samples = sample_service_snpeff_annotations.get_variants_samples_by_variation_features(
+        features)
+    assert 1 == len(feature_id_nucleotide_samples)
+    assert 'hgvs:NC_011083:SEHA_RS04550:p.Ile224fs' in feature_id_nucleotide_samples
+    assert {sample_sh14_001.id, sample_sh14_014.id} == set(
+        feature_id_nucleotide_samples['hgvs:NC_011083:SEHA_RS04550:p.Ile224fs'].sample_ids)
+
+    # spdi
+    features = [QueryFeatureMutationSPDI('NC_011083:835147:C:CA')]
+    feature_id_nucleotide_samples = sample_service_snpeff_annotations.get_variants_samples_by_variation_features(
+        features)
+    assert 1 == len(feature_id_nucleotide_samples)
+    assert 'NC_011083:835147:C:CA' in feature_id_nucleotide_samples
+    assert {sample_sh14_001.id, sample_sh14_014.id} == set(
+        feature_id_nucleotide_samples['NC_011083:835147:C:CA'].sample_ids)
+
+
+def test_get_variants_samples_by_variation_features_both_hgvs_spdi(database, sample_service_snpeff_annotations):
+    sample_sh14_001 = database.get_session().query(Sample).filter(Sample.name == 'SH14-001').one()
+    sample_sh14_014 = database.get_session().query(Sample).filter(Sample.name == 'SH14-014').one()
+    sample_sh10_014 = database.get_session().query(Sample).filter(Sample.name == 'SH10-014').one()
+
+    features = [QueryFeatureHGVS.create_from_id('hgvs:NC_011083:SEHA_RS04550:c.670dupA'),
+                QueryFeatureHGVS.create_from_id('hgvs:NC_011083:n.882634G>A'),
+                QueryFeatureHGVS.create_from_id('hgvs:NC_011083:SEHA_RS04550:p.Ile224fs'),
+                QueryFeatureMutationSPDI('NC_011083:835147:C:CA')]
+    feature_id_nucleotide_samples = sample_service_snpeff_annotations.get_variants_samples_by_variation_features(
+        features)
+
+    assert 4 == len(feature_id_nucleotide_samples)
+    assert {sample_sh14_001.id, sample_sh14_014.id} == set(
+        feature_id_nucleotide_samples['hgvs:NC_011083:SEHA_RS04550:c.670dupA'].sample_ids)
+    assert {sample_sh14_001.id, sample_sh14_014.id} == set(
+        feature_id_nucleotide_samples['hgvs:NC_011083:SEHA_RS04550:p.Ile224fs'].sample_ids)
+    assert {sample_sh10_014.id} == set(feature_id_nucleotide_samples['hgvs:NC_011083:n.882634G>A'].sample_ids)
+    assert {sample_sh14_001.id, sample_sh14_014.id} == set(
+        feature_id_nucleotide_samples['NC_011083:835147:C:CA'].sample_ids)
+
+
+def test_get_variants_samples_by_variation_features_no_matches(database, sample_service_snpeff_annotations):
+    features = [QueryFeatureHGVS.create_from_id('hgvs:NC_011083:n.unknown')]
+
+    feature_id_nucleotide_samples = sample_service_snpeff_annotations.get_variants_samples_by_variation_features(
+        features)
+
+    assert 0 == len(feature_id_nucleotide_samples)

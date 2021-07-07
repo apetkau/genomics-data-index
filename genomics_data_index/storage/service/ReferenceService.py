@@ -7,7 +7,7 @@ from Bio.SeqRecord import SeqRecord
 from biocommons.seqrepo import SeqRepo
 from ete3 import Tree
 
-from genomics_data_index.storage.model.QueryFeatureMutation import QueryFeatureMutation
+from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
 from genomics_data_index.storage.model.db import Reference, SampleNucleotideVariation, ReferenceSequence, Sample
 from genomics_data_index.storage.service import DatabaseConnection, EntityExistsError
 from genomics_data_index.storage.util import parse_sequence_file
@@ -92,7 +92,7 @@ class ReferenceService:
             raise Exception(f'to={to} must be one of {self.MUTATION_ID_TYPES}')
 
         # Convert to query feature mutations so I can get spdi parts
-        spdi_features = {QueryFeatureMutation(i) for i in spdi_ids}
+        spdi_features = {QueryFeatureMutationSPDI(i) for i in spdi_ids}
 
         # Get set of sequence names since it's likely all (or most) of the input spdi_ids are on the same sequence
         sequence_names = {f.sequence for f in spdi_features}

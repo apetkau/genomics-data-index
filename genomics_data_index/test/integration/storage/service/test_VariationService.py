@@ -78,7 +78,7 @@ def test_summarize_variants(database, snippy_nucleotide_data_package, reference_
 
 
 def test_get_variants_on_reference(database, snippy_nucleotide_data_package, reference_service_with_data,
-                            sample_service, filesystem_storage):
+                                   sample_service, filesystem_storage):
     variation_service = VariationService(database_connection=database,
                                          reference_service=reference_service_with_data,
                                          sample_service=sample_service,
@@ -203,7 +203,6 @@ def test_insert_variants_examine_variation_annotations(database, snpeff_nucleoti
     assert 'hgvs:NC_011083:SEHA_RS03410:c.1229T>G' == v.id_hgvs_c
     assert 'hgvs:NC_011083:SEHA_RS03410:p.Leu410Arg' == v.id_hgvs_p
 
-
     # Deletion
     v: NucleotideVariantsSamples = session.query(NucleotideVariantsSamples).get({
         'sequence': 'NC_011083',
@@ -227,7 +226,6 @@ def test_insert_variants_examine_variation_annotations(database, snpeff_nucleoti
     assert 'hgvs:NC_011083:SEHA_RS04540:c.696delT' == v.id_hgvs_c
     assert 'hgvs:NC_011083:SEHA_RS04540:p.Phe232fs' == v.id_hgvs_p
 
-
     # Insertion
     v: NucleotideVariantsSamples = session.query(NucleotideVariantsSamples).get({
         'sequence': 'NC_011083',
@@ -250,7 +248,6 @@ def test_insert_variants_examine_variation_annotations(database, snpeff_nucleoti
     assert 'p.Ter149fs' == v.annotation_hgvs_p
     assert 'hgvs:NC_011083:SEHA_RS12315:c.431_437dupTTTATAT' == v.id_hgvs_c
     assert 'hgvs:NC_011083:SEHA_RS12315:p.Ter149fs' == v.id_hgvs_p
-
 
     # MNP
     v: NucleotideVariantsSamples = session.query(NucleotideVariantsSamples).get({
@@ -305,8 +302,8 @@ def test_insert_variants_regular_vcf_reader_examine_variation(database, regular_
     assert 'SNP' == v.var_type, 'Type is incorrect'
     assert {sample_name_ids['SampleA']} == set(v.sample_ids)
     assert all([x is None for x in [v.annotation, v.annotation_impact, v.annotation_gene_name, v.annotation_gene_id,
-                                v.annotation_feature_type, v.annotation_transcript_biotype, v.annotation_hgvs_c,
-                                v.annotation_hgvs_p]])
+                                    v.annotation_feature_type, v.annotation_transcript_biotype, v.annotation_hgvs_c,
+                                    v.annotation_hgvs_p]])
 
     v = session.query(NucleotideVariantsSamples).get({
         'sequence': 'reference',
@@ -317,8 +314,8 @@ def test_insert_variants_regular_vcf_reader_examine_variation(database, regular_
     assert 'INDEL' == v.var_type, 'Type is incorrect'
     assert {sample_name_ids['SampleB'], sample_name_ids['SampleC']} == set(v.sample_ids)
     assert all([x is None for x in [v.annotation, v.annotation_impact, v.annotation_gene_name, v.annotation_gene_id,
-                                v.annotation_feature_type, v.annotation_transcript_biotype, v.annotation_hgvs_c,
-                                v.annotation_hgvs_p]])
+                                    v.annotation_feature_type, v.annotation_transcript_biotype, v.annotation_hgvs_c,
+                                    v.annotation_hgvs_p]])
 
     v = session.query(NucleotideVariantsSamples).get({
         'sequence': 'reference',
@@ -329,8 +326,8 @@ def test_insert_variants_regular_vcf_reader_examine_variation(database, regular_
     assert 'INDEL' == v.var_type, 'Type is incorrect'
     assert {sample_name_ids['SampleB']} == set(v.sample_ids)
     assert all([x is None for x in [v.annotation, v.annotation_impact, v.annotation_gene_name, v.annotation_gene_id,
-                                v.annotation_feature_type, v.annotation_transcript_biotype, v.annotation_hgvs_c,
-                                v.annotation_hgvs_p]])
+                                    v.annotation_feature_type, v.annotation_transcript_biotype, v.annotation_hgvs_c,
+                                    v.annotation_hgvs_p]])
 
     v = session.query(NucleotideVariantsSamples).get({
         'sequence': 'reference',
@@ -341,8 +338,8 @@ def test_insert_variants_regular_vcf_reader_examine_variation(database, regular_
     assert 'OTHER' == v.var_type, 'Type is incorrect'
     assert {sample_name_ids['SampleC']} == set(v.sample_ids)
     assert all([x is None for x in [v.annotation, v.annotation_impact, v.annotation_gene_name, v.annotation_gene_id,
-                                v.annotation_feature_type, v.annotation_transcript_biotype, v.annotation_hgvs_c,
-                                v.annotation_hgvs_p]])
+                                    v.annotation_feature_type, v.annotation_transcript_biotype, v.annotation_hgvs_c,
+                                    v.annotation_hgvs_p]])
 
 
 def test_insert_variants_duplicates(database, snippy_nucleotide_data_package, reference_service_with_data,

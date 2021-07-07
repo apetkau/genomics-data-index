@@ -1,12 +1,14 @@
-from typing import List, Dict, Set, Union, cast
+from typing import List, Dict, Set, Union, cast, Type
 
 import pandas as pd
 
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.NucleotideMutationTranslater import NucleotideMutationTranslater
 from genomics_data_index.storage.model.QueryFeature import QueryFeature
+from genomics_data_index.storage.model.QueryFeatureHGVS import QueryFeatureHGVS
 from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
 from genomics_data_index.storage.model.QueryFeatureMutation import QueryFeatureMutation
+from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
 from genomics_data_index.storage.model.db import NucleotideVariantsSamples, Reference, ReferenceSequence, MLSTScheme, \
     SampleMLSTAlleles, MLSTAllelesSamples, Sample
 from genomics_data_index.storage.model.db import SampleNucleotideVariation
@@ -52,6 +54,7 @@ class SampleService:
         """
         samples = self._connection.get_session().query(Sample) \
             .join(Sample.sample_nucleotide_variation) \
+            .join(SampleNucleotideVariation.reference) \
             .join(Reference.sequences) \
             .filter(ReferenceSequence.sequence_name == sequence_name) \
             .all()
@@ -158,16 +161,49 @@ class SampleService:
         str, NucleotideVariantsSamples]:
         standardized_features_to_input_feature = {}
         standardized_features_ids = set()
+        standardized_feature_hgvs_c_ids = set()
+        standardized_feature_hgvs_p_ids = set()
         for feature in features:
-            dbf = NucleotideMutationTranslater.to_db_feature(feature)
-            standardized_features_to_input_feature[dbf.id] = feature.id
-            standardized_features_ids.add(dbf.id)
+            if isinstance(feature, QueryFeatureMutationSPDI):
+                dbf = NucleotideMutationTranslater.to_db_feature(feature)
+                standardized_features_to_input_feature[dbf.id] = feature.id
+                standardized_features_ids.add(dbf.id)
+            elif isinstance(feature, QueryFeatureHGVS):
+                if feature.is_nucleotide():
+                    standardized_feature_hgvs_c_ids.add(feature.id)
+                elif feature.is_protein():
+                    standardized_feature_hgvs_p_ids.add(feature.id)
+                else:
+                    raise Exception(f'feature=[{feature}] is neither nucleotide or protein')
+            else:
+                raise Exception(f'Invalid type for feature=[{feature}]. '
+                                f'Must be either {QueryFeatureMutationSPDI.__class__.__name__} or '
+                                f'{QueryFeatureHGVS.__class__.__name__}')
 
-        variants = self._connection.get_session().query(NucleotideVariantsSamples) \
-            .filter(NucleotideVariantsSamples._spdi.in_(standardized_features_ids)) \
-            .all()
+        if len(standardized_features_ids) > 0:
+            variants_spdi = self._connection.get_session().query(NucleotideVariantsSamples) \
+                .filter(NucleotideVariantsSamples._spdi.in_(standardized_features_ids)) \
+                .all()
+        else:
+            variants_spdi = []
 
-        unstandardized_variants = {standardized_features_to_input_feature[v.spdi]: v for v in variants}
+        if len(standardized_feature_hgvs_c_ids) > 0:
+            variants_hgvs_c = self._connection.get_session().query(NucleotideVariantsSamples) \
+                .filter(NucleotideVariantsSamples._id_hgvs_c.in_(standardized_feature_hgvs_c_ids)) \
+                .all()
+        else:
+            variants_hgvs_c = []
+
+        if len(standardized_feature_hgvs_p_ids) > 0:
+            variants_hgvs_p = self._connection.get_session().query(NucleotideVariantsSamples) \
+                .filter(NucleotideVariantsSamples._id_hgvs_p.in_(standardized_feature_hgvs_p_ids)) \
+                .all()
+        else:
+            variants_hgvs_p = []
+
+        unstandardized_variants = {standardized_features_to_input_feature[v.spdi]: v for v in variants_spdi}
+        unstandardized_variants.update({v.id_hgvs_c: v for v in variants_hgvs_c})
+        unstandardized_variants.update({v.id_hgvs_p: v for v in variants_hgvs_p})
         return unstandardized_variants
 
     def _get_mlst_samples_by_mlst_features(self, features: List[QueryFeatureMLST]) -> List[MLSTAllelesSamples]:
@@ -178,8 +214,8 @@ class SampleService:
 
         return mlst_alleles
 
-    def _get_feature_type(self, features: List[QueryFeature]) -> str:
-        feature_types = {type(f).__name__ for f in features}
+    def _get_feature_type(self, features: List[QueryFeature]) -> Type[QueryFeature]:
+        feature_types = {f.__class__ for f in features}
 
         if len(feature_types) != 1:
             raise Exception(f'Should only be one feature type but instead got: {feature_types}.')
@@ -189,12 +225,12 @@ class SampleService:
     def find_sample_sets_by_features(self, features: List[QueryFeature]) -> Dict[str, SampleSet]:
         feature_type = self._get_feature_type(features)
 
-        if feature_type == 'QueryFeatureMutation':
+        if issubclass(feature_type, QueryFeatureMutation):
             features = cast(List[QueryFeatureMutation], features)
             variants_dict = self.get_variants_samples_by_variation_features(features)
 
             return {id: variants_dict[id].sample_ids for id in variants_dict}
-        elif feature_type == 'QueryFeatureMLST':
+        elif issubclass(feature_type, QueryFeatureMLST):
             features = cast(List[QueryFeatureMLST], features)
             mlst_alleles = self._get_mlst_samples_by_mlst_features(features)
 
@@ -205,12 +241,12 @@ class SampleService:
     def find_samples_by_features(self, features: List[QueryFeature]) -> Dict[str, List[Sample]]:
         feature_type = self._get_feature_type(features)
 
-        if feature_type == 'QueryFeatureMutation':
+        if issubclass(feature_type, QueryFeatureMutation):
             features = cast(List[QueryFeatureMutation], features)
             variants_dict = self.get_variants_samples_by_variation_features(features)
 
             return {id: self.find_samples_by_ids(variants_dict[id].sample_ids) for id in variants_dict}
-        elif feature_type == 'QueryFeatureMLST':
+        elif issubclass(feature_type, QueryFeatureMLST):
             features = cast(List[QueryFeatureMLST], features)
             mlst_alleles = self._get_mlst_samples_by_mlst_features(features)
 
@@ -221,11 +257,13 @@ class SampleService:
     def count_samples_by_features(self, features: List[QueryFeature]) -> Dict[str, List[Sample]]:
         feature_type = self._get_feature_type(features)
 
-        if feature_type == 'QueryFeatureMutation':
+        if issubclass(feature_type, QueryFeatureMutation):
+            features = cast(List[QueryFeatureMutation], features)
             variants_dict = self.get_variants_samples_by_variation_features(features)
 
             return {id: len(variants_dict[id].sample_ids) for id in variants_dict}
-        elif feature_type == 'QueryFeatureMLST':
+        elif issubclass(feature_type, QueryFeatureMLST):
+            features = cast(List[QueryFeatureMLST], features)
             mlst_alleles = self._get_mlst_samples_by_mlst_features(features)
 
             allele_id_to_count = {a.sla: len(a.sample_ids) for a in mlst_alleles}

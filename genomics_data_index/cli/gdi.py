@@ -31,7 +31,7 @@ from genomics_data_index.storage.io.processor.MultipleProcessSampleFilesProcesso
     MultipleProcessSampleFilesProcessor
 from genomics_data_index.storage.io.processor.NullSampleFilesProcessor import NullSampleFilesProcessor
 from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
-from genomics_data_index.storage.model.QueryFeatureMutation import QueryFeatureMutation
+from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
 from genomics_data_index.storage.service import EntityExistsError
 from genomics_data_index.storage.service.CoreAlignmentService import CoreAlignmentService
 from genomics_data_index.storage.service.MLSTService import MLSTService
@@ -626,7 +626,7 @@ def query_mutation(ctx, name: List[str], include_unknown: bool, summarize: bool)
     data_index_connection = get_project_exit_on_error(ctx).create_connection()
     mutation_query_service = data_index_connection.mutation_query_service
 
-    features = [QueryFeatureMutation(n) for n in name]
+    features = [QueryFeatureMutationSPDI(n) for n in name]
     if not summarize:
         match_df = mutation_query_service.find_by_features(features, include_unknown=include_unknown)
     else:

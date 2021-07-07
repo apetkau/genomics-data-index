@@ -4,7 +4,7 @@ from typing import List, Dict, Any, Set
 import pandas as pd
 
 from genomics_data_index.storage.model.QueryFeature import QueryFeature
-from genomics_data_index.storage.model.QueryFeatureMutation import QueryFeatureMutation
+from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
 from genomics_data_index.storage.service.FullFeatureQueryService import FullFeatureQueryService
 from genomics_data_index.storage.service.ReferenceService import ReferenceService
 from genomics_data_index.storage.service.SampleService import SampleService
@@ -63,7 +63,7 @@ class MutationQueryService(FullFeatureQueryService):
         return matches_df
 
     def get_correct_query_feature(self) -> Any:
-        return QueryFeatureMutation
+        return QueryFeatureMutationSPDI
 
     def expand_feature(self, feature: QueryFeature):
         raise Exception('Not implemented')

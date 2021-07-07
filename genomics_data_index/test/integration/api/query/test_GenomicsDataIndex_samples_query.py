@@ -10,12 +10,14 @@ from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.api.query.impl.ExperimentalTreeSamplesQuery import ExperimentalTreeSamplesQuery
 from genomics_data_index.api.query.impl.MutationTreeSamplesQuery import MutationTreeSamplesQuery
 from genomics_data_index.api.query.impl.TreeSamplesQuery import TreeSamplesQuery
+from genomics_data_index.api.query.impl.DataFrameSamplesQuery import DataFrameSamplesQuery
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
 from genomics_data_index.storage.SampleSet import SampleSet
+from genomics_data_index.storage.model.QueryFeatureHGVS import QueryFeatureHGVS
 from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
-from genomics_data_index.storage.model.QueryFeatureMutation import QueryFeatureMutation
+from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
 from genomics_data_index.storage.model.db import Sample
-from genomics_data_index.test.integration import snippy_all_dataframes, data_dir
+from genomics_data_index.test.integration import snippy_all_dataframes, data_dir, snpeff_tree_file
 
 
 # wrapper methods to simplify writing tests
@@ -340,18 +342,78 @@ def test_query_single_mutation(loaded_database_connection: DataIndexConnection):
     db = loaded_database_connection.database
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
 
-    query_result = query(loaded_database_connection).hasa(QueryFeatureMutation('reference:5061:G:A'))
+    query_result = query(loaded_database_connection).hasa(QueryFeatureMutationSPDI('reference:5061:G:A'))
     assert 1 == len(query_result)
     assert {sampleB.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)
     assert not query_result.has_tree()
 
 
+def test_query_mutation_hgvs(loaded_database_connection_annotations: DataIndexConnection):
+    db = loaded_database_connection_annotations.database
+    sample_sh14_001 = db.get_session().query(Sample).filter(Sample.name == 'SH14-001').one()
+    sample_sh14_014 = db.get_session().query(Sample).filter(Sample.name == 'SH14-014').one()
+    sample_sh10_014 = db.get_session().query(Sample).filter(Sample.name == 'SH10-014').one()
+
+    # hgvs c (nucleotide)
+    ## Test using QueryFeature object
+    query_result = query(loaded_database_connection_annotations).hasa(
+        QueryFeatureHGVS.create_from_id('hgvs:NC_011083:SEHA_RS04550:p.Ile224fs'))
+    assert 2 == len(query_result)
+    assert {sample_sh14_001.id, sample_sh14_014.id} == set(query_result.sample_set)
+    assert 3 == len(query_result.universe_set)
+    assert not query_result.has_tree()
+
+    ## Test using string
+    query_result = query(loaded_database_connection_annotations).hasa('hgvs:NC_011083:SEHA_RS04550:p.Ile224fs')
+    assert 2 == len(query_result)
+    assert {sample_sh14_001.id, sample_sh14_014.id} == set(query_result.sample_set)
+    assert 3 == len(query_result.universe_set)
+    assert not query_result.has_tree()
+
+    # hgvs p (protein)
+    ## Test using QueryFeature object
+    query_result = query(loaded_database_connection_annotations).hasa(
+        QueryFeatureHGVS.create_from_id('hgvs:NC_011083:SEHA_RS04550:c.670dupA'))
+    assert 2 == len(query_result)
+    assert {sample_sh14_001.id, sample_sh14_014.id} == set(query_result.sample_set)
+    assert 3 == len(query_result.universe_set)
+    assert not query_result.has_tree()
+
+    ## Test using string
+    query_result = query(loaded_database_connection_annotations).hasa('hgvs:NC_011083:SEHA_RS04550:c.670dupA')
+    assert 2 == len(query_result)
+    assert {sample_sh14_001.id, sample_sh14_014.id} == set(query_result.sample_set)
+    assert 3 == len(query_result.universe_set)
+    assert not query_result.has_tree()
+
+    # hgvs n (nucleotide)
+    ## Test using QueryFeature object
+    query_result = query(loaded_database_connection_annotations).hasa(
+        QueryFeatureHGVS.create_from_id('hgvs:NC_011083:n.882634G>A'))
+    assert 1 == len(query_result)
+    assert {sample_sh10_014.id} == set(query_result.sample_set)
+    assert 3 == len(query_result.universe_set)
+    assert not query_result.has_tree()
+
+    ## Test using string
+    query_result = query(loaded_database_connection_annotations).hasa('hgvs:NC_011083:n.882634G>A')
+    assert 1 == len(query_result)
+    assert {sample_sh10_014.id} == set(query_result.sample_set)
+    assert 3 == len(query_result.universe_set)
+    assert not query_result.has_tree()
+
+    # Test find no results
+    query_result = query(loaded_database_connection_annotations).hasa(
+        QueryFeatureHGVS.create_from_id('hgvs:NC_011083:SEHA_RS04550:p.none'))
+    assert 0 == len(query_result)
+
+
 def test_query_single_mutation_complement(loaded_database_connection: DataIndexConnection):
     db = loaded_database_connection.database
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
 
-    query_result = query(loaded_database_connection).hasa(QueryFeatureMutation('reference:5061:G:A'))
+    query_result = query(loaded_database_connection).hasa(QueryFeatureMutationSPDI('reference:5061:G:A'))
     assert 1 == len(query_result)
     assert {sampleB.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)
@@ -396,7 +458,7 @@ def test_query_single_mutation_two_samples(loaded_database_connection: DataIndex
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
     sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
 
-    query_result = query(loaded_database_connection).hasa(QueryFeatureMutation('reference:839:C:G'))
+    query_result = query(loaded_database_connection).hasa(QueryFeatureMutationSPDI('reference:839:C:G'))
     assert 2 == len(query_result)
     assert {sampleB.id, sampleC.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)
@@ -407,7 +469,7 @@ def test_query_single_mutation_two_samples_kmer_one_sample(loaded_database_conne
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
     sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
 
-    query_result = query(loaded_database_connection).hasa(QueryFeatureMutation('reference:839:C:G'))
+    query_result = query(loaded_database_connection).hasa(QueryFeatureMutationSPDI('reference:839:C:G'))
     assert 2 == len(query_result)
     assert {sampleB.id, sampleC.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)
@@ -437,7 +499,7 @@ def test_query_single_mutation_two_samples_complement(loaded_database_connection
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
     sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
 
-    query_result = query(loaded_database_connection).hasa(QueryFeatureMutation('reference:839:C:G'))
+    query_result = query(loaded_database_connection).hasa(QueryFeatureMutationSPDI('reference:839:C:G'))
     assert 2 == len(query_result)
     assert {sampleB.id, sampleC.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)
@@ -450,7 +512,7 @@ def test_query_single_mutation_two_samples_complement(loaded_database_connection
 
 
 def test_query_single_mutation_no_results(loaded_database_connection: DataIndexConnection):
-    query_result = query(loaded_database_connection).hasa(QueryFeatureMutation('reference:1:1:A'))
+    query_result = query(loaded_database_connection).hasa(QueryFeatureMutationSPDI('reference:1:1:A'))
     assert 0 == len(query_result)
     assert query_result.is_empty()
     assert 9 == len(query_result.universe_set)
@@ -461,8 +523,8 @@ def test_query_chained_mutation(loaded_database_connection: DataIndexConnection)
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
 
     query_result = query(loaded_database_connection).hasa(
-        QueryFeatureMutation('reference:839:C:G')).hasa(
-        QueryFeatureMutation('reference:5061:G:A'))
+        QueryFeatureMutationSPDI('reference:839:C:G')).hasa(
+        QueryFeatureMutationSPDI('reference:5061:G:A'))
     assert 1 == len(query_result)
     assert {sampleB.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)
@@ -1358,6 +1420,70 @@ def test_query_join_tree_join_dataframe(prebuilt_tree: Tree, loaded_database_con
     assert ['red', 'green', 'blue'] == df['Color'].tolist()
 
 
+def test_query_tree_join_dataframe_hasa_snpeff(loaded_database_connection_annotations: DataIndexConnection):
+    db = loaded_database_connection_annotations.database
+    sample_sh14_001 = db.get_session().query(Sample).filter(Sample.name == 'SH14-001').one()
+    sample_sh14_014 = db.get_session().query(Sample).filter(Sample.name == 'SH14-014').one()
+    sample_sh10_014 = db.get_session().query(Sample).filter(Sample.name == 'SH10-014').one()
+
+    metadata_df = pd.DataFrame([
+        [sample_sh14_001.id, 'red'],
+        [sample_sh14_014.id, 'red'],
+        [sample_sh10_014.id, 'blue']
+    ], columns=['Sample ID', 'Color'])
+
+    tree = Tree(str(snpeff_tree_file))
+
+    # Query hasa with tree query
+    query_result = query(loaded_database_connection_annotations).join_tree(tree,
+                                                                           kind='mutation',
+                                                                           alignment_length=4888768,
+                                                                           reference_name='NC_011083')
+    assert 3 == len(query_result)
+    assert isinstance(query_result, TreeSamplesQuery)
+    assert query_result.has_tree()
+    query_result = query_result.hasa('hgvs:NC_011083:SEHA_RS04550:p.Ile224fs')
+    assert 2 == len(query_result)
+    assert {sample_sh14_001.id, sample_sh14_014.id} == set(query_result.sample_set)
+
+    # Query hasa with database query
+    query_result = query(loaded_database_connection_annotations).join(data_frame=metadata_df,
+                                                                      sample_ids_column='Sample ID')
+    assert 3 == len(query_result)
+    assert isinstance(query_result, DataFrameSamplesQuery)
+    assert not query_result.has_tree()
+    query_result = query_result.hasa('hgvs:NC_011083:SEHA_RS04550:p.Ile224fs')
+    assert 2 == len(query_result)
+    assert {sample_sh14_001.id, sample_sh14_014.id} == set(query_result.sample_set)
+
+    # Query hasa with tree joined to dataframe
+    query_result = query(loaded_database_connection_annotations).join_tree(tree,
+                                                                           kind='mutation',
+                                                                           alignment_length=4888768,
+                                                                           reference_name='NC_011083')
+    query_result = query_result.join(data_frame=metadata_df, sample_ids_column='Sample ID')
+    assert 3 == len(query_result)
+    assert isinstance(query_result, TreeSamplesQuery)
+    assert query_result.has_tree()
+    query_result = query_result.hasa('hgvs:NC_011083:SEHA_RS04550:p.Ile224fs')
+    assert 2 == len(query_result)
+    assert {sample_sh14_001.id, sample_sh14_014.id} == set(query_result.sample_set)
+
+    # Query hasa with experimental tree query
+    query_result = query(loaded_database_connection_annotations).join_tree(tree,
+                                                                           kind='mutation',
+                                                                           alignment_length=4888768,
+                                                                           reference_name='NC_011083')
+    query_result = cast(MutationTreeSamplesQuery, query_result)
+    query_result = ExperimentalTreeSamplesQuery.from_tree_query(query_result)
+    assert 3 == len(query_result)
+    assert isinstance(query_result, ExperimentalTreeSamplesQuery)
+    assert query_result.has_tree()
+    query_result = query_result.hasa('hgvs:NC_011083:SEHA_RS04550:p.Ile224fs')
+    assert 2 == len(query_result)
+    assert {sample_sh14_001.id, sample_sh14_014.id} == set(query_result.sample_set)
+
+
 def test_within_constructed_tree(loaded_database_connection: DataIndexConnection):
     query_result = query(loaded_database_connection).hasa(
         'reference:839:C:G', kind='mutation').build_tree(
@@ -1802,7 +1928,8 @@ def test_summary_features_kindmutations_unique(loaded_database_connection: DataI
     expected_df['Total'] = 3
     expected_df['Percent'] = 100 * (expected_df['Count'] / expected_df['Total'])
 
-    mutations_df = q.isin(['SampleA', 'SampleB', 'SampleC']).summary_features(selection='unique', ignore_annotations=True)
+    mutations_df = q.isin(['SampleA', 'SampleB', 'SampleC']).summary_features(selection='unique',
+                                                                              ignore_annotations=True)
     mutations_df = mutations_df.sort_index()
 
     assert len(expected_df) == len(mutations_df)
@@ -1843,21 +1970,23 @@ def test_summary_features_kindmutations_annotations(loaded_database_connection_a
     assert ['NC_011083', 140658, 'C', 'A', 1, 1, 100,
             'missense_variant', 'MODERATE', 'murF', 'SEHA_RS01180', 'transcript', 'protein_coding',
             'c.497C>A', 'p.Ala166Glu',
-            'hgvs:NC_011083:SEHA_RS01180:c.497C>A', 'hgvs:NC_011083:SEHA_RS01180:p.Ala166Glu'] == list(mutations_df.loc['NC_011083:140658:C:A'])
+            'hgvs:NC_011083:SEHA_RS01180:c.497C>A', 'hgvs:NC_011083:SEHA_RS01180:p.Ala166Glu'] == list(
+        mutations_df.loc['NC_011083:140658:C:A'])
 
     ## inframe deletion
     assert ['NC_011083', 4465400, 'GGCCGAA', 'G', 1, 1, 100,
             'conservative_inframe_deletion', 'MODERATE', 'tyrB', 'SEHA_RS22180', 'transcript', 'protein_coding',
             'c.157_162delGAAGCC', 'p.Glu53_Ala54del',
-            'hgvs:NC_011083:SEHA_RS22180:c.157_162delGAAGCC', 'hgvs:NC_011083:SEHA_RS22180:p.Glu53_Ala54del'] == list(mutations_df.loc['NC_011083:4465400:GGCCGAA:G'])
+            'hgvs:NC_011083:SEHA_RS22180:c.157_162delGAAGCC', 'hgvs:NC_011083:SEHA_RS22180:p.Glu53_Ala54del'] == list(
+        mutations_df.loc['NC_011083:4465400:GGCCGAA:G'])
 
     ## Intergenic variant (with some NA values in fields)
     assert ['NC_011083', 4555461, 'T', 'TC', 1, 1, 100,
             'intergenic_region', 'MODIFIER', 'SEHA_RS22510-SEHA_RS26685', 'SEHA_RS22510-SEHA_RS26685',
             'intergenic_region', 'NA',
             'n.4555461_4555462insC', 'NA',
-            'hgvs:NC_011083:n.4555461_4555462insC', 'NA'] == list(mutations_df.loc['NC_011083:4555461:T:TC'].fillna('NA'))
-
+            'hgvs:NC_011083:n.4555461_4555462insC', 'NA'] == list(
+        mutations_df.loc['NC_011083:4555461:T:TC'].fillna('NA'))
 
     # 3 samples
     mutations_df = q.isin(['SH10-014', 'SH14-001', 'SH14-014']).summary_features(ignore_annotations=False)
@@ -1875,15 +2004,16 @@ def test_summary_features_kindmutations_annotations(loaded_database_connection_a
     assert ['NC_011083', 140658, 'C', 'A', 3, 3, 100,
             'missense_variant', 'MODERATE', 'murF', 'SEHA_RS01180', 'transcript', 'protein_coding',
             'c.497C>A', 'p.Ala166Glu',
-            'hgvs:NC_011083:SEHA_RS01180:c.497C>A', 'hgvs:NC_011083:SEHA_RS01180:p.Ala166Glu'] == list(mutations_df.loc['NC_011083:140658:C:A'])
+            'hgvs:NC_011083:SEHA_RS01180:c.497C>A', 'hgvs:NC_011083:SEHA_RS01180:p.Ala166Glu'] == list(
+        mutations_df.loc['NC_011083:140658:C:A'])
 
     ## Intergenic variant (1/3)
     assert ['NC_011083', 4555461, 'T', 'TC', 1, 3, 33,
             'intergenic_region', 'MODIFIER', 'SEHA_RS22510-SEHA_RS26685', 'SEHA_RS22510-SEHA_RS26685',
             'intergenic_region', 'NA',
             'n.4555461_4555462insC', 'NA',
-            'hgvs:NC_011083:n.4555461_4555462insC', 'NA'] == list(mutations_df.loc['NC_011083:4555461:T:TC'].fillna('NA'))
-
+            'hgvs:NC_011083:n.4555461_4555462insC', 'NA'] == list(
+        mutations_df.loc['NC_011083:4555461:T:TC'].fillna('NA'))
 
     # Test ignore annotations
     mutations_df = q.isin(['SH10-014', 'SH14-001', 'SH14-014']).summary_features(ignore_annotations=True)
@@ -1891,7 +2021,6 @@ def test_summary_features_kindmutations_annotations(loaded_database_connection_a
     assert ['Sequence', 'Position', 'Deletion', 'Insertion',
             'Count', 'Total', 'Percent'] == list(mutations_df.columns)
     assert 177 == len(mutations_df)
-
 
     ## Test unique
     mutations_df = q.isa('SH10-014').summary_features(selection='unique', ignore_annotations=False)
@@ -1909,7 +2038,8 @@ def test_summary_features_kindmutations_annotations(loaded_database_connection_a
     assert ['NC_011083', 2049576, 'A', 'C', 1, 1, 100,
             'missense_variant', 'MODERATE', 'cutC', 'SEHA_RS10675', 'transcript', 'protein_coding',
             'c.536T>G', 'p.Val179Gly',
-            'hgvs:NC_011083:SEHA_RS10675:c.536T>G', 'hgvs:NC_011083:SEHA_RS10675:p.Val179Gly'] == list(mutations_df.loc['NC_011083:2049576:A:C'])
+            'hgvs:NC_011083:SEHA_RS10675:c.536T>G', 'hgvs:NC_011083:SEHA_RS10675:p.Val179Gly'] == list(
+        mutations_df.loc['NC_011083:2049576:A:C'])
 
 
 def test_summary_features_two(loaded_database_connection: DataIndexConnection):

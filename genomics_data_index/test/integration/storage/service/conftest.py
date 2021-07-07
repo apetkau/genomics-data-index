@@ -99,6 +99,19 @@ def sample_service(database):
 
 
 @pytest.fixture
+def sample_service_snpeff_annotations(database, reference_service_with_snpeff_data,
+                                      snpeff_nucleotide_data_package, sample_service,
+                                      filesystem_storage) -> SampleService:
+    var_service = VariationService(database_connection=database,
+                                   reference_service=reference_service_with_snpeff_data,
+                                   sample_service=sample_service,
+                                   variation_dir=filesystem_storage.variation_dir)
+    var_service.insert(feature_scope_name='NC_011083',
+                       data_package=snpeff_nucleotide_data_package)
+    return sample_service
+
+
+@pytest.fixture
 def variation_service(database, reference_service_with_data,
                       snippy_nucleotide_data_package, sample_service, filesystem_storage) -> VariationService:
     var_service = VariationService(database_connection=database,

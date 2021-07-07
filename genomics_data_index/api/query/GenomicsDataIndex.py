@@ -125,8 +125,8 @@ class GenomicsDataIndex:
             data.append([mutation, seq, pos, deletion, insertion, count, total_samples])
 
         features_df = pd.DataFrame(data,
-                            columns=['Mutation', 'Sequence', 'Position',
-                                     'Deletion', 'Insertion', 'Count', 'Total']).set_index('Mutation')
+                                   columns=['Mutation', 'Sequence', 'Position',
+                                            'Deletion', 'Insertion', 'Count', 'Total']).set_index('Mutation')
 
         features_df['Percent'] = 100 * (features_df['Count'] / features_df['Total'])
 

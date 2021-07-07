@@ -12,10 +12,10 @@ from genomics_data_index.storage.io.mutation.NucleotideSampleData import Nucleot
 from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
 from genomics_data_index.storage.io.mutation.VariationFile import VariationFile
 from genomics_data_index.storage.io.mutation.VcfVariantsReader import VcfVariantsReader
+from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
 from genomics_data_index.storage.model.db import NucleotideVariantsSamples, SampleNucleotideVariation, Sample
 from genomics_data_index.storage.service import DatabaseConnection
 from genomics_data_index.storage.service.FeatureService import FeatureService
-from genomics_data_index.storage.model.QueryFeatureMutation import QueryFeatureMutation
 from genomics_data_index.storage.service.ReferenceService import ReferenceService
 from genomics_data_index.storage.service.SampleService import SampleService
 
@@ -111,7 +111,7 @@ class VariationService(FeatureService):
             raise Exception(f'Index name not equal to "Mutation" for features_df={features_df}')
 
         mutation_ids = features_df.index.tolist()
-        query_features = [QueryFeatureMutation(i) for i in mutation_ids]
+        query_features = [QueryFeatureMutationSPDI(i) for i in mutation_ids]
         id_to_nucleotide_variants_samples: Dict[str, NucleotideVariantsSamples] = \
             self._sample_service.get_variants_samples_by_variation_features(query_features)
 
