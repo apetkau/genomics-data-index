@@ -10,13 +10,14 @@ from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.api.query.impl.ExperimentalTreeSamplesQuery import ExperimentalTreeSamplesQuery
 from genomics_data_index.api.query.impl.MutationTreeSamplesQuery import MutationTreeSamplesQuery
 from genomics_data_index.api.query.impl.TreeSamplesQuery import TreeSamplesQuery
+from genomics_data_index.api.query.impl.DataFrameSamplesQuery import DataFrameSamplesQuery
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.QueryFeatureHGVS import QueryFeatureHGVS
 from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
 from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
 from genomics_data_index.storage.model.db import Sample
-from genomics_data_index.test.integration import snippy_all_dataframes, data_dir
+from genomics_data_index.test.integration import snippy_all_dataframes, data_dir, snpeff_tree_file
 
 
 # wrapper methods to simplify writing tests
@@ -1417,6 +1418,70 @@ def test_query_join_tree_join_dataframe(prebuilt_tree: Tree, loaded_database_con
     assert ['Query', 'Sample Name', 'Sample ID', 'Status', 'Color'] == df.columns.tolist()
     assert ['SampleA', 'SampleB', 'SampleC'] == df['Sample Name'].tolist()
     assert ['red', 'green', 'blue'] == df['Color'].tolist()
+
+
+def test_query_tree_join_dataframe_hasa_snpeff(loaded_database_connection_annotations: DataIndexConnection):
+    db = loaded_database_connection_annotations.database
+    sample_sh14_001 = db.get_session().query(Sample).filter(Sample.name == 'SH14-001').one()
+    sample_sh14_014 = db.get_session().query(Sample).filter(Sample.name == 'SH14-014').one()
+    sample_sh10_014 = db.get_session().query(Sample).filter(Sample.name == 'SH10-014').one()
+
+    metadata_df = pd.DataFrame([
+        [sample_sh14_001.id, 'red'],
+        [sample_sh14_014.id, 'red'],
+        [sample_sh10_014.id, 'blue']
+    ], columns=['Sample ID', 'Color'])
+
+    tree = Tree(str(snpeff_tree_file))
+
+    # Query hasa with tree query
+    query_result = query(loaded_database_connection_annotations).join_tree(tree,
+                                                                           kind='mutation',
+                                                                           alignment_length=4888768,
+                                                                           reference_name='NC_011083')
+    assert 3 == len(query_result)
+    assert isinstance(query_result, TreeSamplesQuery)
+    assert query_result.has_tree()
+    query_result = query_result.hasa('hgvs:NC_011083:SEHA_RS04550:p.Ile224fs')
+    assert 2 == len(query_result)
+    assert {sample_sh14_001.id, sample_sh14_014.id} == set(query_result.sample_set)
+
+    # Query hasa with database query
+    query_result = query(loaded_database_connection_annotations).join(data_frame=metadata_df,
+                                                                      sample_ids_column='Sample ID')
+    assert 3 == len(query_result)
+    assert isinstance(query_result, DataFrameSamplesQuery)
+    assert not query_result.has_tree()
+    query_result = query_result.hasa('hgvs:NC_011083:SEHA_RS04550:p.Ile224fs')
+    assert 2 == len(query_result)
+    assert {sample_sh14_001.id, sample_sh14_014.id} == set(query_result.sample_set)
+
+    # Query hasa with tree joined to dataframe
+    query_result = query(loaded_database_connection_annotations).join_tree(tree,
+                                                                           kind='mutation',
+                                                                           alignment_length=4888768,
+                                                                           reference_name='NC_011083')
+    query_result = query_result.join(data_frame=metadata_df, sample_ids_column='Sample ID')
+    assert 3 == len(query_result)
+    assert isinstance(query_result, TreeSamplesQuery)
+    assert query_result.has_tree()
+    query_result = query_result.hasa('hgvs:NC_011083:SEHA_RS04550:p.Ile224fs')
+    assert 2 == len(query_result)
+    assert {sample_sh14_001.id, sample_sh14_014.id} == set(query_result.sample_set)
+
+    # Query hasa with experimental tree query
+    query_result = query(loaded_database_connection_annotations).join_tree(tree,
+                                                                           kind='mutation',
+                                                                           alignment_length=4888768,
+                                                                           reference_name='NC_011083')
+    query_result = cast(MutationTreeSamplesQuery, query_result)
+    query_result = ExperimentalTreeSamplesQuery.from_tree_query(query_result)
+    assert 3 == len(query_result)
+    assert isinstance(query_result, ExperimentalTreeSamplesQuery)
+    assert query_result.has_tree()
+    query_result = query_result.hasa('hgvs:NC_011083:SEHA_RS04550:p.Ile224fs')
+    assert 2 == len(query_result)
+    assert {sample_sh14_001.id, sample_sh14_014.id} == set(query_result.sample_set)
 
 
 def test_within_constructed_tree(loaded_database_connection: DataIndexConnection):
