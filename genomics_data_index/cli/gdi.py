@@ -38,7 +38,7 @@ from genomics_data_index.storage.service.MLSTService import MLSTService
 from genomics_data_index.storage.service.SampleService import SampleService
 from genomics_data_index.storage.service.TreeService import TreeService
 from genomics_data_index.storage.service.VariationService import VariationService
-from genomics_data_index.storage.util import get_genome_name
+from genomics_data_index.storage.io.mutation.SequenceFile import SequenceFile
 
 logger = logging.getLogger('genomics_data_index')
 max_cores = multiprocessing.cpu_count()
@@ -122,7 +122,7 @@ def load_variants_common(data_index_connection: DataIndexConnection, ncores: int
     if len(samples_exist) > 0:
         logger.error(f'Samples {samples_exist} already exist, will not load any variants')
     else:
-        reference_name = get_genome_name(reference_file)
+        reference_name = SequenceFile(reference_file).get_genome_name()
 
         variation_service.insert(feature_scope_name=reference_name,
                                  data_package=data_package)
