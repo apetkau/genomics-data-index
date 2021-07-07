@@ -13,3 +13,4 @@ dependencies:
   - htslib
   - jupyterlab
   - matplotlib
+  - snpeff
