@@ -10,7 +10,7 @@ from ete3 import Tree
 from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
 from genomics_data_index.storage.model.db import Reference, SampleNucleotideVariation, ReferenceSequence, Sample
 from genomics_data_index.storage.service import DatabaseConnection, EntityExistsError
-from genomics_data_index.storage.util import parse_sequence_file
+from genomics_data_index.storage.io.mutation.SequenceFile import SequenceFile
 
 
 class ReferenceService:
@@ -26,7 +26,7 @@ class ReferenceService:
             self._seq_repo_proxy = dataproxy.SeqRepoDataProxy(SeqRepo(seq_repo_dir))
 
     def add_reference_genome(self, genome_file: Path):
-        (genome_name, sequences) = parse_sequence_file(genome_file)
+        (genome_name, sequences) = SequenceFile(genome_file).parse_sequence_file()
 
         if self.exists_reference_genome(genome_name):
             raise EntityExistsError(f'Reference genome [{genome_name}] already exists in database')
@@ -55,7 +55,7 @@ class ReferenceService:
         ref_length = 0
         ref_contigs = {}
 
-        (ref_name, sequences) = parse_sequence_file(reference_file)
+        (ref_name, sequences) = SequenceFile(reference_file).parse_sequence_file()
         for record in sequences:
             ref_contigs[record.id] = ReferenceSequence(
                 sequence_name=record.id, sequence_length=len(record.seq))

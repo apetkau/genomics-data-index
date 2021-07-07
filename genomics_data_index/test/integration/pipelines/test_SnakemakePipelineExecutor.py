@@ -7,7 +7,7 @@ import vcf
 from Bio.SeqRecord import SeqRecord
 
 from genomics_data_index.pipelines.SnakemakePipelineExecutor import SnakemakePipelineExecutor
-from genomics_data_index.storage.util import parse_sequence_file
+from genomics_data_index.storage.io.mutation.SequenceFile import SequenceFile
 from genomics_data_index.test.integration.pipelines import assemblies_samples, assemblies_reference, expected_mutations
 
 
@@ -27,7 +27,7 @@ def read_expected_mutations(file: Path) -> List[str]:
 
 
 def get_consensus_sequences(file: Path) -> List[SeqRecord]:
-    ref_name, sequences = parse_sequence_file(file)
+    ref_name, sequences = SequenceFile(file).parse_sequence_file()
     return sequences
 
 

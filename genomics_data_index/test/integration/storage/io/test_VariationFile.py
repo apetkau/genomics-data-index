@@ -3,7 +3,7 @@ from pathlib import Path
 
 from genomics_data_index.storage.MaskedGenomicRegions import MaskedGenomicRegions
 from genomics_data_index.storage.io.mutation.VariationFile import VariationFile
-from genomics_data_index.storage.util import parse_sequence_file
+from genomics_data_index.storage.io.mutation.SequenceFile import SequenceFile
 from genomics_data_index.test.integration import data_dir, regular_vcf_dir, variation_dir, reference_file, consensus_dir
 from genomics_data_index.test.integration import extra_snippy_dir
 from genomics_data_index.test.integration.storage.io import read_vcf_df
@@ -95,7 +95,7 @@ def test_consensus_no_mask():
     sample_bcf = variation_dir / 'SampleA.bcf'
 
     expected_consensus_file = consensus_dir / 'SampleA-consensus-nomask.fasta.gz'
-    name, expected_consensus_records = parse_sequence_file(expected_consensus_file)
+    name, expected_consensus_records = SequenceFile(expected_consensus_file).parse_sequence_file()
     expected_consensus_record = expected_consensus_records[0]
 
     seq_records = VariationFile(sample_bcf).consensus(reference_file=reference_file)
@@ -112,7 +112,7 @@ def test_consensus_empty_mask():
     empty_mask = MaskedGenomicRegions.empty_mask()
 
     expected_consensus_file = consensus_dir / 'SampleA-consensus-nomask.fasta.gz'
-    name, expected_consensus_records = parse_sequence_file(expected_consensus_file)
+    name, expected_consensus_records = SequenceFile(expected_consensus_file).parse_sequence_file()
     expected_consensus_record = expected_consensus_records[0]
 
     with tempfile.TemporaryDirectory() as out_dir:
@@ -133,7 +133,7 @@ def test_consensus_mask():
     sample_mask_file = variation_dir / 'SampleA.bed.gz'
 
     expected_consensus_file = consensus_dir / 'SampleA-consensus-withmask.fasta.gz'
-    name, expected_consensus_records = parse_sequence_file(expected_consensus_file)
+    name, expected_consensus_records = SequenceFile(expected_consensus_file).parse_sequence_file()
     expected_consensus_record = expected_consensus_records[0]
 
     seq_records = VariationFile(sample_bcf).consensus(reference_file=reference_file,
@@ -150,7 +150,7 @@ def test_consensus_mask_over_mutation():
     sample_mask_file = variation_dir / 'SampleA-mask-over-mutation.bed.gz'
 
     expected_consensus_file = consensus_dir / 'SampleA-consensus-withmask-over-mutation.fasta.gz'
-    name, expected_consensus_records = parse_sequence_file(expected_consensus_file)
+    name, expected_consensus_records = SequenceFile(expected_consensus_file).parse_sequence_file()
     expected_consensus_record = expected_consensus_records[0]
 
     seq_records = VariationFile(sample_bcf).consensus(reference_file=reference_file,
