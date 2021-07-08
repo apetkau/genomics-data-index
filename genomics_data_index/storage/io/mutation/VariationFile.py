@@ -13,6 +13,7 @@ from Bio.SeqRecord import SeqRecord
 
 from genomics_data_index.storage.model.NucleotideMutationTranslater import NucleotideMutationTranslater
 from genomics_data_index.storage.util import execute_commands
+from genomics_data_index.storage.io.mutation.SnpEffDatabase import SnpEffDatabase
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +48,13 @@ class VariationFile:
             ['bcftools', 'index', str(output)]
         ])
         return output, output_index
+
+    @property
+    def file(self) -> Path:
+        return self._file
+
+    def annotate(self, snpeff_database: SnpEffDatabase, annotated_vcf: Path) -> VariationFile:
+        return VariationFile(snpeff_database.annotate(self._file, output_vcf_file=annotated_vcf))
 
     def consensus(self, reference_file: Path, mask_file: Path = None, include_expression: str = 'TYPE="SNP"',
                   mask_with: str = 'N') -> List[SeqRecord]:

@@ -1,7 +1,6 @@
 import tempfile
 from pathlib import Path
 import vcf
-import pandas as pd
 
 from genomics_data_index.storage.io.mutation.SequenceFile import SequenceFile
 from genomics_data_index.test.integration import reference_file_5000_snpeff, snpeff_vcf_file
