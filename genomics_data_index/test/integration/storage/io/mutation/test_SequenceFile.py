@@ -66,6 +66,9 @@ def test_create_snpeff_database():
         sequence_file = SequenceFile(reference_file_5000_snpeff)
         snpeff_config = sequence_file.create_snpeff_database(database_dir)
 
+        expected_genbank_path = snpeff_database_dir / 'NC_011083-5000' / 'genes.gbk.gz'
+        expected_snpeff_bin_file = snpeff_database_dir / 'NC_011083-5000' / 'snpEffectPredictor.bin'
+
         assert snpeff_config.name == 'snpEff.config'
         assert snpeff_config.exists()
         assert snpeff_config.parent == database_dir
@@ -76,3 +79,7 @@ def test_create_snpeff_database():
         assert 'NC_011083-5000.genome' in entries
         assert entries['NC_011083-5000.chromosomes'] == 'NC_011083.1'
         assert entries['NC_011083-5000.NC_011083.1.codonTable'] == 'Bacterial_and_Plant_Plastid'
+
+        assert expected_genbank_path.exists()
+        assert expected_genbank_path.is_symlink()
+        assert expected_snpeff_bin_file.exists()

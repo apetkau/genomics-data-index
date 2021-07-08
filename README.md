@@ -147,6 +147,11 @@ gdi --version
 
 You should see `gdi, version 0.1.0` printed out.
 
+### Additional dependencies
+
+For snpeff to work you will need to install the package `mkisofs` on Ubuntu (e.g., `sudo apt install mkisofs`).
+I do not know the exact package name on other systems.
+
 ## 3.2. PyPI/pip
 
 To install just the Python component of this project from [PyPI][gdi-pypi] you can run the following:
