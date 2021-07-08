@@ -24,6 +24,7 @@ def parse_snpeff_config(config_file: Path) -> Dict[str, str]:
 def test_create_snpeff_database():
     with tempfile.TemporaryDirectory() as out_dir:
         database_dir = Path(out_dir)
+        snpeff_database_dir = database_dir / 'db'
         sequence_file = SequenceFile(reference_file_5000_snpeff)
         snpeff_config = sequence_file.create_snpeff_database(database_dir)
 
@@ -34,4 +35,4 @@ def test_create_snpeff_database():
         entries = parse_snpeff_config(snpeff_config)
 
         print(entries.keys())
-        assert entries['data.dir'] == './snpeff-db/'
+        assert entries['data.dir'] == f'{snpeff_database_dir}'

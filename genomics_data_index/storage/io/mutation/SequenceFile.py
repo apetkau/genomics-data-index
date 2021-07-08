@@ -57,10 +57,11 @@ class SequenceFile:
         logger.debug(f'Setting up snpeff database in [{database_dir}]')
 
         snpeff_config_path = database_dir / 'snpEff.config'
+        snpeff_database_dir = database_dir / 'db'
 
         snpeff_config_template = jinja_env.get_template('snpEff.config')
         with open(snpeff_config_path, 'w') as snpeff_config:
-            snpeff_config.write(snpeff_config_template.render())
+            snpeff_config.write(snpeff_config_template.render(data_dir=str(snpeff_database_dir)))
 
         logger.debug(f'Writing snpeff config file [{snpeff_config_path}]')
 
