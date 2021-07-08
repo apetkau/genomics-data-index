@@ -10,13 +10,15 @@ import shutil
 
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
+from jinja2 import Environment, PackageLoader, select_autoescape
 
 
 logger = logging.getLogger(__name__)
 
-
-config_dir = Path(path.dirname(__file__), 'config')
-snpeff_config_template = config_dir / 'snpEff.config'
+jinja_env = Environment(
+    loader=PackageLoader(__name__),
+    autoescape=select_autoescape()
+)
 
 
 class SequenceFile:
@@ -54,8 +56,11 @@ class SequenceFile:
     def create_snpeff_database(self, database_dir: Path) -> Path:
         logger.debug(f'Setting up snpeff database in [{database_dir}]')
 
-        snpeff_config_path = database_dir / snpeff_config_template.name
-        shutil.copy(snpeff_config_template, snpeff_config_path)
+        snpeff_config_path = database_dir / 'snpEff.config'
+
+        snpeff_config_template = jinja_env.get_template('snpEff.config')
+        with open(snpeff_config_path, 'w') as snpeff_config:
+            snpeff_config.write(snpeff_config_template.render())
 
         logger.debug(f'Writing snpeff config file [{snpeff_config_path}]')
 
