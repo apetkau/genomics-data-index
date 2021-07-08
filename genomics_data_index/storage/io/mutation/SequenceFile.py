@@ -32,11 +32,28 @@ class SequenceFile:
         _open = partial(gzip.open, mode='rt') if encoding == 'gzip' else open
 
         ref_name = self.get_genome_name()
+        ref_extension = self.get_genome_extension_minus_compression().lower()
 
+        logger.debug(f'Sequence file [{self._file}] has extension (minus compression) [{ref_extension}]')
         with _open(self._file) as f:
-            sequences = list(SeqIO.parse(f, 'fasta'))
+            if ref_extension == '.gb' or ref_extension == '.gbk':
+                logger.debug(f'Parsing sequence file [{self._file}] as a genbank file')
+                sequences = list(SeqIO.parse(f, 'genbank'))
+            else:
+                logger.debug(f'Parsing sequence file [{self._file}] as a fasta file')
+                sequences = list(SeqIO.parse(f, 'fasta'))
 
             return ref_name, sequences
+
+    def get_genome_extension_minus_compression(self):
+        encoding = guess_type(str(self._file))[1]
+
+        if encoding == 'gzip':
+            ref_extension = splitext(basename(self._file).rstrip('.gz'))[1]
+        else:
+            ref_extension = splitext(basename(self._file))[1]
+
+        return ref_extension
 
     def get_genome_name(self) -> str:
         """
