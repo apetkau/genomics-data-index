@@ -64,16 +64,16 @@ def test_create_snpeff_database():
         database_dir = Path(out_dir)
         snpeff_database_dir = database_dir / 'db'
         sequence_file = SequenceFile(reference_file_5000_snpeff)
-        snpeff_config = sequence_file.create_snpeff_database(database_dir)
+        snpeff_database = sequence_file.create_snpeff_database(database_dir)
 
         expected_genbank_path = snpeff_database_dir / 'NC_011083-5000' / 'genes.gbk.gz'
         expected_snpeff_bin_file = snpeff_database_dir / 'NC_011083-5000' / 'snpEffectPredictor.bin'
 
-        assert snpeff_config.name == 'snpEff.config'
-        assert snpeff_config.exists()
-        assert snpeff_config.parent == database_dir
+        assert snpeff_database.config.name == 'snpEff.config'
+        assert snpeff_database.config.exists()
+        assert snpeff_database.config.parent == database_dir
 
-        entries = parse_snpeff_config(snpeff_config)
+        entries = parse_snpeff_config(snpeff_database.config)
 
         assert entries['data.dir'] == f'{snpeff_database_dir}'
         assert 'NC_011083-5000.genome' in entries
@@ -91,16 +91,16 @@ def test_create_snpeff_database_multiple_contigs():
         snpeff_database_dir = database_dir / 'db'
         sequence_file = SequenceFile(reference_file_5000_snpeff_2)
 
-        snpeff_config = sequence_file.create_snpeff_database(database_dir, codon_type='Bacterial_and_Plant_Plastid')
+        snpeff_database = sequence_file.create_snpeff_database(database_dir, codon_type='Bacterial_and_Plant_Plastid')
 
         expected_genbank_path = snpeff_database_dir / 'NC_011083_CP001602-5000' / 'genes.gbk.gz'
         expected_snpeff_bin_file = snpeff_database_dir / 'NC_011083_CP001602-5000' / 'snpEffectPredictor.bin'
 
-        assert snpeff_config.name == 'snpEff.config'
-        assert snpeff_config.exists()
-        assert snpeff_config.parent == database_dir
+        assert snpeff_database.config.name == 'snpEff.config'
+        assert snpeff_database.config.exists()
+        assert snpeff_database.config.parent == database_dir
 
-        entries = parse_snpeff_config(snpeff_config)
+        entries = parse_snpeff_config(snpeff_database.config)
 
         assert entries['data.dir'] == f'{snpeff_database_dir}'
         assert 'NC_011083_CP001602-5000.genome' in entries

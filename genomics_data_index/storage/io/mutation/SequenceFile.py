@@ -12,6 +12,7 @@ from Bio.SeqRecord import SeqRecord
 from jinja2 import Environment, PackageLoader, select_autoescape
 
 from genomics_data_index.storage.util import execute_commands
+from genomics_data_index.storage.io.mutation.SnpEffDatabase import SnpEffDatabase
 
 
 logger = logging.getLogger(__name__)
@@ -105,7 +106,7 @@ class SequenceFile:
             genbank_path = reference_dir / 'genes.gbk'
         symlink(self._file, genbank_path)
 
-    def create_snpeff_database(self, database_dir: Path, codon_type: str = 'Standard') -> Path:
+    def create_snpeff_database(self, database_dir: Path, codon_type: str = 'Standard') -> SnpEffDatabase:
         if not self.is_genbank():
             raise Exception(f'Sequence file [{self._file}] is not a genbank file. '
                             f'Can only build snpeff databases for genbank files.')
@@ -126,4 +127,6 @@ class SequenceFile:
         command = ['snpEff', 'build', '-v', '-c', str(snpeff_config_path), '-genbank', genome_name]
         execute_commands([command])
 
-        return snpeff_config_path
+        return SnpEffDatabase(snpeff_config=snpeff_config_path,
+                              database_dir=database_dir,
+                              genome_name=genome_name)
