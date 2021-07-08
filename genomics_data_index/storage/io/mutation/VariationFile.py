@@ -11,9 +11,9 @@ import pandas as pd
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 
+from genomics_data_index.storage.io.mutation.SnpEffDatabase import SnpEffDatabase
 from genomics_data_index.storage.model.NucleotideMutationTranslater import NucleotideMutationTranslater
 from genomics_data_index.storage.util import execute_commands
-from genomics_data_index.storage.io.mutation.SnpEffDatabase import SnpEffDatabase
 
 logger = logging.getLogger(__name__)
 

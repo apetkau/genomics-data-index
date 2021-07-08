@@ -2,13 +2,13 @@ import tempfile
 from pathlib import Path
 
 from genomics_data_index.storage.MaskedGenomicRegions import MaskedGenomicRegions
-from genomics_data_index.storage.io.mutation.VariationFile import VariationFile
 from genomics_data_index.storage.io.mutation.SequenceFile import SequenceFile
+from genomics_data_index.storage.io.mutation.VariationFile import VariationFile
+from genomics_data_index.storage.io.mutation.VcfVariantsReader import VcfVariantsReader
 from genomics_data_index.test.integration import data_dir, regular_vcf_dir, variation_dir, reference_file, consensus_dir
 from genomics_data_index.test.integration import extra_snippy_dir
-from genomics_data_index.test.integration.storage.io import read_vcf_df
 from genomics_data_index.test.integration import reference_file_5000_snpeff, snpeff_vcf_file
-from genomics_data_index.storage.io.mutation.VcfVariantsReader import VcfVariantsReader
+from genomics_data_index.test.integration.storage.io import read_vcf_df
 
 
 def test_write():
@@ -394,7 +394,8 @@ def test_annotate():
         snpeff_database = SequenceFile(reference_file_5000_snpeff).create_snpeff_database(database_dir)
 
         variation_file = VariationFile(snpeff_vcf_file)
-        annotated_variation_file = variation_file.annotate(snpeff_database=snpeff_database, annotated_vcf=output_vcf_file)
+        annotated_variation_file = variation_file.annotate(snpeff_database=snpeff_database,
+                                                           annotated_vcf=output_vcf_file)
 
         assert output_vcf_file == annotated_variation_file.file
 

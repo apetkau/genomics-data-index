@@ -27,6 +27,7 @@ from genomics_data_index.storage.io.mlst.MLSTSampleDataPackage import MLSTSample
 from genomics_data_index.storage.io.mlst.MLSTSistrReader import MLSTSistrReader
 from genomics_data_index.storage.io.mlst.MLSTTSeemannFeaturesReader import MLSTTSeemannFeaturesReader
 from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
+from genomics_data_index.storage.io.mutation.SequenceFile import SequenceFile
 from genomics_data_index.storage.io.processor.MultipleProcessSampleFilesProcessor import \
     MultipleProcessSampleFilesProcessor
 from genomics_data_index.storage.io.processor.NullSampleFilesProcessor import NullSampleFilesProcessor
@@ -38,7 +39,6 @@ from genomics_data_index.storage.service.MLSTService import MLSTService
 from genomics_data_index.storage.service.SampleService import SampleService
 from genomics_data_index.storage.service.TreeService import TreeService
 from genomics_data_index.storage.service.VariationService import VariationService
-from genomics_data_index.storage.io.mutation.SequenceFile import SequenceFile
 
 logger = logging.getLogger('genomics_data_index')
 max_cores = multiprocessing.cpu_count()

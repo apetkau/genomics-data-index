@@ -1,10 +1,11 @@
-from typing import Dict
+import re
 import tempfile
 from pathlib import Path
-import re
+from typing import Dict
 
 from genomics_data_index.storage.io.mutation.SequenceFile import SequenceFile
-from genomics_data_index.test.integration import reference_file_5000_snpeff, reference_file_5000_snpeff_2, reference_file
+from genomics_data_index.test.integration import reference_file_5000_snpeff, reference_file_5000_snpeff_2, \
+    reference_file
 
 
 def parse_snpeff_config(config_file: Path) -> Dict[str, str]:

@@ -1,7 +1,6 @@
-from pathlib import Path
-import tempfile
 import os
-import shutil
+import tempfile
+from pathlib import Path
 
 from genomics_data_index.storage.util import execute_command
 

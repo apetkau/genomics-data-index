@@ -1,19 +1,18 @@
 import gzip
+import logging
 from functools import partial
 from mimetypes import guess_type
+from os import mkdir, symlink, path
 from os.path import basename, splitext
 from pathlib import Path
 from typing import Tuple, List
-import logging
-from os import mkdir, symlink, path
 
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from genomics_data_index.storage.util import execute_commands
 from genomics_data_index.storage.io.mutation.SnpEffDatabase import SnpEffDatabase
-
+from genomics_data_index.storage.util import execute_commands
 
 logger = logging.getLogger(__name__)
 
@@ -88,7 +87,7 @@ class SequenceFile:
                 data_dir=str(snpeff_database_dir),
                 reference_name=genome_name,
                 sequence_ids=sequence_ids,
-                codon_type = codon_type,
+                codon_type=codon_type,
             ))
 
         logger.debug(f'Wrote snpeff config file [{snpeff_config_file}]')

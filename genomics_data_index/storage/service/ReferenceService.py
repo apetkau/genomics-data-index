@@ -7,10 +7,10 @@ from Bio.SeqRecord import SeqRecord
 from biocommons.seqrepo import SeqRepo
 from ete3 import Tree
 
+from genomics_data_index.storage.io.mutation.SequenceFile import SequenceFile
 from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
 from genomics_data_index.storage.model.db import Reference, SampleNucleotideVariation, ReferenceSequence, Sample
 from genomics_data_index.storage.service import DatabaseConnection, EntityExistsError
-from genomics_data_index.storage.io.mutation.SequenceFile import SequenceFile
 
 
 class ReferenceService:
