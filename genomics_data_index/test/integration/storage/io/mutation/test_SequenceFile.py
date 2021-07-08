@@ -72,5 +72,7 @@ def test_create_snpeff_database():
 
         entries = parse_snpeff_config(snpeff_config)
 
-        print(entries.keys())
         assert entries['data.dir'] == f'{snpeff_database_dir}'
+        assert 'NC_011083-5000.genome' in entries
+        assert entries['NC_011083-5000.chromosomes'] == 'NC_011083.1'
+        assert entries['NC_011083-5000.NC_011083.1.codonTable'] == 'Bacterial_and_Plant_Plastid'

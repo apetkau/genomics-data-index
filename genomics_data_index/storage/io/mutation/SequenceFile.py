@@ -76,9 +76,18 @@ class SequenceFile:
         snpeff_config_path = database_dir / 'snpEff.config'
         snpeff_database_dir = database_dir / 'db'
 
+        name, records = self.parse_sequence_file()
+        sequence_ids = [s.id for s in records]
+        codon_type = 'Bacterial_and_Plant_Plastid'
+
         snpeff_config_template = jinja_env.get_template('snpEff.config')
         with open(snpeff_config_path, 'w') as snpeff_config:
-            snpeff_config.write(snpeff_config_template.render(data_dir=str(snpeff_database_dir)))
+            snpeff_config.write(snpeff_config_template.render(
+                data_dir=str(snpeff_database_dir),
+                reference_name=name,
+                sequence_ids=sequence_ids,
+                codon_type = codon_type,
+            ))
 
         logger.debug(f'Writing snpeff config file [{snpeff_config_path}]')
 
