@@ -74,10 +74,10 @@ class SequenceFile:
 
         return ref_name
 
-    def _write_snpeff_config(self, snpeff_config_file: Path, snpeff_database_dir: Path) -> str:
+    def _write_snpeff_config(self, snpeff_config_file: Path, snpeff_database_dir: Path,
+                             codon_type: str) -> str:
         genome_name, records = self.parse_sequence_file()
         sequence_ids = [s.id for s in records]
-        codon_type = 'Bacterial_and_Plant_Plastid'
 
         snpeff_config_template = jinja_env.get_template('snpEff.config')
         with open(snpeff_config_file, 'w') as snpeff_config:
@@ -105,7 +105,7 @@ class SequenceFile:
             genbank_path = reference_dir / 'genes.gbk'
         symlink(self._file, genbank_path)
 
-    def create_snpeff_database(self, database_dir: Path) -> Path:
+    def create_snpeff_database(self, database_dir: Path, codon_type: str = 'Standard') -> Path:
         if not self.is_genbank():
             raise Exception(f'Sequence file [{self._file}] is not a genbank file. '
                             f'Can only build snpeff databases for genbank files.')
@@ -117,7 +117,8 @@ class SequenceFile:
 
         genome_name = self._write_snpeff_config(
             snpeff_config_file=snpeff_config_path,
-            snpeff_database_dir=snpeff_database_dir)
+            snpeff_database_dir=snpeff_database_dir,
+            codon_type=codon_type)
 
         self._setup_snpeff_files(snpeff_database_dir=snpeff_database_dir,
                                  reference_name=genome_name)

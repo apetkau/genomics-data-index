@@ -78,7 +78,7 @@ def test_create_snpeff_database():
         assert entries['data.dir'] == f'{snpeff_database_dir}'
         assert 'NC_011083-5000.genome' in entries
         assert entries['NC_011083-5000.chromosomes'] == 'NC_011083.1'
-        assert entries['NC_011083-5000.NC_011083.1.codonTable'] == 'Bacterial_and_Plant_Plastid'
+        assert entries['NC_011083-5000.NC_011083.1.codonTable'] == 'Standard'
 
         assert expected_genbank_path.exists()
         assert expected_genbank_path.is_symlink()
@@ -90,7 +90,8 @@ def test_create_snpeff_database_multiple_contigs():
         database_dir = Path(out_dir)
         snpeff_database_dir = database_dir / 'db'
         sequence_file = SequenceFile(reference_file_5000_snpeff_2)
-        snpeff_config = sequence_file.create_snpeff_database(database_dir)
+
+        snpeff_config = sequence_file.create_snpeff_database(database_dir, codon_type='Bacterial_and_Plant_Plastid')
 
         expected_genbank_path = snpeff_database_dir / 'NC_011083_CP001602-5000' / 'genes.gbk.gz'
         expected_snpeff_bin_file = snpeff_database_dir / 'NC_011083_CP001602-5000' / 'snpEffectPredictor.bin'
