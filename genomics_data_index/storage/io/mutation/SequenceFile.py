@@ -5,11 +5,11 @@ from os.path import basename, splitext
 from pathlib import Path
 from typing import Tuple, List
 import logging
-from os import mkdir, symlink
+from os import mkdir, symlink, path
 
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
-from jinja2 import Environment, PackageLoader, select_autoescape
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from genomics_data_index.storage.util import execute_commands
 from genomics_data_index.storage.io.mutation.SnpEffDatabase import SnpEffDatabase
@@ -17,8 +17,10 @@ from genomics_data_index.storage.io.mutation.SnpEffDatabase import SnpEffDatabas
 
 logger = logging.getLogger(__name__)
 
+template_dir = Path(path.dirname(__file__)) / 'templates'
+
 jinja_env = Environment(
-    loader=PackageLoader(__name__),
+    loader=FileSystemLoader(template_dir),
     autoescape=select_autoescape()
 )
 
