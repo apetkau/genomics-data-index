@@ -26,17 +26,27 @@ rule prepare_reference:
         reference=reference_abs,
     output:
         reference="reference/reference.fasta",
-        reference_mm2_index="reference/reference.fasta.mmi"
+    threads: 1
+    log:
+        "logs/prepare-reference.log"
+    script:
+        "scripts/prepare-reference.py"
+
+
+rule index_reference:
+    input:
+        reference="reference/reference.fasta",
+    output:
+        reference_mm2_index="reference/reference.fasta.mmi",
     conda:
         "envs/main.yaml"
     threads: 1
     log:
-        faidx="logs/prepare_reference.faidx.log",
-        mm2_index="logs/prepare_reference.mm2_index.log"
+        faidx="logs/index_reference.faidx.log",
+        mm2_index="logs/index_reference.mm2_index.log"
     shell:
-        "ln -s {input.reference} {output.reference} && "
-        "samtools faidx {output.reference} 2>&1 1>{log.faidx} && "
-        "minimap2 -t {threads} -d {output.reference_mm2_index} {output.reference} 2>&1 1>{log.mm2_index}"
+        "samtools faidx {input.reference} 2>&1 1>{log.faidx} && "
+        "minimap2 -t {threads} -d {output.reference_mm2_index} {input.reference} 2>&1 1>{log.mm2_index}"
 
 
 rule assembly_align:
