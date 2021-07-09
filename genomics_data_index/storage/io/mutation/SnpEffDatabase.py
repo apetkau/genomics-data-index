@@ -1,8 +1,13 @@
+from __future__ import annotations
 import os
 import tempfile
 from pathlib import Path
+import configparser
+import logging
 
 from genomics_data_index.storage.util import execute_command
+
+logger = logging.getLogger(__name__)
 
 
 class SnpEffDatabase:
@@ -12,6 +17,18 @@ class SnpEffDatabase:
         self._database_dir = database_dir
         self._genome_name = genome_name
 
+    def write_database_config(self, file: Path) -> None:
+        database_config = configparser.ConfigParser()
+        database_config['snpeff'] = {
+            'snpeff_config': str(self._snpeff_config),
+            'database_dir': str(self._database_dir),
+            'genome_name': str(self._genome_name),
+        }
+
+        logger.debug(f'Writing snpeff database config to [{file}]')
+        with open(file, 'w') as fh:
+            database_config.write(fh)
+
     @property
     def config(self) -> Path:
         return self._snpeff_config
@@ -19,6 +36,10 @@ class SnpEffDatabase:
     @property
     def genome_name(self) -> str:
         return self._genome_name
+
+    @property
+    def database_dir(self) -> Path:
+        return self._database_dir
 
     def annotate(self, input_vcf_file: Path, output_vcf_file: Path) -> Path:
         """
@@ -50,3 +71,23 @@ class SnpEffDatabase:
                 execute_command(bgzip_command, stdout=bgzip_out_h)
 
         return output_vcf_file
+
+
+    @classmethod
+    def create_from_config(cls, config_file: Path) -> SnpEffDatabase:
+        database_config = configparser.ConfigParser()
+        database_config.read(config_file)
+
+        snpeff_config = database_config['snpeff']['snpeff_config']
+        database_dir = database_config['snpeff']['database_dir']
+        genome_name = database_config['snpeff']['genome_name']
+
+        if snpeff_config is None or database_dir is None or genome_name is None:
+            raise Exception(f'Invalid snpeff database config in [{config_file}]')
+        else:
+            snpeff_config = Path(snpeff_config)
+            database_dir = Path(database_dir)
+
+        return SnpEffDatabase(snpeff_config=snpeff_config,
+                              database_dir=database_dir,
+                              genome_name=genome_name)
