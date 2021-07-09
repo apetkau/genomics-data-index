@@ -45,6 +45,11 @@ class SequenceFile:
 
             return ref_name, sequences
 
+    def write(self, output_file: Path, format: str) -> None:
+        ref_name, sequences = self.parse_sequence_file()
+        with open(output_file, 'w') as fh:
+            SeqIO.write(sequences, fh, format)
+
     def get_genome_extension_minus_compression(self):
         if self.is_gzip():
             ref_extension = splitext(basename(self._file).rstrip('.gz'))[1]

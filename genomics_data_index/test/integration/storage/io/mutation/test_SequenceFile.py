@@ -2,6 +2,7 @@ import re
 import tempfile
 from pathlib import Path
 from typing import Dict
+from Bio import SeqIO
 
 from genomics_data_index.storage.io.mutation.SequenceFile import SequenceFile
 from genomics_data_index.test.integration import reference_file_5000_snpeff, reference_file_5000_snpeff_2, \
@@ -58,6 +59,48 @@ def test_read_genbank_file_multiple_sequences():
     record = records[1]
     assert 'CP001602.2' == record.id
     assert 5000 == len(record)
+
+
+def test_write():
+    with tempfile.TemporaryDirectory() as out_dir:
+        out_file = Path(out_dir, 'output.fasta')
+        sequence_file = SequenceFile(reference_file_5000_snpeff)
+        sequence_file.write(out_file, 'fasta')
+
+        assert out_file.exists()
+
+        with open(out_file, 'r') as fh:
+            sequences_out = list(SeqIO.parse(fh, 'fasta'))
+
+        ref_name, sequences_in = sequence_file.parse_sequence_file()
+
+        assert 1 == len(sequences_out)
+        assert 1 == len(sequences_in)
+
+        assert sequences_in[0].id == sequences_out[0].id
+        assert sequences_in[0].seq == sequences_out[0].seq
+
+
+def test_write_multiple_sequences():
+    with tempfile.TemporaryDirectory() as out_dir:
+        out_file = Path(out_dir, 'output.fasta')
+        sequence_file = SequenceFile(reference_file_5000_snpeff_2)
+        sequence_file.write(out_file, 'fasta')
+
+        assert out_file.exists()
+
+        with open(out_file, 'r') as fh:
+            sequences_out = list(SeqIO.parse(fh, 'fasta'))
+
+        ref_name, sequences_in = sequence_file.parse_sequence_file()
+
+        assert 2 == len(sequences_out)
+        assert 2 == len(sequences_in)
+
+        assert sequences_in[0].id == sequences_out[0].id
+        assert sequences_in[0].seq == sequences_out[0].seq
+        assert sequences_in[1].id == sequences_out[1].id
+        assert sequences_in[1].seq == sequences_out[1].seq
 
 
 def test_create_snpeff_database():
