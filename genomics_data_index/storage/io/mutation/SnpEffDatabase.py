@@ -54,7 +54,7 @@ class SnpEffDatabase:
             tmp_out_dir = Path(out_dir)
             tmp_vcf_path = tmp_out_dir / input_vcf_file.name
             tmp_vcf_out = tmp_out_dir / 'output.vcf'
-            os.symlink(input_vcf_file, tmp_vcf_path)
+            os.symlink(input_vcf_file.absolute(), tmp_vcf_path)
 
             snpeff_command = ['snpEff', 'ann', '-v', '-c', str(self._snpeff_config),
                               '-hgvs', '-hgvs1LetterAa', '-no-upstream', '-no-downstream', '-i', 'vcf', '-o', 'vcf',

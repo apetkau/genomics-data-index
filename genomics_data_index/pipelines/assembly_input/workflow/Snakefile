@@ -95,6 +95,19 @@ rule assembly_variant:
         "bcftools call --threads {threads} --ploidy 1 -Oz -mv 1> {output}"
 
 
+rule assembly_variant_snpeff:
+    input:
+        snpeff_db_conf="snpeff_db/db.conf",
+        vcf="variant/{sample}.vcf.gz",
+    output:
+        snpeff_vcf="variant-snpeff/{sample}.vcf.gz",
+    threads: 1
+    log:
+        "logs/assembly_variant_snpeff.{sample}.log",
+    script:
+        "scripts/assembly-variant-snpeff.py"
+
+
 rule assembly_consensus:
     input:
         reference="reference/reference.fasta",
@@ -144,10 +157,9 @@ rule basic_mlst:
 
 rule gdi_input_fofn:
     input:
-        sample_vcfs=expand("variant/{sample}.vcf.gz",sample=samples),
+        sample_vcfs=expand("variant-snpeff/{sample}.vcf.gz",sample=samples) if config["include_snpeff"] else expand("variant/{sample}.vcf.gz",sample=samples),
         sample_consensus=expand("consensus/{sample}.fasta.gz",sample=samples),
         sample_sketches=expand("sketch/{sample}.sig.gz",sample=samples) if config["include_kmer"] else [],
-        snpeff_db_conf="snpeff_db/db.conf" if config["include_snpeff"] else [],
     log:
         "logs/gdi_input_fofn.log"
     output:
