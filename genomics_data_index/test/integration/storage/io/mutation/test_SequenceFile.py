@@ -129,6 +129,12 @@ def test_create_snpeff_database():
         assert expected_snpeff_bin_file.exists()
 
 
+def test_can_use_snpeff():
+    assert SequenceFile(reference_file_5000_snpeff).can_use_snpeff()
+    assert SequenceFile(reference_file_5000_snpeff_2).can_use_snpeff()
+    assert not SequenceFile(reference_file).can_use_snpeff()
+
+
 def test_create_snpeff_database_multiple_contigs():
     with tempfile.TemporaryDirectory() as out_dir:
         database_dir = Path(out_dir)

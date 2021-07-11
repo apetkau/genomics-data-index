@@ -68,6 +68,9 @@ class SequenceFile:
         ref_extension = self.get_genome_extension_minus_compression().lower()
         return ref_extension == '.gb' or ref_extension == '.gbk'
 
+    def can_use_snpeff(self) -> bool:
+        return self.is_genbank()
+
     def get_genome_name(self) -> str:
         """
         Gets the genome name (filename minus extension). Accounts for gzipped/non-gzipped files.
