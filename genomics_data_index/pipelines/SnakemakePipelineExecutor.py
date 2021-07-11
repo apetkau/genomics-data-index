@@ -9,6 +9,7 @@ import yaml
 
 from genomics_data_index.pipelines.ExecutorResults import ExecutorResults
 from genomics_data_index.pipelines.PipelineExecutor import PipelineExecutor
+from genomics_data_index.storage.io.mutation.SequenceFile import SequenceFile
 from genomics_data_index.storage.util import execute_commands
 
 logger = logging.getLogger(__name__)
@@ -20,6 +21,7 @@ class SnakemakePipelineExecutor(PipelineExecutor):
 
     def __init__(self, working_directory: Path, use_conda: bool = True,
                  include_kmer: bool = True, include_mlst: bool = True,
+                 ignore_snpeff: bool = False,
                  kmer_sizes: List[int] = None, kmer_scaled: int = 1000,
                  snakemake_batch_size: int = 5000):
         super().__init__()
@@ -30,6 +32,7 @@ class SnakemakePipelineExecutor(PipelineExecutor):
         self._use_conda = use_conda
         self._include_kmer = include_kmer
         self._include_mlst = include_mlst
+        self._ignore_snpeff = ignore_snpeff
         self._snakemake_batch_size = snakemake_batch_size
         self._sourmash_params = self._prepare_sourmash_params(kmer_sizes=kmer_sizes, kmer_scaled=kmer_scaled)
 
@@ -40,7 +43,7 @@ class SnakemakePipelineExecutor(PipelineExecutor):
         return params
 
     def _sample_name_from_file(self, sample_file: Path) -> str:
-        return sample_file.stem
+        return SequenceFile(sample_file).get_genome_name()
 
     def _prepare_working_directory(self, reference_file: Path,
                                    input_files: List[Path]) -> Path:
@@ -50,6 +53,8 @@ class SnakemakePipelineExecutor(PipelineExecutor):
         config_file = config_dir / 'config.yaml'
         samples_file = config_dir / 'samples.tsv'
 
+        include_snpeff = not self._ignore_snpeff and SequenceFile(reference_file).can_use_snpeff()
+
         logger.debug(f'Writing snakemake config [{config_file}]')
         with open(config_file, 'w') as fh:
             config = {
@@ -57,9 +62,11 @@ class SnakemakePipelineExecutor(PipelineExecutor):
                 'samples': str(samples_file.absolute()),
                 'include_mlst': self._include_mlst,
                 'include_kmer': self._include_kmer,
+                'include_snpeff': include_snpeff,
                 'sourmash_params': self._sourmash_params,
             }
             yaml.dump(config, fh)
+            logger.debug(f'Snakemake config={config}')
 
         logger.debug(f'Writing samples list [{samples_file}]')
 
