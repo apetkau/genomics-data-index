@@ -348,6 +348,8 @@ def analysis(ctx):
               default=False)
 @click.option('--include-kmer/--no-include-kmer', help="Enable/disable including kmer analysis in results.",
               default=False)
+@click.option('--ignore-snpeff/--no-ignore-snpeff', help="Enable/disable including snpeff annotations in "
+                                                         "mutation results.", default=False)
 @click.option('--kmer-size', help='Kmer size for indexing. List multiple for multiple kmer sizes in an index',
               default=[31], multiple=True, type=click.IntRange(min=1, max=201))
 @click.option('--kmer-scaled', help='The scaled parameter to pass to sourmash. Defines how many kmers to keep in the '
@@ -363,7 +365,7 @@ def analysis(ctx):
 @click.argument('assembled_genomes', type=click.Path(exists=True), nargs=-1)
 def assembly(ctx, reference_file: str, index: bool, clean: bool, build_tree: bool, align_type: str,
              extra_tree_params: str, use_conda: bool,
-             include_mlst: bool, include_kmer: bool, kmer_size: List[int], kmer_scaled: int,
+             include_mlst: bool, include_kmer: bool, ignore_snpeff: bool, kmer_size: List[int], kmer_scaled: int,
              batch_size: int,
              assembly_input_file: str, assembled_genomes: List[str]):
     data_index_connection = get_project_exit_on_error(ctx).create_connection()
@@ -395,6 +397,7 @@ def assembly(ctx, reference_file: str, index: bool, clean: bool, build_tree: boo
                                                   use_conda=use_conda,
                                                   include_mlst=include_mlst,
                                                   include_kmer=include_kmer,
+                                                  ignore_snpeff=ignore_snpeff,
                                                   kmer_sizes=kmer_sizes,
                                                   kmer_scaled=kmer_scaled,
                                                   snakemake_batch_size=batch_size)
