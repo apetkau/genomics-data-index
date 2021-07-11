@@ -26,17 +26,39 @@ rule prepare_reference:
         reference=reference_abs,
     output:
         reference="reference/reference.fasta",
-        reference_mm2_index="reference/reference.fasta.mmi"
+    threads: 1
+    log:
+        "logs/prepare-reference.log"
+    script:
+        "scripts/prepare-reference.py"
+
+
+rule index_reference:
+    input:
+        reference="reference/reference.fasta",
+    output:
+        reference_mm2_index="reference/reference.fasta.mmi",
     conda:
         "envs/main.yaml"
     threads: 1
     log:
-        faidx="logs/prepare_reference.faidx.log",
-        mm2_index="logs/prepare_reference.mm2_index.log"
+        faidx="logs/index_reference.faidx.log",
+        mm2_index="logs/index_reference.mm2_index.log"
     shell:
-        "ln -s {input.reference} {output.reference} && "
-        "samtools faidx {output.reference} 2>&1 1>{log.faidx} && "
-        "minimap2 -t {threads} -d {output.reference_mm2_index} {output.reference} 2>&1 1>{log.mm2_index}"
+        "samtools faidx {input.reference} 2>&1 1>{log.faidx} && "
+        "minimap2 -t {threads} -d {output.reference_mm2_index} {input.reference} 2>&1 1>{log.mm2_index}"
+
+
+rule prepare_snpeff_database:
+    input:
+        reference=reference_abs,
+    output:
+        snpeff_db_conf="snpeff_db/db.conf",
+    threads: 1
+    log:
+        "logs/prepare-snpeff-database.log"
+    script:
+        "scripts/prepare-snpeff-database.py"
 
 
 rule assembly_align:
@@ -71,6 +93,19 @@ rule assembly_variant:
     shell:
         "bcftools mpileup --threads {threads} -Ou -f {input.reference} {input.bam} 2> {log.mpileup} | "
         "bcftools call --threads {threads} --ploidy 1 -Oz -mv 1> {output}"
+
+
+rule assembly_variant_snpeff:
+    input:
+        snpeff_db_conf="snpeff_db/db.conf",
+        vcf="variant/{sample}.vcf.gz",
+    output:
+        snpeff_vcf="variant-snpeff/{sample}.vcf.gz",
+    threads: 1
+    log:
+        "logs/assembly_variant_snpeff.{sample}.log",
+    script:
+        "scripts/assembly-variant-snpeff.py"
 
 
 rule assembly_consensus:
@@ -122,9 +157,9 @@ rule basic_mlst:
 
 rule gdi_input_fofn:
     input:
-        sample_vcfs=expand("variant/{sample}.vcf.gz",sample=samples),
+        sample_vcfs=expand("variant-snpeff/{sample}.vcf.gz",sample=samples) if config["include_snpeff"] else expand("variant/{sample}.vcf.gz",sample=samples),
         sample_consensus=expand("consensus/{sample}.fasta.gz",sample=samples),
-        sample_sketches=expand("sketch/{sample}.sig.gz",sample=samples) if config["include_kmer"] else []
+        sample_sketches=expand("sketch/{sample}.sig.gz",sample=samples) if config["include_kmer"] else [],
     log:
         "logs/gdi_input_fofn.log"
     output:

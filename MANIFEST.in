@@ -1,5 +1,6 @@
 recursive-include genomics_data_index/test/integration/data *
 recursive-include genomics_data_index/pipelines/assembly_input/ *
+recursive-include genomics_data_index/storage/io/mutation/templates/ *
 include README.md
 include CHANGELOG.md
 include MANIFEST.in

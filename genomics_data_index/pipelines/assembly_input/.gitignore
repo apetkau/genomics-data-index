@@ -2,3 +2,12 @@
 /workflow/logs
 /workflow/align
 /workflow/variant
+/align
+/consensus
+/gdi-input.fofn
+/logs
+/mlst.tsv
+/mlst
+/reference
+/sketch
+/variant

@@ -4,7 +4,7 @@ from typing import Optional
 
 from genomics_data_index.storage.MaskedGenomicRegions import MaskedGenomicRegions
 from genomics_data_index.storage.io.mutation.NucleotideSampleData import NucleotideSampleData
-from genomics_data_index.storage.util import parse_sequence_file
+from genomics_data_index.storage.io.mutation.SequenceFile import SequenceFile
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +31,7 @@ class NucleotideSampleDataSequenceMask(NucleotideSampleData):
             if new_file.exists():
                 raise Exception(f'File {new_file} already exists')
 
-            name, records = parse_sequence_file(self._sample_mask_sequence)
+            name, records = SequenceFile(self._sample_mask_sequence).parse_sequence_file()
             logger.debug(f'Getting genomic masks from {self._sample_mask_sequence}')
             masked_regions = MaskedGenomicRegions.from_sequences(sequences=records)
             masked_regions.write(new_file)

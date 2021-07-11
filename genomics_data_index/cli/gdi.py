@@ -27,6 +27,7 @@ from genomics_data_index.storage.io.mlst.MLSTSampleDataPackage import MLSTSample
 from genomics_data_index.storage.io.mlst.MLSTSistrReader import MLSTSistrReader
 from genomics_data_index.storage.io.mlst.MLSTTSeemannFeaturesReader import MLSTTSeemannFeaturesReader
 from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
+from genomics_data_index.storage.io.mutation.SequenceFile import SequenceFile
 from genomics_data_index.storage.io.processor.MultipleProcessSampleFilesProcessor import \
     MultipleProcessSampleFilesProcessor
 from genomics_data_index.storage.io.processor.NullSampleFilesProcessor import NullSampleFilesProcessor
@@ -38,7 +39,6 @@ from genomics_data_index.storage.service.MLSTService import MLSTService
 from genomics_data_index.storage.service.SampleService import SampleService
 from genomics_data_index.storage.service.TreeService import TreeService
 from genomics_data_index.storage.service.VariationService import VariationService
-from genomics_data_index.storage.util import get_genome_name
 
 logger = logging.getLogger('genomics_data_index')
 max_cores = multiprocessing.cpu_count()
@@ -122,7 +122,7 @@ def load_variants_common(data_index_connection: DataIndexConnection, ncores: int
     if len(samples_exist) > 0:
         logger.error(f'Samples {samples_exist} already exist, will not load any variants')
     else:
-        reference_name = get_genome_name(reference_file)
+        reference_name = SequenceFile(reference_file).get_genome_name()
 
         variation_service.insert(feature_scope_name=reference_name,
                                  data_package=data_package)
@@ -348,12 +348,16 @@ def analysis(ctx):
               default=False)
 @click.option('--include-kmer/--no-include-kmer', help="Enable/disable including kmer analysis in results.",
               default=False)
+@click.option('--ignore-snpeff/--no-ignore-snpeff', help="Enable/disable including snpeff annotations in "
+                                                         "mutation results.", default=False)
 @click.option('--kmer-size', help='Kmer size for indexing. List multiple for multiple kmer sizes in an index',
               default=[31], multiple=True, type=click.IntRange(min=1, max=201))
 @click.option('--kmer-scaled', help='The scaled parameter to pass to sourmash. Defines how many kmers to keep in the '
                                     'sketch should be (i.e., a value of 1000 means to keep approx. 1/1000 kmers).',
               default=1000, type=click.IntRange(min=1))
-@click.option('--batch-size', help='The maximum number of Snakemake jobs to execute in a single batch.',
+@click.option('--batch-size', help='The maximum number of input files to process before dividing the Snakemake '
+                                   'pipeline into batches. The number of jobs scheduled in each batch will be larger'
+                                   'than this value.',
               default=5000, type=click.IntRange(min=1))
 @click.option('--assembly-input-file',
               help='A file listing the genome assemblies to process, one per line. This is an alternative'
@@ -363,7 +367,7 @@ def analysis(ctx):
 @click.argument('assembled_genomes', type=click.Path(exists=True), nargs=-1)
 def assembly(ctx, reference_file: str, index: bool, clean: bool, build_tree: bool, align_type: str,
              extra_tree_params: str, use_conda: bool,
-             include_mlst: bool, include_kmer: bool, kmer_size: List[int], kmer_scaled: int,
+             include_mlst: bool, include_kmer: bool, ignore_snpeff: bool, kmer_size: List[int], kmer_scaled: int,
              batch_size: int,
              assembly_input_file: str, assembled_genomes: List[str]):
     data_index_connection = get_project_exit_on_error(ctx).create_connection()
@@ -395,9 +399,10 @@ def assembly(ctx, reference_file: str, index: bool, clean: bool, build_tree: boo
                                                   use_conda=use_conda,
                                                   include_mlst=include_mlst,
                                                   include_kmer=include_kmer,
+                                                  ignore_snpeff=ignore_snpeff,
                                                   kmer_sizes=kmer_sizes,
                                                   kmer_scaled=kmer_scaled,
-                                                  snakemake_batch_size=batch_size)
+                                                  snakemake_input_batch_size=batch_size)
 
     logger.info(f'Processing {len(genome_paths)} genomes to identify mutations')
     results = pipeline_executor.execute(input_files=genome_paths,
