@@ -3,4 +3,5 @@ reference: input-data/reference.fasta
 samples: config/samples.tsv
 include_kmer: True
 include_mlst: True
+include_snpeff: False
 sourmash_params: k=31,scaled=1000

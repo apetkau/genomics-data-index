@@ -49,6 +49,18 @@ rule index_reference:
         "minimap2 -t {threads} -d {output.reference_mm2_index} {input.reference} 2>&1 1>{log.mm2_index}"
 
 
+rule prepare_snpeff_database:
+    input:
+        reference=reference_abs,
+    output:
+        snpeff_db_conf="snpeff_db/db.conf",
+    threads: 1
+    log:
+        "logs/prepare-snpeff-database.log"
+    script:
+        "scripts/prepare-snpeff-database.py"
+
+
 rule assembly_align:
     input:
         reference_mm2_index="reference/reference.fasta.mmi",
@@ -134,7 +146,8 @@ rule gdi_input_fofn:
     input:
         sample_vcfs=expand("variant/{sample}.vcf.gz",sample=samples),
         sample_consensus=expand("consensus/{sample}.fasta.gz",sample=samples),
-        sample_sketches=expand("sketch/{sample}.sig.gz",sample=samples) if config["include_kmer"] else []
+        sample_sketches=expand("sketch/{sample}.sig.gz",sample=samples) if config["include_kmer"] else [],
+        snpeff_db_conf="snpeff_db/db.conf" if config["include_snpeff"] else [],
     log:
         "logs/gdi_input_fofn.log"
     output:
