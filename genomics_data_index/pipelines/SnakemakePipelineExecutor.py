@@ -53,7 +53,16 @@ class SnakemakePipelineExecutor(PipelineExecutor):
         config_file = config_dir / 'config.yaml'
         samples_file = config_dir / 'samples.tsv'
 
-        include_snpeff = not self._ignore_snpeff and SequenceFile(reference_file).can_use_snpeff()
+        can_use_snpeff_reference = SequenceFile(reference_file).can_use_snpeff()
+        include_snpeff = False
+        if can_use_snpeff_reference and not self._ignore_snpeff:
+            include_snpeff = True
+            logger.info('Including snpeff annotations in snakemake results')
+        elif can_use_snpeff_reference:
+            logger.info(f'Can use snpeff for reference file [{reference_file}] but ignore_snpeff=[{include_snpeff}]'
+                        f' so will not use snpeff.')
+        else:
+            logger.info(f'Cannot use snpeff for reference file [{reference_file}], no snpeff annotations are included')
 
         logger.debug(f'Writing snakemake config [{config_file}]')
         with open(config_file, 'w') as fh:
