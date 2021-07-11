@@ -355,7 +355,9 @@ def analysis(ctx):
 @click.option('--kmer-scaled', help='The scaled parameter to pass to sourmash. Defines how many kmers to keep in the '
                                     'sketch should be (i.e., a value of 1000 means to keep approx. 1/1000 kmers).',
               default=1000, type=click.IntRange(min=1))
-@click.option('--batch-size', help='The maximum number of Snakemake jobs to execute in a single batch.',
+@click.option('--batch-size', help='The maximum number of input files to process before dividing the Snakemake '
+                                   'pipeline into batches. The number of jobs scheduled in each batch will be larger'
+                                   'than this value.',
               default=5000, type=click.IntRange(min=1))
 @click.option('--assembly-input-file',
               help='A file listing the genome assemblies to process, one per line. This is an alternative'
@@ -400,7 +402,7 @@ def assembly(ctx, reference_file: str, index: bool, clean: bool, build_tree: boo
                                                   ignore_snpeff=ignore_snpeff,
                                                   kmer_sizes=kmer_sizes,
                                                   kmer_scaled=kmer_scaled,
-                                                  snakemake_batch_size=batch_size)
+                                                  snakemake_input_batch_size=batch_size)
 
     logger.info(f'Processing {len(genome_paths)} genomes to identify mutations')
     results = pipeline_executor.execute(input_files=genome_paths,

@@ -139,7 +139,7 @@ def test_create_fofn_file_multiple_samples_batching():
         input_samples = [assemblies_samples[s] for s in samples]
 
         pipeline_executor = SnakemakePipelineExecutor(working_directory=tmp_dir, use_conda=False,
-                                                      include_mlst=False, snakemake_batch_size=2)
+                                                      include_mlst=False, snakemake_input_batch_size=2)
 
         results = pipeline_executor.execute(input_files=input_samples,
                                             reference_file=assemblies_reference,

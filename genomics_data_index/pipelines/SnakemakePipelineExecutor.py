@@ -23,7 +23,7 @@ class SnakemakePipelineExecutor(PipelineExecutor):
                  include_kmer: bool = True, include_mlst: bool = True,
                  ignore_snpeff: bool = False,
                  kmer_sizes: List[int] = None, kmer_scaled: int = 1000,
-                 snakemake_batch_size: int = 5000):
+                 snakemake_input_batch_size: int = 5000):
         super().__init__()
         if kmer_sizes is None:
             kmer_sizes = [31]
@@ -33,7 +33,7 @@ class SnakemakePipelineExecutor(PipelineExecutor):
         self._include_kmer = include_kmer
         self._include_mlst = include_mlst
         self._ignore_snpeff = ignore_snpeff
-        self._snakemake_batch_size = snakemake_batch_size
+        self._snakemake_batch_size = snakemake_input_batch_size
         self._sourmash_params = self._prepare_sourmash_params(kmer_sizes=kmer_sizes, kmer_scaled=kmer_scaled)
 
     def _prepare_sourmash_params(self, kmer_sizes: List[int], kmer_scaled: int) -> str:
