@@ -357,3 +357,7 @@ def test_create_fofn_file_snpeff_no_conda():
 
         assert actual_mutations_snpeff_file == actual_mutations_file_from_df
         assert actual_consensus_file == actual_consensus_file_from_df
+
+        # snpeff annotations should be added in headers
+        reader = vcf.Reader(filename=str(actual_mutations_snpeff_file))
+        assert 'ANN' in reader.infos
