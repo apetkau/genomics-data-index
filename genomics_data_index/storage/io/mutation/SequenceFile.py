@@ -68,6 +68,17 @@ class SequenceFile:
         ref_extension = self.get_genome_extension_minus_compression().lower()
         return ref_extension == '.gb' or ref_extension == '.gbk'
 
+    def is_fasta(self) -> bool:
+        ref_extension = self.get_genome_extension_minus_compression().lower()
+        return ref_extension == '.fasta' or ref_extension == '.fa' or ref_extension == '.fna'
+
+    def is_assembly(self) -> bool:
+        return self.is_fasta() or self.is_genbank()
+
+    def is_reads(self) -> bool:
+        extension = self.get_genome_extension_minus_compression().lower()
+        return extension == '.fastq' or extension == '.fq'
+
     def can_use_snpeff(self) -> bool:
         return self.is_genbank()
 
