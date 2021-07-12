@@ -14,7 +14,7 @@ from genomics_data_index.storage.util import execute_commands
 
 logger = logging.getLogger(__name__)
 
-snakemake_file = Path(path.dirname(__file__), 'assembly_input', 'workflow', 'Snakefile')
+snakemake_file = Path(path.dirname(__file__), 'snakemake', 'main', 'workflow', 'Snakefile')
 
 
 class SnakemakePipelineExecutor(PipelineExecutor):
