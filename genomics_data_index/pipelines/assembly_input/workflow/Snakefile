@@ -11,7 +11,7 @@ min_version("5.1.2")
 configfile: "config/config.yaml"
 
 sample_files = pd.read_csv(config["samples"],sep='\t').set_index("Sample",drop=False)
-samples_assemblies = sample_files[~sample_files['Assembly'].isna()].index.tolist()
+samples_assemblies = sample_files[~sample_files['Assemblies'].isna()].index.tolist()
 samples_paired_reads = sample_files[(~sample_files['Reads1'].isna()) & (~sample_files['Reads2'].isna())].index.tolist()
 samples_single_reads = sample_files[(~sample_files['Reads1'].isna()) & (sample_files['Reads2'].isna())].index.tolist()
 
@@ -73,7 +73,7 @@ rule prepare_snpeff_database:
 rule assembly_align:
     input:
         reference_mm2_index="reference/reference.fasta.mmi",
-        sample=lambda wildcards: sample_files.loc[wildcards.sample]['Assembly'],
+        sample=lambda wildcards: sample_files.loc[wildcards.sample]['Assemblies'],
     output:
         "assemblies/align/{sample}.bam",
     conda:
@@ -173,7 +173,7 @@ rule assembly_consensus:
 
 rule assembly_sourmash_sketch:
     input:
-        sample=lambda wildcards: sample_files.loc[wildcards.sample]['Assembly'],
+        sample=lambda wildcards: sample_files.loc[wildcards.sample]['Assemblies'],
     output:
         "assemblies/sketch/{sample}.sig.gz"
     conda:
@@ -210,7 +210,7 @@ rule reads_paired_sourmash_sketch:
 
 rule basic_mlst:
     input:
-        sample=lambda wildcards: sample_files.loc[wildcards.sample]['Assembly'],
+        sample=lambda wildcards: sample_files.loc[wildcards.sample]['Assemblies'],
     output:
         "mlst/{sample}.tsv"
     conda:
