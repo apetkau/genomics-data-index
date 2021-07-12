@@ -49,7 +49,7 @@ class SnakemakePipelineExecutor(PipelineExecutor):
         return SequenceFile(sample_file).get_genome_name()
 
     def _prepare_working_directory(self, reference_file: Path,
-                                   input_files: List[Path]) -> Path:
+                                   input_sample_files: pd.DataFrame) -> Path:
         config_dir = self._working_directory / 'config'
         config_dir.mkdir()
 
@@ -84,15 +84,24 @@ class SnakemakePipelineExecutor(PipelineExecutor):
             logger.debug(f'Snakemake config={config}')
 
         logger.debug(f'Writing samples list [{samples_file}]')
-
-        sample_names = []
-        for file in input_files:
-            sample_names.append([self._sample_name_from_file(file), str(file.absolute()), pd.NA, pd.NA])
-
-        sample_names_df = pd.DataFrame(sample_names, columns=['Sample', 'Assemblies', 'Reads1', 'Reads2'])
-        sample_names_df.to_csv(samples_file, sep='\t', index=False)
+        self.write_input_sample_files(input_sample_files=input_sample_files, output_file=samples_file)
 
         return config_file
+
+    def validate_input_sample_files(self, input_sample_files: pd.DataFrame) -> bool:
+        return input_sample_files.columns.tolist() == ['Sample', 'Assemblies', 'Reads1', 'Reads2']
+
+    def create_input_sample_files(self, input_files: List[Path]) -> pd.DataFrame:
+        sample_files = []
+        for file in input_files:
+            sample_files.append([self._sample_name_from_file(file), str(file.absolute()), pd.NA, pd.NA])
+
+        sample_files_df = pd.DataFrame(sample_files, columns=['Sample', 'Assemblies', 'Reads1', 'Reads2'])
+
+        return sample_files_df
+
+    def write_input_sample_files(self, input_sample_files: pd.DataFrame, output_file: Path) -> None:
+        input_sample_files.to_csv(output_file, sep='\t', index=False)
 
     def _apply_use_conda(self, command: List[str]) -> List[str]:
         if self._use_conda:
@@ -106,11 +115,13 @@ class SnakemakePipelineExecutor(PipelineExecutor):
 
     def execute(self, input_files: List[Path], reference_file: Path, ncores: int = 1) -> ExecutorResults:
         working_directory = self._working_directory
+        input_sample_files = self.create_input_sample_files(input_files)
+        number_samples = len(input_sample_files)
         logger.debug(f'Preparing working directory [{working_directory}] for snakemake')
         config_file = self._prepare_working_directory(reference_file=reference_file,
-                                                      input_files=input_files)
+                                                      input_sample_files=input_sample_files)
 
-        logger.debug(f'Executing snakemake on {len(input_files)} files with reference_file=[{reference_file}]'
+        logger.debug(f'Executing snakemake on {number_samples} files with reference_file=[{reference_file}]'
                      f' using {ncores} cores in [{working_directory}]')
         snakemake_output_fofn = working_directory / 'gdi-input.fofn'
         snakemake_output_mlst = working_directory / 'mlst.tsv'
@@ -122,7 +133,7 @@ class SnakemakePipelineExecutor(PipelineExecutor):
 
         # I found with very large numbers of input files snakemake would slow down significantly
         # So I'm executing batches of files in snakemake if you pass too many input files.
-        number_batches = self._get_number_batches(len(input_files))
+        number_batches = self._get_number_batches(number_samples)
         if number_batches > 1:
             for batch_number in range(1, number_batches + 1):
                 logger.info(f'Running snakemake batch: {batch_number}/{number_batches}')
