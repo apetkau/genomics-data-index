@@ -116,11 +116,16 @@ rule reads_paired_snippy:
     conda:
         "envs/snippy.yaml"
     threads: 1
+    params:
+        mincov=config['reads_mincov'],
+        minqual=config['reads_minqual'],
+        subsample=config['reads_subsample'],
     log:
         snippy="logs/snippy_variant_paired.{sample}.log",
     shell:
-        "snippy --cpus {threads} --outdir {output.snippy_dir} --ref {input.reference}"
-        " --R1 {input.reads1} --R2 {input.reads2} 1> {log.snippy} 2>&1 && "
+        "snippy --cpus {threads} --outdir {output.snippy_dir} --ref {input.reference} --mincov {params.mincov}"
+        " --minqual {params.minqual} --subsample {params.subsample} --R1 {input.reads1} --R2 {input.reads2}"
+        " 1> {log.snippy} 2>&1 && "
         "cp {output.snippy_dir}/snps.vcf.gz {output.vcf} && "
         "gzip --stdout {output.snippy_dir}/snps.aligned.fa > {output.consensus}"
 

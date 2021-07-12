@@ -5,3 +5,6 @@ include_kmer: True
 include_mlst: False
 include_snpeff: True
 sourmash_params: k=31,scaled=1000
+reads_mincov: 10
+reads_minqual: 100
+reads_subsample: 1
