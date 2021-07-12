@@ -121,7 +121,7 @@ rule reads_paired_snippy:
     shell:
         "snippy --cpus {threads} --outdir {output.snippy_dir} --ref {input.reference}"
         " --R1 {input.reads1} --R2 {input.reads2} 1> {log.snippy} 2>&1 && "
-        "ln {output.snippy_dir}/snps.vcf.gz {output.vcf} && "
+        "cp {output.snippy_dir}/snps.vcf.gz {output.vcf} && "
         "gzip --stdout {output.snippy_dir}/snps.aligned.fa > {output.consensus}"
 
 
