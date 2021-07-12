@@ -10,7 +10,15 @@ min_version("5.1.2")
 configfile: "config/config.yaml"
 
 sample_files = pd.read_csv(config["samples"],sep='\t').set_index("Sample",drop=False)
-samples = sample_files.index.tolist()
+samples_assemblies = sample_files[~sample_files['Assembly'].isna()].index.tolist()
+samples_paired_reads = sample_files[(~sample_files['Reads1'].isna()) & (~sample_files['Reads2'].isna())].index.tolist()
+samples_single_reads = sample_files[(~sample_files['Reads1'].isna()) & (sample_files['Reads2'].isna())].index.tolist()
+
+# If both reads and assemblies are set, prefer the assemblies for analysis
+samples_assemblies_set = set(samples_assemblies)
+samples_paired_reads = list(set(samples_paired_reads) - samples_assemblies_set)
+samples_single_reads = list(set(samples_single_reads) - samples_assemblies_set)
+
 reference_abs = Path(config["reference"]).absolute()
 
 # Workflow
@@ -64,7 +72,7 @@ rule prepare_snpeff_database:
 rule assembly_align:
     input:
         reference_mm2_index="reference/reference.fasta.mmi",
-        sample=lambda wildcards: sample_files.loc[wildcards.sample]['File'],
+        sample=lambda wildcards: sample_files.loc[wildcards.sample]['Assembly'],
     output:
         "align/{sample}.bam",
     conda:
@@ -125,7 +133,7 @@ rule assembly_consensus:
 
 rule sourmash_sketch:
     input:
-        sample=lambda wildcards: sample_files.loc[wildcards.sample]['File'],
+        sample=lambda wildcards: sample_files.loc[wildcards.sample]['Assembly'],
     output:
         "sketch/{sample}.sig.gz"
     conda:
@@ -143,7 +151,7 @@ rule sourmash_sketch:
 
 rule basic_mlst:
     input:
-        sample=lambda wildcards: sample_files.loc[wildcards.sample]['File'],
+        sample=lambda wildcards: sample_files.loc[wildcards.sample]['Assembly'],
     output:
         "mlst/{sample}.tsv"
     conda:
@@ -157,9 +165,9 @@ rule basic_mlst:
 
 rule gdi_input_fofn:
     input:
-        sample_vcfs=expand("variant-snpeff/{sample}.vcf.gz",sample=samples) if config["include_snpeff"] else expand("variant/{sample}.vcf.gz",sample=samples),
-        sample_consensus=expand("consensus/{sample}.fasta.gz",sample=samples),
-        sample_sketches=expand("sketch/{sample}.sig.gz",sample=samples) if config["include_kmer"] else [],
+        sample_vcfs=expand("variant-snpeff/{sample}.vcf.gz",sample=samples_assemblies) if config["include_snpeff"] else expand("variant/{sample}.vcf.gz",sample=samples_assemblies),
+        sample_consensus=expand("consensus/{sample}.fasta.gz",sample=samples_assemblies),
+        sample_sketches=expand("sketch/{sample}.sig.gz",sample=samples_assemblies) if config["include_kmer"] else [],
     log:
         "logs/gdi_input_fofn.log"
     output:
@@ -170,7 +178,7 @@ rule gdi_input_fofn:
 
 rule mlst_full_table:
     input:
-        sample_vcfs=expand("mlst/{sample}.tsv",sample=samples),
+        sample_vcfs=expand("mlst/{sample}.tsv",sample=samples_assemblies),
     log:
         "logs/mlst_full_table.log"
     output:

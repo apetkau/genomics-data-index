@@ -1,2 +1,2 @@
-Sample	File
-SampleA	input-data/SampleA.fasta
+Sample	Assembly	Reads1	Reads2
+SampleA	input-data/SampleA.fasta		
