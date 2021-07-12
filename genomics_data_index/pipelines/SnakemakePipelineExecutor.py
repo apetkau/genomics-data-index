@@ -45,9 +45,6 @@ class SnakemakePipelineExecutor(PipelineExecutor):
 
         return params
 
-    def _sample_name_from_file(self, sample_file: Path) -> str:
-        return SequenceFile(sample_file).get_genome_name()
-
     def _prepare_working_directory(self, reference_file: Path,
                                    input_sample_files: pd.DataFrame) -> Path:
         config_dir = self._working_directory / 'config'
@@ -88,21 +85,6 @@ class SnakemakePipelineExecutor(PipelineExecutor):
 
         return config_file
 
-    def validate_input_sample_files(self, input_sample_files: pd.DataFrame) -> bool:
-        return input_sample_files.columns.tolist() == ['Sample', 'Assemblies', 'Reads1', 'Reads2']
-
-    def create_input_sample_files(self, input_files: List[Path]) -> pd.DataFrame:
-        sample_files = []
-        for file in input_files:
-            sample_files.append([self._sample_name_from_file(file), str(file.absolute()), pd.NA, pd.NA])
-
-        sample_files_df = pd.DataFrame(sample_files, columns=['Sample', 'Assemblies', 'Reads1', 'Reads2'])
-
-        return sample_files_df
-
-    def write_input_sample_files(self, input_sample_files: pd.DataFrame, output_file: Path) -> None:
-        input_sample_files.to_csv(output_file, sep='\t', index=False)
-
     def _apply_use_conda(self, command: List[str]) -> List[str]:
         if self._use_conda:
             logger.debug('Enabling --use-conda for snakemake pipeline')
@@ -116,6 +98,7 @@ class SnakemakePipelineExecutor(PipelineExecutor):
     def execute(self, input_files: List[Path], reference_file: Path, ncores: int = 1) -> ExecutorResults:
         working_directory = self._working_directory
         input_sample_files = self.create_input_sample_files(input_files)
+        self.validate_input_sample_files(input_sample_files)
         number_samples = len(input_sample_files)
         logger.debug(f'Preparing working directory [{working_directory}] for snakemake')
         config_file = self._prepare_working_directory(reference_file=reference_file,
