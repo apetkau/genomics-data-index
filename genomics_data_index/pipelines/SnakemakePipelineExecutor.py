@@ -35,6 +35,9 @@ class SnakemakePipelineExecutor(PipelineExecutor):
         self._ignore_snpeff = ignore_snpeff
         self._snakemake_batch_size = snakemake_input_batch_size
         self._sourmash_params = self._prepare_sourmash_params(kmer_sizes=kmer_sizes, kmer_scaled=kmer_scaled)
+        self._reads_mincov = 10
+        self._reads_minqual = 100
+        self._reads_subsample = 1
 
     def _prepare_sourmash_params(self, kmer_sizes: List[int], kmer_scaled: int) -> str:
         params = ','.join([f'k={v}' for v in kmer_sizes])
@@ -73,6 +76,9 @@ class SnakemakePipelineExecutor(PipelineExecutor):
                 'include_kmer': self._include_kmer,
                 'include_snpeff': include_snpeff,
                 'sourmash_params': self._sourmash_params,
+                'reads_mincov': self._reads_mincov,
+                'reads_minqual': self._reads_minqual,
+                'reads_subsample': self._reads_subsample,
             }
             yaml.dump(config, fh)
             logger.debug(f'Snakemake config={config}')
@@ -81,9 +87,9 @@ class SnakemakePipelineExecutor(PipelineExecutor):
 
         sample_names = []
         for file in input_files:
-            sample_names.append([self._sample_name_from_file(file), str(file.absolute())])
+            sample_names.append([self._sample_name_from_file(file), str(file.absolute()), pd.NA, pd.NA])
 
-        sample_names_df = pd.DataFrame(sample_names, columns=['Sample', 'File'])
+        sample_names_df = pd.DataFrame(sample_names, columns=['Sample', 'Assemblies', 'Reads1', 'Reads2'])
         sample_names_df.to_csv(samples_file, sep='\t', index=False)
 
         return config_file

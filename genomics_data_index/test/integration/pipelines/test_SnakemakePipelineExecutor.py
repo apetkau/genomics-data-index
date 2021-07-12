@@ -53,8 +53,8 @@ def assert_consensus(consensus_file: Path, expected_length: int, expected_Ns: in
 def test_create_fofn_file_single_sample():
     with TemporaryDirectory() as tmp_dir_str:
         tmp_dir = Path(tmp_dir_str)
-        actual_mutations_file = tmp_dir / 'variant' / 'SampleA.vcf.gz'
-        actual_consensus_file = tmp_dir / 'consensus' / 'SampleA.fasta.gz'
+        actual_mutations_file = tmp_dir / 'assemblies'/ 'variant' / 'SampleA.vcf.gz'
+        actual_consensus_file = tmp_dir / 'assemblies'/ 'consensus' / 'SampleA.fasta.gz'
         unexpected_mlst_file = tmp_dir / 'mlst.tsv'
         input_samples = [assemblies_samples['SampleA']]
 
@@ -245,9 +245,9 @@ def test_create_fofn_file_multiple_samples_multiple_cores_and_use_conda():
 def test_create_fofn_file_single_sketch_mlst():
     with TemporaryDirectory() as tmp_dir_str:
         tmp_dir = Path(tmp_dir_str)
-        actual_mutations_file = tmp_dir / 'variant' / 'SampleA.vcf.gz'
-        actual_consensus_file = tmp_dir / 'consensus' / 'SampleA.fasta.gz'
-        actual_sketch_file = tmp_dir / 'sketch' / 'SampleA.sig.gz'
+        actual_mutations_file = tmp_dir / 'assemblies' / 'variant' / 'SampleA.vcf.gz'
+        actual_consensus_file = tmp_dir / 'assemblies' / 'consensus' / 'SampleA.fasta.gz'
+        actual_sketch_file = tmp_dir / 'assemblies' /'sketch' / 'SampleA.sig.gz'
         actual_mlst_file = tmp_dir / 'mlst.tsv'
         input_samples = [assemblies_samples['SampleA']]
 
@@ -287,9 +287,9 @@ def test_create_fofn_file_single_sketch_mlst():
 def test_create_fofn_file_single_no_sketch_with_mlst():
     with TemporaryDirectory() as tmp_dir_str:
         tmp_dir = Path(tmp_dir_str)
-        actual_mutations_file = tmp_dir / 'variant' / 'SampleA.vcf.gz'
-        actual_consensus_file = tmp_dir / 'consensus' / 'SampleA.fasta.gz'
-        unexpected_sketch_file = tmp_dir / 'sketch' / 'SampleA.sig.gz'
+        actual_mutations_file = tmp_dir / 'assemblies' / 'variant' / 'SampleA.vcf.gz'
+        actual_consensus_file = tmp_dir / 'assemblies' / 'consensus' / 'SampleA.fasta.gz'
+        unexpected_sketch_file = tmp_dir / 'assemblies' / 'sketch' / 'SampleA.sig.gz'
         actual_mlst_file = tmp_dir / 'mlst.tsv'
         input_samples = [assemblies_samples['SampleA']]
 
@@ -327,9 +327,9 @@ def test_create_fofn_file_single_no_sketch_with_mlst():
 def test_create_fofn_file_snpeff_no_conda():
     with TemporaryDirectory() as tmp_dir_str:
         tmp_dir = Path(tmp_dir_str)
-        actual_mutations_snpeff_file = tmp_dir / 'variant-snpeff' / 'SampleA.vcf.gz'
+        actual_mutations_snpeff_file = tmp_dir / 'assemblies' / 'variant-snpeff' / 'SampleA.vcf.gz'
         actual_snpeff_config = tmp_dir / 'snpeff_db' / 'snpEff.config'
-        actual_consensus_file = tmp_dir / 'consensus' / 'SampleA.fasta.gz'
+        actual_consensus_file = tmp_dir / 'assemblies' / 'consensus' / 'SampleA.fasta.gz'
         input_samples = [snpeff_input_sampleA]
 
         pipeline_executor = SnakemakePipelineExecutor(working_directory=tmp_dir, use_conda=False,
@@ -366,9 +366,9 @@ def test_create_fofn_file_snpeff_no_conda():
 def test_create_fofn_file_snpeff_with_conda():
     with TemporaryDirectory() as tmp_dir_str:
         tmp_dir = Path(tmp_dir_str)
-        actual_mutations_snpeff_file = tmp_dir / 'variant-snpeff' / 'SampleA.vcf.gz'
+        actual_mutations_snpeff_file = tmp_dir / 'assemblies' / 'variant-snpeff' / 'SampleA.vcf.gz'
         actual_snpeff_config = tmp_dir / 'snpeff_db' / 'snpEff.config'
-        actual_consensus_file = tmp_dir / 'consensus' / 'SampleA.fasta.gz'
+        actual_consensus_file = tmp_dir / 'assemblies' / 'consensus' / 'SampleA.fasta.gz'
         input_samples = [snpeff_input_sampleA]
 
         pipeline_executor = SnakemakePipelineExecutor(working_directory=tmp_dir, use_conda=True,
