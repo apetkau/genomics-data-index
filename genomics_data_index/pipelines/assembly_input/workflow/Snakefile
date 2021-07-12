@@ -75,7 +75,7 @@ rule assembly_align:
         reference_mm2_index="reference/reference.fasta.mmi",
         sample=lambda wildcards: sample_files.loc[wildcards.sample]['Assembly'],
     output:
-        "align/{sample}.bam",
+        "assemblies/align/{sample}.bam",
     conda:
         "envs/main.yaml"
     threads: 1
@@ -90,9 +90,9 @@ rule assembly_align:
 rule assembly_variant:
     input:
         reference="reference/reference.fasta",
-        bam="align/{sample}.bam",
+        bam="assemblies/align/{sample}.bam",
     output:
-        "variant/{sample}.vcf.gz",
+        "assemblies/variant/{sample}.vcf.gz",
     conda:
         "envs/main.yaml"
     threads: 1
@@ -120,7 +120,7 @@ rule reads_paired_snippy:
         snippy="logs/snippy_variant_paired.{sample}.log",
     shell:
         "snippy --cpus {threads} --outdir {output.snippy_dir} --ref {input.reference}"
-        " --R1 {input.reads1} --R2 {input.reads2}  2>&1 1> {log.snippy} && "
+        " --R1 {input.reads1} --R2 {input.reads2} 1> {log.snippy} 2>&1 && "
         "ln {output.snippy_dir}/snps.vcf.gz {output.vcf} && "
         "gzip --stdout {output.snippy_dir}/snps.aligned.fa > {output.consensus}"
 
@@ -128,9 +128,9 @@ rule reads_paired_snippy:
 rule assembly_variant_snpeff:
     input:
         snpeff_db_conf="snpeff_db/db.conf",
-        vcf="variant/{sample}.vcf.gz",
+        vcf="assemblies/variant/{sample}.vcf.gz",
     output:
-        snpeff_vcf="variant-snpeff/{sample}.vcf.gz",
+        snpeff_vcf="assemblies/variant-snpeff/{sample}.vcf.gz",
     threads: 1
     log:
         "logs/assembly_variant_snpeff.{sample}.log",
@@ -154,9 +154,9 @@ rule reads_variant_snpeff:
 rule assembly_consensus:
     input:
         reference="reference/reference.fasta",
-        bam="align/{sample}.bam",
+        bam="assemblies/align/{sample}.bam",
     output:
-        "consensus/{sample}.fasta.gz",
+        "assemblies/consensus/{sample}.fasta.gz",
     conda:
         "envs/main.yaml"
     log:
@@ -170,7 +170,7 @@ rule assembly_sourmash_sketch:
     input:
         sample=lambda wildcards: sample_files.loc[wildcards.sample]['Assembly'],
     output:
-        "sketch/{sample}.sig.gz"
+        "assemblies/sketch/{sample}.sig.gz"
     conda:
         "envs/main.yaml"
     threads: 1
@@ -219,21 +219,21 @@ rule basic_mlst:
 
 def sample_vcfs_input(wildcards) -> List[str]:
     if config["include_snpeff"]:
-        return expand("variant-snpeff/{sample}.vcf.gz",sample=samples_assemblies) + \
+        return expand("assemblies/variant-snpeff/{sample}.vcf.gz",sample=samples_assemblies) + \
                expand("reads/variant-snpeff/{sample}.vcf.gz",sample=samples_paired_reads)
     else:
-        return expand("variant/{sample}.vcf.gz",sample=samples_assemblies) + \
+        return expand("assemblies/variant/{sample}.vcf.gz",sample=samples_assemblies) + \
                expand("reads/variant/{sample}.vcf.gz",sample=samples_paired_reads)
 
 
 def sample_consensus_input(wildcards) -> List[str]:
-    return expand("consensus/{sample}.fasta.gz",sample=samples_assemblies) + \
+    return expand("assemblies/consensus/{sample}.fasta.gz",sample=samples_assemblies) + \
            expand("reads/consensus/{sample}.fasta.gz",sample=samples_paired_reads)
 
 
 def sample_sketches_input(wildcards) -> List[str]:
     if config["include_kmer"]:
-        return expand("sketch/{sample}.sig.gz",sample=samples_assemblies) + \
+        return expand("assemblies/sketch/{sample}.sig.gz",sample=samples_assemblies) + \
                expand("reads/sketch/{sample}.sig.gz",sample=samples_paired_reads)
     else:
         return []
