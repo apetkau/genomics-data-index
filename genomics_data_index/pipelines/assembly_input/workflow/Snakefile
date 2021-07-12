@@ -1,3 +1,4 @@
+from typing import List
 from pathlib import Path
 
 import pandas as pd
@@ -103,6 +104,27 @@ rule assembly_variant:
         "bcftools call --threads {threads} --ploidy 1 -Oz -mv 1> {output}"
 
 
+rule reads_paired_snippy:
+    input:
+        reference="reference/reference.fasta",
+        reads1=lambda wildcards: sample_files.loc[wildcards.sample]['Reads1'],
+        reads2=lambda wildcards: sample_files.loc[wildcards.sample]['Reads2'],
+    output:
+        snippy_dir=directory("variant/snippy/paired/{sample}"),
+        vcf="variant/reads/{sample}.vcf.gz",
+        consensus="consensus/reads/{sample}.fasta.gz",
+    conda:
+        "envs/snippy.yaml"
+    threads: 1
+    log:
+        snippy="logs/snippy_variant_paired.{sample}.log",
+    shell:
+        "snippy --cpus {threads} --outdir {output.snippy_dir} --ref {input.reference}"
+        " --R1 {input.reads1} --R2 {input.reads2}  2>&1 1> {log.snippy} && "
+        "ln {output.snippy_dir}/snps.vcf.gz {output.vcf} && "
+        "gzip --stdout {output.snippy_dir}/snps.aligned.fa > {output.consensus}"
+
+
 rule assembly_variant_snpeff:
     input:
         snpeff_db_conf="snpeff_db/db.conf",
@@ -131,7 +153,7 @@ rule assembly_consensus:
         "gzip -c - > {output}"
 
 
-rule sourmash_sketch:
+rule assembly_sourmash_sketch:
     input:
         sample=lambda wildcards: sample_files.loc[wildcards.sample]['Assembly'],
     output:
@@ -149,6 +171,25 @@ rule sourmash_sketch:
         "gzip {output}.tmp && mv {output}.tmp.gz {output}"
 
 
+rule reads_paired_sourmash_sketch:
+    input:
+        reads1=lambda wildcards: sample_files.loc[wildcards.sample]['Reads1'],
+        reads2=lambda wildcards: sample_files.loc[wildcards.sample]['Reads2'],
+    output:
+        "sketch/reads/{sample}.sig.gz"
+    conda:
+        "envs/main.yaml"
+    threads: 1
+    params:
+        sourmash_params=config["sourmash_params"],
+    log:
+        sketch="logs/sourmash_sketch.{sample}.sketch.log"
+    shell:
+        "sourmash sketch dna -p {params.sourmash_params} --name {wildcards.sample} "
+        "--output {output}.tmp {input.reads1} {input.reads2} 2>{log.sketch} && "
+        "gzip {output}.tmp && mv {output}.tmp.gz {output}"
+
+
 rule basic_mlst:
     input:
         sample=lambda wildcards: sample_files.loc[wildcards.sample]['Assembly'],
@@ -163,20 +204,23 @@ rule basic_mlst:
         "mlst --threads {threads} --nopath {input.sample} > {output} 2> {log.mlst}"
 
 
-def sample_vcfs_input(wildcards):
+def sample_vcfs_input(wildcards) -> List[str]:
     if config["include_snpeff"]:
         return expand("variant-snpeff/{sample}.vcf.gz",sample=samples_assemblies)
     else:
-        return expand("variant/{sample}.vcf.gz",sample=samples_assemblies)
+        return expand("variant/{sample}.vcf.gz",sample=samples_assemblies) + \
+               expand("variant/reads/{sample}.vcf.gz",sample=samples_paired_reads)
 
 
-def sample_consensus_input(wildcards):
-    return expand("consensus/{sample}.fasta.gz",sample=samples_assemblies)
+def sample_consensus_input(wildcards) -> List[str]:
+    return expand("consensus/{sample}.fasta.gz",sample=samples_assemblies) + \
+           expand("consensus/reads/{sample}.fasta.gz",sample=samples_paired_reads)
 
 
-def sample_sketches_input(wildcards):
+def sample_sketches_input(wildcards) -> List[str]:
     if config["include_kmer"]:
-        return expand("sketch/{sample}.sig.gz",sample=samples_assemblies)
+        return expand("sketch/{sample}.sig.gz",sample=samples_assemblies) + \
+               expand("sketch/reads/{sample}.sig.gz",sample=samples_paired_reads)
     else:
         return []
 
