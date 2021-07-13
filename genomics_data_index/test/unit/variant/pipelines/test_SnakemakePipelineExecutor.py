@@ -166,3 +166,26 @@ def test_write_input_sample_files():
         assert 2 == len(df)
         assert ['A', 'file.fasta', 'NA', 'NA'] == df.iloc[0].tolist()
         assert ['B', 'file2.fasta', 'NA', 'NA'] == df.iloc[1].tolist()
+
+
+def test_write_read_input_sample_files():
+    input_samples = pd.DataFrame([
+        ['A', Path('file.fasta'), pd.NA, pd.NA],
+        ['B', pd.NA, Path('file.fastq'), pd.NA]
+    ], columns=['Sample', 'Assemblies', 'Reads1', 'Reads2'])
+
+    executor = SnakemakePipelineExecutor()
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        out_dir = Path(tmp_dir)
+        out_file = out_dir / 'output.tsv'
+
+        executor.write_input_sample_files(input_samples, output_file=out_file)
+
+        df = executor.read_input_sample_files(out_file)
+        executor.validate_input_sample_files(df)
+
+        assert ['Sample', 'Assemblies', 'Reads1', 'Reads2'] == df.columns.tolist()
+        assert 2 == len(df)
+        assert ['A', Path('file.fasta'), pd.NA, pd.NA] == df.iloc[0].tolist()
+        assert ['B', pd.NA, Path('file.fastq'), pd.NA] == df.iloc[1].tolist()

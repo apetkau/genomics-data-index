@@ -137,3 +137,11 @@ class PipelineExecutor(abc.ABC):
             else:
                 input_sample_files[col] = input_sample_files[col].apply(lambda x: str(x) if not pd.isna(x) else pd.NA)
         input_sample_files.to_csv(output_file, sep='\t', index=False)
+
+
+    def read_input_sample_files(self, input_file: Path) -> pd.DataFrame:
+        df = pd.read_csv(input_file, sep='\t')
+        for col in ['Assemblies', 'Reads1', 'Reads2']:
+            df[col] = df[col].apply(lambda x: Path(x) if not pd.isna(x) else pd.NA)
+
+        return df
