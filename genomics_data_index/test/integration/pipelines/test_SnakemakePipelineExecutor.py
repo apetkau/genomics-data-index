@@ -61,7 +61,8 @@ def test_create_fofn_file_single_sample():
         pipeline_executor = SnakemakePipelineExecutor(working_directory=tmp_dir, use_conda=False,
                                                       include_mlst=False)
 
-        results = pipeline_executor.execute(input_files=input_samples,
+        sample_files = pipeline_executor.create_input_sample_files(input_samples)
+        results = pipeline_executor.execute(sample_files=sample_files,
                                             reference_file=assemblies_reference,
                                             ncores=1)
 
@@ -99,7 +100,8 @@ def test_create_fofn_file_multiple_samples():
         pipeline_executor = SnakemakePipelineExecutor(working_directory=tmp_dir, use_conda=False,
                                                       include_mlst=False)
 
-        results = pipeline_executor.execute(input_files=input_samples,
+        sample_files = pipeline_executor.create_input_sample_files(input_samples)
+        results = pipeline_executor.execute(sample_files=sample_files,
                                             reference_file=assemblies_reference,
                                             ncores=1)
 
@@ -141,7 +143,8 @@ def test_create_fofn_file_multiple_samples_batching():
         pipeline_executor = SnakemakePipelineExecutor(working_directory=tmp_dir, use_conda=False,
                                                       include_mlst=False, snakemake_input_batch_size=2)
 
-        results = pipeline_executor.execute(input_files=input_samples,
+        sample_files = pipeline_executor.create_input_sample_files(input_samples)
+        results = pipeline_executor.execute(sample_files=sample_files,
                                             reference_file=assemblies_reference,
                                             ncores=1)
 
@@ -183,7 +186,8 @@ def test_create_fofn_file_multiple_samples_with_ns():
         pipeline_executor = SnakemakePipelineExecutor(working_directory=tmp_dir, use_conda=False,
                                                       include_mlst=False)
 
-        results = pipeline_executor.execute(input_files=input_samples,
+        sample_files = pipeline_executor.create_input_sample_files(input_samples)
+        results = pipeline_executor.execute(sample_files=sample_files,
                                             reference_file=assemblies_reference,
                                             ncores=1)
 
@@ -225,7 +229,8 @@ def test_create_fofn_file_multiple_samples_multiple_cores_and_use_conda():
         pipeline_executor = SnakemakePipelineExecutor(working_directory=tmp_dir, use_conda=True,
                                                       include_mlst=False)
 
-        results = pipeline_executor.execute(input_files=input_samples,
+        sample_files = pipeline_executor.create_input_sample_files(input_samples)
+        results = pipeline_executor.execute(sample_files=sample_files,
                                             reference_file=assemblies_reference,
                                             ncores=2)
 
@@ -254,7 +259,8 @@ def test_create_fofn_file_single_sketch_mlst():
         pipeline_executor = SnakemakePipelineExecutor(working_directory=tmp_dir, use_conda=False,
                                                       include_mlst=True)
 
-        results = pipeline_executor.execute(input_files=input_samples,
+        sample_files = pipeline_executor.create_input_sample_files(input_samples)
+        results = pipeline_executor.execute(sample_files=sample_files,
                                             reference_file=assemblies_reference,
                                             ncores=1)
 
@@ -296,7 +302,8 @@ def test_create_fofn_file_single_no_sketch_with_mlst():
         pipeline_executor = SnakemakePipelineExecutor(working_directory=tmp_dir, use_conda=False,
                                                       include_mlst=True, include_kmer=False)
 
-        results = pipeline_executor.execute(input_files=input_samples,
+        sample_files = pipeline_executor.create_input_sample_files(input_samples)
+        results = pipeline_executor.execute(sample_files=sample_files,
                                             reference_file=assemblies_reference,
                                             ncores=1)
 
@@ -335,7 +342,8 @@ def test_create_fofn_file_snpeff_no_conda():
         pipeline_executor = SnakemakePipelineExecutor(working_directory=tmp_dir, use_conda=False,
                                                       include_mlst=False, include_kmer=False)
 
-        results = pipeline_executor.execute(input_files=input_samples,
+        sample_files = pipeline_executor.create_input_sample_files(input_samples)
+        results = pipeline_executor.execute(sample_files=sample_files,
                                             reference_file=snpeff_reference_genome,
                                             ncores=1)
 
@@ -374,7 +382,8 @@ def test_create_fofn_file_snpeff_with_conda():
         pipeline_executor = SnakemakePipelineExecutor(working_directory=tmp_dir, use_conda=True,
                                                       include_mlst=False, include_kmer=False)
 
-        results = pipeline_executor.execute(input_files=input_samples,
+        sample_files = pipeline_executor.create_input_sample_files(input_samples)
+        results = pipeline_executor.execute(sample_files=sample_files,
                                             reference_file=snpeff_reference_genome,
                                             ncores=1)
 

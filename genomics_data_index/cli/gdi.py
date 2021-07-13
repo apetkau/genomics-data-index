@@ -404,8 +404,11 @@ def assembly(ctx, reference_file: str, index: bool, clean: bool, build_tree: boo
                                                   kmer_scaled=kmer_scaled,
                                                   snakemake_input_batch_size=batch_size)
 
+    logger.info(f'Automatically structuring {len(genome_paths)} input files into assemblies/reads')
+    sample_files = pipeline_executor.create_input_sample_files(genome_paths)
+
     logger.info(f'Processing {len(genome_paths)} genomes to identify mutations')
-    results = pipeline_executor.execute(input_files=genome_paths,
+    results = pipeline_executor.execute(sample_files=sample_files,
                                         reference_file=Path(reference_file),
                                         ncores=ctx.obj['ncores'])
 

@@ -95,14 +95,13 @@ class SnakemakePipelineExecutor(PipelineExecutor):
     def _get_number_batches(self, number_input_files: int) -> int:
         return int(math.ceil(number_input_files / self._snakemake_batch_size))
 
-    def execute(self, input_files: List[Path], reference_file: Path, ncores: int = 1) -> ExecutorResults:
+    def execute(self, sample_files: pd.DataFrame, reference_file: Path, ncores: int = 1) -> ExecutorResults:
         working_directory = self._working_directory
-        input_sample_files = self.create_input_sample_files(input_files)
-        self.validate_input_sample_files(input_sample_files)
-        number_samples = len(input_sample_files)
+        self.validate_input_sample_files(sample_files)
+        number_samples = len(sample_files)
         logger.debug(f'Preparing working directory [{working_directory}] for snakemake')
         config_file = self._prepare_working_directory(reference_file=reference_file,
-                                                      input_sample_files=input_sample_files)
+                                                      input_sample_files=sample_files)
 
         logger.debug(f'Executing snakemake on {number_samples} files with reference_file=[{reference_file}]'
                      f' using {ncores} cores in [{working_directory}]')
