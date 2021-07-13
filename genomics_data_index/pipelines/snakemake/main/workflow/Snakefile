@@ -6,7 +6,7 @@ from snakemake.utils import min_version
 
 # Configuration
 
-min_version("5.1.2")
+min_version("6.0.0")
 
 configfile: "config/config.yaml"
 
@@ -173,7 +173,7 @@ rule assembly_consensus:
 
 rule assembly_sourmash_sketch:
     input:
-        sample=lambda wildcards: sample_files.loc[wildcards.sample]['Assemblies'],
+        aassembly=lambda wildcards: sample_files.loc[wildcards.sample]['Assemblies'],
     output:
         "assemblies/sketch/{sample}.sig.gz"
     conda:
@@ -185,27 +185,16 @@ rule assembly_sourmash_sketch:
         sketch="logs/sourmash_sketch.{sample}.sketch.log"
     shell:
         "sourmash sketch dna -p {params.sourmash_params} --name {wildcards.sample} "
-        "--output {output}.tmp {input.sample} 2>{log.sketch} && "
+        "--output {output}.tmp {input} 2>{log.sketch} && "
         "gzip {output}.tmp && mv {output}.tmp.gz {output}"
 
 
-rule reads_paired_sourmash_sketch:
+use rule assembly_sourmash_sketch as reads_paired_sourmash_sketch with:
     input:
         reads1=lambda wildcards: sample_files.loc[wildcards.sample]['Reads1'],
         reads2=lambda wildcards: sample_files.loc[wildcards.sample]['Reads2'],
     output:
         "reads/sketch/{sample}.sig.gz"
-    conda:
-        "envs/main.yaml"
-    threads: 1
-    params:
-        sourmash_params=config["sourmash_params"],
-    log:
-        sketch="logs/sourmash_sketch.{sample}.sketch.log"
-    shell:
-        "sourmash sketch dna -p {params.sourmash_params} --name {wildcards.sample} "
-        "--output {output}.tmp {input.reads1} {input.reads2} 2>{log.sketch} && "
-        "gzip {output}.tmp && mv {output}.tmp.gz {output}"
 
 
 rule basic_mlst:
