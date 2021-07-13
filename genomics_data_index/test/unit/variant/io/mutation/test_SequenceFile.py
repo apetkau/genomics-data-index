@@ -8,6 +8,28 @@ def sf_name(name: str) -> SequenceFile:
     return SequenceFile(Path(name))
 
 
+def test_get_genome_name():
+    assert 'file' == sf_name('file.gbk').get_genome_name()
+    assert 'file_1' == sf_name('file_1.gbk').get_genome_name()
+    assert 'file' == sf_name('file.gbk.gz').get_genome_name()
+    assert 'file' == sf_name('file.fasta.gz').get_genome_name()
+
+    # Should only exclude if it's reads
+    assert 'file_1' == sf_name('file_1.gbk').get_genome_name(exclude_paired_end_indicators=True)
+
+    assert 'file' == sf_name('file.fastq.gz').get_genome_name()
+    assert 'file_A' == sf_name('file_A.fastq').get_genome_name()
+    assert 'file_A_1' == sf_name('file_A_1.fastq').get_genome_name()
+    assert 'file_A' == sf_name('file_A_1.fastq').get_genome_name(exclude_paired_end_indicators=True)
+    assert 'file_A_R1' == sf_name('file_A_R1.fastq').get_genome_name()
+    assert 'file_A' == sf_name('file_A_R1.fastq').get_genome_name(exclude_paired_end_indicators=True)
+    assert 'file_A_R2' == sf_name('file_A_R2.fastq').get_genome_name()
+    assert 'file_A' == sf_name('file_A_R2.fastq').get_genome_name(exclude_paired_end_indicators=True)
+    assert 'file_A_R1_xyz' == sf_name('file_A_R1_xyz.fastq').get_genome_name()
+    assert 'file_A' == sf_name('file_A_R1_xyz.fastq').get_genome_name(exclude_paired_end_indicators=True)
+    assert 'file_A_R2_xyz' == sf_name('file_A_R2_xyz.fq.gz').get_genome_name()
+    assert 'file_A' == sf_name('file_A_R2_xyz.fq.gz').get_genome_name(exclude_paired_end_indicators=True)
+
 
 def test_is_genbank():
     assert SequenceFile(Path('file.gbk')).is_genbank()

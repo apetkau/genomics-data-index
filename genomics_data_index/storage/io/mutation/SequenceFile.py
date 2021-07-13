@@ -129,18 +129,29 @@ class SequenceFile:
     def can_use_snpeff(self) -> bool:
         return self.is_genbank()
 
-    def get_genome_name(self) -> str:
+    def get_genome_name(self, exclude_paired_end_indicators: bool = False) -> str:
         """
         Gets the genome name (filename minus extension). Accounts for gzipped/non-gzipped files.
         :param file: The file.
+        :param exclude_paired_end_indicators: Exclude paired-end indicators when getting genome name (e.g., _R1, _1, etc).
+                                              this only applies if the sequence file is a reads file.
         :return: The genome name from the file.
         """
         if self.is_gzip():
-            ref_name = splitext(basename(self._file).rstrip('.gz'))[0]
+            name_minus_extension = splitext(basename(self._file).rstrip('.gz'))[0]
         else:
-            ref_name = splitext(basename(self._file))[0]
+            name_minus_extension = splitext(basename(self._file))[0]
 
-        return ref_name
+        if self.is_reads() and exclude_paired_end_indicators:
+            name_minus_pair_indicator = name_minus_extension
+            for pair_indicator in ['_1', '_2', '_R1', '_R2', '_f', '_r']:
+                last_index = name_minus_extension.rfind(pair_indicator)
+                if last_index != -1:
+                    name_minus_pair_indicator = name_minus_extension[:last_index]
+                    break
+            return name_minus_pair_indicator
+        else:
+            return name_minus_extension
 
     def _write_snpeff_config(self, snpeff_config_file: Path, snpeff_database_dir: Path,
                              codon_type: str) -> str:
