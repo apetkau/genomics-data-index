@@ -23,7 +23,9 @@ class SnakemakePipelineExecutor(PipelineExecutor):
                  include_kmer: bool = True, include_mlst: bool = True,
                  ignore_snpeff: bool = False,
                  kmer_sizes: List[int] = None, kmer_scaled: int = 1000,
-                 snakemake_input_batch_size: int = 5000):
+                 snakemake_input_batch_size: int = 5000,
+                 reads_mincov: int = 10, reads_minqual: float = 100,
+                 reads_subsample: float = 1):
         super().__init__()
         if kmer_sizes is None:
             kmer_sizes = [31]
@@ -35,9 +37,9 @@ class SnakemakePipelineExecutor(PipelineExecutor):
         self._ignore_snpeff = ignore_snpeff
         self._snakemake_batch_size = snakemake_input_batch_size
         self._sourmash_params = self._prepare_sourmash_params(kmer_sizes=kmer_sizes, kmer_scaled=kmer_scaled)
-        self._reads_mincov = 10
-        self._reads_minqual = 100
-        self._reads_subsample = 1
+        self._reads_mincov = reads_mincov
+        self._reads_minqual = reads_minqual
+        self._reads_subsample = reads_subsample
 
     def _prepare_sourmash_params(self, kmer_sizes: List[int], kmer_scaled: int) -> str:
         params = ','.join([f'k={v}' for v in kmer_sizes])

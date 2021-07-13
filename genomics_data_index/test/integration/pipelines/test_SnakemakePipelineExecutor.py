@@ -10,6 +10,7 @@ from genomics_data_index.pipelines.SnakemakePipelineExecutor import SnakemakePip
 from genomics_data_index.storage.io.mutation.SequenceFile import SequenceFile
 from genomics_data_index.test.integration.pipelines import assemblies_samples, assemblies_reference, expected_mutations
 from genomics_data_index.test.integration.pipelines import snpeff_input_sampleA, snpeff_reference_genome
+from genomics_data_index.test.integration.pipelines import snpeff_reads_paired, snpeff_reads_single
 
 
 def vcf_to_mutations_list(vcf_file: Path) -> List[str]:
@@ -408,4 +409,56 @@ def test_create_fofn_file_snpeff_with_conda():
 
         # snpeff annotations should be added in headers
         reader = vcf.Reader(filename=str(actual_mutations_snpeff_file))
+        assert 'ANN' in reader.infos
+
+
+def test_create_fofn_file_snpeff_reads_with_conda():
+    with TemporaryDirectory() as tmp_dir_str:
+        tmp_dir = Path(tmp_dir_str)
+        actual_mutations_snpeff_file_paired = tmp_dir / 'reads' / 'paired' / 'variant-snpeff' / 'SampleA-snpeff.vcf.gz'
+        actual_mutations_snpeff_file_single = tmp_dir / 'reads' / 'single' / 'variant-snpeff' / 'SampleA-single-snpeff.vcf.gz'
+        actual_snpeff_config = tmp_dir / 'snpeff_db' / 'snpEff.config'
+        actual_consensus_file_paired = tmp_dir / 'reads' / 'paired' / 'consensus' / 'SampleA-snpeff.fasta.gz'
+        actual_consensus_file_single = tmp_dir / 'reads' / 'single' / 'consensus' / 'SampleA-single-snpeff.fasta.gz'
+        input_samples = snpeff_reads_paired + snpeff_reads_single
+
+        pipeline_executor = SnakemakePipelineExecutor(working_directory=tmp_dir, use_conda=True,
+                                                      include_mlst=False, include_kmer=False,
+                                                      reads_mincov=5)
+
+        sample_files = pipeline_executor.create_input_sample_files(input_samples)
+        results = pipeline_executor.execute(sample_files=sample_files,
+                                            reference_file=snpeff_reference_genome,
+                                            ncores=1)
+
+        input_fofn = results.get_file('gdi-fofn')
+
+        assert input_fofn.exists()
+        assert actual_snpeff_config.exists()
+        assert actual_mutations_snpeff_file_paired.exists()
+        assert actual_mutations_snpeff_file_single.exists()
+        assert actual_consensus_file_paired.exists()
+        assert actual_consensus_file_single.exists()
+
+        # Verify input file of file names for rest of gdi software (used as input to the indexing component)
+        fofn_df = pd.read_csv(input_fofn, sep='\t')
+        assert ['Sample', 'VCF', 'Mask File'] == fofn_df.columns.tolist()
+
+        assert 2 == len(fofn_df)
+        assert {'SampleA-snpeff', 'SampleA-single-snpeff'} == set(fofn_df['Sample'].tolist())
+        actual_mutations_file_paired_from_df = Path(fofn_df[fofn_df['Sample'] == 'SampleA-snpeff']['VCF'].tolist()[0])
+        actual_mutations_file_single_from_df = Path(fofn_df[fofn_df['Sample'] == 'SampleA-single-snpeff']['VCF'].tolist()[0])
+        actual_consensus_file_paired_from_df = Path(fofn_df[fofn_df['Sample'] == 'SampleA-snpeff']['Mask File'].tolist()[0])
+        actual_consensus_file_single_from_df = Path(fofn_df[fofn_df['Sample'] == 'SampleA-single-snpeff']['Mask File'].tolist()[0])
+
+        assert actual_mutations_snpeff_file_paired == actual_mutations_file_paired_from_df
+        assert actual_mutations_snpeff_file_single == actual_mutations_file_single_from_df
+        assert actual_consensus_file_paired == actual_consensus_file_paired_from_df
+        assert actual_consensus_file_single == actual_consensus_file_single_from_df
+
+        # snpeff annotations should be added in headers
+        reader = vcf.Reader(filename=str(actual_mutations_snpeff_file_paired))
+        assert 'ANN' in reader.infos
+
+        reader = vcf.Reader(filename=str(actual_mutations_snpeff_file_single))
         assert 'ANN' in reader.infos

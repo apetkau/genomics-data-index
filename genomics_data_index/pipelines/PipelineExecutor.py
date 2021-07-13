@@ -99,7 +99,7 @@ class PipelineExecutor(abc.ABC):
                 file2_differences = file2.name_differences(file1)
 
                 if len(file1_differences) != 1 or len(file2_differences) != 1:
-                    raise Exception(f'Files [{reads[sample]}] have too many differences in names, cannot determine'
+                    raise Exception(f'Files [{reads[sample]}] do not have exactly one difference between names, cannot determine'
                                     f' paired structure.')
                 else:
                     f1d = file1_differences[0].lower()
