@@ -81,7 +81,8 @@ class SnakemakePipelineExecutor(PipelineExecutor):
             logger.debug(f'Snakemake config={config}')
 
         logger.debug(f'Writing samples list [{samples_file}]')
-        self.write_input_sample_files(input_sample_files=input_sample_files, output_file=samples_file)
+        self.write_input_sample_files(input_sample_files=input_sample_files, output_file=samples_file,
+                                      abolute_paths=True)
 
         return config_file
 
