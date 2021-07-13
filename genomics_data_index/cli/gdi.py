@@ -325,14 +325,15 @@ def list_samples(ctx):
 
 
 @main.command()
+@click.option('--absolute/--no-absolute', help='Convert paths to absolute paths', required=False)
 @click.argument('genomes', type=click.Path(exists=True), nargs=-1)
-def input(genomes: List[str]):
+def input(absolute: bool, genomes: List[str]):
     genome_paths = [Path(f) for f in genomes]
     pipeline_executor = SnakemakePipelineExecutor()
     sample_files = pipeline_executor.create_input_sample_files(input_files=genome_paths)
 
     # Defaults to writing to stdout
-    pipeline_executor.write_input_sample_files(input_sample_files=sample_files)
+    pipeline_executor.write_input_sample_files(input_sample_files=sample_files, abolute_paths=absolute)
 
 
 @main.command()
