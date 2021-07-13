@@ -111,8 +111,8 @@ rule reads_paired_snippy:
         reads2=lambda wildcards: sample_files.loc[wildcards.sample]['Reads2'],
     output:
         snippy_dir=directory("reads/snippy/paired/{sample}"),
-        vcf="reads/variant/{sample}.vcf.gz",
-        consensus="reads/consensus/{sample}.fasta.gz",
+        vcf="reads/paired/variant/{sample}.vcf.gz",
+        consensus="reads/paired/consensus/{sample}.fasta.gz",
     conda:
         "envs/snippy.yaml"
     threads: 1
@@ -146,9 +146,9 @@ rule assembly_variant_snpeff:
 use rule assembly_variant_snpeff as reads_variant_snpeff with:
     input:
         snpeff_db_conf="snpeff_db/db.conf",
-        vcf="reads/variant/{sample}.vcf.gz",
+        vcf="reads/paired/variant/{sample}.vcf.gz",
     output:
-        snpeff_vcf="reads/variant-snpeff/{sample}.vcf.gz",
+        snpeff_vcf="reads/paired/variant-snpeff/{sample}.vcf.gz",
 
 
 rule assembly_consensus:
@@ -189,7 +189,7 @@ use rule assembly_sourmash_sketch as reads_paired_sourmash_sketch with:
         reads1=lambda wildcards: sample_files.loc[wildcards.sample]['Reads1'],
         reads2=lambda wildcards: sample_files.loc[wildcards.sample]['Reads2'],
     output:
-        "reads/sketch/{sample}.sig.gz"
+        "reads/paired/sketch/{sample}.sig.gz"
 
 
 rule basic_mlst:
@@ -209,21 +209,21 @@ rule basic_mlst:
 def sample_vcfs_input(wildcards) -> List[str]:
     if config["include_snpeff"]:
         return expand("assemblies/variant-snpeff/{sample}.vcf.gz",sample=samples_assemblies) + \
-               expand("reads/variant-snpeff/{sample}.vcf.gz",sample=samples_paired_reads)
+               expand("reads/paired/variant-snpeff/{sample}.vcf.gz",sample=samples_paired_reads)
     else:
         return expand("assemblies/variant/{sample}.vcf.gz",sample=samples_assemblies) + \
-               expand("reads/variant/{sample}.vcf.gz",sample=samples_paired_reads)
+               expand("reads/paired/variant/{sample}.vcf.gz",sample=samples_paired_reads)
 
 
 def sample_consensus_input(wildcards) -> List[str]:
     return expand("assemblies/consensus/{sample}.fasta.gz",sample=samples_assemblies) + \
-           expand("reads/consensus/{sample}.fasta.gz",sample=samples_paired_reads)
+           expand("reads/paired/consensus/{sample}.fasta.gz",sample=samples_paired_reads)
 
 
 def sample_sketches_input(wildcards) -> List[str]:
     if config["include_kmer"]:
         return expand("assemblies/sketch/{sample}.sig.gz",sample=samples_assemblies) + \
-               expand("reads/sketch/{sample}.sig.gz",sample=samples_paired_reads)
+               expand("reads/paired/sketch/{sample}.sig.gz",sample=samples_paired_reads)
     else:
         return []
 
