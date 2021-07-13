@@ -377,6 +377,10 @@ def input_command(absolute: bool, input_genomes_file: str, genomes: List[str]):
               default=False)
 @click.option('--ignore-snpeff/--no-ignore-snpeff', help="Enable/disable including snpeff annotations in "
                                                          "mutation results.", default=False)
+@click.option('--reads-mincov', help='Minimum coverage when aligning reads to a reference genome',
+              default=10, type=click.IntRange(min=1))
+@click.option('--reads-minqual', help='Minimum quality score of VCF variants when aligning reads to a reference genome',
+              default=100, type=click.IntRange(min=1))
 @click.option('--kmer-size', help='Kmer size for indexing. List multiple for multiple kmer sizes in an index',
               default=[31], multiple=True, type=click.IntRange(min=1, max=201))
 @click.option('--kmer-scaled', help='The scaled parameter to pass to sourmash. Defines how many kmers to keep in the '
@@ -401,7 +405,9 @@ def input_command(absolute: bool, input_genomes_file: str, genomes: List[str]):
 @click.argument('genomes', type=click.Path(exists=True), nargs=-1)
 def analysis(ctx, reference_file: str, index: bool, clean: bool, build_tree: bool, align_type: str,
              extra_tree_params: str, use_conda: bool,
-             include_mlst: bool, include_kmer: bool, ignore_snpeff: bool, kmer_size: List[int], kmer_scaled: int,
+             include_mlst: bool, include_kmer: bool, ignore_snpeff: bool,
+             reads_mincov: int, reads_minqual: int,
+             kmer_size: List[int], kmer_scaled: int,
              batch_size: int,
              input_genomes_file: str, input_structured_genomes_file: str, genomes: List[str]):
     data_index_connection = get_project_exit_on_error(ctx).create_connection()
@@ -442,7 +448,9 @@ def analysis(ctx, reference_file: str, index: bool, clean: bool, build_tree: boo
                                                   ignore_snpeff=ignore_snpeff,
                                                   kmer_sizes=kmer_sizes,
                                                   kmer_scaled=kmer_scaled,
-                                                  snakemake_input_batch_size=batch_size)
+                                                  snakemake_input_batch_size=batch_size,
+                                                  reads_mincov=reads_mincov,
+                                                  reads_minqual=reads_minqual)
 
     if sample_files is None:
         logger.info(f'Automatically structuring {len(genome_paths)} input files into assemblies/reads')
