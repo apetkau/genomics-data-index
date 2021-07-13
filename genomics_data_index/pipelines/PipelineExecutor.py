@@ -2,9 +2,13 @@ import abc
 from pathlib import Path
 from typing import List
 import pandas as pd
+import logging
 
 from genomics_data_index.pipelines.ExecutorResults import ExecutorResults
 from genomics_data_index.storage.io.mutation.SequenceFile import SequenceFile
+
+
+logger = logging.getLogger(__name__)
 
 
 class PipelineExecutor(abc.ABC):
@@ -29,17 +33,87 @@ class PipelineExecutor(abc.ABC):
             raise Exception(f'input_sample_files={input_sample_files} has invalid columns. '
                             f'Expected {self.INPUT_SAMPLE_FILE_COLUMNS}')
 
-    def _sample_name_from_file(self, sample_file: Path) -> str:
-        return SequenceFile(sample_file).get_genome_name()
-
     def create_input_sample_files(self, input_files: List[Path]) -> pd.DataFrame:
-        sample_files = []
+        assemblies = {}
+        reads = {}
+        sample_names = set()
+        data = []
+
+        # Initial pass of files to break up into assemblies/reads
         for file in input_files:
-            sample_files.append([self._sample_name_from_file(file), str(file.absolute()), pd.NA, pd.NA])
+            sf = SequenceFile(file)
+            sample_name = sf.get_genome_name()
+            if sf.is_assembly():
+                if sample_name in sample_names:
+                    if sample_name in assemblies:
+                        previous_files = [assemblies[sample_name]]
+                    else:
+                        previous_files = reads[sample_name]
+                    raise Exception(f'Duplicate sample with name [{sample_name}]. current_file=[{file}], '
+                                    f'previous_file(s)={previous_files}')
+                else:
+                    sample_names.add(sample_name)
+                    assemblies[sample_name] = file
+            elif sf.is_reads():
+                if sample_name in assemblies:
+                    previous_files = [reads[sample_name]]
+                    raise Exception(f'Duplicate sample with name [{sample_name}]. current_file=[{file}], '
+                                    f'previous_file(s)={previous_files}')
+                elif sample_name in reads:
+                    if len(reads[sample_name]) != 1:
+                        raise Exception(f'Invalid number of files for sample with name [{sample_name}]. '
+                                        f'current_file=[{file}], previous_files={reads[sample_name]}')
+                    else:
+                        reads[sample_name].append(file)
+                else:
+                    reads[sample_name] = [file]
 
-        sample_files_df = pd.DataFrame(sample_files, columns=self.INPUT_SAMPLE_FILE_COLUMNS)
+                sample_names.add(sample_name)
+            else:
+                logger.warning(f'Input file [{file}] with unknown file type (not assembly or reads). Ignoring.')
 
-        return sample_files_df
+        # Now we iterate over samples to insert into an array to create the final dataframe
+        for sample in assemblies:
+            data.append([sample, str(assemblies[sample]), pd.NA, pd.NA])
+
+        # Iterate over reads to insert into array for final dataframe
+        for sample in reads:
+            if len(reads[sample]) == 1:
+                data.append([sample, pd.NA, str(reads[sample]), pd.NA])
+            elif len(reads[sample]) == 2:
+                file1 = SequenceFile(reads[sample][0])
+                file2 = SequenceFile(reads[sample][1])
+
+                file1_differences = file1.name_differences(file2)
+                file2_differences = file2.name_differences(file1)
+
+                if len(file1_differences) != 1 or len(file2_differences) != 1:
+                    raise Exception(f'Files [{reads[sample]}] have too many differences in names, cannot determine'
+                                    f' paired structure.')
+                else:
+                    f1d = file1_differences[0].lower()
+                    f2d = file2_differences[0].lower()
+
+                    if f1d == '1' and f2d == '2':
+                        forward = file1
+                        reverse = file2
+                    elif f1d == 'f' and f2d == 'r':
+                        forward = file1
+                        reverse = file2
+                    elif f2d == '1' and f1d == '2':
+                        reverse = file1
+                        forward = file2
+                    elif f1d == 'r' and f2d == 'f':
+                        reverse = file1
+                        forward = file2
+                    else:
+                        raise Exception(f'Cannot determine pair structure for files [{reads[sample]}]')
+
+                    data.append([sample, pd.NA, str(forward), str(reverse)])
+            else:
+                raise Exception(f'Invalid number of files for sample [{sample}], files={reads[sample]}')
+
+        return pd.DataFrame(data, columns=self.INPUT_SAMPLE_FILE_COLUMNS)
 
     def write_input_sample_files(self, input_sample_files: pd.DataFrame, output_file: Path) -> None:
         input_sample_files.to_csv(output_file, sep='\t', index=False)
