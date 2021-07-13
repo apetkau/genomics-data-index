@@ -143,17 +143,12 @@ rule assembly_variant_snpeff:
         "scripts/variant-snpeff.py"
 
 
-rule reads_variant_snpeff:
+use rule assembly_variant_snpeff as reads_variant_snpeff with:
     input:
         snpeff_db_conf="snpeff_db/db.conf",
         vcf="reads/variant/{sample}.vcf.gz",
     output:
         snpeff_vcf="reads/variant-snpeff/{sample}.vcf.gz",
-    threads: 1
-    log:
-        "logs/reads_variant_snpeff.{sample}.log",
-    script:
-        "scripts/variant-snpeff.py"
 
 
 rule assembly_consensus:
@@ -173,7 +168,7 @@ rule assembly_consensus:
 
 rule assembly_sourmash_sketch:
     input:
-        aassembly=lambda wildcards: sample_files.loc[wildcards.sample]['Assemblies'],
+        assembly=lambda wildcards: sample_files.loc[wildcards.sample]['Assemblies'],
     output:
         "assemblies/sketch/{sample}.sig.gz"
     conda:
