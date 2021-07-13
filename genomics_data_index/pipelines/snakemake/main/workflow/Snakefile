@@ -6,7 +6,7 @@ from snakemake.utils import min_version
 
 # Configuration
 
-min_version("6.0.0")
+min_version("6.0")
 
 configfile: "config/config.yaml"
 
@@ -19,6 +19,10 @@ samples_single_reads = sample_files[(~sample_files['Reads1'].isna()) & (sample_f
 samples_assemblies_set = set(samples_assemblies)
 samples_paired_reads = list(set(samples_paired_reads) - samples_assemblies_set)
 samples_single_reads = list(set(samples_single_reads) - samples_assemblies_set)
+
+print(f'samples_assemblies={samples_assemblies}')
+print(f'samples_paired_reads={samples_paired_reads}')
+print(f'samples_single_reads={samples_single_reads}')
 
 reference_abs = Path(config["reference"]).absolute()
 
@@ -121,10 +125,35 @@ rule reads_paired_snippy:
         minqual=config['reads_minqual'],
         subsample=config['reads_subsample'],
     log:
-        snippy="logs/snippy_variant_paired.{sample}.log",
+        snippy="logs/snippy_variant.{sample}.log",
     shell:
         "snippy --cpus {threads} --outdir {output.snippy_dir} --ref {input.reference} --mincov {params.mincov}"
         " --minqual {params.minqual} --subsample {params.subsample} --R1 {input.reads1} --R2 {input.reads2}"
+        " 1> {log.snippy} 2>&1 && "
+        "cp {output.snippy_dir}/snps.vcf.gz {output.vcf} && "
+        "gzip --stdout {output.snippy_dir}/snps.aligned.fa > {output.consensus}"
+
+
+rule reads_single_snippy:
+    input:
+        reference="reference/reference.fasta",
+        reads1=lambda wildcards: sample_files.loc[wildcards.sample]['Reads1'],
+    output:
+        snippy_dir=directory("reads/snippy/single/{sample}"),
+        vcf="reads/single/variant/{sample}.vcf.gz",
+        consensus="reads/single/consensus/{sample}.fasta.gz",
+    conda:
+        "envs/snippy.yaml"
+    threads: 1
+    params:
+        mincov=config['reads_mincov'],
+        minqual=config['reads_minqual'],
+        subsample=config['reads_subsample'],
+    log:
+        snippy="logs/snippy_variant.{sample}.log",
+    shell:
+        "snippy --cpus {threads} --outdir {output.snippy_dir} --ref {input.reference} --mincov {params.mincov}"
+        " --minqual {params.minqual} --subsample {params.subsample} --se {input.reads1}"
         " 1> {log.snippy} 2>&1 && "
         "cp {output.snippy_dir}/snps.vcf.gz {output.vcf} && "
         "gzip --stdout {output.snippy_dir}/snps.aligned.fa > {output.consensus}"
@@ -143,12 +172,20 @@ rule assembly_variant_snpeff:
         "scripts/variant-snpeff.py"
 
 
-use rule assembly_variant_snpeff as reads_variant_snpeff with:
+use rule assembly_variant_snpeff as reads_variant_paired_snpeff with:
     input:
         snpeff_db_conf="snpeff_db/db.conf",
         vcf="reads/paired/variant/{sample}.vcf.gz",
     output:
         snpeff_vcf="reads/paired/variant-snpeff/{sample}.vcf.gz",
+
+
+use rule assembly_variant_snpeff as reads_variant_single_snpeff with:
+    input:
+        snpeff_db_conf="snpeff_db/db.conf",
+        vcf="reads/single/variant/{sample}.vcf.gz",
+    output:
+        snpeff_vcf="reads/single/variant-snpeff/{sample}.vcf.gz",
 
 
 rule assembly_consensus:
@@ -192,6 +229,13 @@ use rule assembly_sourmash_sketch as reads_paired_sourmash_sketch with:
         "reads/paired/sketch/{sample}.sig.gz"
 
 
+use rule assembly_sourmash_sketch as reads_single_sourmash_sketch with:
+    input:
+        reads1=lambda wildcards: sample_files.loc[wildcards.sample]['Reads1'],
+    output:
+        "reads/single/sketch/{sample}.sig.gz"
+
+
 rule basic_mlst:
     input:
         sample=lambda wildcards: sample_files.loc[wildcards.sample]['Assemblies'],
@@ -209,21 +253,25 @@ rule basic_mlst:
 def sample_vcfs_input(wildcards) -> List[str]:
     if config["include_snpeff"]:
         return expand("assemblies/variant-snpeff/{sample}.vcf.gz",sample=samples_assemblies) + \
-               expand("reads/paired/variant-snpeff/{sample}.vcf.gz",sample=samples_paired_reads)
+               expand("reads/paired/variant-snpeff/{sample}.vcf.gz",sample=samples_paired_reads) + \
+               expand("reads/single/variant-snpeff/{sample}.vcf.gz",sample=samples_single_reads)
     else:
         return expand("assemblies/variant/{sample}.vcf.gz",sample=samples_assemblies) + \
-               expand("reads/paired/variant/{sample}.vcf.gz",sample=samples_paired_reads)
+               expand("reads/paired/variant/{sample}.vcf.gz",sample=samples_paired_reads) + \
+               expand("reads/single/variant/{sample}.vcf.gz",sample=samples_single_reads)
 
 
 def sample_consensus_input(wildcards) -> List[str]:
     return expand("assemblies/consensus/{sample}.fasta.gz",sample=samples_assemblies) + \
-           expand("reads/paired/consensus/{sample}.fasta.gz",sample=samples_paired_reads)
+           expand("reads/paired/consensus/{sample}.fasta.gz",sample=samples_paired_reads) + \
+           expand("reads/single/consensus/{sample}.fasta.gz",sample=samples_single_reads)
 
 
 def sample_sketches_input(wildcards) -> List[str]:
     if config["include_kmer"]:
         return expand("assemblies/sketch/{sample}.sig.gz",sample=samples_assemblies) + \
-               expand("reads/paired/sketch/{sample}.sig.gz",sample=samples_paired_reads)
+               expand("reads/paired/sketch/{sample}.sig.gz",sample=samples_paired_reads) + \
+               expand("reads/single/sketch/{sample}.sig.gz",sample=samples_single_reads)
     else:
         return []
 
