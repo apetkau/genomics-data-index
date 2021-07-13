@@ -42,7 +42,7 @@ class PipelineExecutor(abc.ABC):
         # Initial pass of files to break up into assemblies/reads
         for file in input_files:
             sf = SequenceFile(file)
-            sample_name = sf.get_genome_name()
+            sample_name = sf.get_genome_name(exclude_paired_end_indicators=True)
             if sf.is_assembly():
                 if sample_name in sample_names:
                     if sample_name in assemblies:
@@ -79,7 +79,7 @@ class PipelineExecutor(abc.ABC):
         # Iterate over reads to insert into array for final dataframe
         for sample in reads:
             if len(reads[sample]) == 1:
-                data.append([sample, pd.NA, str(reads[sample]), pd.NA])
+                data.append([sample, pd.NA, str(reads[sample][0]), pd.NA])
             elif len(reads[sample]) == 2:
                 file1 = SequenceFile(reads[sample][0])
                 file2 = SequenceFile(reads[sample][1])
@@ -109,7 +109,7 @@ class PipelineExecutor(abc.ABC):
                     else:
                         raise Exception(f'Cannot determine pair structure for files [{reads[sample]}]')
 
-                    data.append([sample, pd.NA, str(forward), str(reverse)])
+                    data.append([sample, pd.NA, str(forward.file), str(reverse.file)])
             else:
                 raise Exception(f'Invalid number of files for sample [{sample}], files={reads[sample]}')
 

@@ -30,6 +30,10 @@ class SequenceFile:
     def __init__(self, file: Path):
         self._file = file
 
+    @property
+    def file(self):
+        return self._file
+
     def parse_sequence_file(self) -> Tuple[str, List[SeqRecord]]:
         # Code for handling gzipped/non-gzipped from https://stackoverflow.com/a/52839332
         _open = partial(gzip.open, mode='rt') if self.is_gzip() else open
