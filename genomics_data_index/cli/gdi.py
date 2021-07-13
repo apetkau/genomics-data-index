@@ -328,7 +328,7 @@ def list_samples(ctx):
 @click.argument('genomes', type=click.Path(exists=True), nargs=-1)
 def input(genomes: List[str]):
     genome_paths = [Path(f) for f in genomes]
-    pipeline_executor = SnakemakePipelineExecutor(working_directory=Path('/tmp'))
+    pipeline_executor = SnakemakePipelineExecutor()
     sample_files = pipeline_executor.create_input_sample_files(input_files=genome_paths)
 
     # Defaults to writing to stdout

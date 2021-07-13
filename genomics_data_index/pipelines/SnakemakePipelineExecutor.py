@@ -19,7 +19,7 @@ snakemake_file = Path(path.dirname(__file__), 'snakemake', 'main', 'workflow', '
 
 class SnakemakePipelineExecutor(PipelineExecutor):
 
-    def __init__(self, working_directory: Path, use_conda: bool = True,
+    def __init__(self, working_directory: Path = None, use_conda: bool = True,
                  include_kmer: bool = True, include_mlst: bool = True,
                  ignore_snpeff: bool = False,
                  kmer_sizes: List[int] = None, kmer_scaled: int = 1000,
@@ -97,7 +97,13 @@ class SnakemakePipelineExecutor(PipelineExecutor):
 
     def execute(self, sample_files: pd.DataFrame, reference_file: Path, ncores: int = 1) -> ExecutorResults:
         working_directory = self._working_directory
+
+        # Preconditions
+        if working_directory is None:
+            raise Exception(f'working_directory is None. Please re-create {self.__class__.__name__} with a proper '
+                            f'working directory.')
         self.validate_input_sample_files(sample_files)
+
         number_samples = len(sample_files)
         logger.debug(f'Preparing working directory [{working_directory}] for snakemake')
         config_file = self._prepare_working_directory(reference_file=reference_file,
