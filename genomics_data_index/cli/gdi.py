@@ -324,11 +324,31 @@ def list_samples(ctx):
     click.echo('\n'.join(items))
 
 
+def read_genomes_from_file(input_file: Path) -> List[Path]:
+    with open(input_file, 'r') as fh:
+        genome_paths = [Path(l.strip()) for l in fh.readlines()]
+        return genome_paths
+
 @main.command()
 @click.option('--absolute/--no-absolute', help='Convert paths to absolute paths', required=False)
+@click.option('--input-genomes-file',
+              help='A file listing the genomes to process, one per line. This is an alternative'
+                   ' to passing genomes as arguments on the command-line',
+              type=click.Path(exists=True),
+              required=False)
 @click.argument('genomes', type=click.Path(exists=True), nargs=-1)
-def input(absolute: bool, genomes: List[str]):
-    genome_paths = [Path(f) for f in genomes]
+def input(absolute: bool, input_genomes_file: str, genomes: List[str]):
+    if input_genomes_file is not None:
+        if len(genomes) > 0:
+            logger.warning(f'--input-genomes-file=[{input_genomes_file}] is specified so will ignore genomes '
+                           f'passed on the command-line.')
+        genome_paths = read_genomes_from_file(Path(input_genomes_file))
+    elif len(genomes) > 0:
+        genome_paths = [Path(f) for f in genomes]
+    else:
+        logger.error('Must pass a list of genome files or use --input-genomes-file')
+        sys.exit(1)
+
     pipeline_executor = SnakemakePipelineExecutor()
     sample_files = pipeline_executor.create_input_sample_files(input_files=genome_paths)
 
@@ -374,7 +394,7 @@ def analysis(ctx, reference_file: str, index: bool, clean: bool, build_tree: boo
              extra_tree_params: str, use_conda: bool,
              include_mlst: bool, include_kmer: bool, ignore_snpeff: bool, kmer_size: List[int], kmer_scaled: int,
              batch_size: int,
-             assembly_input_file: str, genomes: List[str]):
+             input_genomes_file: str, genomes: List[str]):
     data_index_connection = get_project_exit_on_error(ctx).create_connection()
     kmer_service = data_index_connection.kmer_service
 
@@ -382,9 +402,8 @@ def analysis(ctx, reference_file: str, index: bool, clean: bool, build_tree: boo
         logger.debug('--no-index is enabled so setting --no-clean')
         clean = False
 
-    if assembly_input_file is not None:
-        with open(assembly_input_file, 'r') as fh:
-            genome_paths = [Path(l.strip()) for l in fh.readlines()]
+    if input_genomes_file is not None:
+        genome_paths = read_genomes_from_file(Path(input_genomes_file))
     else:
         genome_paths = [Path(f) for f in genomes]
 
