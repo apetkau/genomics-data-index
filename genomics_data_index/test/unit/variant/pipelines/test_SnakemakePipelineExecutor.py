@@ -1,3 +1,5 @@
+import tempfile
+
 import pytest
 from pathlib import Path
 import pandas as pd
@@ -142,3 +144,25 @@ def test_validate_input_sample_files_fail2():
 
     assert 'column=[Reads2]' in str(execinfo.value)
     assert 'does not contain Path or NA' in str(execinfo.value)
+
+
+def test_write_input_sample_files():
+    input_samples = pd.DataFrame([
+        ['A', Path('file.fasta'), pd.NA, pd.NA],
+        ['B', Path('file2.fasta'), pd.NA, pd.NA]
+    ], columns=['Sample', 'Assemblies', 'Reads1', 'Reads2'])
+
+    executor = SnakemakePipelineExecutor()
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        out_dir = Path(tmp_dir)
+        out_file = out_dir / 'output.tsv'
+
+        executor.write_input_sample_files(input_samples, output_file=out_file)
+
+        df = pd.read_csv(out_file, sep='\t').fillna('NA')
+
+        assert ['Sample', 'Assemblies', 'Reads1', 'Reads2'] == df.columns.tolist()
+        assert 2 == len(df)
+        assert ['A', 'file.fasta', 'NA', 'NA'] == df.iloc[0].tolist()
+        assert ['B', 'file2.fasta', 'NA', 'NA'] == df.iloc[1].tolist()

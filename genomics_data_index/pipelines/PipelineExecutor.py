@@ -1,6 +1,7 @@
 import abc
+import io
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Union
 import pandas as pd
 import logging
 import sys
@@ -125,7 +126,10 @@ class PipelineExecutor(abc.ABC):
 
         return pd.DataFrame(data, columns=self.INPUT_SAMPLE_FILE_COLUMNS)
 
-    def write_input_sample_files(self, input_sample_files: pd.DataFrame, output_file: Optional[Path] = None) -> None:
-        if output_file is None:
-            output_file = sys.stdout
+    def write_input_sample_files(self, input_sample_files: pd.DataFrame,
+                                 output_file: Union[Path, io.TextIOWrapper] = sys.stdout) -> None:
+        input_sample_files = input_sample_files.copy()
+        # Convert paths to strings
+        for col in ['Assemblies', 'Reads1', 'Reads2']:
+            input_sample_files[col] = input_sample_files[col].apply(lambda x: str(x) if not pd.isna(x) else pd.NA)
         input_sample_files.to_csv(output_file, sep='\t', index=False)
