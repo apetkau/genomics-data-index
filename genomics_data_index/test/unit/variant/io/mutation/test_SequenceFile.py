@@ -3,6 +3,12 @@ from pathlib import Path
 from genomics_data_index.storage.io.mutation.SequenceFile import SequenceFile
 
 
+# Method used to shorten creating sequence files with a given name
+def sf_name(name: str) -> SequenceFile:
+    return SequenceFile(Path(name))
+
+
+
 def test_is_genbank():
     assert SequenceFile(Path('file.gbk')).is_genbank()
     assert SequenceFile(Path('file.gb')).is_genbank()
@@ -45,3 +51,31 @@ def test_is_reads():
 
     assert not SequenceFile(Path('file.fasta')).is_reads()
     assert not SequenceFile(Path('file.gbk.gz')).is_reads()
+
+
+def test_name_differences():
+    assert [] == sf_name('file.fastq').name_differences(sf_name('file.fastq'))
+    assert [] == sf_name('').name_differences(sf_name(''))
+    assert [] == sf_name('.').name_differences(sf_name('.'))
+
+    assert ['1'] == sf_name('file1.fastq').name_differences(sf_name('file2.fastq'))
+    assert ['2'] == sf_name('file2.fastq').name_differences(sf_name('file1.fastq'))
+
+    assert ['1'] == sf_name('file_1.fastq').name_differences(sf_name('file_2.fastq'))
+    assert ['2'] == sf_name('file_2.fastq').name_differences(sf_name('file_1.fastq'))
+
+    assert ['1'] == sf_name('file_xyz_R1.fastq').name_differences(sf_name('file_xyz_R2.fastq'))
+    assert ['2'] == sf_name('file_xyz_R2.fastq').name_differences(sf_name('file_xyz_R1.fastq'))
+
+    assert ['a', '1'] == sf_name('file_a_xyz_R1.fastq').name_differences(sf_name('file_b_xyz_R2.fastq'))
+    assert ['b', '2'] == sf_name('file_b_xyz_R2.fastq').name_differences(sf_name('file_a_xyz_R1.fastq'))
+
+    # Difference at end
+    assert ['gz'] == sf_name('file.fastq.gz').name_differences(sf_name('file.fastq.by'))
+
+    # Difference at beginning
+    assert ['p.'] == sf_name('p.file.fastq.gz').name_differences(sf_name('x_file.fastq.gz'))
+
+    # Many differences in beginning, middle, and end
+    assert ['p.', '1', 'gz'] == sf_name('p.file1.fastq.gz').name_differences(sf_name('x_file2.fastq.by'))
+    assert ['x_', '2', 'by'] == sf_name('x_file2.fastq.by').name_differences(sf_name('p.file1.fastq.gz'))
