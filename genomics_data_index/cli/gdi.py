@@ -324,14 +324,18 @@ def list_samples(ctx):
     click.echo('\n'.join(items))
 
 
-@main.group()
-@click.pass_context
-def analysis(ctx):
-    pass
+@main.command()
+@click.argument('genomes', type=click.Path(exists=True), nargs=-1)
+def input(genomes: List[str]):
+    genome_paths = [Path(f) for f in genomes]
+    pipeline_executor = SnakemakePipelineExecutor(working_directory=Path('/tmp'))
+    sample_files = pipeline_executor.create_input_sample_files(input_files=genome_paths)
+
+    # Defaults to writing to stdout
+    pipeline_executor.write_input_sample_files(input_sample_files=sample_files)
 
 
-@analysis.command()
-@click.pass_context
+@main.command()
 @click.option('--reference-file', help='Reference genome', required=True, type=click.Path(exists=True))
 @click.option('--index/--no-index', help='Whether or not to load the processed files into the index or'
                                          ' just produce the VCFs from assemblies. --no-index implies --no-clean.',
@@ -356,20 +360,20 @@ def analysis(ctx):
                                     'sketch should be (i.e., a value of 1000 means to keep approx. 1/1000 kmers).',
               default=1000, type=click.IntRange(min=1))
 @click.option('--batch-size', help='The maximum number of input files to process before dividing the Snakemake '
-                                   'pipeline into batches. The number of jobs scheduled in each batch will be larger'
+                                   'pipeline into batches. The number of jobs scheduled in each batch will be larger '
                                    'than this value.',
-              default=5000, type=click.IntRange(min=1))
-@click.option('--assembly-input-file',
-              help='A file listing the genome assemblies to process, one per line. This is an alternative'
-                   ' to passing assemblies as arguments on the command-line',
+              default=2000, type=click.IntRange(min=1))
+@click.option('--input-genomes-file',
+              help='A file listing the genomes to process, one per line. This is an alternative'
+                   ' to passing genomes as arguments on the command-line',
               type=click.Path(exists=True),
               required=False)
-@click.argument('assembled_genomes', type=click.Path(exists=True), nargs=-1)
-def assembly(ctx, reference_file: str, index: bool, clean: bool, build_tree: bool, align_type: str,
+@click.argument('genomes', type=click.Path(exists=True), nargs=-1)
+def analysis(ctx, reference_file: str, index: bool, clean: bool, build_tree: bool, align_type: str,
              extra_tree_params: str, use_conda: bool,
              include_mlst: bool, include_kmer: bool, ignore_snpeff: bool, kmer_size: List[int], kmer_scaled: int,
              batch_size: int,
-             assembly_input_file: str, assembled_genomes: List[str]):
+             assembly_input_file: str, genomes: List[str]):
     data_index_connection = get_project_exit_on_error(ctx).create_connection()
     kmer_service = data_index_connection.kmer_service
 
@@ -381,7 +385,7 @@ def assembly(ctx, reference_file: str, index: bool, clean: bool, build_tree: boo
         with open(assembly_input_file, 'r') as fh:
             genome_paths = [Path(l.strip()) for l in fh.readlines()]
     else:
-        genome_paths = [Path(f) for f in assembled_genomes]
+        genome_paths = [Path(f) for f in genomes]
 
     timestamp = time.time()
     snakemake_directory = Path(getcwd(), f'snakemake-assemblies.{timestamp}')
@@ -425,7 +429,7 @@ def assembly(ctx, reference_file: str, index: bool, clean: bool, build_tree: boo
             clean = False
 
         if include_kmer:
-            logger.info(f'Inserting kmer sketches for {len(assembled_genomes)} samples into the database')
+            logger.info(f'Inserting kmer sketches for {len(sample_files)} samples into the database')
             files_df = pd.read_csv(processed_files_fofn, sep='\t', index_col=False)
             for idx, row in files_df.iterrows():
                 sample_name = row['Sample']

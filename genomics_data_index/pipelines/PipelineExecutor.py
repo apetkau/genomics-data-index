@@ -1,8 +1,9 @@
 import abc
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 import pandas as pd
 import logging
+import sys
 
 from genomics_data_index.pipelines.ExecutorResults import ExecutorResults
 from genomics_data_index.storage.io.mutation.SequenceFile import SequenceFile
@@ -34,6 +35,10 @@ class PipelineExecutor(abc.ABC):
                             f'Expected {self.INPUT_SAMPLE_FILE_COLUMNS}')
 
     def create_input_sample_files(self, input_files: List[Path]) -> pd.DataFrame:
+        """
+
+        :rtype: object
+        """
         assemblies = {}
         reads = {}
         sample_names = set()
@@ -115,5 +120,7 @@ class PipelineExecutor(abc.ABC):
 
         return pd.DataFrame(data, columns=self.INPUT_SAMPLE_FILE_COLUMNS)
 
-    def write_input_sample_files(self, input_sample_files: pd.DataFrame, output_file: Path) -> None:
+    def write_input_sample_files(self, input_sample_files: pd.DataFrame, output_file: Optional[Path] = None) -> None:
+        if output_file is None:
+            output_file = sys.stdout
         input_sample_files.to_csv(output_file, sep='\t', index=False)
