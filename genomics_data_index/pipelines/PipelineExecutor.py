@@ -34,6 +34,11 @@ class PipelineExecutor(abc.ABC):
             raise Exception(f'input_sample_files={input_sample_files} has invalid columns. '
                             f'Expected {self.INPUT_SAMPLE_FILE_COLUMNS}')
 
+        for col in ['Assemblies', 'Reads1', 'Reads2']:
+            are_paths = set(input_sample_files[col].apply(lambda x: isinstance(x, Path) or pd.isna(x)).tolist())
+            if not all(are_paths):
+                raise Exception(f'column=[{col}] in input_sample_files={input_sample_files} does not contain Path or NA')
+
     def create_input_sample_files(self, input_files: List[Path]) -> pd.DataFrame:
         """
 
@@ -79,12 +84,12 @@ class PipelineExecutor(abc.ABC):
 
         # Now we iterate over samples to insert into an array to create the final dataframe
         for sample in assemblies:
-            data.append([sample, str(assemblies[sample]), pd.NA, pd.NA])
+            data.append([sample, assemblies[sample], pd.NA, pd.NA])
 
         # Iterate over reads to insert into array for final dataframe
         for sample in reads:
             if len(reads[sample]) == 1:
-                data.append([sample, pd.NA, str(reads[sample][0]), pd.NA])
+                data.append([sample, pd.NA, reads[sample][0], pd.NA])
             elif len(reads[sample]) == 2:
                 file1 = SequenceFile(reads[sample][0])
                 file2 = SequenceFile(reads[sample][1])
@@ -114,7 +119,7 @@ class PipelineExecutor(abc.ABC):
                     else:
                         raise Exception(f'Cannot determine pair structure for files [{reads[sample]}]')
 
-                    data.append([sample, pd.NA, str(forward.file), str(reverse.file)])
+                    data.append([sample, pd.NA, forward.file, reverse.file])
             else:
                 raise Exception(f'Invalid number of files for sample [{sample}], files={reads[sample]}')
 
