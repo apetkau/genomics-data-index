@@ -52,7 +52,7 @@ rule index_reference:
     output:
         reference_mm2_index="reference/reference.fasta.mmi",
     conda:
-        "envs/main.yaml"
+        "envs/minimap2.yaml"
     threads: 1
     log:
         faidx="logs/index_reference.faidx.log",
@@ -81,7 +81,7 @@ rule assembly_align:
     output:
         "assemblies/align/{sample}.bam",
     conda:
-        "envs/main.yaml"
+        "envs/minimap2.yaml"
     threads: 1
     log:
         mm2="logs/assembly_align.{sample}.minimap2.log",
@@ -98,7 +98,7 @@ rule assembly_variant:
     output:
         "assemblies/variant/{sample}.vcf.gz",
     conda:
-        "envs/main.yaml"
+        "envs/bcftools.yaml"
     threads: 1
     log:
         mpileup="logs/assembly_variant.{sample}.mpileup.log",
@@ -195,7 +195,7 @@ rule assembly_consensus:
     output:
         "assemblies/consensus/{sample}.fasta.gz",
     conda:
-        "envs/main.yaml"
+        "envs/htsbox.yaml"
     log:
         consensus="logs/assembly_consensus.{sample}.consensus.log",
     shell:
@@ -208,9 +208,9 @@ rule assembly_sourmash_sketch:
         assembly=lambda wildcards: sample_files.loc[wildcards.sample]['Assemblies'],
     output:
         "assemblies/sketch/{sample}.sig.gz"
-    conda:
-        "envs/main.yaml"
     threads: 1
+    conda:
+        "envs/sourmash.yaml"
     params:
         sourmash_params=config["sourmash_params"],
     log:
@@ -283,6 +283,8 @@ rule gdi_input_fofn:
         sample_sketches=sample_sketches_input,
     log:
         "logs/gdi_input_fofn.log"
+    conda:
+        "envs/main.yaml"
     output:
         "gdi-input.fofn"
     script:
@@ -294,6 +296,8 @@ rule mlst_full_table:
         sample_vcfs=expand("mlst/{sample}.tsv",sample=samples_assemblies),
     log:
         "logs/mlst_full_table.log"
+    conda:
+        "envs/main.yaml"
     output:
         "mlst.tsv"
     shell:
