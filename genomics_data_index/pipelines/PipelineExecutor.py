@@ -56,7 +56,7 @@ class PipelineExecutor(abc.ABC):
                     assemblies[sample_name] = file
             elif sf.is_reads():
                 if sample_name in assemblies:
-                    previous_files = [reads[sample_name]]
+                    previous_files = assemblies[sample_name]
                     raise Exception(f'Duplicate sample with name [{sample_name}]. current_file=[{file}], '
                                     f'previous_file(s)={previous_files}')
                 elif sample_name in reads:
