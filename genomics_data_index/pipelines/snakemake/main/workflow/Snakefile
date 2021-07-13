@@ -20,10 +20,6 @@ samples_assemblies_set = set(samples_assemblies)
 samples_paired_reads = list(set(samples_paired_reads) - samples_assemblies_set)
 samples_single_reads = list(set(samples_single_reads) - samples_assemblies_set)
 
-print(f'samples_assemblies={samples_assemblies}')
-print(f'samples_paired_reads={samples_paired_reads}')
-print(f'samples_single_reads={samples_single_reads}')
-
 reference_abs = Path(config["reference"]).absolute()
 
 # Workflow
@@ -285,6 +281,7 @@ rule gdi_input_fofn:
         "logs/gdi_input_fofn.log"
     conda:
         "envs/main.yaml"
+    message: "Generating input file to be loaded into index [{output}]."
     output:
         "gdi-input.fofn"
     script:
