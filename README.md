@@ -26,7 +26,7 @@ or attached external data (e.g., phylogenetic trees or DataFrames of metadata).
 # Select samples with a D614G mutation on gene S
 r = s.hasa('hgvs:MN996528.1:S:D614G')
 
-# Select samples with Sequence Type 100 for Locus (gene) adk in MLST scheme ecoli
+# Select samples with Allele 100 for Locus (gene) adk in MLST scheme ecoli
 r = s.hasa('ecoli:adk:100')
 ```
 
