@@ -1,3 +1,4 @@
+from __future__ import annotations
 import gzip
 import logging
 from functools import partial
@@ -28,6 +29,10 @@ class SequenceFile:
 
     def __init__(self, file: Path):
         self._file = file
+
+    @property
+    def file(self):
+        return self._file
 
     def parse_sequence_file(self) -> Tuple[str, List[SeqRecord]]:
         # Code for handling gzipped/non-gzipped from https://stackoverflow.com/a/52839332
@@ -68,21 +73,89 @@ class SequenceFile:
         ref_extension = self.get_genome_extension_minus_compression().lower()
         return ref_extension == '.gb' or ref_extension == '.gbk'
 
+    def is_fasta(self) -> bool:
+        ref_extension = self.get_genome_extension_minus_compression().lower()
+        return ref_extension == '.fasta' or ref_extension == '.fa' or ref_extension == '.fna'
+
+    def is_assembly(self) -> bool:
+        return self.is_fasta() or self.is_genbank()
+
+    def is_reads(self) -> bool:
+        extension = self.get_genome_extension_minus_compression().lower()
+        return extension == '.fastq' or extension == '.fq'
+
+    def name_differences(self, other_file: SequenceFile) -> List[str]:
+        """
+        Gets the differences from this sequence file name and the passed file name.
+        I assume both file names are of the same length (i.e., no insertion of gaps anywhere or
+        complicated alignment of strings). This is intended to be used to figure out which of a pair
+        of fastq files is the forward and which is the reverse.
+        :param other_file: The other sequence file.
+        :return: A list of strings containing mismatches between this file name and the other file name.
+        """
+        name1 = self._file.name
+        name2 = other_file._file.name
+
+        if len(name1) != len(name2):
+            raise Exception(f'name1=[{name1}] is not the same length as name2=[{name2}]')
+        else:
+            differences = []
+            current_difference = None
+            previous_difference_index = -1
+            for i in range(len(name1)):
+                c1 = name1[i]
+                c2 = name2[i]
+                if c1 == c2:
+                    if current_difference is not None:
+                        differences.append(current_difference)
+                        current_difference = None
+                else:
+                    if previous_difference_index == (i - 1):
+                        if current_difference is None:
+                            current_difference = c1
+                            previous_difference_index = i
+                        else:
+                            current_difference += c1
+                            previous_difference_index = i
+                    elif current_difference is None:
+                        current_difference = c1
+                        previous_difference_index = i
+                    else:
+                        raise Exception(f'previous_difference_index=[{previous_difference_index}], i=[{i}], '
+                                        f'but current_difference is not None')
+
+            # Append last bit of differences
+            if current_difference is not None:
+                differences.append(current_difference)
+
+            return differences
+
     def can_use_snpeff(self) -> bool:
         return self.is_genbank()
 
-    def get_genome_name(self) -> str:
+    def get_genome_name(self, exclude_paired_end_indicators: bool = False) -> str:
         """
         Gets the genome name (filename minus extension). Accounts for gzipped/non-gzipped files.
         :param file: The file.
+        :param exclude_paired_end_indicators: Exclude paired-end indicators when getting genome name (e.g., _R1, _1, etc).
+                                              this only applies if the sequence file is a reads file.
         :return: The genome name from the file.
         """
         if self.is_gzip():
-            ref_name = splitext(basename(self._file).rstrip('.gz'))[0]
+            name_minus_extension = splitext(basename(self._file).rstrip('.gz'))[0]
         else:
-            ref_name = splitext(basename(self._file))[0]
+            name_minus_extension = splitext(basename(self._file))[0]
 
-        return ref_name
+        if self.is_reads() and exclude_paired_end_indicators:
+            name_minus_pair_indicator = name_minus_extension
+            for pair_indicator in ['_1', '_2', '_R1', '_R2', '_f', '_r']:
+                last_index = name_minus_extension.rfind(pair_indicator)
+                if last_index != -1:
+                    name_minus_pair_indicator = name_minus_extension[:last_index]
+                    break
+            return name_minus_pair_indicator
+        else:
+            return name_minus_extension
 
     def _write_snpeff_config(self, snpeff_config_file: Path, snpeff_database_dir: Path,
                              codon_type: str) -> str:

@@ -13,7 +13,7 @@ to be used as input for indexing. This works by:
 
 # Test
 
-## Basic
+## Basic assemblies
 
 To test this pipeline independent of the Python software you can run the following from within this directory:
 
@@ -21,12 +21,19 @@ To test this pipeline independent of the Python software you can run the followi
 snakemake -j 1
 ```
 
-## snpeff
+## snpeff assemblies
 
 To test the pipeline with snpeff annotations you can run:
 
 ```bash
 snakemake --configfile config/config-snpeff.yaml -j 1
+```
+
+## Basic reads
+
+```bash
+# Need to --use-conda since snippy dependencies (e.g., samtools) requires specific versions
+snakemake --use-conda --configfile config/config-reads.yaml -j 1
 ```
 
 # Cleanup

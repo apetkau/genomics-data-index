@@ -1,0 +1,4 @@
+Sample	Assemblies	Reads1	Reads2
+SampleA-paired		input-data/SampleA-snpeff_1.fastq.gz	input-data/SampleA-snpeff_2.fastq.gz
+SampleA-single		input-data/SampleA-snpeff_1.fastq.gz	
+SampleA-assembly	input-data/SampleA-snpeff.fasta.gz

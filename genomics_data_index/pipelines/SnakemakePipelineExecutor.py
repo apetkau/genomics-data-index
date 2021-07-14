@@ -14,16 +14,18 @@ from genomics_data_index.storage.util import execute_commands
 
 logger = logging.getLogger(__name__)
 
-snakemake_file = Path(path.dirname(__file__), 'assembly_input', 'workflow', 'Snakefile')
+snakemake_file = Path(path.dirname(__file__), 'snakemake', 'main', 'workflow', 'Snakefile')
 
 
 class SnakemakePipelineExecutor(PipelineExecutor):
 
-    def __init__(self, working_directory: Path, use_conda: bool = True,
+    def __init__(self, working_directory: Path = None, use_conda: bool = True,
                  include_kmer: bool = True, include_mlst: bool = True,
                  ignore_snpeff: bool = False,
                  kmer_sizes: List[int] = None, kmer_scaled: int = 1000,
-                 snakemake_input_batch_size: int = 5000):
+                 snakemake_input_batch_size: int = 5000,
+                 reads_mincov: int = 10, reads_minqual: float = 100,
+                 reads_subsample: float = 1):
         super().__init__()
         if kmer_sizes is None:
             kmer_sizes = [31]
@@ -35,6 +37,9 @@ class SnakemakePipelineExecutor(PipelineExecutor):
         self._ignore_snpeff = ignore_snpeff
         self._snakemake_batch_size = snakemake_input_batch_size
         self._sourmash_params = self._prepare_sourmash_params(kmer_sizes=kmer_sizes, kmer_scaled=kmer_scaled)
+        self._reads_mincov = reads_mincov
+        self._reads_minqual = reads_minqual
+        self._reads_subsample = reads_subsample
 
     def _prepare_sourmash_params(self, kmer_sizes: List[int], kmer_scaled: int) -> str:
         params = ','.join([f'k={v}' for v in kmer_sizes])
@@ -42,11 +47,8 @@ class SnakemakePipelineExecutor(PipelineExecutor):
 
         return params
 
-    def _sample_name_from_file(self, sample_file: Path) -> str:
-        return SequenceFile(sample_file).get_genome_name()
-
     def _prepare_working_directory(self, reference_file: Path,
-                                   input_files: List[Path]) -> Path:
+                                   input_sample_files: pd.DataFrame) -> Path:
         config_dir = self._working_directory / 'config'
         config_dir.mkdir()
 
@@ -73,18 +75,16 @@ class SnakemakePipelineExecutor(PipelineExecutor):
                 'include_kmer': self._include_kmer,
                 'include_snpeff': include_snpeff,
                 'sourmash_params': self._sourmash_params,
+                'reads_mincov': self._reads_mincov,
+                'reads_minqual': self._reads_minqual,
+                'reads_subsample': self._reads_subsample,
             }
             yaml.dump(config, fh)
             logger.debug(f'Snakemake config={config}')
 
         logger.debug(f'Writing samples list [{samples_file}]')
-
-        sample_names = []
-        for file in input_files:
-            sample_names.append([self._sample_name_from_file(file), str(file.absolute())])
-
-        sample_names_df = pd.DataFrame(sample_names, columns=['Sample', 'File'])
-        sample_names_df.to_csv(samples_file, sep='\t', index=False)
+        self.write_input_sample_files(input_sample_files=input_sample_files, output_file=samples_file,
+                                      abolute_paths=True)
 
         return config_file
 
@@ -98,13 +98,21 @@ class SnakemakePipelineExecutor(PipelineExecutor):
     def _get_number_batches(self, number_input_files: int) -> int:
         return int(math.ceil(number_input_files / self._snakemake_batch_size))
 
-    def execute(self, input_files: List[Path], reference_file: Path, ncores: int = 1) -> ExecutorResults:
+    def execute(self, sample_files: pd.DataFrame, reference_file: Path, ncores: int = 1) -> ExecutorResults:
         working_directory = self._working_directory
+
+        # Preconditions
+        if working_directory is None:
+            raise Exception(f'working_directory is None. Please re-create {self.__class__.__name__} with a proper '
+                            f'working directory.')
+        self.validate_input_sample_files(sample_files)
+
+        number_samples = len(sample_files)
         logger.debug(f'Preparing working directory [{working_directory}] for snakemake')
         config_file = self._prepare_working_directory(reference_file=reference_file,
-                                                      input_files=input_files)
+                                                      input_sample_files=sample_files)
 
-        logger.debug(f'Executing snakemake on {len(input_files)} files with reference_file=[{reference_file}]'
+        logger.debug(f'Executing snakemake on {number_samples} files with reference_file=[{reference_file}]'
                      f' using {ncores} cores in [{working_directory}]')
         snakemake_output_fofn = working_directory / 'gdi-input.fofn'
         snakemake_output_mlst = working_directory / 'mlst.tsv'
@@ -116,7 +124,7 @@ class SnakemakePipelineExecutor(PipelineExecutor):
 
         # I found with very large numbers of input files snakemake would slow down significantly
         # So I'm executing batches of files in snakemake if you pass too many input files.
-        number_batches = self._get_number_batches(len(input_files))
+        number_batches = self._get_number_batches(number_samples)
         if number_batches > 1:
             for batch_number in range(1, number_batches + 1):
                 logger.info(f'Running snakemake batch: {batch_number}/{number_batches}')

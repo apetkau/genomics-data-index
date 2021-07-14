@@ -324,13 +324,40 @@ def list_samples(ctx):
     click.echo('\n'.join(items))
 
 
-@main.group()
-@click.pass_context
-def analysis(ctx):
-    pass
+def read_genomes_from_file(input_file: Path) -> List[Path]:
+    with open(input_file, 'r') as fh:
+        genome_paths = [Path(l.strip()) for l in fh.readlines()]
+        return genome_paths
 
 
-@analysis.command()
+@main.command(name='input')
+@click.option('--absolute/--no-absolute', help='Convert paths to absolute paths', required=False)
+@click.option('--input-genomes-file',
+              help='A file listing the genomes to process, one per line. This is an alternative'
+                   ' to passing genomes as arguments on the command-line',
+              type=click.Path(exists=True),
+              required=False)
+@click.argument('genomes', type=click.Path(exists=True), nargs=-1)
+def input_command(absolute: bool, input_genomes_file: str, genomes: List[str]):
+    if input_genomes_file is not None:
+        if len(genomes) > 0:
+            logger.warning(f'--input-genomes-file=[{input_genomes_file}] is specified so will ignore genomes '
+                           f'passed on the command-line.')
+        genome_paths = read_genomes_from_file(Path(input_genomes_file))
+    elif len(genomes) > 0:
+        genome_paths = [Path(f) for f in genomes]
+    else:
+        logger.error('Must pass a list of genome files or use --input-genomes-file')
+        sys.exit(1)
+
+    pipeline_executor = SnakemakePipelineExecutor()
+    sample_files = pipeline_executor.create_input_sample_files(input_files=genome_paths)
+
+    # Defaults to writing to stdout
+    pipeline_executor.write_input_sample_files(input_sample_files=sample_files, abolute_paths=absolute)
+
+
+@main.command()
 @click.pass_context
 @click.option('--reference-file', help='Reference genome', required=True, type=click.Path(exists=True))
 @click.option('--index/--no-index', help='Whether or not to load the processed files into the index or'
@@ -350,26 +377,39 @@ def analysis(ctx):
               default=False)
 @click.option('--ignore-snpeff/--no-ignore-snpeff', help="Enable/disable including snpeff annotations in "
                                                          "mutation results.", default=False)
+@click.option('--reads-mincov', help='Minimum coverage when aligning reads to a reference genome',
+              default=10, type=click.IntRange(min=1))
+@click.option('--reads-minqual', help='Minimum quality score of VCF variants when aligning reads to a reference genome',
+              default=100, type=click.IntRange(min=1))
 @click.option('--kmer-size', help='Kmer size for indexing. List multiple for multiple kmer sizes in an index',
               default=[31], multiple=True, type=click.IntRange(min=1, max=201))
 @click.option('--kmer-scaled', help='The scaled parameter to pass to sourmash. Defines how many kmers to keep in the '
                                     'sketch should be (i.e., a value of 1000 means to keep approx. 1/1000 kmers).',
               default=1000, type=click.IntRange(min=1))
 @click.option('--batch-size', help='The maximum number of input files to process before dividing the Snakemake '
-                                   'pipeline into batches. The number of jobs scheduled in each batch will be larger'
+                                   'pipeline into batches. The number of jobs scheduled in each batch will be larger '
                                    'than this value.',
-              default=5000, type=click.IntRange(min=1))
-@click.option('--assembly-input-file',
-              help='A file listing the genome assemblies to process, one per line. This is an alternative'
-                   ' to passing assemblies as arguments on the command-line',
+              default=2000, type=click.IntRange(min=1))
+@click.option('--input-genomes-file',
+              help='A file listing the genomes to process, one per line. This is an alternative'
+                   ' to passing genomes as arguments on the command-line',
               type=click.Path(exists=True),
               required=False)
-@click.argument('assembled_genomes', type=click.Path(exists=True), nargs=-1)
-def assembly(ctx, reference_file: str, index: bool, clean: bool, build_tree: bool, align_type: str,
+@click.option('--input-structured-genomes-file',
+              help='A structured file listing the samples and associated files. Used for finer control over sample names'
+                   ' and the associated assemblies/reads. You can generate such a file with '
+                   '"gdi input *.fasta *.fastq.gz > structured_input.tsv". This is an alternative'
+                   ' to passing genomes as arguments on the command-line.',
+              type=click.Path(exists=True),
+              required=False)
+@click.argument('genomes', type=click.Path(exists=True), nargs=-1)
+def analysis(ctx, reference_file: str, index: bool, clean: bool, build_tree: bool, align_type: str,
              extra_tree_params: str, use_conda: bool,
-             include_mlst: bool, include_kmer: bool, ignore_snpeff: bool, kmer_size: List[int], kmer_scaled: int,
+             include_mlst: bool, include_kmer: bool, ignore_snpeff: bool,
+             reads_mincov: int, reads_minqual: int,
+             kmer_size: List[int], kmer_scaled: int,
              batch_size: int,
-             assembly_input_file: str, assembled_genomes: List[str]):
+             input_genomes_file: str, input_structured_genomes_file: str, genomes: List[str]):
     data_index_connection = get_project_exit_on_error(ctx).create_connection()
     kmer_service = data_index_connection.kmer_service
 
@@ -377,11 +417,17 @@ def assembly(ctx, reference_file: str, index: bool, clean: bool, build_tree: boo
         logger.debug('--no-index is enabled so setting --no-clean')
         clean = False
 
-    if assembly_input_file is not None:
-        with open(assembly_input_file, 'r') as fh:
-            genome_paths = [Path(l.strip()) for l in fh.readlines()]
+    sample_files = None
+    genome_paths = []
+    if input_structured_genomes_file is not None:
+        logger.debug(f'Using --input-structured-genomes-file=[{input_structured_genomes_file}]')
+        sample_files = SnakemakePipelineExecutor().read_input_sample_files(Path(input_structured_genomes_file))
+    elif input_genomes_file is not None:
+        logger.debug(f'Using --input-genomes-file=[{input_genomes_file}]')
+        genome_paths = read_genomes_from_file(Path(input_genomes_file))
     else:
-        genome_paths = [Path(f) for f in assembled_genomes]
+        logger.debug(f'Using {len(genomes)} files passed as command-line arguments')
+        genome_paths = [Path(f) for f in genomes]
 
     timestamp = time.time()
     snakemake_directory = Path(getcwd(), f'snakemake-assemblies.{timestamp}')
@@ -402,10 +448,16 @@ def assembly(ctx, reference_file: str, index: bool, clean: bool, build_tree: boo
                                                   ignore_snpeff=ignore_snpeff,
                                                   kmer_sizes=kmer_sizes,
                                                   kmer_scaled=kmer_scaled,
-                                                  snakemake_input_batch_size=batch_size)
+                                                  snakemake_input_batch_size=batch_size,
+                                                  reads_mincov=reads_mincov,
+                                                  reads_minqual=reads_minqual)
 
-    logger.info(f'Processing {len(genome_paths)} genomes to identify mutations')
-    results = pipeline_executor.execute(input_files=genome_paths,
+    if sample_files is None:
+        logger.info(f'Automatically structuring {len(genome_paths)} input files into assemblies/reads')
+        sample_files = pipeline_executor.create_input_sample_files(genome_paths)
+
+    logger.info(f'Processing {len(sample_files)} genomes to identify mutations')
+    results = pipeline_executor.execute(sample_files=sample_files,
                                         reference_file=Path(reference_file),
                                         ncores=ctx.obj['ncores'])
 
@@ -422,7 +474,7 @@ def assembly(ctx, reference_file: str, index: bool, clean: bool, build_tree: boo
             clean = False
 
         if include_kmer:
-            logger.info(f'Inserting kmer sketches for {len(assembled_genomes)} samples into the database')
+            logger.info(f'Inserting kmer sketches for {len(sample_files)} samples into the database')
             files_df = pd.read_csv(processed_files_fofn, sep='\t', index_col=False)
             for idx, row in files_df.iterrows():
                 sample_name = row['Sample']

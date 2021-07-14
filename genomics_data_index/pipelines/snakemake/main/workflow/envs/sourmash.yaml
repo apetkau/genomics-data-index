@@ -3,9 +3,5 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - minimap2
-  - samtools
-  - bcftools
-  - htsbox
-  - htslib
   - sourmash
+  - gzip
