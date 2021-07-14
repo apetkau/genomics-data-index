@@ -22,11 +22,11 @@ gdi load vcf vcf-files.txt
 or attached external data (e.g., phylogenetic trees or DataFrames of metadata).
 
 ```python
-# Select samples with a 26568 C > A mutation
-r = s.hasa('MN996528.1:26568:C:A')
-
 # Select samples with a D614G mutation on gene S
 r = s.hasa('hgvs:MN996528.1:S:D614G')
+
+# Select samples with Sequence Type 100 for Locus (gene) adk in MLST scheme ecoli
+r = s.hasa('ecoli:adk:100')
 ```
 
 **Summaries of the features** (mutations, kmers, MLST) can be exported from a set of samples alongside
@@ -70,9 +70,9 @@ You can see more examples of this software in action in the provided [Tutorials]
   * [3.2. PyPI/pip](#32-pypipip)
   * [3.3. From GitHub](#33-from-github)
 - [4. Usage](#4-usage)
-  * [4.1.1](#411-indexing)
-  * [4.1.2](#412-querying)
-  * [4.1.3](#413-main-usage-statement)
+  * [4.1. Indexing](#41-indexing)
+  * [4.2. Querying](#42-querying)
+  * [4.3 Main usage statement](#43-main-usage-statement)
 - [5. Tutorial](#5-tutorial)
 - [6. Acknowledgements](#6-acknowledgements)
 
