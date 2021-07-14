@@ -36,6 +36,38 @@ def test_insert_variants_saved_files(database, snippy_nucleotide_data_package, r
     assert 3 == len(genomic_mask_files)
 
 
+def test_read_index(database, snippy_nucleotide_data_package, reference_service_with_data,
+                                     sample_service, filesystem_storage):
+    variation_service = VariationService(database_connection=database,
+                                         reference_service=reference_service_with_data,
+                                         sample_service=sample_service,
+                                         variation_dir=filesystem_storage.variation_dir)
+
+    variation_service.insert(feature_scope_name='genome', data_package=snippy_nucleotide_data_package)
+
+    session = database.get_session()
+    sampleB = session.query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = session.query(Sample).filter(Sample.name == 'SampleC').one()
+
+    # Read 2 that do exist
+    feature_samples = variation_service.read_index(['reference:839:1:G', 'reference:866:9:G'])
+    assert len(feature_samples) == 2
+    assert {'reference:839:1:G', 'reference:866:9:G'} == set(feature_samples.keys())
+    assert isinstance(feature_samples['reference:839:1:G'], NucleotideVariantsSamples)
+    assert isinstance(feature_samples['reference:866:9:G'], NucleotideVariantsSamples)
+    assert {sampleB.id, sampleC.id} == set(feature_samples['reference:839:1:G'].sample_ids)
+    assert {sampleC.id} == set(feature_samples['reference:866:9:G'].sample_ids)
+
+    # Read empty list
+    feature_samples = variation_service.read_index([])
+    assert len(feature_samples) == 0
+
+    # Read list with additional non-existing IDs
+    feature_samples = variation_service.read_index(['reference:839:1:G', 'reference:866:9:G', 'not_exist:100:A:T'])
+    assert len(feature_samples) == 2
+    assert {'reference:839:1:G', 'reference:866:9:G'} == set(feature_samples.keys())
+
+
 def test_insert_variants_masked_regions(database, snippy_nucleotide_data_package, reference_service_with_data,
                                         sample_service, filesystem_storage):
     variation_service = VariationService(database_connection=database,
