@@ -28,6 +28,16 @@ class FeatureService(abc.ABC):
         self._max_insert_batch_size = max_insert_batch_size
         self._min_insert_batch_size = 5
 
+    # @abc.abstractmethod
+    # def read_index(self, feature_ids: List[Any]) -> Dict[Any, Any]:
+    #     """
+    #     Reads the passed list of feature IDs from the database and returns a dictionary containing those features that
+    #     already exist. This dictionary maps {'id' => 'feature_object_in_database'}.
+    #     :param feature_objects: The list of feature objects to search through.
+    #     :return: A dictionary containing any features that already existing in the database index.
+    #     """
+    #     pass
+
     @abc.abstractmethod
     def get_correct_data_package(self) -> Any:
         pass
@@ -55,7 +65,7 @@ class FeatureService(abc.ABC):
     def _modify_df_types(self, features_df: pd.DataFrame) -> pd.DataFrame:
         return features_df
 
-    def _create_feature_objects(self, features_df: pd.DataFrame, sample_names: Set[str]) -> List[Any]:
+    def _create_feature_objects(self, features_df: pd.DataFrame, sample_names: Set[str]) -> Dict[str, Any]:
         sample_name_ids = self._sample_service.find_sample_name_ids(sample_names)
 
         features_df['_FEATURE_ID'] = features_df.apply(self._create_feature_identifier, axis='columns')
@@ -64,7 +74,7 @@ class FeatureService(abc.ABC):
         index_df = features_df.groupby('_FEATURE_ID').agg(self.aggregate_feature_column())
         index_df = self._modify_df_types(index_df).reset_index()
 
-        return index_df.apply(self._create_feature_object, axis='columns').tolist()
+        return index_df.apply(self._create_feature_object, axis='columns').to_dict()
 
     @abc.abstractmethod
     def check_samples_have_features(self, sample_names: Set[str], feature_scope_name: str) -> bool:
@@ -180,7 +190,17 @@ class FeatureService(abc.ABC):
         features_df = features_reader.get_features_table()
         features_df = self._update_scope(features_df, feature_scope_name)
         sample_names = features_reader.samples_set()
-        self._connection.get_session().bulk_save_objects(self._create_feature_objects(features_df, sample_names))
+        new_feature_objects_dict = self._create_feature_objects(features_df, sample_names)
+        # existing_feature_objects = self.read_index(new_feature_objects)
+        # for id_db in existing_feature_objects:
+        #     feature_object_db = existing_feature_objects[id_db]
+        #     feature_object_new = new_feature_objects[id_db]
+        #     self.merge_feature_objects(feature_object_db, feature_object_new)
+        #     new_feature_objects[id_db] = feature_object_new
+        # self._connection.get_session().bulk_save_objects(list(new_feature_objects.values()))
+        # then bulk save objects
+        feature_objects_to_save = new_feature_objects_dict.values()
+        self._connection.get_session().bulk_save_objects(feature_objects_to_save)
         self._connection.get_session().commit()
         logger.info('Finished indexing features from all samples')
 
