@@ -8,6 +8,7 @@
 * [analysis]: Added ability to load VCF files with [SnpEff](http://pcingola.github.io/SnpEff/) annotations and associte these with the nucleotide identifiers.
     * `summary_features()` and `hasa()` works with the SnpEff variant identifiers (HGVS).
     * SnpEff results will be included when loading assemblies.
+* [analysis]: Added the ability to analyze and index sequence reads (by mapping to a reference genome using [snippy](https://github.com/tseemann/snippy)).
 
 # 0.1.0
 

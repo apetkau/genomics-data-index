@@ -8,10 +8,13 @@ data.
 
 **Indexing** breaks genomes up into individual features (*nucleotide mutations*, *k-mers*, or *genes/MLST*)
 and stores the index in a directory which can easily be shared with other people. Indexes can be generated 
-direct from sequence data or loaded from existing intermediate files (e.g., VCF files).
+direct from sequence data or loaded from existing intermediate files (e.g., VCF files, MLST results).
 
 ```bash
-# Index features in VCF files listed in vcf-files.txt
+# Analyze sequence data (reads/assemblies, compressed/uncompressed)
+gdi analysis --reference-file genome.gbk.gz *.fasta.gz *.fastq.gz
+
+# (Alternatively) Index features in previously computed VCF files listed in vcf-files.txt
 gdi load vcf vcf-files.txt
 ```
 
@@ -21,6 +24,9 @@ or attached external data (e.g., phylogenetic trees or DataFrames of metadata).
 ```python
 # Select samples with a 26568 C > A mutation
 r = s.hasa('MN996528.1:26568:C:A')
+
+# Select samples with a D614G mutation on gene S
+r = s.hasa('hgvs:MN996528.1:S:D614G')
 ```
 
 **Summaries of the features** (mutations, kmers, MLST) can be exported from a set of samples alongside
@@ -64,6 +70,9 @@ You can see more examples of this software in action in the provided [Tutorials]
   * [3.2. PyPI/pip](#32-pypipip)
   * [3.3. From GitHub](#33-from-github)
 - [4. Usage](#4-usage)
+  * [4.1.1](#411-indexing)
+  * [4.1.2](#412-querying)
+  * [4.1.3](#413-main-usage-statement)
 - [5. Tutorial](#5-tutorial)
 - [6. Acknowledgements](#6-acknowledgements)
 
@@ -83,9 +92,13 @@ in a database. The types of features supported include: **Nucleotide mutations**
 Indexing assigns names to the individual features, represented as strings inspired by the
 [Sequence Position Deletion Insertion (SPDI)][] model.
 
-1. **Nucleotide mutations**: `reference:position:deletion:insertion` (e.g., `ref:100:A:T`)
+1. **Nucleotide mutations**: `sequence:position:deletion:insertion` (e.g., `ref:100:A:T`)
 2. **Genes/MLST**: `scheme:locus:allele` (e.g., `ecoli:adk:100`)
 3. **Kmers**: *Not implemented yet*
+
+Alternatively, for **Nucleotide mutations** names can be given using [hgvs](https://varnomen.hgvs.org/) (as output by [SnpEff](http://pcingola.github.io/SnpEff/)).
+
+1. **Nucleotide mutations**: `hgvs:sequence:gene:p.protein_change` (e.g., `hgvs:ref:geneX:p.P20H`).
 
 ## 1.2. Querying
 
@@ -186,7 +199,36 @@ pip install .
 
 # 4. Usage
 
-The main command is called `gdi`:
+The main command is called `gdi`. A quick overview of the usage is as follows:
+
+## 4.1. Indexing
+
+```bash
+# Create new index in `index/`
+# cd to `index/` to make next commands easier to run
+gdi init index
+cd index
+
+# Creates an index of mutations (VCF files) and kmer sketches (sourmash)
+gdi analysis --use-conda --include-kmer --kmer-size 31 --reference-file genome.gbk.gz *.fastq.gz
+
+# (Optional) build tree from mutations (against reference genome `genome`) for phylogenetic querying
+gdi rebuild tree --align-type full genome
+```
+
+The produced index will be in the directory `index/`.
+
+## 4.2. Querying
+
+```bash
+# List indexed samples
+gdi list samples
+
+# Query for genomes with mutation
+gdi query mutation 'genome:10:A:T'
+```
+
+## 4.3. Main usage statement
 
 ```
 Usage: gdi [OPTIONS] COMMAND [ARGS]...
@@ -200,32 +242,22 @@ Options:
 
   --log-level [DEBUG|INFO|WARNING|ERROR|CRITICAL]
                                   Sets the log level  [default: INFO]
+  --version                       Show the version and exit.
   --config FILE                   Read configuration from FILE.
   --help                          Show this message and exit.
 
 Commands:
+  analysis
   build
   db
   export
   init
+  input
   list
   load
   query
   rebuild
 ```
-
-If you've previously ran [snippy][] you can load up this data (i.e., the SNPs in VCF format) as follows:
-
-```bash
-# Initialize and cd to project
-gdi init proj1
-cd proj1
-
-# Load data
-gdi load snippy --reference-file reference.fasta snippy-analysis/
-```
-
-Where `snippy-analysis/` contains directories like `SampleA`, `SampleB`, etc.
 
 # 5. Tutorial
 
