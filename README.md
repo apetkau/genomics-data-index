@@ -21,6 +21,7 @@ gdi load vcf vcf-files.txt
 **Querying** provides both a *Python API* and *Command-line interface* to select sets of samples using this index
 or attached external data (e.g., phylogenetic trees or DataFrames of metadata).
 
+*Python API:*
 ```python
 # Select samples with a D614G mutation on gene S
 r = s.hasa('hgvs:MN996528.1:S:D614G')
