@@ -1,7 +1,7 @@
 import pytest
 
-from genomics_data_index.storage.model.db import NucleotideVariantsSamples, MLSTAllelesSamples
 from genomics_data_index.storage.SampleSet import SampleSet
+from genomics_data_index.storage.model.db import NucleotideVariantsSamples, MLSTAllelesSamples
 
 
 def test_update_sample_ids_both_overlap():

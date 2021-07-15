@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import gzip
 import logging
 from functools import partial

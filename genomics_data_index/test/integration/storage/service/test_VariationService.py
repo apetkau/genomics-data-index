@@ -38,7 +38,7 @@ def test_insert_variants_saved_files(database, snippy_nucleotide_data_package, r
 
 
 def test_read_index(database, snippy_nucleotide_data_package, reference_service_with_data,
-                                     sample_service, filesystem_storage):
+                    sample_service, filesystem_storage):
     variation_service = VariationService(database_connection=database,
                                          reference_service=reference_service_with_data,
                                          sample_service=sample_service,
@@ -557,9 +557,9 @@ def test_multiple_insert_variants_different_samples(database, snippy_nucleotide_
 
 
 def test_multiple_insert_variants_different_reference_genomes(database, snippy_nucleotide_data_package_AB,
-                                                    snpeff_nucleotide_data_package,
-                                                    reference_service_with_data,
-                                                    sample_service, filesystem_storage):
+                                                              snpeff_nucleotide_data_package,
+                                                              reference_service_with_data,
+                                                              sample_service, filesystem_storage):
     variation_service = VariationService(database_connection=database,
                                          reference_service=reference_service_with_data,
                                          sample_service=sample_service,

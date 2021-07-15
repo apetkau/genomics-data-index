@@ -1,14 +1,14 @@
 import abc
 import io
-from pathlib import Path
-from typing import List, Union
-import pandas as pd
 import logging
 import sys
+from pathlib import Path
+from typing import List, Union
+
+import pandas as pd
 
 from genomics_data_index.pipelines.ExecutorResults import ExecutorResults
 from genomics_data_index.storage.io.mutation.SequenceFile import SequenceFile
-
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +38,8 @@ class PipelineExecutor(abc.ABC):
         for col in ['Assemblies', 'Reads1', 'Reads2']:
             are_paths = set(input_sample_files[col].apply(lambda x: isinstance(x, Path) or pd.isna(x)).tolist())
             if not all(are_paths):
-                raise Exception(f'column=[{col}] in input_sample_files={input_sample_files} does not contain Path or NA')
+                raise Exception(
+                    f'column=[{col}] in input_sample_files={input_sample_files} does not contain Path or NA')
 
     def create_input_sample_files(self, input_files: List[Path]) -> pd.DataFrame:
         """
@@ -99,8 +100,9 @@ class PipelineExecutor(abc.ABC):
                 file2_differences = file2.name_differences(file1)
 
                 if len(file1_differences) != 1 or len(file2_differences) != 1:
-                    raise Exception(f'Files [{reads[sample]}] do not have exactly one difference between names, cannot determine'
-                                    f' paired structure.')
+                    raise Exception(
+                        f'Files [{reads[sample]}] do not have exactly one difference between names, cannot determine'
+                        f' paired structure.')
                 else:
                     f1d = file1_differences[0].lower()
                     f2d = file2_differences[0].lower()
@@ -133,11 +135,11 @@ class PipelineExecutor(abc.ABC):
         # Convert paths to strings
         for col in ['Assemblies', 'Reads1', 'Reads2']:
             if abolute_paths:
-                input_sample_files[col] = input_sample_files[col].apply(lambda x: str(x.absolute()) if not pd.isna(x) else pd.NA)
+                input_sample_files[col] = input_sample_files[col].apply(
+                    lambda x: str(x.absolute()) if not pd.isna(x) else pd.NA)
             else:
                 input_sample_files[col] = input_sample_files[col].apply(lambda x: str(x) if not pd.isna(x) else pd.NA)
         input_sample_files.to_csv(output_file, sep='\t', index=False)
-
 
     def read_input_sample_files(self, input_file: Path) -> pd.DataFrame:
         df = pd.read_csv(input_file, sep='\t')

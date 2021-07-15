@@ -186,7 +186,7 @@ class FeatureService(abc.ABC):
         return features_df
 
     def update_feature_objects_inplace(self, feature_objects_dict_dest: Dict[str, FeatureSamples],
-                                      feature_objects_dict_source: Dict[str, FeatureSamples]) -> None:
+                                       feature_objects_dict_source: Dict[str, FeatureSamples]) -> None:
         """
         Updates matching features from feature_objects_dict_source into feature_objects_dict_dest.
         This will modify objects in feature_objects_dict_dest. This will *not* insert any new objects from
@@ -228,11 +228,13 @@ class FeatureService(abc.ABC):
         new_feature_objects = [created_feature_objects_dict[fid] for fid in new_feature_object_ids]
 
         # bulk save new feature objects
-        logger.debug(f'Creating {len(new_feature_objects)}/{len(created_feature_objects_dict)} new features in database')
+        logger.debug(
+            f'Creating {len(new_feature_objects)}/{len(created_feature_objects_dict)} new features in database')
         self._connection.get_session().bulk_save_objects(new_feature_objects)
 
         # bulk update existing feature objects
-        logger.debug(f'Updating {len(db_feature_objects_dict)}/{len(created_feature_objects_dict)} existing features in database')
+        logger.debug(
+            f'Updating {len(db_feature_objects_dict)}/{len(created_feature_objects_dict)} existing features in database')
         self._connection.get_session().bulk_save_objects(db_feature_objects_dict.values())
 
         self._connection.get_session().commit()

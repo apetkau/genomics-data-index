@@ -232,8 +232,8 @@ def test_multiple_insert_different_samples_same_scheme(database, mlst_data_packa
 
 
 def test_multiple_inserts_different_schemes(database, mlst_data_package_basic,
-                                    mlst_data_package_single_scheme2,
-                                    sample_service, filesystem_storage):
+                                            mlst_data_package_single_scheme2,
+                                            sample_service, filesystem_storage):
     mlst_service = MLSTService(database_connection=database,
                                sample_service=sample_service,
                                mlst_dir=filesystem_storage.mlst_dir)

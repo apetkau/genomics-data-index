@@ -1,6 +1,7 @@
 from __future__ import annotations
+
 from pathlib import Path
-from typing import Union, Tuple, Optional, cast
+from typing import Union, Tuple, Optional
 
 from ete3 import Tree
 from sqlalchemy import Column, String, Integer, LargeBinary, UnicodeText, ForeignKey
