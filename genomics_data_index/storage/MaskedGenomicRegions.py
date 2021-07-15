@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import tempfile
 from pathlib import Path
-from typing import List, Set, Dict
+from typing import List, Set, Dict, Generator, Tuple
 
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
@@ -118,11 +118,15 @@ class MaskedGenomicRegions:
                 return True
         return False
 
-    def overlaps_range(self, sequence: str, start: int, stop: int, start_position_index: str = '0') -> bool:
-        if start_position_index != '0' and start_position_index != '1':
+    def _validate_start_position_index(self, start_position_index: str) -> None:
+        if start_position_index not in ['0', '1']:
             raise Exception((f'Unknown value start_position_index=[{start_position_index}].'
                              'Should be "0" or "1" to indicate which is the starting base position'))
-        elif start_position_index == '1':
+
+    def overlaps_range(self, sequence: str, start: int, stop: int, start_position_index: str = '0') -> bool:
+        self._validate_start_position_index(start_position_index)
+
+        if start_position_index == '1':
             start = start - 1
             stop = stop - 1
 
@@ -136,6 +140,29 @@ class MaskedGenomicRegions:
                 elif start < i.end and stop > i.end:
                     return True
         return False
+
+    def positions_iter(self, start_position_index: str = '0') -> Generator[Tuple[str, int], None, None]:
+        """
+        Creates an iterator to iterate over all ('sequence', 'position') in this mask.
+        :param start_position_index: Whether positions should be in 0-base coordinates or 1-base coordinates.
+                                     See https://bedtools.readthedocs.io/en/latest/content/general-usage.html#bed-format
+                                     for a description of the differences in coordinates.
+        :return: An iterator which will return tuples like ('sequence', 'position') for every
+                 position in this mask.
+        """
+        self._validate_start_position_index(start_position_index)
+
+        for sequence in self._mask:
+            sequence_name = sequence.chrom
+            start = sequence.start
+            end = sequence.end
+
+            if start_position_index == '1':
+                start = start + 1
+                end = end + 1
+
+            for pos in range(start, end):
+                yield sequence_name, pos
 
     def __len__(self) -> int:
         """
