@@ -13,6 +13,7 @@ from genomics_data_index.api.query.impl.MutationTreeSamplesQuery import Mutation
 from genomics_data_index.api.query.impl.TreeSamplesQuery import TreeSamplesQuery
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
 from genomics_data_index.storage.SampleSet import SampleSet
+from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
 from genomics_data_index.storage.model.QueryFeatureHGVS import QueryFeatureHGVS
 from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
 from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
@@ -347,6 +348,28 @@ def test_query_single_mutation(loaded_database_connection: DataIndexConnection):
     assert {sampleB.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)
     assert not query_result.has_tree()
+
+
+def test_query_single_mutation_then_add_new_genomes_and_query(loaded_database_connection: DataIndexConnection,
+                                                              snippy_data_package_2: NucleotideSampleDataPackage):
+    db = loaded_database_connection.database
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+
+    query_result = query(loaded_database_connection).hasa(QueryFeatureMutationSPDI('reference:5061:G:A'))
+    assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+    assert 9 == len(query_result.universe_set)
+
+    # Insert new data which should increase the number of matches I get
+    loaded_database_connection.variation_service.insert(data_package=snippy_data_package_2,
+                                                        feature_scope_name='genome')
+
+    sampleB_2 = db.get_session().query(Sample).filter(Sample.name == 'SampleB_2').one()
+
+    query_result = query(loaded_database_connection).hasa(QueryFeatureMutationSPDI('reference:5061:G:A'))
+    assert 2 == len(query_result)
+    assert {sampleB.id, sampleB_2.id} == set(query_result.sample_set)
+    assert 12 == len(query_result.universe_set)
 
 
 def test_query_mutation_hgvs(loaded_database_connection_annotations: DataIndexConnection):

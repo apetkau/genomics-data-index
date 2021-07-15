@@ -37,6 +37,18 @@ data_dir_empty = root_data_dir / 'empty_vcfs'
 
 test_project_dir = root_data_dir / 'test_project_dir'
 
+snippy_sample2_vcfs_dict = {
+    'SampleA_2': data_dir / 'SampleA' / 'snps.vcf.gz',
+    'SampleB_2': data_dir / 'SampleB' / 'snps.vcf.gz',
+    'SampleC_2': data_dir / 'SampleC' / 'snps.vcf.gz',
+}
+
+snippy_sample2_mask_sequences_dict = {
+    'SampleA_2': data_dir / 'SampleA' / 'snps.aligned.fa',
+    'SampleB_2': data_dir / 'SampleB' / 'snps.aligned.fa',
+    'SampleC_2': data_dir / 'SampleC' / 'snps.aligned.fa',
+}
+
 sourmash_signatures = {
     'SampleA': sourmash_dir / 'SampleA.sig.gz',
     'SampleB': sourmash_dir / 'SampleB.sig.gz',
