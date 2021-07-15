@@ -123,6 +123,108 @@ def test_double_insert_mlst(database, mlst_data_package_single_scheme, sample_se
     assert 2 == len(sample_mlst_alleles)
 
 
+def test_multiple_insert_different_samples_same_scheme(database, mlst_data_package_single_scheme,
+                                                       mlst_data_package_single_scheme2,
+                                                       sample_service, filesystem_storage):
+    mlst_service = MLSTService(database_connection=database,
+                               sample_service=sample_service,
+                               mlst_dir=filesystem_storage.mlst_dir)
+
+    session = database.get_session()
+
+    # Insert first set of data
+    mlst_service.insert(feature_scope_name='lmonocytogenes', data_package=mlst_data_package_single_scheme)
+
+    sample_CFSAN002349 = session.query(Sample).filter(Sample.name == 'CFSAN002349').one()
+    sample_CFSAN023463 = session.query(Sample).filter(Sample.name == 'CFSAN023463').one()
+
+    ## Test feature where all new samples get added
+    m: MLSTAllelesSamples = session.query(MLSTAllelesSamples).get({
+        'scheme': 'lmonocytogenes',
+        'locus': 'cat',
+        'allele': '11',
+    })
+    assert m.id == 'lmonocytogenes:cat:11'
+    assert m.sla == 'lmonocytogenes:cat:11'
+    assert set(m.sample_ids) == {sample_CFSAN002349.id, sample_CFSAN023463.id}
+
+    ## Test feature where only one of the new samples gets added
+    m: MLSTAllelesSamples = session.query(MLSTAllelesSamples).get({
+        'scheme': 'lmonocytogenes',
+        'locus': 'abcZ',
+        'allele': '1',
+    })
+    assert m.id == 'lmonocytogenes:abcZ:1'
+    assert m.sla == 'lmonocytogenes:abcZ:1'
+    assert set(m.sample_ids) == {sample_CFSAN002349.id, sample_CFSAN023463.id}
+
+    ## Test feature where none of the new samples gets added
+    m: MLSTAllelesSamples = session.query(MLSTAllelesSamples).get({
+        'scheme': 'lmonocytogenes',
+        'locus': 'dapE',
+        'allele': '13',
+    })
+    assert m.id == 'lmonocytogenes:dapE:13'
+    assert m.sla == 'lmonocytogenes:dapE:13'
+    assert set(m.sample_ids) == {sample_CFSAN002349.id, sample_CFSAN023463.id}
+
+    ## Test feature that only exists after the 2nd addition
+    m: MLSTAllelesSamples = session.query(MLSTAllelesSamples).get({
+        'scheme': 'lmonocytogenes',
+        'locus': 'dapE',
+        'allele': '12',
+    })
+    assert m is None
+
+    # Insert second set of data
+    mlst_service.insert(feature_scope_name='lmonocytogenes', data_package=mlst_data_package_single_scheme2)
+
+    sample_CFSAN002349_2 = session.query(Sample).filter(Sample.name == 'CFSAN002349-2').one()
+    sample_CFSAN023463_2 = session.query(Sample).filter(Sample.name == 'CFSAN023463-2').one()
+
+    ## Test feature where all new samples get added
+    m: MLSTAllelesSamples = session.query(MLSTAllelesSamples).get({
+        'scheme': 'lmonocytogenes',
+        'locus': 'cat',
+        'allele': '11',
+    })
+    assert m.id == 'lmonocytogenes:cat:11'
+    assert m.sla == 'lmonocytogenes:cat:11'
+    assert set(m.sample_ids) == {sample_CFSAN002349.id, sample_CFSAN023463.id,
+                                 sample_CFSAN002349_2.id, sample_CFSAN023463_2.id}
+
+    ## Test feature where only one of the new samples gets added
+    m: MLSTAllelesSamples = session.query(MLSTAllelesSamples).get({
+        'scheme': 'lmonocytogenes',
+        'locus': 'abcZ',
+        'allele': '1',
+    })
+    assert m.id == 'lmonocytogenes:abcZ:1'
+    assert m.sla == 'lmonocytogenes:abcZ:1'
+    assert set(m.sample_ids) == {sample_CFSAN002349.id, sample_CFSAN023463.id,
+                                 sample_CFSAN002349_2.id}
+
+    ## Test feature where none of the new samples gets added
+    m: MLSTAllelesSamples = session.query(MLSTAllelesSamples).get({
+        'scheme': 'lmonocytogenes',
+        'locus': 'dapE',
+        'allele': '13',
+    })
+    assert m.id == 'lmonocytogenes:dapE:13'
+    assert m.sla == 'lmonocytogenes:dapE:13'
+    assert set(m.sample_ids) == {sample_CFSAN002349.id, sample_CFSAN023463.id}
+
+    ## Test feature that only exists after the 2nd addition
+    m: MLSTAllelesSamples = session.query(MLSTAllelesSamples).get({
+        'scheme': 'lmonocytogenes',
+        'locus': 'dapE',
+        'allele': '12',
+    })
+    assert m.id == 'lmonocytogenes:dapE:12'
+    assert m.sla == 'lmonocytogenes:dapE:12'
+    assert set(m.sample_ids) == {sample_CFSAN002349_2.id, sample_CFSAN023463_2.id}
+
+
 def test_get_all_alleles(mlst_service_loaded: MLSTService):
     assert {'1'} == mlst_service_loaded.get_all_alleles('lmonocytogenes', 'abcZ')
 
