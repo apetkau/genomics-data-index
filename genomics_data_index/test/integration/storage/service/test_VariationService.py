@@ -12,6 +12,7 @@ from genomics_data_index.storage.model.db import NucleotideVariantsSamples, Samp
 from genomics_data_index.storage.service import EntityExistsError
 from genomics_data_index.storage.service.VariationService import VariationService
 from genomics_data_index.test.integration import data_dir, snippy_snps_dataframes, snippy_all_dataframes
+from genomics_data_index.test.integration import reference_file_snpeff
 
 
 def test_insert_variants_saved_files(database, snippy_nucleotide_data_package, reference_service_with_data,
@@ -553,6 +554,69 @@ def test_multiple_insert_variants_different_samples(database, snippy_nucleotide_
     assert all([x is None for x in [v.annotation, v.annotation_impact, v.annotation_gene_name, v.annotation_gene_id,
                                     v.annotation_feature_type, v.annotation_transcript_biotype, v.annotation_hgvs_c,
                                     v.annotation_hgvs_p]])
+
+
+def test_multiple_insert_variants_different_reference_genomes(database, snippy_nucleotide_data_package_AB,
+                                                    snpeff_nucleotide_data_package,
+                                                    reference_service_with_data,
+                                                    sample_service, filesystem_storage):
+    variation_service = VariationService(database_connection=database,
+                                         reference_service=reference_service_with_data,
+                                         sample_service=sample_service,
+                                         variation_dir=filesystem_storage.variation_dir)
+    session = database.get_session()
+
+    # Add snpeff reference genome
+    reference_service_with_data.add_reference_genome(reference_file_snpeff)
+
+    # Insert samples A and B, and snpeff samples
+    variation_service.insert(feature_scope_name='genome', data_package=snippy_nucleotide_data_package_AB)
+    variation_service.insert(feature_scope_name='NC_011083', data_package=snpeff_nucleotide_data_package)
+
+    assert 273 == session.query(NucleotideVariantsSamples).count(), 'Incorrect number of storage entries'
+    assert 5 == session.query(Sample).count(), 'Incorrect number of Samples'
+    assert 5 == session.query(SampleNucleotideVariation).count(), 'Incorrect number of SampleNucleotideVariation'
+
+    sampleA = session.query(Sample).filter(Sample.name == 'SampleA').one()
+    sample_SH10_014 = session.query(Sample).filter(Sample.name == 'SH10-014').one()
+    sample_SH14_001 = session.query(Sample).filter(Sample.name == 'SH14-001').one()
+    sample_SH14_014 = session.query(Sample).filter(Sample.name == 'SH14-014').one()
+
+    ## Variant which is present only in Sample A
+    v: NucleotideVariantsSamples = session.query(NucleotideVariantsSamples).get({
+        'sequence': 'reference',
+        'position': 1708,
+        'deletion': len('ATGCTGTTCAATAC'),
+        'insertion': 'A'
+    })
+    assert v is not None, 'Particular storage does not exist'
+    assert 'INDEL' == v.var_type, 'Type is incorrect'
+    assert {sampleA.id} == set(v.sample_ids)
+    assert all([x is None for x in [v.annotation, v.annotation_impact, v.annotation_gene_name, v.annotation_gene_id,
+                                    v.annotation_feature_type, v.annotation_transcript_biotype, v.annotation_hgvs_c,
+                                    v.annotation_hgvs_p]])
+
+    # SNV/SNP for snpeff data
+    v: NucleotideVariantsSamples = session.query(NucleotideVariantsSamples).get({
+        'sequence': 'NC_011083',
+        'position': 602110,
+        'deletion': len('T'),
+        'insertion': 'G'
+    })
+    assert v is not None, 'Particular storage does not exist'
+    assert 'SNP' == v.var_type, 'Type is incorrect'
+    assert {sample_SH10_014.id, sample_SH14_001.id, sample_SH14_014.id} == set(v.sample_ids)
+
+    assert 'missense_variant' == v.annotation
+    assert 'MODERATE' == v.annotation_impact
+    assert 'SEHA_RS03410' == v.annotation_gene_id
+    assert 'SEHA_RS03410' == v.annotation_gene_name
+    assert 'transcript' == v.annotation_feature_type
+    assert 'protein_coding' == v.annotation_transcript_biotype
+    assert 'c.1229T>G' == v.annotation_hgvs_c
+    assert 'p.Leu410Arg' == v.annotation_hgvs_p
+    assert 'hgvs:NC_011083:SEHA_RS03410:c.1229T>G' == v.id_hgvs_c
+    assert 'hgvs:NC_011083:SEHA_RS03410:p.Leu410Arg' == v.id_hgvs_p
 
 
 def test_get_variants_ordered(database, snippy_nucleotide_data_package, reference_service_with_data,
