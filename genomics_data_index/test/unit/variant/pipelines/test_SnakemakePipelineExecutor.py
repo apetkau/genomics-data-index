@@ -1,9 +1,8 @@
 import tempfile
-
-import pytest
 from pathlib import Path
-import pandas as pd
 
+import pandas as pd
+import pytest
 
 from genomics_data_index.pipelines.SnakemakePipelineExecutor import SnakemakePipelineExecutor
 

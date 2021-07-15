@@ -13,6 +13,7 @@ from genomics_data_index.api.query.impl.MutationTreeSamplesQuery import Mutation
 from genomics_data_index.api.query.impl.TreeSamplesQuery import TreeSamplesQuery
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
 from genomics_data_index.storage.SampleSet import SampleSet
+from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
 from genomics_data_index.storage.model.QueryFeatureHGVS import QueryFeatureHGVS
 from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
 from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
@@ -349,6 +350,28 @@ def test_query_single_mutation(loaded_database_connection: DataIndexConnection):
     assert not query_result.has_tree()
 
 
+def test_query_single_mutation_then_add_new_genomes_and_query(loaded_database_connection: DataIndexConnection,
+                                                              snippy_data_package_2: NucleotideSampleDataPackage):
+    db = loaded_database_connection.database
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+
+    query_result = query(loaded_database_connection).hasa(QueryFeatureMutationSPDI('reference:5061:G:A'))
+    assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+    assert 9 == len(query_result.universe_set)
+
+    # Insert new data which should increase the number of matches I get
+    loaded_database_connection.variation_service.insert(data_package=snippy_data_package_2,
+                                                        feature_scope_name='genome')
+
+    sampleB_2 = db.get_session().query(Sample).filter(Sample.name == 'SampleB_2').one()
+
+    query_result = query(loaded_database_connection).hasa(QueryFeatureMutationSPDI('reference:5061:G:A'))
+    assert 2 == len(query_result)
+    assert {sampleB.id, sampleB_2.id} == set(query_result.sample_set)
+    assert 12 == len(query_result.universe_set)
+
+
 def test_query_mutation_hgvs(loaded_database_connection_annotations: DataIndexConnection):
     db = loaded_database_connection_annotations.database
     sample_sh14_001 = db.get_session().query(Sample).filter(Sample.name == 'SH14-001').one()
@@ -546,14 +569,17 @@ def test_query_mlst_allele(loaded_database_connection: DataIndexConnection):
     db = loaded_database_connection.database
     sample1 = db.get_session().query(Sample).filter(Sample.name == 'CFSAN002349').one()
     sample2 = db.get_session().query(Sample).filter(Sample.name == 'CFSAN023463').one()
+    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
 
     query_result = query(loaded_database_connection).hasa(QueryFeatureMLST('lmonocytogenes:abcZ:1'))
-    assert 2 == len(query_result)
-    assert {sample1.id, sample2.id} == set(query_result.sample_set)
+    assert 5 == len(query_result)
+    assert {sample1.id, sample2.id, sampleA.id, sampleB.id, sampleC.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)
 
-    assert {'CFSAN002349', 'CFSAN023463'} == set(query_result.tolist())
-    assert {sample1.id, sample2.id} == set(query_result.tolist(names=False))
+    assert {'CFSAN002349', 'CFSAN023463', 'SampleA', 'SampleB', 'SampleC'} == set(query_result.tolist())
+    assert {sample1.id, sample2.id, sampleA.id, sampleB.id, sampleC.id} == set(query_result.tolist(names=False))
 
 
 def test_query_chained_mlst_alleles(loaded_database_connection: DataIndexConnection):
@@ -580,20 +606,54 @@ def test_query_chained_mlst_alleles_has_allele(loaded_database_connection: DataI
     assert 9 == len(query_result.universe_set)
 
 
-@pytest.mark.skip
 def test_query_chained_mlst_nucleotide(loaded_database_connection: DataIndexConnection):
     db = loaded_database_connection.database
-    sample1 = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
 
+    # Test query mutation then MLST
     query_result = query(loaded_database_connection) \
         .hasa('reference:839:C:G', kind='mutation') \
         .hasa('lmonocytogenes:cat:12', kind='mlst')
     assert 1 == len(query_result)
-    assert {sample1.id} == set(query_result.sample_set)
+    assert {sampleC.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)
 
     assert ['SampleC'] == query_result.tolist()
-    assert [sample1.id] == query_result.tolist(names=False)
+    assert [sampleC.id] == query_result.tolist(names=False)
+
+    # Test query MLST then mutation
+    query_result = query(loaded_database_connection) \
+        .hasa('lmonocytogenes:cat:11', kind='mlst') \
+        .hasa('reference:3897:GCGCA:G', kind='mutation')
+    assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+    assert 9 == len(query_result.universe_set)
+
+    assert ['SampleB'] == query_result.tolist()
+    assert [sampleB.id] == query_result.tolist(names=False)
+
+    # Test query MLST (with unknown allele) then mutation
+    query_result = query(loaded_database_connection) \
+        .hasa('lmonocytogenes:ldh:5', kind='mlst') \
+        .hasa('reference:3897:GCGCA:G', kind='mutation')
+    assert 1 == len(query_result)
+    assert {sampleC.id} == set(query_result.sample_set)
+    assert 9 == len(query_result.universe_set)
+
+    assert ['SampleC'] == query_result.tolist()
+    assert [sampleC.id] == query_result.tolist(names=False)
+
+    # Test the unknown allele of MLST
+    query_result = query(loaded_database_connection) \
+        .hasa('lmonocytogenes:ldh:?', kind='mlst') \
+        .hasa('reference:3897:GCGCA:G', kind='mutation')
+    assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+    assert 9 == len(query_result.universe_set)
+
+    assert ['SampleB'] == query_result.tolist()
+    assert [sampleB.id] == query_result.tolist(names=False)
 
 
 def test_query_single_mutation_dataframe(loaded_database_connection: DataIndexConnection):

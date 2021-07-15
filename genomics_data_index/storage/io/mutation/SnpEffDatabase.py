@@ -1,9 +1,10 @@
 from __future__ import annotations
+
+import configparser
+import logging
 import os
 import tempfile
 from pathlib import Path
-import configparser
-import logging
 
 from genomics_data_index.storage.util import execute_command
 
@@ -71,7 +72,6 @@ class SnpEffDatabase:
                 execute_command(bgzip_command, stdout=bgzip_out_h)
 
         return output_vcf_file
-
 
     @classmethod
     def create_from_config(cls, config_file: Path) -> SnpEffDatabase:

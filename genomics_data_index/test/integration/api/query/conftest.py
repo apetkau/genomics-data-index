@@ -12,11 +12,23 @@ from genomics_data_index.storage.io.mlst.MLSTSampleDataPackage import MLSTSample
 from genomics_data_index.storage.io.mlst.MLSTTSeemannFeaturesReader import MLSTTSeemannFeaturesReader
 from genomics_data_index.api.query.GenomicsDataIndex import GenomicsDataIndex
 
-from genomics_data_index.test.integration import sample_dirs, reference_file, basic_mlst_file, tree_file
+from genomics_data_index.test.integration import sample_dirs, reference_file, basic_mlst_file, tree_file, \
+    mlst_snippy_file
 from genomics_data_index.test.integration import sourmash_signatures, snpeff_sample_vcfs, reference_file_snpeff
+from genomics_data_index.test.integration import snippy_sample2_vcfs_dict, snippy_sample2_mask_sequences_dict
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
 from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
 from genomics_data_index.storage.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor
+
+
+@pytest.fixture
+def snippy_data_package_2() -> NucleotideSampleDataPackage:
+    tmp_dir = Path(tempfile.mkdtemp())
+    data_package = NucleotideSampleDataPackage.create_from_sequence_masks(sample_vcf_map=snippy_sample2_vcfs_dict,
+                                                                          masked_genomic_files_map=snippy_sample2_mask_sequences_dict,
+                                                                          sample_files_processor=SerialSampleFilesProcessor(
+                                                                              tmp_dir))
+    return data_package
 
 
 @pytest.fixture
@@ -43,8 +55,8 @@ def loaded_database_connection() -> DataIndexConnection:
                                        kmer_index_path=sourmash_signatures[sample_name])
 
     # Load MLST results with overlapping samples with Nucleotide variation
-    # mlst_package_snippy = MLSTSampleDataPackage(MLSTTSeemannFeaturesReader(mlst_file=mlst_snippy_file))
-    # database_connection.mlst_service.insert(mlst_package_snippy)
+    mlst_package_snippy = MLSTSampleDataPackage(MLSTTSeemannFeaturesReader(mlst_file=mlst_snippy_file))
+    database_connection.mlst_service.insert(mlst_package_snippy)
 
     return database_connection
 

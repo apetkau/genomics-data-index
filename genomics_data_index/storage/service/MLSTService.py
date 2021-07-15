@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Dict, Set, Any, Tuple, cast
+from typing import Dict, Set, Any, Tuple, cast, List
 
 import pandas as pd
 
@@ -10,7 +10,8 @@ from genomics_data_index.storage.io.SampleData import SampleData
 from genomics_data_index.storage.io.SampleDataPackage import SampleDataPackage
 from genomics_data_index.storage.io.mlst.MLSTSampleData import MLSTSampleData
 from genomics_data_index.storage.io.mlst.MLSTSampleDataPackage import MLSTSampleDataPackage
-from genomics_data_index.storage.model.db import MLSTScheme, SampleMLSTAlleles, MLSTAllelesSamples, Sample
+from genomics_data_index.storage.model.db import MLSTScheme, SampleMLSTAlleles, MLSTAllelesSamples, Sample, \
+    FeatureSamples
 from genomics_data_index.storage.service import DatabaseConnection
 from genomics_data_index.storage.service.FeatureService import FeatureService, AUTO_SCOPE
 from genomics_data_index.storage.service.SampleService import SampleService
@@ -77,7 +78,7 @@ class MLSTService(FeatureService):
     def _get_sample_id_series(self, features_df: pd.DataFrame, sample_name_ids: Dict[str, int]) -> pd.Series:
         return features_df.apply(lambda x: sample_name_ids[x['Sample']], axis='columns')
 
-    def _create_feature_object(self, features_df: pd.DataFrame):
+    def _create_feature_object(self, features_df: pd.DataFrame) -> FeatureSamples:
         return MLSTAllelesSamples(sla=features_df['_FEATURE_ID'], sample_ids=features_df['_SAMPLE_ID'])
 
     def check_samples_have_features(self, sample_names: Set[str], feature_scope_name: str) -> bool:
@@ -115,3 +116,10 @@ class MLSTService(FeatureService):
         self._verify_correct_data_package(data_package=data_package)
         mlst_data_package = cast(MLSTSampleDataPackage, data_package)
         return mlst_data_package.get_features_reader()
+
+    def read_index(self, feature_ids: List[str]) -> Dict[str, FeatureSamples]:
+        feature_samples = self._connection.get_session().query(MLSTAllelesSamples) \
+            .filter(MLSTAllelesSamples._sla.in_(feature_ids)) \
+            .all()
+
+        return {f.id: f for f in feature_samples}

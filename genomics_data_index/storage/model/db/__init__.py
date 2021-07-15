@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from pathlib import Path
 from typing import Union, Tuple, Optional
 
@@ -25,7 +27,45 @@ MAX_SAMPLE_SET_BYTES = 500 * 10 ** 6
 database_path_translator: Optional[DatabasePathTranslator] = None
 
 
-class NucleotideVariantsSamples(Base):
+class FeatureSamples:
+    """
+    An abstract class to track properties/methods common to any storage of a link between a feature and
+    a set of sample identifiers.
+
+    This is not declared as an abstract class (using abc.ABC) since this was causing metaclass conflicts
+    with SQLAlchemy objects below (and I wasn't sure how to resolve them).
+    """
+
+    def __init__(self):
+        pass
+
+    @hybrid_property
+    def id(self) -> str:
+        raise NotImplementedError()
+
+    @hybrid_property
+    def sample_ids(self) -> SampleSet:
+        raise NotImplementedError()
+
+    @sample_ids.setter
+    def sample_ids(self, sample_ids: SampleSet) -> None:
+        raise NotImplementedError()
+
+    def update_sample_ids(self, other: FeatureSamples) -> None:
+        """
+        Updates (merges) the other objects samples into this object.
+        :param other: The other object.
+        :return: None. Modifies this object in-place.
+        """
+        if not isinstance(other, self.__class__):
+            raise Exception(f'Cannot merge other=[{other}] since it is not of type {self.__class__}')
+        elif self.id != other.id:
+            raise Exception(f'Cannot merge other=[{other}] since identifiers are not equal ({self.id} != {other.id}')
+        else:
+            self.sample_ids = self.sample_ids.union(other.sample_ids)
+
+
+class NucleotideVariantsSamples(Base, FeatureSamples):
     __tablename__ = 'nucleotide_variants_samples'
     sequence = Column(String(255), primary_key=True)
     position = Column(Integer, primary_key=True)
@@ -53,6 +93,7 @@ class NucleotideVariantsSamples(Base):
                  annotation_gene_id: str = None, annotation_feature_type: str = None,
                  annotation_transcript_biotype: str = None, annotation_hgvs_c: str = None,
                  annotation_hgvs_p: str = None):
+        super().__init__()
         self.spdi = spdi
         self.var_type = var_type
         self.sample_ids = sample_ids
@@ -68,6 +109,10 @@ class NucleotideVariantsSamples(Base):
 
         self._id_hgvs_c = self.id_hgvs_c
         self._id_hgvs_p = self.id_hgvs_p
+
+    @property
+    def id(self) -> str:
+        return self.spdi
 
     @hybrid_property
     def spdi(self) -> str:
@@ -264,7 +309,7 @@ class SampleMLSTAlleles(Base):
                f'_alleles_file={self._alleles_file})>'
 
 
-class MLSTAllelesSamples(Base):
+class MLSTAllelesSamples(Base, FeatureSamples):
     __tablename__ = 'mlst_alleles_samples'
     scheme = Column(String(255), primary_key=True)
     locus = Column(String(255), primary_key=True)
@@ -273,8 +318,13 @@ class MLSTAllelesSamples(Base):
     _sample_ids = Column(LargeBinary(length=MAX_SAMPLE_SET_BYTES))
 
     def __init__(self, sla: str = None, sample_ids: SampleSet = None):
+        super().__init__()
         self.sla = sla
         self.sample_ids = sample_ids
+
+    @hybrid_property
+    def id(self) -> str:
+        return self.sla
 
     @hybrid_property
     def sample_ids(self) -> SampleSet:

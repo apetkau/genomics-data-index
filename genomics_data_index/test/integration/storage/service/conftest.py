@@ -7,7 +7,9 @@ import pytest
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 from genomics_data_index.test.integration import sample_dirs, reference_file, regular_vcf_dir, data_dir
+from genomics_data_index.test.integration import sample_dirs_AB, sample_dirs_C
 from genomics_data_index.test.integration import mlst_file_single_scheme, basic_mlst_file, mlst_file_unknown
+from genomics_data_index.test.integration import mlst_file_single_scheme2, mlst_file_single_scheme3
 from genomics_data_index.test.integration import sourmash_signatures, snpeff_sample_vcfs, reference_file_snpeff
 from genomics_data_index.storage.service import DatabaseConnection
 from genomics_data_index.storage.service.ReferenceService import ReferenceService
@@ -48,6 +50,20 @@ def reference_service(database, filesystem_storage) -> ReferenceService:
 def snippy_nucleotide_data_package() -> NucleotideSampleDataPackage:
     tmp_dir = Path(tempfile.mkdtemp())
     return NucleotideSampleDataPackage.create_from_snippy(sample_dirs,
+                                                          sample_files_processor=SerialSampleFilesProcessor(tmp_dir))
+
+
+@pytest.fixture
+def snippy_nucleotide_data_package_AB() -> NucleotideSampleDataPackage:
+    tmp_dir = Path(tempfile.mkdtemp())
+    return NucleotideSampleDataPackage.create_from_snippy(sample_dirs_AB,
+                                                          sample_files_processor=SerialSampleFilesProcessor(tmp_dir))
+
+
+@pytest.fixture
+def snippy_nucleotide_data_package_C() -> NucleotideSampleDataPackage:
+    tmp_dir = Path(tempfile.mkdtemp())
+    return NucleotideSampleDataPackage.create_from_snippy(sample_dirs_C,
                                                           sample_files_processor=SerialSampleFilesProcessor(tmp_dir))
 
 
@@ -195,8 +211,28 @@ def mlst_reader_single_scheme() -> MLSTFeaturesReader:
 
 
 @pytest.fixture
+def mlst_reader_single_scheme2() -> MLSTFeaturesReader:
+    return MLSTTSeemannFeaturesReader(mlst_file=mlst_file_single_scheme2)
+
+
+@pytest.fixture
+def mlst_reader_single_scheme3() -> MLSTFeaturesReader:
+    return MLSTTSeemannFeaturesReader(mlst_file=mlst_file_single_scheme3)
+
+
+@pytest.fixture
 def mlst_data_package_single_scheme(mlst_reader_single_scheme) -> MLSTSampleDataPackage:
     return MLSTSampleDataPackage(mlst_reader_single_scheme)
+
+
+@pytest.fixture
+def mlst_data_package_single_scheme2(mlst_reader_single_scheme2) -> MLSTSampleDataPackage:
+    return MLSTSampleDataPackage(mlst_reader_single_scheme2)
+
+
+@pytest.fixture
+def mlst_data_package_single_scheme3(mlst_reader_single_scheme3) -> MLSTSampleDataPackage:
+    return MLSTSampleDataPackage(mlst_reader_single_scheme3)
 
 
 @pytest.fixture

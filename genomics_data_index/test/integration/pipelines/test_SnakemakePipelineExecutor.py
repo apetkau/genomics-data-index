@@ -54,8 +54,8 @@ def assert_consensus(consensus_file: Path, expected_length: int, expected_Ns: in
 def test_create_fofn_file_single_sample():
     with TemporaryDirectory() as tmp_dir_str:
         tmp_dir = Path(tmp_dir_str)
-        actual_mutations_file = tmp_dir / 'assemblies'/ 'variant' / 'SampleA.vcf.gz'
-        actual_consensus_file = tmp_dir / 'assemblies'/ 'consensus' / 'SampleA.fasta.gz'
+        actual_mutations_file = tmp_dir / 'assemblies' / 'variant' / 'SampleA.vcf.gz'
+        actual_consensus_file = tmp_dir / 'assemblies' / 'consensus' / 'SampleA.fasta.gz'
         unexpected_mlst_file = tmp_dir / 'mlst.tsv'
         input_samples = [assemblies_samples['SampleA']]
 
@@ -253,7 +253,7 @@ def test_create_fofn_file_single_sketch_mlst():
         tmp_dir = Path(tmp_dir_str)
         actual_mutations_file = tmp_dir / 'assemblies' / 'variant' / 'SampleA.vcf.gz'
         actual_consensus_file = tmp_dir / 'assemblies' / 'consensus' / 'SampleA.fasta.gz'
-        actual_sketch_file = tmp_dir / 'assemblies' /'sketch' / 'SampleA.sig.gz'
+        actual_sketch_file = tmp_dir / 'assemblies' / 'sketch' / 'SampleA.sig.gz'
         actual_mlst_file = tmp_dir / 'mlst.tsv'
         input_samples = [assemblies_samples['SampleA']]
 
@@ -447,9 +447,12 @@ def test_create_fofn_file_snpeff_reads_with_conda():
         assert 2 == len(fofn_df)
         assert {'SampleA-snpeff', 'SampleA-single-snpeff'} == set(fofn_df['Sample'].tolist())
         actual_mutations_file_paired_from_df = Path(fofn_df[fofn_df['Sample'] == 'SampleA-snpeff']['VCF'].tolist()[0])
-        actual_mutations_file_single_from_df = Path(fofn_df[fofn_df['Sample'] == 'SampleA-single-snpeff']['VCF'].tolist()[0])
-        actual_consensus_file_paired_from_df = Path(fofn_df[fofn_df['Sample'] == 'SampleA-snpeff']['Mask File'].tolist()[0])
-        actual_consensus_file_single_from_df = Path(fofn_df[fofn_df['Sample'] == 'SampleA-single-snpeff']['Mask File'].tolist()[0])
+        actual_mutations_file_single_from_df = Path(
+            fofn_df[fofn_df['Sample'] == 'SampleA-single-snpeff']['VCF'].tolist()[0])
+        actual_consensus_file_paired_from_df = Path(
+            fofn_df[fofn_df['Sample'] == 'SampleA-snpeff']['Mask File'].tolist()[0])
+        actual_consensus_file_single_from_df = Path(
+            fofn_df[fofn_df['Sample'] == 'SampleA-single-snpeff']['Mask File'].tolist()[0])
 
         assert actual_mutations_snpeff_file_paired == actual_mutations_file_paired_from_df
         assert actual_mutations_snpeff_file_single == actual_mutations_file_single_from_df

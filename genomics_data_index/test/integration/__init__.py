@@ -13,6 +13,10 @@ variation_dir = root_data_dir / 'variation'
 consensus_dir = root_data_dir / 'consensus'
 sourmash_dir = root_data_dir / 'sourmash'
 sample_dirs = [data_dir / d for d in listdir(data_dir) if path.isdir(data_dir / d)]
+sample_dirs_AB = [data_dir / 'SampleA', data_dir / 'SampleB']
+sample_dirs_C = [data_dir / 'SampleC']
+sample_dirs_A = [data_dir / 'SampleA']
+sample_dirs_BC = [data_dir / 'SampleB', data_dir / 'SampleC']
 reference_file = data_dir / 'genome.fasta.gz'
 reference_file_snpeff = snpeff_data_dir / 'NC_011083.fasta.gz'
 reference_file_5000_snpeff = snpeff_database_dir / 'NC_011083-5000.gbk.gz'
@@ -25,11 +29,25 @@ mlst_file_unknown = mlst_dir / 'mlst-unknown.tsv'
 sistr_mlst_file = mlst_dir / 'mlst-sistr.csv'
 chewbbaca_mlst_file = mlst_dir / 'mlst-chewbbaca-small.tsv'
 mlst_file_single_scheme = mlst_dir / 'mlst-single-scheme.tsv'
+mlst_file_single_scheme2 = mlst_dir / 'mlst-single-scheme2.tsv'
+mlst_file_single_scheme3 = mlst_dir / 'mlst-single-scheme3.tsv'
 mlst_snippy_file = mlst_dir / 'mlst-snippy-data.csv'
 
 data_dir_empty = root_data_dir / 'empty_vcfs'
 
 test_project_dir = root_data_dir / 'test_project_dir'
+
+snippy_sample2_vcfs_dict = {
+    'SampleA_2': data_dir / 'SampleA' / 'snps.vcf.gz',
+    'SampleB_2': data_dir / 'SampleB' / 'snps.vcf.gz',
+    'SampleC_2': data_dir / 'SampleC' / 'snps.vcf.gz',
+}
+
+snippy_sample2_mask_sequences_dict = {
+    'SampleA_2': data_dir / 'SampleA' / 'snps.aligned.fa',
+    'SampleB_2': data_dir / 'SampleB' / 'snps.aligned.fa',
+    'SampleC_2': data_dir / 'SampleC' / 'snps.aligned.fa',
+}
 
 sourmash_signatures = {
     'SampleA': sourmash_dir / 'SampleA.sig.gz',

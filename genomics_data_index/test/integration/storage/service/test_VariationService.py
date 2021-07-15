@@ -12,6 +12,7 @@ from genomics_data_index.storage.model.db import NucleotideVariantsSamples, Samp
 from genomics_data_index.storage.service import EntityExistsError
 from genomics_data_index.storage.service.VariationService import VariationService
 from genomics_data_index.test.integration import data_dir, snippy_snps_dataframes, snippy_all_dataframes
+from genomics_data_index.test.integration import reference_file_snpeff
 
 
 def test_insert_variants_saved_files(database, snippy_nucleotide_data_package, reference_service_with_data,
@@ -34,6 +35,38 @@ def test_insert_variants_saved_files(database, snippy_nucleotide_data_package, r
 
     genomic_mask_files = {v.masked_regions_file for s in samples for v in s.sample_nucleotide_variation}
     assert 3 == len(genomic_mask_files)
+
+
+def test_read_index(database, snippy_nucleotide_data_package, reference_service_with_data,
+                    sample_service, filesystem_storage):
+    variation_service = VariationService(database_connection=database,
+                                         reference_service=reference_service_with_data,
+                                         sample_service=sample_service,
+                                         variation_dir=filesystem_storage.variation_dir)
+
+    variation_service.insert(feature_scope_name='genome', data_package=snippy_nucleotide_data_package)
+
+    session = database.get_session()
+    sampleB = session.query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = session.query(Sample).filter(Sample.name == 'SampleC').one()
+
+    # Read 2 that do exist
+    feature_samples = variation_service.read_index(['reference:839:1:G', 'reference:866:9:G'])
+    assert len(feature_samples) == 2
+    assert {'reference:839:1:G', 'reference:866:9:G'} == set(feature_samples.keys())
+    assert isinstance(feature_samples['reference:839:1:G'], NucleotideVariantsSamples)
+    assert isinstance(feature_samples['reference:866:9:G'], NucleotideVariantsSamples)
+    assert {sampleB.id, sampleC.id} == set(feature_samples['reference:839:1:G'].sample_ids)
+    assert {sampleC.id} == set(feature_samples['reference:866:9:G'].sample_ids)
+
+    # Read empty list
+    feature_samples = variation_service.read_index([])
+    assert len(feature_samples) == 0
+
+    # Read list with additional non-existing IDs
+    feature_samples = variation_service.read_index(['reference:839:1:G', 'reference:866:9:G', 'not_exist:100:A:T'])
+    assert len(feature_samples) == 2
+    assert {'reference:839:1:G', 'reference:866:9:G'} == set(feature_samples.keys())
 
 
 def test_insert_variants_masked_regions(database, snippy_nucleotide_data_package, reference_service_with_data,
@@ -403,6 +436,187 @@ def test_insert_variants_duplicates_subset(database, snippy_nucleotide_data_pack
         assert 112 == session.query(NucleotideVariantsSamples).count(), 'Incorrect number of storage entries'
         assert 3 == session.query(Sample).count(), 'Incorrect number of Samples'
         assert 3 == session.query(SampleNucleotideVariation).count(), 'Incorrect number of SampleSequences'
+
+
+def test_multiple_insert_variants_different_samples(database, snippy_nucleotide_data_package_AB,
+                                                    snippy_nucleotide_data_package_C,
+                                                    reference_service_with_data,
+                                                    sample_service, filesystem_storage):
+    variation_service = VariationService(database_connection=database,
+                                         reference_service=reference_service_with_data,
+                                         sample_service=sample_service,
+                                         variation_dir=filesystem_storage.variation_dir)
+    session = database.get_session()
+
+    assert 0 == session.query(NucleotideVariantsSamples).count(), 'Incorrect number of storage entries'
+    assert 0 == session.query(Sample).count(), 'Incorrect number of Samples'
+    assert 0 == session.query(SampleNucleotideVariation).count(), 'Incorrect number of SampleNucleotideVariation'
+
+    # Insert samples A and B
+    variation_service.insert(feature_scope_name='genome', data_package=snippy_nucleotide_data_package_AB)
+
+    assert 96 == session.query(NucleotideVariantsSamples).count(), 'Incorrect number of storage entries'
+    assert 2 == session.query(Sample).count(), 'Incorrect number of Samples'
+    assert 2 == session.query(SampleNucleotideVariation).count(), 'Incorrect number of SampleNucleotideVariation'
+
+    sampleA = session.query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = session.query(Sample).filter(Sample.name == 'SampleB').one()
+
+    ## Variant which is present only in Sample A
+    v: NucleotideVariantsSamples = session.query(NucleotideVariantsSamples).get({
+        'sequence': 'reference',
+        'position': 1708,
+        'deletion': len('ATGCTGTTCAATAC'),
+        'insertion': 'A'
+    })
+    assert v is not None, 'Particular storage does not exist'
+    assert 'INDEL' == v.var_type, 'Type is incorrect'
+    assert {sampleA.id} == set(v.sample_ids)
+    assert all([x is None for x in [v.annotation, v.annotation_impact, v.annotation_gene_name, v.annotation_gene_id,
+                                    v.annotation_feature_type, v.annotation_transcript_biotype, v.annotation_hgvs_c,
+                                    v.annotation_hgvs_p]])
+
+    ## Variant which is present only in Samples B
+    v: NucleotideVariantsSamples = session.query(NucleotideVariantsSamples).get({
+        'sequence': 'reference',
+        'position': 4539,
+        'deletion': len('T'),
+        'insertion': 'A'
+    })
+    assert v is not None, 'Particular storage does not exist'
+    assert 'SNP' == v.var_type, 'Type is incorrect'
+    assert {sampleB.id} == set(v.sample_ids)
+    assert all([x is None for x in [v.annotation, v.annotation_impact, v.annotation_gene_name, v.annotation_gene_id,
+                                    v.annotation_feature_type, v.annotation_transcript_biotype, v.annotation_hgvs_c,
+                                    v.annotation_hgvs_p]])
+
+    ## Variant which is present only in Samples B and C
+    v: NucleotideVariantsSamples = session.query(NucleotideVariantsSamples).get({
+        'sequence': 'reference',
+        'position': 4585,
+        'deletion': len('T'),
+        'insertion': 'C'
+    })
+    assert v is not None, 'Particular storage does not exist'
+    assert 'SNP' == v.var_type, 'Type is incorrect'
+    assert {sampleB.id} == set(v.sample_ids)
+    assert all([x is None for x in [v.annotation, v.annotation_impact, v.annotation_gene_name, v.annotation_gene_id,
+                                    v.annotation_feature_type, v.annotation_transcript_biotype, v.annotation_hgvs_c,
+                                    v.annotation_hgvs_p]])
+
+    # Insert sample C
+    variation_service.insert(feature_scope_name='genome', data_package=snippy_nucleotide_data_package_C)
+
+    assert 112 == session.query(NucleotideVariantsSamples).count(), 'Incorrect number of storage entries'
+    assert 3 == session.query(Sample).count(), 'Incorrect number of Samples'
+    assert 3 == session.query(SampleNucleotideVariation).count(), 'Incorrect number of SampleNucleotideVariation'
+
+    sampleC = session.query(Sample).filter(Sample.name == 'SampleC').one()
+
+    ## Variant which is present only in Sample A
+    v: NucleotideVariantsSamples = session.query(NucleotideVariantsSamples).get({
+        'sequence': 'reference',
+        'position': 1708,
+        'deletion': len('ATGCTGTTCAATAC'),
+        'insertion': 'A'
+    })
+    assert v is not None, 'Particular storage does not exist'
+    assert 'INDEL' == v.var_type, 'Type is incorrect'
+    assert {sampleA.id} == set(v.sample_ids)
+    assert all([x is None for x in [v.annotation, v.annotation_impact, v.annotation_gene_name, v.annotation_gene_id,
+                                    v.annotation_feature_type, v.annotation_transcript_biotype, v.annotation_hgvs_c,
+                                    v.annotation_hgvs_p]])
+
+    ## Variant which is present only in Samples B
+    v: NucleotideVariantsSamples = session.query(NucleotideVariantsSamples).get({
+        'sequence': 'reference',
+        'position': 4539,
+        'deletion': len('T'),
+        'insertion': 'A'
+    })
+    assert v is not None, 'Particular storage does not exist'
+    assert 'SNP' == v.var_type, 'Type is incorrect'
+    assert {sampleB.id} == set(v.sample_ids)
+    assert all([x is None for x in [v.annotation, v.annotation_impact, v.annotation_gene_name, v.annotation_gene_id,
+                                    v.annotation_feature_type, v.annotation_transcript_biotype, v.annotation_hgvs_c,
+                                    v.annotation_hgvs_p]])
+
+    ## Variant which is present only in Samples B and C
+    v: NucleotideVariantsSamples = session.query(NucleotideVariantsSamples).get({
+        'sequence': 'reference',
+        'position': 4585,
+        'deletion': len('T'),
+        'insertion': 'C'
+    })
+    assert v is not None, 'Particular storage does not exist'
+    assert 'SNP' == v.var_type, 'Type is incorrect'
+    assert {sampleB.id, sampleC.id} == set(v.sample_ids)
+    assert all([x is None for x in [v.annotation, v.annotation_impact, v.annotation_gene_name, v.annotation_gene_id,
+                                    v.annotation_feature_type, v.annotation_transcript_biotype, v.annotation_hgvs_c,
+                                    v.annotation_hgvs_p]])
+
+
+def test_multiple_insert_variants_different_reference_genomes(database, snippy_nucleotide_data_package_AB,
+                                                              snpeff_nucleotide_data_package,
+                                                              reference_service_with_data,
+                                                              sample_service, filesystem_storage):
+    variation_service = VariationService(database_connection=database,
+                                         reference_service=reference_service_with_data,
+                                         sample_service=sample_service,
+                                         variation_dir=filesystem_storage.variation_dir)
+    session = database.get_session()
+
+    # Add snpeff reference genome
+    reference_service_with_data.add_reference_genome(reference_file_snpeff)
+
+    # Insert samples A and B, and snpeff samples
+    variation_service.insert(feature_scope_name='genome', data_package=snippy_nucleotide_data_package_AB)
+    variation_service.insert(feature_scope_name='NC_011083', data_package=snpeff_nucleotide_data_package)
+
+    assert 273 == session.query(NucleotideVariantsSamples).count(), 'Incorrect number of storage entries'
+    assert 5 == session.query(Sample).count(), 'Incorrect number of Samples'
+    assert 5 == session.query(SampleNucleotideVariation).count(), 'Incorrect number of SampleNucleotideVariation'
+
+    sampleA = session.query(Sample).filter(Sample.name == 'SampleA').one()
+    sample_SH10_014 = session.query(Sample).filter(Sample.name == 'SH10-014').one()
+    sample_SH14_001 = session.query(Sample).filter(Sample.name == 'SH14-001').one()
+    sample_SH14_014 = session.query(Sample).filter(Sample.name == 'SH14-014').one()
+
+    ## Variant which is present only in Sample A
+    v: NucleotideVariantsSamples = session.query(NucleotideVariantsSamples).get({
+        'sequence': 'reference',
+        'position': 1708,
+        'deletion': len('ATGCTGTTCAATAC'),
+        'insertion': 'A'
+    })
+    assert v is not None, 'Particular storage does not exist'
+    assert 'INDEL' == v.var_type, 'Type is incorrect'
+    assert {sampleA.id} == set(v.sample_ids)
+    assert all([x is None for x in [v.annotation, v.annotation_impact, v.annotation_gene_name, v.annotation_gene_id,
+                                    v.annotation_feature_type, v.annotation_transcript_biotype, v.annotation_hgvs_c,
+                                    v.annotation_hgvs_p]])
+
+    # SNV/SNP for snpeff data
+    v: NucleotideVariantsSamples = session.query(NucleotideVariantsSamples).get({
+        'sequence': 'NC_011083',
+        'position': 602110,
+        'deletion': len('T'),
+        'insertion': 'G'
+    })
+    assert v is not None, 'Particular storage does not exist'
+    assert 'SNP' == v.var_type, 'Type is incorrect'
+    assert {sample_SH10_014.id, sample_SH14_001.id, sample_SH14_014.id} == set(v.sample_ids)
+
+    assert 'missense_variant' == v.annotation
+    assert 'MODERATE' == v.annotation_impact
+    assert 'SEHA_RS03410' == v.annotation_gene_id
+    assert 'SEHA_RS03410' == v.annotation_gene_name
+    assert 'transcript' == v.annotation_feature_type
+    assert 'protein_coding' == v.annotation_transcript_biotype
+    assert 'c.1229T>G' == v.annotation_hgvs_c
+    assert 'p.Leu410Arg' == v.annotation_hgvs_p
+    assert 'hgvs:NC_011083:SEHA_RS03410:c.1229T>G' == v.id_hgvs_c
+    assert 'hgvs:NC_011083:SEHA_RS03410:p.Leu410Arg' == v.id_hgvs_p
 
 
 def test_get_variants_ordered(database, snippy_nucleotide_data_package, reference_service_with_data,

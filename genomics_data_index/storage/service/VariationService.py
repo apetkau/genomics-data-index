@@ -13,7 +13,8 @@ from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackage import 
 from genomics_data_index.storage.io.mutation.VariationFile import VariationFile
 from genomics_data_index.storage.io.mutation.VcfVariantsReader import VcfVariantsReader
 from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
-from genomics_data_index.storage.model.db import NucleotideVariantsSamples, SampleNucleotideVariation, Sample
+from genomics_data_index.storage.model.db import NucleotideVariantsSamples, SampleNucleotideVariation, Sample, \
+    FeatureSamples
 from genomics_data_index.storage.service import DatabaseConnection
 from genomics_data_index.storage.service.FeatureService import FeatureService
 from genomics_data_index.storage.service.ReferenceService import ReferenceService
@@ -172,7 +173,7 @@ class VariationService(FeatureService):
     def _get_sample_id_series(self, features_df: pd.DataFrame, sample_name_ids: Dict[str, int]) -> pd.Series:
         return features_df.apply(lambda x: sample_name_ids[x['SAMPLE']], axis='columns')
 
-    def _create_feature_object(self, features_df: pd.DataFrame):
+    def _create_feature_object(self, features_df: pd.DataFrame) -> FeatureSamples:
         return NucleotideVariantsSamples(spdi=features_df['_FEATURE_ID'],
                                          var_type=features_df['TYPE'],
                                          sample_ids=features_df['_SAMPLE_ID'],
@@ -234,3 +235,10 @@ class VariationService(FeatureService):
                                           data_package: SampleDataPackage) -> FeaturesReader:
         sample_data_dict = cast(Dict[str, NucleotideSampleData], sample_data_dict)
         return VcfVariantsReader(sample_data_dict)
+
+    def read_index(self, feature_ids: List[str]) -> Dict[str, FeatureSamples]:
+        feature_samples = self._connection.get_session().query(NucleotideVariantsSamples) \
+            .filter(NucleotideVariantsSamples._spdi.in_(feature_ids)) \
+            .all()
+
+        return {f.id: f for f in feature_samples}

@@ -1,4 +1,3 @@
 SampleA	lmonocytogenes	0	abcZ(1)	bglA(51)	cat(11)	dapE(13)	dat(2)	ldh(5)	lhkA(5)
-SampleB	lmonocytogenes	0	abcZ(1)	bglA(52)	cat(11)	dapE(13)	dat(2)	ldh(5)	lhkA(5)
+SampleB	lmonocytogenes	0	abcZ(1)	bglA(52)	cat(11)	dapE(13)	dat(2)	ldh(?)	lhkA(5)
 SampleC	lmonocytogenes	0	abcZ(1)	bglA(52)	cat(12)	dapE(13)	dat(2)	ldh(5)	lhkA(5)
-SampleD	lmonocytogenes	0	abcZ(1)	bglA(52)	cat(12)	dapE(14)	dat(2)	ldh(5)	lhkA(5)

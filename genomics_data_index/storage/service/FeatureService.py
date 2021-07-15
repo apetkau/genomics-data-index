@@ -8,7 +8,7 @@ import pandas as pd
 from genomics_data_index.storage.io.FeaturesReader import FeaturesReader
 from genomics_data_index.storage.io.SampleData import SampleData
 from genomics_data_index.storage.io.SampleDataPackage import SampleDataPackage
-from genomics_data_index.storage.model.db import Sample
+from genomics_data_index.storage.model.db import Sample, FeatureSamples
 from genomics_data_index.storage.service import DatabaseConnection
 from genomics_data_index.storage.service import EntityExistsError
 from genomics_data_index.storage.service.SampleService import SampleService
@@ -29,6 +29,16 @@ class FeatureService(abc.ABC):
         self._min_insert_batch_size = 5
 
     @abc.abstractmethod
+    def read_index(self, feature_ids: List[str]) -> Dict[str, FeatureSamples]:
+        """
+        Reads the passed list of feature IDs from the database and returns a dictionary containing those features that
+        already exist. This dictionary maps {'id' => 'feature_object_in_database'}.
+        :param feature_ids: The list of feature object ids to search through.
+        :return: A dictionary containing any features that already existing in the database index.
+        """
+        pass
+
+    @abc.abstractmethod
     def get_correct_data_package(self) -> Any:
         pass
 
@@ -45,7 +55,7 @@ class FeatureService(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def _create_feature_object(self, features_df: pd.DataFrame):
+    def _create_feature_object(self, features_df: pd.DataFrame) -> FeatureSamples:
         pass
 
     @abc.abstractmethod
@@ -55,7 +65,7 @@ class FeatureService(abc.ABC):
     def _modify_df_types(self, features_df: pd.DataFrame) -> pd.DataFrame:
         return features_df
 
-    def _create_feature_objects(self, features_df: pd.DataFrame, sample_names: Set[str]) -> List[Any]:
+    def _create_feature_objects(self, features_df: pd.DataFrame, sample_names: Set[str]) -> List[FeatureSamples]:
         sample_name_ids = self._sample_service.find_sample_name_ids(sample_names)
 
         features_df['_FEATURE_ID'] = features_df.apply(self._create_feature_identifier, axis='columns')
@@ -175,12 +185,58 @@ class FeatureService(abc.ABC):
     def _update_scope(self, features_df: pd.DataFrame, feature_scope_name: str) -> pd.DataFrame:
         return features_df
 
+    def update_feature_objects_inplace(self, feature_objects_dict_dest: Dict[str, FeatureSamples],
+                                       feature_objects_dict_source: Dict[str, FeatureSamples]) -> None:
+        """
+        Updates matching features from feature_objects_dict_source into feature_objects_dict_dest.
+        This will modify objects in feature_objects_dict_dest. This will *not* insert any new objects from
+        feature_objects_dict_source. This method is primarily used to update the existing objects in a database.
+        :param feature_objects_dict_dest: The dictionary of feature ids to feature objects to merge into.
+        :param feature_objects_dict_source: The dictionary of feature ids to feature objects to merge from.
+        :return: Nothing. Modifies objects in feature_objects_dict_dest.
+        """
+        logger.debug(f'Scanning {len(feature_objects_dict_dest)} destination features for corresponding'
+                     f' source features and updating if any matches are found.')
+        count_updated_features = 0
+        for feature_id in feature_objects_dict_dest:
+            feature_object_dest = feature_objects_dict_dest[feature_id]
+            if feature_id in feature_objects_dict_source:
+                feature_object_source = feature_objects_dict_source[feature_id]
+                feature_object_dest.update_sample_ids(feature_object_source)
+                count_updated_features += 1
+
+        logger.debug(f'Updated {count_updated_features}/{len(feature_objects_dict_dest)} destination feature objects '
+                     f'inplace out of a total of {len(feature_objects_dict_source)} supplied source feature objects.')
+
     def index_features(self, features_reader: FeaturesReader, feature_scope_name: str) -> None:
         logger.info('Indexing features from all samples')
         features_df = features_reader.get_features_table()
         features_df = self._update_scope(features_df, feature_scope_name)
         sample_names = features_reader.samples_set()
-        self._connection.get_session().bulk_save_objects(self._create_feature_objects(features_df, sample_names))
+
+        # Create new features and merge with existing features if they exist
+        created_feature_objects = self._create_feature_objects(features_df, sample_names)
+        created_feature_objects_dict = {f.id: f for f in created_feature_objects}
+        logger.debug(f'Indexing a total of {len(created_feature_objects_dict)} features')
+        db_feature_objects_dict = self.read_index(list(created_feature_objects_dict.keys()))
+        logger.debug(f'Found {len(db_feature_objects_dict)}/{len(created_feature_objects_dict)} new features to '
+                     f'index which already exist. These will be updated to map to the new samples.')
+        self.update_feature_objects_inplace(db_feature_objects_dict, created_feature_objects_dict)
+
+        # Subtract out existing feature objects in database
+        new_feature_object_ids = set(created_feature_objects_dict.keys()) - set(db_feature_objects_dict.keys())
+        new_feature_objects = [created_feature_objects_dict[fid] for fid in new_feature_object_ids]
+
+        # bulk save new feature objects
+        logger.debug(
+            f'Creating {len(new_feature_objects)}/{len(created_feature_objects_dict)} new features in database')
+        self._connection.get_session().bulk_save_objects(new_feature_objects)
+
+        # bulk update existing feature objects
+        logger.debug(
+            f'Updating {len(db_feature_objects_dict)}/{len(created_feature_objects_dict)} existing features in database')
+        self._connection.get_session().bulk_save_objects(db_feature_objects_dict.values())
+
         self._connection.get_session().commit()
         logger.info('Finished indexing features from all samples')
 

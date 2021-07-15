@@ -2,6 +2,7 @@ import re
 import tempfile
 from pathlib import Path
 from typing import Dict
+
 from Bio import SeqIO
 
 from genomics_data_index.storage.io.mutation.SequenceFile import SequenceFile
