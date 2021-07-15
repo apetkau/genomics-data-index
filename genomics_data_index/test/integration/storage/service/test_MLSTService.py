@@ -135,6 +135,9 @@ def test_multiple_insert_different_samples_same_scheme(database, mlst_data_packa
     # Insert first set of data
     mlst_service.insert(feature_scope_name='lmonocytogenes', data_package=mlst_data_package_single_scheme)
 
+    features_count = session.query(MLSTAllelesSamples).count()
+    assert 7 == features_count
+
     sample_CFSAN002349 = session.query(Sample).filter(Sample.name == 'CFSAN002349').one()
     sample_CFSAN023463 = session.query(Sample).filter(Sample.name == 'CFSAN023463').one()
 
@@ -178,6 +181,9 @@ def test_multiple_insert_different_samples_same_scheme(database, mlst_data_packa
 
     # Insert second set of data
     mlst_service.insert(feature_scope_name='lmonocytogenes', data_package=mlst_data_package_single_scheme2)
+
+    features_count = session.query(MLSTAllelesSamples).count()
+    assert 12 == features_count
 
     sample_CFSAN002349_2 = session.query(Sample).filter(Sample.name == 'CFSAN002349-2').one()
     sample_CFSAN023463_2 = session.query(Sample).filter(Sample.name == 'CFSAN023463-2').one()
@@ -225,6 +231,60 @@ def test_multiple_insert_different_samples_same_scheme(database, mlst_data_packa
     assert set(m.sample_ids) == {sample_CFSAN002349_2.id, sample_CFSAN023463_2.id}
 
 
+def test_multiple_inserts_different_schemes(database, mlst_data_package_basic,
+                                    mlst_data_package_single_scheme2,
+                                    sample_service, filesystem_storage):
+    mlst_service = MLSTService(database_connection=database,
+                               sample_service=sample_service,
+                               mlst_dir=filesystem_storage.mlst_dir)
+
+    session = database.get_session()
+
+    mlst_service.insert(data_package=mlst_data_package_single_scheme2)
+    mlst_service.insert(data_package=mlst_data_package_basic)
+
+    features_count = session.query(MLSTAllelesSamples).count()
+    assert 27 == features_count
+
+    sample_2014C_3598 = session.query(Sample).filter(Sample.name == '2014C-3598').one()
+    sample_2014C_3599 = session.query(Sample).filter(Sample.name == '2014C-3599').one()
+    sample_CFSAN002349_2 = session.query(Sample).filter(Sample.name == 'CFSAN002349-2').one()
+    sample_CFSAN023463_2 = session.query(Sample).filter(Sample.name == 'CFSAN023463-2').one()
+    sample_CFSAN002349 = session.query(Sample).filter(Sample.name == 'CFSAN002349').one()
+    sample_CFSAN023463 = session.query(Sample).filter(Sample.name == 'CFSAN023463').one()
+
+    # Test feature where only some of the new samples gets added
+    m: MLSTAllelesSamples = session.query(MLSTAllelesSamples).get({
+        'scheme': 'lmonocytogenes',
+        'locus': 'abcZ',
+        'allele': '1',
+    })
+    assert m.id == 'lmonocytogenes:abcZ:1'
+    assert m.sla == 'lmonocytogenes:abcZ:1'
+    assert set(m.sample_ids) == {sample_CFSAN002349.id, sample_CFSAN023463.id,
+                                 sample_CFSAN002349_2.id}
+
+    # Test feature with unknown alleles
+    m: MLSTAllelesSamples = session.query(MLSTAllelesSamples).get({
+        'scheme': 'lmonocytogenes',
+        'locus': 'lhkA',
+        'allele': '?',
+    })
+    assert m.id == 'lmonocytogenes:lhkA:?'
+    assert m.sla == 'lmonocytogenes:lhkA:?'
+    assert set(m.sample_ids) == {sample_CFSAN023463_2.id}
+
+    # Test completely different scheme
+    m: MLSTAllelesSamples = session.query(MLSTAllelesSamples).get({
+        'scheme': 'ecoli',
+        'locus': 'adk',
+        'allele': '100',
+    })
+    assert m.id == 'ecoli:adk:100'
+    assert m.sla == 'ecoli:adk:100'
+    assert set(m.sample_ids) == {sample_2014C_3598.id, sample_2014C_3599.id}
+
+
 def test_multiple_inserts_3_inserts(database, mlst_data_package_single_scheme,
                                     mlst_data_package_single_scheme2,
                                     mlst_data_package_single_scheme3,
@@ -233,11 +293,15 @@ def test_multiple_inserts_3_inserts(database, mlst_data_package_single_scheme,
                                sample_service=sample_service,
                                mlst_dir=filesystem_storage.mlst_dir)
 
+    session = database.get_session()
+
     mlst_service.insert(feature_scope_name='lmonocytogenes', data_package=mlst_data_package_single_scheme)
     mlst_service.insert(feature_scope_name='lmonocytogenes', data_package=mlst_data_package_single_scheme2)
     mlst_service.insert(feature_scope_name='lmonocytogenes', data_package=mlst_data_package_single_scheme3)
 
-    session = database.get_session()
+    features_count = session.query(MLSTAllelesSamples).count()
+    assert 13 == features_count
+
     sample_CFSAN002349 = session.query(Sample).filter(Sample.name == 'CFSAN002349').one()
     sample_CFSAN023463 = session.query(Sample).filter(Sample.name == 'CFSAN023463').one()
     sample_CFSAN002349_2 = session.query(Sample).filter(Sample.name == 'CFSAN002349-2').one()
