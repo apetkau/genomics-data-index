@@ -11,16 +11,21 @@ from genomics_data_index.storage.io.SampleData import SampleData
 from genomics_data_index.storage.io.mutation.NucleotideFeaturesReader import NucleotideFeaturesReader
 from genomics_data_index.storage.io.mutation.NucleotideSampleData import NucleotideSampleData
 from genomics_data_index.storage.io.mutation.VcfSnpEffAnnotationParser import VcfSnpEffAnnotationParser
+from genomics_data_index.storage.model import NUCLEOTIDE_UNKNOWN, NUCLEOTIDE_UNKNOWN_TYPE
 
 logger = logging.getLogger(__name__)
 
 
 class VcfVariantsReader(NucleotideFeaturesReader):
 
-    def __init__(self, sample_files_map: Dict[str, NucleotideSampleData]):
+    VCF_FRAME_COLUMNS = ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE', 'VARIANT_ID']
+
+    def __init__(self, sample_files_map: Dict[str, NucleotideSampleData],
+                 include_masked_regions: bool = False):
         super().__init__()
         self._sample_files_map = sample_files_map
         self._snpeff_parser = VcfSnpEffAnnotationParser()
+        self._include_masked_regions = include_masked_regions
 
     def _fix_df_columns(self, vcf_df: pd.DataFrame) -> pd.DataFrame:
         # If no data, I still want certain column names so that rest of code still works
@@ -55,9 +60,7 @@ class VcfVariantsReader(NucleotideFeaturesReader):
         cols = out.columns.tolist()
         out['SAMPLE'] = sample_name
         out = out.reindex(columns=['SAMPLE'] + cols)
-        return out.loc[:,
-               ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT',
-                'TYPE', 'FILE', 'VARIANT_ID'] + self._snpeff_parser.ANNOTATION_COLUMNS]
+        return out.loc[:, self.VCF_FRAME_COLUMNS + self._snpeff_parser.ANNOTATION_COLUMNS]
 
     def _get_type(self, vcf_df: pd.DataFrame) -> pd.Series:
         return vcf_df['INFO'].map(lambda x: x['TYPE'][0])
@@ -68,9 +71,32 @@ class VcfVariantsReader(NucleotideFeaturesReader):
             vcf_file, index_file = self._sample_files_map[sample].get_vcf_file()
             frame = self.read_vcf(vcf_file, sample)
             frame = self._snpeff_parser.select_variant_annotations(frame)
-            frames.append(frame)
+
+            if self._include_masked_regions:
+                frame_mask = self.mask_to_features(self._sample_files_map[sample].get_mask(),
+                                                   vcf_file=vcf_file, sample=sample)
+                frame_vcf_mask = self.group_vcf_mask(frame, frame_mask)
+            else:
+                frame_vcf_mask = frame
+
+            frames.append(frame_vcf_mask)
 
         return pd.concat(frames)
+
+    def mask_to_features(self, genomic_mask: MaskedGenomicRegions, vcf_file: Path, sample: str) -> pd.DataFrame:
+        mask_features = []
+        ref = 1
+        alt = NUCLEOTIDE_UNKNOWN
+        type = NUCLEOTIDE_UNKNOWN_TYPE
+        file = vcf_file.name
+        for sequence_name, position in genomic_mask.positions_iter(start_position_index='1'):
+            variant_id = f'{sequence_name}:{position}:{ref}:{alt}'
+            mask_features.append([sample, sequence_name, position, ref, alt, type, file, variant_id])
+
+        return pd.DataFrame(mask_features, columns=self.VCF_FRAME_COLUMNS)
+
+    def group_vcf_mask(self, vcf_frame: pd.DataFrame, frame_mask: pd.DataFrame) -> pd.DataFrame:
+        raise NotImplementedError()
 
     def _fix_alt(self, element: List[str]) -> str:
         """
