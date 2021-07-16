@@ -121,7 +121,8 @@ def sample_service_snpeff_annotations(database, reference_service_with_snpeff_da
     var_service = VariationService(database_connection=database,
                                    reference_service=reference_service_with_snpeff_data,
                                    sample_service=sample_service,
-                                   variation_dir=filesystem_storage.variation_dir)
+                                   variation_dir=filesystem_storage.variation_dir,
+                                   index_unknown_missing=False)
     var_service.insert(feature_scope_name='NC_011083',
                        data_package=snpeff_nucleotide_data_package)
     return sample_service
@@ -133,7 +134,8 @@ def variation_service(database, reference_service_with_data,
     var_service = VariationService(database_connection=database,
                                    reference_service=reference_service_with_data,
                                    sample_service=sample_service,
-                                   variation_dir=filesystem_storage.variation_dir)
+                                   variation_dir=filesystem_storage.variation_dir,
+                                   index_unknown_missing=False)
     var_service.insert(feature_scope_name='genome',
                        data_package=snippy_nucleotide_data_package)
     return var_service
@@ -146,7 +148,8 @@ def variation_service_non_snippy_vcfs(database, reference_service_with_data,
     var_service = VariationService(database_connection=database,
                                    reference_service=reference_service_with_data,
                                    sample_service=sample_service,
-                                   variation_dir=filesystem_storage.variation_dir)
+                                   variation_dir=filesystem_storage.variation_dir,
+                                   index_unknown_missing=False)
     var_service.insert(feature_scope_name='genome',
                        data_package=regular_nucleotide_data_package)
     return var_service

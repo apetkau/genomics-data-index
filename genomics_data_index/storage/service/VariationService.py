@@ -27,11 +27,13 @@ class VariationService(FeatureService):
     MUTATION_TYPES = ['snp', 'indel', 'all', 'other']
 
     def __init__(self, database_connection: DatabaseConnection, variation_dir: Path,
-                 reference_service: ReferenceService, sample_service: SampleService):
+                 reference_service: ReferenceService, sample_service: SampleService,
+                 index_unknown_missing: bool):
         super().__init__(database_connection=database_connection,
                          features_dir=variation_dir,
                          sample_service=sample_service)
         self._reference_service = reference_service
+        self._index_unknown_missing = index_unknown_missing
 
     def _reference_sequence_names(self, reference_name: str) -> List[str]:
         return list(self._reference_service.get_reference_sequences(reference_name).keys())
@@ -234,7 +236,7 @@ class VariationService(FeatureService):
     def _create_persisted_features_reader(self, sample_data_dict: Dict[str, SampleData],
                                           data_package: SampleDataPackage) -> FeaturesReader:
         sample_data_dict = cast(Dict[str, NucleotideSampleData], sample_data_dict)
-        return VcfVariantsReader(sample_data_dict)
+        return VcfVariantsReader(sample_data_dict, include_masked_regions=self._index_unknown_missing)
 
     def read_index(self, feature_ids: List[str]) -> Dict[str, FeatureSamples]:
         feature_samples = self._connection.get_session().query(NucleotideVariantsSamples) \
