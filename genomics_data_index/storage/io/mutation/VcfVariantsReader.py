@@ -73,8 +73,9 @@ class VcfVariantsReader(NucleotideFeaturesReader):
             frame = self._snpeff_parser.select_variant_annotations(frame)
 
             if self._include_masked_regions:
-                frame_mask = self.mask_to_features(self._sample_files_map[sample].get_mask(),
-                                                   vcf_file=vcf_file, sample=sample)
+                frame_mask = self.mask_to_features(self._sample_files_map[sample].get_mask())
+                frame_mask['SAMPLE'] = sample
+                frame_mask['FILE'] = vcf_file.name
                 frame_vcf_mask = self.group_vcf_mask(frame, frame_mask)
             else:
                 frame_vcf_mask = frame
@@ -83,17 +84,16 @@ class VcfVariantsReader(NucleotideFeaturesReader):
 
         return pd.concat(frames)
 
-    def mask_to_features(self, genomic_mask: MaskedGenomicRegions, vcf_file: Path, sample: str) -> pd.DataFrame:
+    def mask_to_features(self, genomic_mask: MaskedGenomicRegions) -> pd.DataFrame:
         mask_features = []
         ref = 1
         alt = NUCLEOTIDE_UNKNOWN
         type = NUCLEOTIDE_UNKNOWN_TYPE
-        file = vcf_file.name
         for sequence_name, position in genomic_mask.positions_iter(start_position_index='1'):
             variant_id = f'{sequence_name}:{position}:{ref}:{alt}'
-            mask_features.append([sample, sequence_name, position, ref, alt, type, file, variant_id])
+            mask_features.append([sequence_name, position, ref, alt, type, variant_id])
 
-        return pd.DataFrame(mask_features, columns=self.VCF_FRAME_COLUMNS)
+        return pd.DataFrame(mask_features, columns=['CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'VARIANT_ID'])
 
     def group_vcf_mask(self, vcf_frame: pd.DataFrame, frame_mask: pd.DataFrame) -> pd.DataFrame:
         raise NotImplementedError()
