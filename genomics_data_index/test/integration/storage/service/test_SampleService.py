@@ -203,14 +203,13 @@ def test_find_sample_sets_by_features_variations(database, sample_service, varia
 
 
 def test_find_unknown_sample_sets_by_features_variations_no_index_unknowns(database, sample_service, variation_service):
-    sampleA = database.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
-
     sample_sets = sample_service.find_unknown_sample_sets_by_feature([QueryFeatureMutationSPDI('reference:5061:G:A')])
-
     assert 0 == len(sample_sets)
 
 
-def test_find_unknown_sample_sets_by_features_variations_with_index_unknowns(database, sample_service, variation_service_index_unknowns):
+def test_find_unknown_sample_sets_by_features_variations_with_index_unknowns(database,
+                                                                             sample_service,
+                                                                             variation_service_index_unknowns):
     sampleA = database.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
 
     sample_sets = sample_service.find_unknown_sample_sets_by_feature([QueryFeatureMutationSPDI('reference:5061:G:A')])
@@ -218,6 +217,25 @@ def test_find_unknown_sample_sets_by_features_variations_with_index_unknowns(dat
     assert 1 == len(sample_sets)
     assert f'reference:5061:G:A' in sample_sets
     assert {sampleA.id} == set(sample_sets[f'reference:5061:G:A'])
+
+
+def test_find_unknown_sample_sets_by_features_variations_with_index_unknowns_multiple(database,
+                                                                                      sample_service,
+                                                                                      variation_service_index_unknowns):
+    sampleA = database.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = database.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+
+    features = [QueryFeatureMutationSPDI('reference:5061:G:A'),
+                QueryFeatureMutationSPDI('reference:87:1:A'),
+                QueryFeatureMutationSPDI('reference:87:G:T'),
+                ]
+    sample_sets = sample_service.find_unknown_sample_sets_by_feature(features)
+
+    assert 3 == len(sample_sets)
+    assert {sampleA.id} == set(sample_sets[f'reference:5061:G:A'])
+    assert {sampleA.id, sampleB.id, sampleC.id} == set(sample_sets[f'reference:87:1:A'])
+    assert {sampleA.id, sampleB.id, sampleC.id} == set(sample_sets[f'reference:87:G:T'])
 
 
 def test_find_sample_sets_by_features_variations_hgvs(database, sample_service_snpeff_annotations):
@@ -519,6 +537,15 @@ def test_get_variants_samples_by_variation_features_only_spdi(database, sample_s
     assert 1 == len(feature_id_nucleotide_samples)
     assert f'reference:5061:G:A' in feature_id_nucleotide_samples
     assert {sampleB.id} == set(feature_id_nucleotide_samples[f'reference:5061:G:A'].sample_ids)
+
+    # Test case of two features which are identical but different names
+    feature_id_nucleotide_samples = sample_service.get_variants_samples_by_variation_features(
+        [QueryFeatureMutationSPDI('reference:5061:G:A'),
+         QueryFeatureMutationSPDI('reference:5061:1:A')])
+
+    assert 2 == len(feature_id_nucleotide_samples)
+    assert {sampleB.id} == set(feature_id_nucleotide_samples[f'reference:5061:G:A'].sample_ids)
+    assert {sampleB.id} == set(feature_id_nucleotide_samples[f'reference:5061:1:A'].sample_ids)
 
 
 def test_get_variants_samples_by_variation_features_only_hgvs_c(database, sample_service_snpeff_annotations):

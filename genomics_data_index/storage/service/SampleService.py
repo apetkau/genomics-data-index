@@ -166,7 +166,10 @@ class SampleService:
         for feature in features:
             if isinstance(feature, QueryFeatureMutationSPDI):
                 dbf = NucleotideMutationTranslater.to_db_feature(feature)
-                standardized_features_to_input_feature[dbf.id] = feature.id
+                if dbf.id in standardized_features_to_input_feature:
+                    standardized_features_to_input_feature[dbf.id].append(feature.id)
+                else:
+                    standardized_features_to_input_feature[dbf.id] = [feature.id]
                 standardized_features_ids.add(dbf.id)
             elif isinstance(feature, QueryFeatureHGVS):
                 if feature.is_nucleotide():
@@ -201,7 +204,15 @@ class SampleService:
         else:
             variants_hgvs_p = []
 
-        unstandardized_variants = {standardized_features_to_input_feature[v.spdi]: v for v in variants_spdi}
+        # Map back unstandardized IDs to the actual variant object
+        # Use this because some features can have multiple identifiers for the same feature
+        # (e.g., ref:10:A:T and ref:10:1:T). I want to make sure I map each passed id to the
+        # same object (that is, in this example, I want to return a dictionary with two keys, one for each ID)
+        unstandardized_variants = {}
+        for v in variants_spdi:
+            for vid in standardized_features_to_input_feature[v.spdi]:
+                unstandardized_variants[vid] = v
+
         unstandardized_variants.update({v.id_hgvs_c: v for v in variants_hgvs_c})
         unstandardized_variants.update({v.id_hgvs_p: v for v in variants_hgvs_p})
         return unstandardized_variants
