@@ -114,7 +114,8 @@ class VcfVariantsReader(NucleotideFeaturesReader):
         # This may not handle every potential case where a variant overlaps with a masked region
         # (e.g., indel veriants which impact more than one nucleotide) but those should not show up
         # in a VCF file AND also in the mask file if everything was called properly.
-        combined_df = combined_df.sort_values(['POS', 'TYPE_ORDER']).groupby('POS', sort=False).nth(0).reset_index()
+        combined_df = combined_df.sort_values(
+            ['CHROM', 'POS', 'TYPE_ORDER']).groupby(['CHROM', 'POS'], sort=False).nth(0).reset_index()
 
         return combined_df.loc[:, self.VCF_FRAME_COLUMNS + self._snpeff_parser.ANNOTATION_COLUMNS]
 
