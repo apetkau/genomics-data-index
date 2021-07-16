@@ -244,15 +244,29 @@ class SampleService:
 
         unknown_features_sets = self.find_sample_sets_by_features(unknown_features)
 
-        features_to_sample_sets = {}
+        features_to_unknown_sample_sets = {}
         for uf in unknown_features:
             uid = uf.id
             fid = unknown_to_features_dict[uid].id
+
             if uid in unknown_features_sets:
-                features_to_sample_sets[fid] = unknown_features_sets[uid]
+                sample_set = unknown_features_sets[uid]
             else:
-                features_to_sample_sets[fid] = SampleSet.create_empty()
-        return features_to_sample_sets
+                sample_set = SampleSet.create_empty()
+
+            # If we've already set this sample set with the same feature,
+            # We need to merge together the unknown sample sets
+            # This can occur if, e.g., we have a large deletion and are iterating over each
+            # Base in the deletion in turn (e.g., ref:10:ATT:A -> gets converted to
+            # ['ref:10:A:?', 'ref:11:T:?', 'ref:12:T:?'], we need to merge unknown sample results
+            # for each of these features in turn.
+            if fid in features_to_unknown_sample_sets:
+                previous_sample_set = features_to_unknown_sample_sets[fid]
+                features_to_unknown_sample_sets[fid] = previous_sample_set.union(sample_set)
+            else:
+                features_to_unknown_sample_sets[fid] = sample_set
+
+        return features_to_unknown_sample_sets
 
     def find_sample_sets_by_features(self, features: List[QueryFeature]) -> Dict[str, SampleSet]:
         feature_type = self._get_feature_type(features)

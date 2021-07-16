@@ -204,7 +204,7 @@ def test_find_sample_sets_by_features_variations(database, sample_service, varia
 
 def test_find_unknown_sample_sets_by_features_variations_no_index_unknowns(database, sample_service, variation_service):
     sample_sets = sample_service.find_unknown_sample_sets_by_feature([QueryFeatureMutationSPDI('reference:5061:G:A')])
-    assert 0 == len(sample_sets)
+    assert set() == set(sample_sets[f'reference:5061:G:A'])
 
 
 def test_find_unknown_sample_sets_by_features_variations_with_index_unknowns(database,
@@ -292,7 +292,7 @@ def test_find_unknown_sample_sets_by_features_variations_different_feature_defin
     sample_sets = sample_service.find_unknown_sample_sets_by_feature([QueryFeatureMutationSPDI('reference:5088:1:G')])
     assert {sampleA.id, sampleC.id} == set(sample_sets[f'reference:5088:1:G'])
 
-    # Test 1 uknown
+    # Test 1 unknown
     sample_sets = sample_service.find_unknown_sample_sets_by_feature([QueryFeatureMutationSPDI('reference:202:1:GCG')])
     assert {sampleA.id} == set(sample_sets[f'reference:202:1:GCG'])
 
@@ -308,6 +308,19 @@ def test_find_unknown_sample_sets_by_features_variations_different_feature_defin
 
     sample_sets = sample_service.find_unknown_sample_sets_by_feature([QueryFeatureMutationSPDI('reference:1167:2:A')])
     assert {sampleA.id} == set(sample_sets[f'reference:1167:2:A'])
+
+    sample_sets = sample_service.find_unknown_sample_sets_by_feature([QueryFeatureMutationSPDI('reference:1167:AT:A')])
+    assert {sampleA.id} == set(sample_sets[f'reference:1167:AT:A'])
+
+    sample_sets = sample_service.find_unknown_sample_sets_by_feature([QueryFeatureMutationSPDI('reference:1167:ATT:A')])
+    print(sample_sets)
+    assert {sampleA.id} == set(sample_sets[f'reference:1167:ATT:A'])
+
+    sample_sets = sample_service.find_unknown_sample_sets_by_feature([QueryFeatureMutationSPDI('reference:1167:1:AGG')])
+    assert set() == set(sample_sets[f'reference:1167:1:AGG'])
+
+    sample_sets = sample_service.find_unknown_sample_sets_by_feature([QueryFeatureMutationSPDI('reference:1167:2:AT')])
+    assert {sampleA.id} == set(sample_sets[f'reference:1167:2:AT'])
 
 
 def test_find_sample_sets_by_features_variations_hgvs(database, sample_service_snpeff_annotations):
