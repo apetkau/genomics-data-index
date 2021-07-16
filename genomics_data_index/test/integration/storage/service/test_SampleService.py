@@ -277,6 +277,39 @@ def test_find_unknown_sample_sets_by_features_variations_with_index_unknowns_mul
     assert {sampleA.id, sampleB.id, sampleC.id} == set(sample_sets[f'reference:87:3:TCG'])
 
 
+def test_find_unknown_sample_sets_by_features_variations_different_feature_definitions(database,
+                                                                                       sample_service,
+                                                                                       variation_service_index_unknowns):
+    sampleA = database.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = database.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+
+    # Test 3 unknowns
+    sample_sets = sample_service.find_unknown_sample_sets_by_feature([QueryFeatureMutationSPDI('reference:87:1:A')])
+    assert {sampleA.id, sampleB.id, sampleC.id} == set(sample_sets[f'reference:87:1:A'])
+
+    # Test 2 unknowns
+    sample_sets = sample_service.find_unknown_sample_sets_by_feature([QueryFeatureMutationSPDI('reference:5088:1:G')])
+    assert {sampleA.id, sampleC.id} == set(sample_sets[f'reference:5088:1:G'])
+
+    # Test 1 uknown
+    sample_sets = sample_service.find_unknown_sample_sets_by_feature([QueryFeatureMutationSPDI('reference:202:1:GCG')])
+    assert {sampleA.id} == set(sample_sets[f'reference:202:1:GCG'])
+
+    # Test on edge of unknown and indels
+    sample_sets = sample_service.find_unknown_sample_sets_by_feature([QueryFeatureMutationSPDI('reference:1167:1:A')])
+    assert set() == set(sample_sets[f'reference:1167:1:A'])
+
+    sample_sets = sample_service.find_unknown_sample_sets_by_feature([QueryFeatureMutationSPDI('reference:1168:1:A')])
+    assert {sampleA.id} == set(sample_sets[f'reference:1168:1:A'])
+
+    sample_sets = sample_service.find_unknown_sample_sets_by_feature([QueryFeatureMutationSPDI('reference:1169:1:A')])
+    assert set() == set(sample_sets[f'reference:1169:1:A'])
+
+    sample_sets = sample_service.find_unknown_sample_sets_by_feature([QueryFeatureMutationSPDI('reference:1167:2:A')])
+    assert {sampleA.id} == set(sample_sets[f'reference:1167:2:A'])
+
+
 def test_find_sample_sets_by_features_variations_hgvs(database, sample_service_snpeff_annotations):
     sample_sh14_001 = database.get_session().query(Sample).filter(Sample.name == 'SH14-001').one()
     sample_sh14_014 = database.get_session().query(Sample).filter(Sample.name == 'SH14-014').one()
