@@ -62,7 +62,7 @@ def test_mask_to_features_multi_sequence():
         f'ref2:{p}:1:?' for p in [13, 14, 15, 16, 17]] == features_df['VARIANT_ID'].tolist()
 
 
-def test_group_vcf_mask():
+def test_combine_vcf_mask():
     num_annotations = 9
 
     data_vcf = [
@@ -94,7 +94,7 @@ def test_group_vcf_mask():
     assert ['NA', 'NA'] == combined_df['ANN.Annotation'].tolist()
 
 
-def test_group_vcf_mask_overlap_feature():
+def test_combine_vcf_mask_overlap_feature():
     num_annotations = 9
 
     data_vcf = [
@@ -126,7 +126,7 @@ def test_group_vcf_mask_overlap_feature():
     assert ['NA'] == combined_df['ANN.Annotation'].tolist()
 
 
-def test_group_vcf_mask_no_mask_features():
+def test_combine_vcf_mask_no_mask_features():
     num_annotations = 9
 
     data_vcf = [
@@ -157,7 +157,7 @@ def test_group_vcf_mask_no_mask_features():
     assert ['NA'] == combined_df['ANN.Annotation'].tolist()
 
 
-def test_group_vcf_mask_no_vcf_feature():
+def test_combine_vcf_mask_no_vcf_feature():
     data_vcf = [
     ]
     data_mask = [
@@ -186,7 +186,7 @@ def test_group_vcf_mask_no_vcf_feature():
     assert ['NA'] == combined_df['ANN.Annotation'].tolist()
 
 
-def test_group_vcf_mask_same_position_different_sequence():
+def test_combine_vcf_mask_same_position_different_sequence():
     num_annotations = 9
 
     data_vcf = [
@@ -218,7 +218,7 @@ def test_group_vcf_mask_same_position_different_sequence():
     assert ['NA', 'NA'] == combined_df['ANN.Annotation'].tolist()
 
 
-def test_group_vcf_mask_multiple_features():
+def test_combine_vcf_mask_multiple_features():
     num_annotations = 9
 
     data_vcf = [
