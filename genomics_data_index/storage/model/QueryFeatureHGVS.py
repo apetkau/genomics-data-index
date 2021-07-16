@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Optional
 
 from genomics_data_index.storage.model.QueryFeatureMutation import QueryFeatureMutation
+from genomics_data_index.storage.model.QueryFeature import QueryFeature
 
 
 class QueryFeatureHGVS(QueryFeatureMutation):

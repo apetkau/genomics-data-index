@@ -222,6 +222,18 @@ class SampleService:
         else:
             return feature_types.pop()
 
+    def find_unknown_sample_sets_by_feature(self, features: List[QueryFeature]) -> Dict[str, SampleSet]:
+        unknown_to_features_dict = {}
+        unknown_features = []
+        for feature in features:
+            unknown_feature = feature.to_unknown()
+            unknown_features.append(unknown_feature)
+            unknown_to_features_dict[unknown_feature.id] = feature
+
+        unknown_features_sets = self.find_sample_sets_by_features(unknown_features)
+
+        return {unknown_to_features_dict[fid].id: unknown_features_sets[fid] for fid in unknown_features_sets}
+
     def find_sample_sets_by_features(self, features: List[QueryFeature]) -> Dict[str, SampleSet]:
         feature_type = self._get_feature_type(features)
 

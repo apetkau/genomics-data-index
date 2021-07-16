@@ -4,6 +4,7 @@ from typing import Union
 
 from genomics_data_index.storage.model import NUCLEOTIDE_UNKNOWN
 from genomics_data_index.storage.model.QueryFeatureMutation import QueryFeatureMutation
+from genomics_data_index.storage.model.QueryFeature import QueryFeature
 
 
 class QueryFeatureMutationSPDI(QueryFeatureMutation):
@@ -93,7 +94,7 @@ class QueryFeatureMutationSPDI(QueryFeatureMutation):
     def to_unknown(self) -> QueryFeature:
         return QueryFeatureMutationSPDI(':'.join([
             self._seq_name,
-            self._pos,
-            self._ref,
+            str(self._pos),
+            str(self._ref),
             NUCLEOTIDE_UNKNOWN
         ]))
