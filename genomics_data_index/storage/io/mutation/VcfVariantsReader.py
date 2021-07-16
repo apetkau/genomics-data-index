@@ -76,7 +76,7 @@ class VcfVariantsReader(NucleotideFeaturesReader):
                 frame_mask = self.mask_to_features(self._sample_files_map[sample].get_mask())
                 frame_mask['SAMPLE'] = sample
                 frame_mask['FILE'] = vcf_file.name
-                frame_vcf_mask = self.group_vcf_mask(frame, frame_mask)
+                frame_vcf_mask = self.combine_vcf_mask(frame, frame_mask)
             else:
                 frame_vcf_mask = frame
 
@@ -95,8 +95,28 @@ class VcfVariantsReader(NucleotideFeaturesReader):
 
         return pd.DataFrame(mask_features, columns=['CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'VARIANT_ID'])
 
-    def group_vcf_mask(self, vcf_frame: pd.DataFrame, frame_mask: pd.DataFrame) -> pd.DataFrame:
-        raise NotImplementedError()
+    def combine_vcf_mask(self, vcf_frame: pd.DataFrame, mask_frame: pd.DataFrame) -> pd.DataFrame:
+        """
+        Combine features together for VCF variants dataframe with mask dataframe, checking for any overlaps.
+        If there is an overlap (e.g., a variant call also is in a masked out region) the masked position (unknown/missing)
+        will be preferred as the true feature.
+        :param vcf_frame: The dataframe containing only mutations/variant calls.
+        :param mask_frame: The dataframe containing features from the genome mask (missing/unknown positions.
+        :return: The combined data frame of both types of features.
+        """
+        combined_df = pd.concat([vcf_frame, mask_frame])
+
+        # Define an order column for TYPE so I can select NUCLEOTIDE_UNKNOWN_TYPE ahead of any other type
+        combined_df['TYPE_ORDER'] = 1
+        combined_df.loc[combined_df['TYPE'] == NUCLEOTIDE_UNKNOWN_TYPE, 'TYPE_ORDER'] = 0
+
+        # For any overlapping positions, prefer the NUCLEOTIDE_UNKNOWN_TYPE type
+        # This may not handle every potential case where a variant overlaps with a masked region
+        # (e.g., indel veriants which impact more than one nucleotide) but those should not show up
+        # in a VCF file AND also in the mask file if everything was called properly.
+        combined_df = combined_df.sort_values(['POS', 'TYPE_ORDER']).groupby('POS', sort=False).nth(0).reset_index()
+
+        return combined_df.loc[:, self.VCF_FRAME_COLUMNS + self._snpeff_parser.ANNOTATION_COLUMNS]
 
     def _fix_alt(self, element: List[str]) -> str:
         """

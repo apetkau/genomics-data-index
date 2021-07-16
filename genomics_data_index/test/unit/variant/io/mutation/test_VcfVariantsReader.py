@@ -1,5 +1,4 @@
-from pathlib import Path
-
+import pandas as pd
 
 from genomics_data_index.storage.io.mutation.VcfVariantsReader import VcfVariantsReader
 from genomics_data_index.storage.MaskedGenomicRegions import MaskedGenomicRegions
@@ -17,11 +16,11 @@ def test_mask_to_features():
     assert ['CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'VARIANT_ID'] == features_df.columns.tolist()
     assert expected_number_features == len(features_df)
     assert ['ref'] * expected_number_features == features_df['CHROM'].tolist()
-    assert list(range(10+1, 15+1)) == features_df['POS'].tolist()
+    assert list(range(10 + 1, 15 + 1)) == features_df['POS'].tolist()
     assert [1] * expected_number_features == features_df['REF'].tolist()
     assert ['?'] * expected_number_features == features_df['ALT'].tolist()
-    assert ['UNKNOWN'] * expected_number_features == features_df['TYPE'].tolist()
-    assert [f'ref:{p}:1:?' for p in range(10+1, 15+1)] == features_df['VARIANT_ID'].tolist()
+    assert ['UNKNOWN_MISSING'] * expected_number_features == features_df['TYPE'].tolist()
+    assert [f'ref:{p}:1:?' for p in range(10 + 1, 15 + 1)] == features_df['VARIANT_ID'].tolist()
 
 
 def test_mask_to_features_multi_range():
@@ -38,7 +37,7 @@ def test_mask_to_features_multi_range():
     assert [11, 12, 13, 14, 15, 21, 22] == features_df['POS'].tolist()
     assert [1] * expected_number_features == features_df['REF'].tolist()
     assert ['?'] * expected_number_features == features_df['ALT'].tolist()
-    assert ['UNKNOWN'] * expected_number_features == features_df['TYPE'].tolist()
+    assert ['UNKNOWN_MISSING'] * expected_number_features == features_df['TYPE'].tolist()
     assert [f'ref:{p}:1:?' for p in [11, 12, 13, 14, 15, 21, 22]] == features_df['VARIANT_ID'].tolist()
 
 
@@ -58,6 +57,70 @@ def test_mask_to_features_multi_sequence():
     assert [11, 12, 13, 14, 15, 13, 14, 15, 16, 17] == features_df['POS'].tolist()
     assert [1] * expected_t == features_df['REF'].tolist()
     assert ['?'] * expected_t == features_df['ALT'].tolist()
-    assert ['UNKNOWN'] * expected_t == features_df['TYPE'].tolist()
+    assert ['UNKNOWN_MISSING'] * expected_t == features_df['TYPE'].tolist()
     assert [f'ref:{p}:1:?' for p in [11, 12, 13, 14, 15]] + [
         f'ref2:{p}:1:?' for p in [13, 14, 15, 16, 17]] == features_df['VARIANT_ID'].tolist()
+
+
+def test_group_vcf_mask():
+    num_annotations = 9
+
+    data_vcf = [
+        ['SampleA', 'ref', 10, 'A', 'T', 'SNP', 'file', 'ref:10:A:T'] + [pd.NA] * num_annotations,
+    ]
+    data_mask = [
+        ['SampleA', 'ref', 1, 1, '?', 'UNKNOWN_MISSING', 'file', 'ref:1:1:?']
+    ]
+    columns = ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE', 'VARIANT_ID',
+               'ANN.Allele', 'ANN.Annotation', 'ANN.Annotation_Impact', 'ANN.Gene_Name', 'ANN.Gene_ID',
+               'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p']
+
+    reader = VcfVariantsReader({})
+
+    vcf_df = pd.DataFrame(data_vcf, columns=columns)
+    mask_df = pd.DataFrame(data_mask, columns=['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE', 'VARIANT_ID'])
+
+    combined_df = reader.combine_vcf_mask(vcf_frame=vcf_df, mask_frame=mask_df)
+    combined_df = combined_df.sort_values('POS').fillna('NA')
+
+    assert combined_df.columns.tolist() == columns
+    assert 2 == len(combined_df)
+    assert ['ref', 'ref'] == combined_df['CHROM'].tolist()
+    assert [1, 10] == combined_df['POS'].tolist()
+    assert [1, 'A'] == combined_df['REF'].tolist()
+    assert ['?', 'T'] == combined_df['ALT'].tolist()
+    assert ['UNKNOWN_MISSING', 'SNP'] == combined_df['TYPE'].tolist()
+    assert ['ref:1:1:?', 'ref:10:A:T'] == combined_df['VARIANT_ID'].tolist()
+    assert ['NA', 'NA'] == combined_df['ANN.Annotation'].tolist()
+
+
+def test_group_vcf_mask_overlap_feature():
+    num_annotations = 9
+
+    data_vcf = [
+        ['SampleA', 'ref', 10, 'A', 'T', 'SNP', 'file', 'ref:10:A:T'] + [pd.NA] * num_annotations,
+    ]
+    data_mask = [
+        ['SampleA', 'ref', 10, 1, '?', 'UNKNOWN_MISSING', 'file', 'ref:10:1:?']
+    ]
+    columns = ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE', 'VARIANT_ID',
+               'ANN.Allele', 'ANN.Annotation', 'ANN.Annotation_Impact', 'ANN.Gene_Name', 'ANN.Gene_ID',
+               'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p']
+
+    reader = VcfVariantsReader({})
+
+    vcf_df = pd.DataFrame(data_vcf, columns=columns)
+    mask_df = pd.DataFrame(data_mask, columns=['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE', 'VARIANT_ID'])
+
+    combined_df = reader.combine_vcf_mask(vcf_frame=vcf_df, mask_frame=mask_df)
+    combined_df = combined_df.sort_values('POS').fillna('NA')
+
+    assert combined_df.columns.tolist() == columns
+    assert 1 == len(combined_df)
+    assert ['ref'] == combined_df['CHROM'].tolist()
+    assert [10] == combined_df['POS'].tolist()
+    assert [1] == combined_df['REF'].tolist()
+    assert ['?'] == combined_df['ALT'].tolist()
+    assert ['UNKNOWN_MISSING'] == combined_df['TYPE'].tolist()
+    assert ['ref:10:1:?'] == combined_df['VARIANT_ID'].tolist()
+    assert ['NA'] == combined_df['ANN.Annotation'].tolist()
