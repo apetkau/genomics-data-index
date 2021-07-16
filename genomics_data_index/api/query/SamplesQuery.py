@@ -52,6 +52,17 @@ class SamplesQuery(abc.ABC):
         """
         pass
 
+    @property
+    @abc.abstractmethod
+    def unknown_set(self) -> SampleSet:
+        """
+        The set of samples :py:class:`genomics_data_index.storage.SampleSet` for which it is unknown
+        whether they match this query or not (e.g., due to missing/unknown data on a region of the genome).
+
+        :returns: A SampleSet defining the samples where it is unknown if they match the query or not.
+        """
+        pass
+
     @abc.abstractmethod
     def join(self, data_frame: pd.DataFrame, sample_ids_column: str = None,
              sample_names_column: str = None, default_isa_kind: str = 'names',

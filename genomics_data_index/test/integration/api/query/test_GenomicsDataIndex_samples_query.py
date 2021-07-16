@@ -245,7 +245,8 @@ def test_query_isin_kmer_samples_query(loaded_database_connection: DataIndexConn
     assert 3 == len(query_result)
     assert {sampleA.id, sampleB.id, sampleC.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)
-    assert "isin_kmer_jaccard(<SamplesQueryIndex[11% (1/9) samples]>, dist=1.0, k=31)" == query_result.query_expression()
+    assert "isin_kmer_jaccard(<SamplesQueryIndex[selected=11% (1/9) samples, " \
+           "unknown=0% (0/9) samples]>, dist=1.0, k=31)" == query_result.query_expression()
 
 
 def test_query_isin_kmer_samples_set(loaded_database_connection: DataIndexConnection):
@@ -270,7 +271,8 @@ def test_query_isin_kmer_samples_query_no_matches(loaded_database_connection: Da
                                                           units='kmer_jaccard')
     assert 0 == len(query_result)
     assert 9 == len(query_result.universe_set)
-    assert "isin_kmer_jaccard(<SamplesQueryIndex[0% (0/9) samples]>, dist=1.0, k=31)" == query_result.query_expression()
+    assert "isin_kmer_jaccard(<SamplesQueryIndex[selected=0% (0/9) samples, " \
+           "unknown=0% (0/9) samples]>, dist=1.0, k=31)" == query_result.query_expression()
 
 
 def test_query_within_kmer_default(loaded_database_connection: DataIndexConnection):
@@ -341,11 +343,13 @@ def test_query_isin_kmer_1_match(loaded_database_connection: DataIndexConnection
 
 def test_query_single_mutation(loaded_database_connection: DataIndexConnection):
     db = loaded_database_connection.database
+    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
 
     query_result = query(loaded_database_connection).hasa(QueryFeatureMutationSPDI('reference:5061:G:A'))
     assert 1 == len(query_result)
     assert {sampleB.id} == set(query_result.sample_set)
+    assert {sampleA.id} == set(query_result.unknown_set)
     assert 9 == len(query_result.universe_set)
     assert not query_result.has_tree()
 

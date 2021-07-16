@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Union, List, Set, Tuple
+from typing import Union, List, Set, Tuple, cast
 
 import numpy as np
 import pandas as pd
@@ -38,6 +38,7 @@ class SamplesQueryIndex(SamplesQuery):
     def __init__(self, connection: DataIndexConnection,
                  universe_set: SampleSet,
                  sample_set: SampleSet,
+                 unknown_set: SampleSet,
                  queries_collection: QueriesCollection = QueriesCollection.create_empty()):
         """
         Builds a new SamplesQueryIndex from the given information. In most normal operations SamplesQuery objects
@@ -48,6 +49,7 @@ class SamplesQueryIndex(SamplesQuery):
         :param universe_set: The :py:class:`genomics_data_index.storage.SampleSet` representing a set of samples defining
                        the universe (used for e.g., complement() operations).
         :param sample_set: The :py:class:`genomics_data_index.storage.SampleSet` representing the set of selected samples.
+        :param unknown_set: The :py:class:`genomics_data_index.storage.SampleSet` representing the set of unknown samples.
         :param queries_collection: A collection of strings representing the queries performed to arrive at this SamplesQuery.
         :return: A new SamplesQueryIndex object.
         """
@@ -55,6 +57,7 @@ class SamplesQueryIndex(SamplesQuery):
         self._query_connection = connection
         self._universe_set = universe_set
         self._sample_set = sample_set
+        self._unknown_set = unknown_set
         self._queries_collection = queries_collection
 
     @property
@@ -65,8 +68,13 @@ class SamplesQueryIndex(SamplesQuery):
     def sample_set(self) -> SampleSet:
         return self._sample_set
 
+    @property
+    def unknown_set(self) -> SampleSet:
+        return self._unknown_set
+
     def reset_universe(self) -> SamplesQuery:
         return self._create_from(sample_set=self._sample_set, universe_set=self._sample_set,
+                                 unknown_set=self._unknown_set,
                                  queries_collection=self._queries_collection)
 
     def join(self, data_frame: pd.DataFrame, sample_ids_column: str = None,
@@ -104,6 +112,7 @@ class SamplesQueryIndex(SamplesQuery):
 
         queries_collection = self._queries_collection.append(query_message)
         return self._create_from(sample_set=intersected_set, universe_set=self._universe_set,
+                                 unknown_set=self._unknown_set,
                                  queries_collection=queries_collection)
 
     def _intersect_sample_set(self, other: SampleSet) -> SampleSet:
@@ -211,6 +220,7 @@ class SamplesQueryIndex(SamplesQuery):
             intersect_set = self._intersect_sample_set(other.sample_set)
             queries_collection = self._queries_collection.append(str(other))
             return self._create_from(intersect_set, universe_set=self._universe_set,
+                                     unknown_set=self._unknown_set,
                                      queries_collection=queries_collection)
         else:
             raise Exception(f'Cannot perform an "and" on object {other}')
@@ -220,6 +230,7 @@ class SamplesQueryIndex(SamplesQuery):
             union_set = self._union_sample_set(other.sample_set)
             queries_collection = self._queries_collection.append(f'OR({str(other)}')
             return self._create_from(union_set, universe_set=self._universe_set,
+                                     unknown_set=self._unknown_set,
                                      queries_collection=queries_collection)
         else:
             raise Exception(f'Cannot perform an "or" on object {other}')
@@ -231,6 +242,7 @@ class SamplesQueryIndex(SamplesQuery):
         complement_set = self.universe_set.minus(self.sample_set)
         query_collection = self._queries_collection.append('complement')
         return self._create_from(sample_set=complement_set, universe_set=self._universe_set,
+                                 unknown_set=self._unknown_set,
                                  queries_collection=query_collection)
 
     @property
@@ -252,8 +264,13 @@ class SamplesQueryIndex(SamplesQuery):
 
     def __str__(self) -> str:
         universe_length = len(self.universe_set)
-        percent_selected = (len(self) / universe_length) * 100
-        return f'<{self.__class__.__name__}[{percent_selected:0.0f}% ({len(self)}/{universe_length}) samples]>'
+        unknown_length = len(self.unknown_set)
+        selected_length = len(self)
+        percent_selected = (selected_length / universe_length) * 100
+        percent_unknown = (unknown_length / universe_length) * 100
+        return f'<{self.__class__.__name__}[selected={percent_selected:0.0f}% ' \
+               f'({selected_length}/{universe_length}) samples, unknown={percent_unknown:0.0f}% ' \
+               f'({unknown_length}/{universe_length}) samples]>'
 
     def tolist(self, names=True):
         if names:
@@ -293,6 +310,7 @@ class SamplesQueryIndex(SamplesQuery):
 
         queries_collection = self._queries_collection.append(query_feature)
         return self._create_from(intersect_found, universe_set=self._universe_set,
+                                 unknown_set=self._unknown_set,
                                  queries_collection=queries_collection)
 
     def _prepare_isin_query_message(self, query_message_prefix: str,
@@ -308,6 +326,7 @@ class SamplesQueryIndex(SamplesQuery):
                                                          additional_messages='')
         queries_collection = self._queries_collection.append(query_message)
         return self._create_from(sample_set=sample_set, universe_set=self._universe_set,
+                                 unknown_set=self._unknown_set,
                                  queries_collection=queries_collection)
 
     def _within_kmer_jaccard(self, data: Union[str, List[str], pd.Series, SamplesQuery, SampleSet],
@@ -329,6 +348,7 @@ class SamplesQueryIndex(SamplesQuery):
                                                                   samples_universe=self._sample_set)
         queries_collection = self._queries_collection.append(query_message)
         return self._create_from(sample_set=sample_set_matches, universe_set=self._universe_set,
+                                 unknown_set=self.unknown_set,
                                  queries_collection=queries_collection)
 
     def _within_distance(self, data: Union[str, List[str], pd.Series, SamplesQuery, SampleSet], distance: float,
@@ -437,9 +457,10 @@ class SamplesQueryIndex(SamplesQuery):
                                                                        kmer_size=kmer_size,
                                                                        ncores=ncores)
 
-    def _create_from(self, sample_set: SampleSet, universe_set: SampleSet,
+    def _create_from(self, sample_set: SampleSet, universe_set: SampleSet, unknown_set: SampleSet,
                      queries_collection: QueriesCollection) -> SamplesQuery:
         return SamplesQueryIndex(connection=self._query_connection,
                                  universe_set=universe_set,
                                  sample_set=sample_set,
+                                 unknown_set=unknown_set,
                                  queries_collection=queries_collection)
