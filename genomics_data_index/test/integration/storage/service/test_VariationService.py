@@ -71,6 +71,42 @@ def test_read_index(database, snippy_nucleotide_data_package, reference_service_
     assert {'reference:839:1:G', 'reference:866:9:G'} == set(feature_samples.keys())
 
 
+def test_count_on_reference_no_index_unknowns(database, snippy_nucleotide_data_package, reference_service_with_data,
+                                        sample_service, filesystem_storage):
+    variation_service = VariationService(database_connection=database,
+                                         reference_service=reference_service_with_data,
+                                         sample_service=sample_service,
+                                         variation_dir=filesystem_storage.variation_dir,
+                                         index_unknown_missing=False)
+
+    variation_service.insert(feature_scope_name='genome', data_package=snippy_nucleotide_data_package)
+
+    assert 112 == variation_service.count_on_reference(reference_name='genome', include_unknown=False)
+    assert 112 == variation_service.count_on_reference(reference_name='genome', include_unknown=True)
+
+    with pytest.raises(NoResultFound) as execinfo:
+        variation_service.count_on_reference('no_exists')
+    assert 'No row was found' in str(execinfo.value)
+
+
+def test_count_on_reference_with_index_unknowns(database, snippy_nucleotide_data_package, reference_service_with_data,
+                                        sample_service, filesystem_storage):
+    variation_service = VariationService(database_connection=database,
+                                         reference_service=reference_service_with_data,
+                                         sample_service=sample_service,
+                                         variation_dir=filesystem_storage.variation_dir,
+                                         index_unknown_missing=True)
+
+    variation_service.insert(feature_scope_name='genome', data_package=snippy_nucleotide_data_package)
+
+    assert 111 == variation_service.count_on_reference(reference_name='genome', include_unknown=False)
+    assert 632 == variation_service.count_on_reference(reference_name='genome', include_unknown=True)
+
+    with pytest.raises(NoResultFound) as execinfo:
+        variation_service.count_on_reference('no_exists')
+    assert 'No row was found' in str(execinfo.value)
+
+
 def test_insert_variants_masked_regions(database, snippy_nucleotide_data_package, reference_service_with_data,
                                         sample_service, filesystem_storage):
     variation_service = VariationService(database_connection=database,
@@ -99,27 +135,33 @@ def test_insert_variants_masked_regions(database, snippy_nucleotide_data_package
                          .count()
 
 
-def test_summarize_variants(database, snippy_nucleotide_data_package, reference_service_with_data,
+def test_mutation_counts_on_reference(database, snippy_nucleotide_data_package, reference_service_with_data,
                             sample_service, filesystem_storage):
     variation_service = VariationService(database_connection=database,
                                          reference_service=reference_service_with_data,
                                          sample_service=sample_service,
                                          variation_dir=filesystem_storage.variation_dir,
-                                         index_unknown_missing=False)
+                                         index_unknown_missing=True)
     variation_service.insert(feature_scope_name='genome', data_package=snippy_nucleotide_data_package)
 
-    assert 112 == variation_service.count_on_reference('genome', include_unknown=False)
-
-    with pytest.raises(NoResultFound) as execinfo:
-        variation_service.count_on_reference('no_exists', include_unknown=False)
-    assert 'No row was found' in str(execinfo.value)
-
-    mutation_counts = variation_service.mutation_counts_on_reference('genome', include_unknown=False)
-    assert 112 == len(mutation_counts)
+    mutation_counts = variation_service.mutation_counts_on_reference('genome')
+    assert 111 == len(mutation_counts)
     assert 2 == mutation_counts['reference:839:1:G']
     assert 1 == mutation_counts['reference:866:9:G']
     assert 1 == mutation_counts['reference:1048:1:G']
     assert 2 == mutation_counts['reference:3897:5:G']
+
+    mutation_counts = variation_service.mutation_counts_on_reference('genome', include_unknown=True)
+    assert 632 == len(mutation_counts)
+    assert 2 == mutation_counts['reference:839:1:G']
+    assert 1 == mutation_counts['reference:866:9:G']
+    assert 1 == mutation_counts['reference:1048:1:G']
+    assert 2 == mutation_counts['reference:3897:5:G']
+    assert 2 == mutation_counts['reference:3897:5:G']
+
+    assert 3 == mutation_counts['reference:9:1:?']
+    assert 2 == mutation_counts['reference:5100:1:?']
+    assert 1 == mutation_counts['reference:888:1:?']
 
 
 def test_get_variants_on_reference(database, snippy_nucleotide_data_package, reference_service_with_data,
