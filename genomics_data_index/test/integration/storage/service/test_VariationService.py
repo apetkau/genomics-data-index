@@ -146,13 +146,13 @@ def test_get_variants_on_reference(database, snippy_nucleotide_data_package, ref
     assert 3897 == mutations['reference:3897:5:G'].position
 
 
-def test_insert_variants_examine_variation(database, snippy_nucleotide_data_package, reference_service_with_data,
+def test_insert_variants_examine_variation_with_unknown(database, snippy_nucleotide_data_package, reference_service_with_data,
                                            sample_service, filesystem_storage):
     variation_service = VariationService(database_connection=database,
                                          reference_service=reference_service_with_data,
                                          sample_service=sample_service,
                                          variation_dir=filesystem_storage.variation_dir,
-                                         index_unknown_missing=False)
+                                         index_unknown_missing=True)
     session = database.get_session()
 
     variation_service.insert(feature_scope_name='genome', data_package=snippy_nucleotide_data_package)
@@ -162,7 +162,7 @@ def test_insert_variants_examine_variation(database, snippy_nucleotide_data_pack
 
     assert 3 == session.query(SampleNucleotideVariation).count(), 'Incorrect number of SampleSequences'
 
-    assert 112 == session.query(NucleotideVariantsSamples).count(), 'Incorrect number of storage entries'
+    assert 632 == session.query(NucleotideVariantsSamples).count(), 'Incorrect number of storage entries'
 
     # Check to make sure some variants are stored
     v = session.query(NucleotideVariantsSamples).get({
@@ -204,6 +204,44 @@ def test_insert_variants_examine_variation(database, snippy_nucleotide_data_pack
         'insertion': 'TTGA'
     })
     assert 'OTHER' == v.var_type, 'Type is incorrect'
+    assert v.id_hgvs_c is None
+    assert v.id_hgvs_p is None
+    assert {sample_name_ids['SampleC']} == set(v.sample_ids)
+
+    # Check to make sure unknown/missing positions are stored
+    v = session.query(NucleotideVariantsSamples).get({
+        'sequence': 'reference',
+        'position': 9,
+        'deletion': 1,
+        'insertion': '?'
+    })
+    assert v is not None
+    assert 'UNKNOWN_MISSING' == v.var_type
+    assert v.id_hgvs_c is None
+    assert v.id_hgvs_p is None
+    assert {sample_name_ids['SampleA'], sample_name_ids['SampleB'],
+            sample_name_ids['SampleC']} == set(v.sample_ids)
+
+    v = session.query(NucleotideVariantsSamples).get({
+        'sequence': 'reference',
+        'position': 5100,
+        'deletion': 1,
+        'insertion': '?'
+    })
+    assert v is not None
+    assert 'UNKNOWN_MISSING' == v.var_type
+    assert v.id_hgvs_c is None
+    assert v.id_hgvs_p is None
+    assert {sample_name_ids['SampleA'], sample_name_ids['SampleC']} == set(v.sample_ids)
+
+    v = session.query(NucleotideVariantsSamples).get({
+        'sequence': 'reference',
+        'position': 873,
+        'deletion': 1,
+        'insertion': '?'
+    })
+    assert v is not None
+    assert 'UNKNOWN_MISSING' == v.var_type
     assert v.id_hgvs_c is None
     assert v.id_hgvs_p is None
     assert {sample_name_ids['SampleC']} == set(v.sample_ids)
