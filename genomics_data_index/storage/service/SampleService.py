@@ -237,9 +237,10 @@ class SampleService:
         unknown_to_features_dict = {}
         unknown_features = []
         for feature in features:
-            unknown_feature = feature.to_unknown()
-            unknown_features.append(unknown_feature)
-            unknown_to_features_dict[unknown_feature.id] = feature
+            unknown_features_exploded = feature.to_unknown_explode()
+            unknown_features.extend(unknown_features_exploded)
+            for unknown_feature in unknown_features_exploded:
+                unknown_to_features_dict[unknown_feature.id] = feature
 
         unknown_features_sets = self.find_sample_sets_by_features(unknown_features)
 

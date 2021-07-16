@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import abc
+from typing import List
 
 
 class QueryFeature(abc.ABC):
@@ -32,6 +33,15 @@ class QueryFeature(abc.ABC):
         """
         Converts this given QueryFeature to one representing an unknown (e.g., unknown mutation or MLST allele).
         :return: The equivalent of this feature but representing an unknown.
+        """
+        pass
+
+    @abc.abstractmethod
+    def to_unknown_explode(self) -> List[QueryFeature]:
+        """
+        Converts this given QueryFeature to one representing an unknown (e.g., unknown mutation or MLST allele).
+        This will explode into separate unknown features (e.g., in cases of an indel/complex mutation).
+        :return: A list of unknown features, where each feature corresponds to a single position.
         """
         pass
 

@@ -226,6 +226,7 @@ def test_find_unknown_sample_sets_by_features_variations_with_index_unknowns_mul
     sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
     sampleC = database.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
 
+    # Test 3 features, two of which are in same location
     features = [QueryFeatureMutationSPDI('reference:5061:G:A'),
                 QueryFeatureMutationSPDI('reference:87:1:A'),
                 QueryFeatureMutationSPDI('reference:87:G:T'),
@@ -236,6 +237,30 @@ def test_find_unknown_sample_sets_by_features_variations_with_index_unknowns_mul
     assert {sampleA.id} == set(sample_sets[f'reference:5061:G:A'])
     assert {sampleA.id, sampleB.id, sampleC.id} == set(sample_sets[f'reference:87:1:A'])
     assert {sampleA.id, sampleB.id, sampleC.id} == set(sample_sets[f'reference:87:G:T'])
+
+    # Test 3 features, two of which are in same location, one is an insertion
+    features = [QueryFeatureMutationSPDI('reference:5061:G:A'),
+                QueryFeatureMutationSPDI('reference:87:ATCG:A'),
+                QueryFeatureMutationSPDI('reference:87:G:T'),
+                ]
+    sample_sets = sample_service.find_unknown_sample_sets_by_feature(features)
+
+    assert 3 == len(sample_sets)
+    assert {sampleA.id} == set(sample_sets[f'reference:5061:G:A'])
+    assert {sampleA.id, sampleB.id, sampleC.id} == set(sample_sets[f'reference:87:ATCG:A'])
+    assert {sampleA.id, sampleB.id, sampleC.id} == set(sample_sets[f'reference:87:G:T'])
+
+    # Test 3 features, two of which are in same location, one is a deletion
+    features = [QueryFeatureMutationSPDI('reference:5061:G:A'),
+                QueryFeatureMutationSPDI('reference:87:T:A'),
+                QueryFeatureMutationSPDI('reference:87:G:TCG'),
+                ]
+    sample_sets = sample_service.find_unknown_sample_sets_by_feature(features)
+
+    assert 3 == len(sample_sets)
+    assert {sampleA.id} == set(sample_sets[f'reference:5061:G:A'])
+    assert {sampleA.id, sampleB.id, sampleC.id} == set(sample_sets[f'reference:87:T:A'])
+    assert {sampleA.id, sampleB.id, sampleC.id} == set(sample_sets[f'reference:87:G:TCG'])
 
 
 def test_find_sample_sets_by_features_variations_hgvs(database, sample_service_snpeff_annotations):
