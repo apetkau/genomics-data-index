@@ -151,29 +151,35 @@ def test_get_variants_table(variants_reader):
     assert ['OTHER'] == df.loc[(df['SAMPLE'] == 'SampleC') & (df['POS'] == 1984), 'TYPE'].tolist()
 
 
-def test_get_genomic_masks(variants_reader):
+def test_get_genomic_masks_and_mask_to_features(variants_reader):
     mask = variants_reader.get_genomic_masked_region('SampleA')
     assert 437 == len(mask)
     assert {'reference'} == mask.sequence_names()
+    assert 437 == len(variants_reader.mask_to_features(mask))
 
     mask = variants_reader.get_genomic_masked_region('SampleB')
     assert 276 == len(mask)
     assert {'reference'} == mask.sequence_names()
+    assert 276 == len(variants_reader.mask_to_features(mask))
 
     mask = variants_reader.get_genomic_masked_region('SampleC')
     assert 329 == len(mask)
     assert {'reference'} == mask.sequence_names()
+    assert 329 == len(variants_reader.mask_to_features(mask))
 
 
 def test_get_genomic_masks_empty(variants_reader_empty_masks):
     mask = variants_reader_empty_masks.get_genomic_masked_region('SampleA')
     assert mask.is_empty()
+    assert 0 == len(variants_reader_empty_masks.mask_to_features(mask))
 
     mask = variants_reader_empty_masks.get_genomic_masked_region('SampleB')
     assert mask.is_empty()
+    assert 0 == len(variants_reader_empty_masks.mask_to_features(mask))
 
     mask = variants_reader_empty_masks.get_genomic_masked_region('SampleC')
     assert mask.is_empty()
+    assert 0 == len(variants_reader_empty_masks.mask_to_features(mask))
 
 
 def test_get_samples_list(variants_reader):
