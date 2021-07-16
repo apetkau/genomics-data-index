@@ -262,6 +262,20 @@ def test_find_unknown_sample_sets_by_features_variations_with_index_unknowns_mul
     assert {sampleA.id, sampleB.id, sampleC.id} == set(sample_sets[f'reference:87:T:A'])
     assert {sampleA.id, sampleB.id, sampleC.id} == set(sample_sets[f'reference:87:G:TCG'])
 
+    # Test 4 features, three are complex, one with integer deletion
+    features = [QueryFeatureMutationSPDI('reference:5061:G:A'),
+                QueryFeatureMutationSPDI('reference:87:TCCG:AAAGG'),
+                QueryFeatureMutationSPDI('reference:87:GGGGA:TCG'),
+                QueryFeatureMutationSPDI('reference:87:3:TCG'),
+                ]
+    sample_sets = sample_service.find_unknown_sample_sets_by_feature(features)
+
+    assert 4 == len(sample_sets)
+    assert {sampleA.id} == set(sample_sets[f'reference:5061:G:A'])
+    assert {sampleA.id, sampleB.id, sampleC.id} == set(sample_sets[f'reference:87:TCCG:AAAGG'])
+    assert {sampleA.id, sampleB.id, sampleC.id} == set(sample_sets[f'reference:87:GGGGA:TCG'])
+    assert {sampleA.id, sampleB.id, sampleC.id} == set(sample_sets[f'reference:87:3:TCG'])
+
 
 def test_find_sample_sets_by_features_variations_hgvs(database, sample_service_snpeff_annotations):
     sample_sh14_001 = database.get_session().query(Sample).filter(Sample.name == 'SH14-001').one()
