@@ -21,7 +21,7 @@ class VcfVariantsReader(NucleotideFeaturesReader):
     VCF_FRAME_COLUMNS = ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE', 'VARIANT_ID']
 
     def __init__(self, sample_files_map: Dict[str, NucleotideSampleData],
-                 include_masked_regions: bool = False):
+                 include_masked_regions: bool = True):
         super().__init__()
         self._sample_files_map = sample_files_map
         self._snpeff_parser = VcfSnpEffAnnotationParser()
@@ -145,5 +145,6 @@ class VcfVariantsReader(NucleotideFeaturesReader):
         return list(self._sample_files_map.keys())
 
     @classmethod
-    def create(cls, sample_files_map: Dict[str, NucleotideSampleData]):
-        return cls(sample_files_map=sample_files_map)
+    def create(cls, sample_files_map: Dict[str, NucleotideSampleData],
+               include_masked_regions: bool = True):
+        return cls(sample_files_map=sample_files_map, include_masked_regions=include_masked_regions)
