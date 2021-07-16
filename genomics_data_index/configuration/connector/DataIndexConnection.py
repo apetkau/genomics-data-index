@@ -138,7 +138,8 @@ class DataIndexConnection:
         variation_service = VariationService(database_connection=database,
                                              variation_dir=filesystem_storage.variation_dir,
                                              reference_service=reference_service,
-                                             sample_service=sample_service)
+                                             sample_service=sample_service,
+                                             index_unknown_missing=True)
 
         alignment_service = CoreAlignmentService(database=database,
                                                  reference_service=reference_service,
