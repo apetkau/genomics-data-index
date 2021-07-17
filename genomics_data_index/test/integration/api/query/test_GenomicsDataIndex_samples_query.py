@@ -357,23 +357,60 @@ def test_query_single_mutation(loaded_database_connection: DataIndexConnection):
 def test_query_single_mutation_then_add_new_genomes_and_query(loaded_database_connection: DataIndexConnection,
                                                               snippy_data_package_2: NucleotideSampleDataPackage):
     db = loaded_database_connection.database
+    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
 
     query_result = query(loaded_database_connection).hasa(QueryFeatureMutationSPDI('reference:5061:G:A'))
     assert 1 == len(query_result)
     assert {sampleB.id} == set(query_result.sample_set)
+    assert {sampleA.id} == set(query_result.unknown_set)
     assert 9 == len(query_result.universe_set)
 
     # Insert new data which should increase the number of matches I get
     loaded_database_connection.variation_service.insert(data_package=snippy_data_package_2,
                                                         feature_scope_name='genome')
 
+    sampleA_2 = db.get_session().query(Sample).filter(Sample.name == 'SampleA_2').one()
     sampleB_2 = db.get_session().query(Sample).filter(Sample.name == 'SampleB_2').one()
 
     query_result = query(loaded_database_connection).hasa(QueryFeatureMutationSPDI('reference:5061:G:A'))
     assert 2 == len(query_result)
     assert {sampleB.id, sampleB_2.id} == set(query_result.sample_set)
+    assert {sampleA.id, sampleA_2.id} == set(query_result.unknown_set)
     assert 12 == len(query_result.universe_set)
+
+
+def test_query_multiple_mutation_unknowns(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+
+    query_result = query(loaded_database_connection).hasa('reference:5061:G:A')
+    assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+    assert {sampleA.id} == set(query_result.unknown_set)
+    assert 9 == len(query_result.universe_set)
+
+    query_result = query_result.hasa('reference:190:A:G')
+    assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+    assert {sampleA.id, sampleC.id} == set(query_result.unknown_set)
+    assert 9 == len(query_result.universe_set)
+
+    # Empty query
+    query_result_empty = query_result.hasa('reference:800:1:G')
+    assert 0 == len(query_result_empty)
+    assert set() == set(query_result_empty.sample_set)
+    assert {sampleA.id, sampleC.id} == set(query_result_empty.unknown_set)
+    assert 9 == len(query_result_empty.universe_set)
+
+    # All unknown query
+    query_result_unknown = query_result.hasa('reference:5160:1:G')
+    assert 0 == len(query_result_unknown)
+    assert set() == set(query_result_unknown.sample_set)
+    assert {sampleA.id, sampleB.id, sampleC.id} == set(query_result_unknown.unknown_set)
+    assert 9 == len(query_result_unknown.universe_set)
 
 
 def test_query_mutation_hgvs(loaded_database_connection_annotations: DataIndexConnection):
