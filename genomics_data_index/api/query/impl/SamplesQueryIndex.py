@@ -72,9 +72,16 @@ class SamplesQueryIndex(SamplesQuery):
     def unknown_set(self) -> SampleSet:
         return self._unknown_set
 
-    def reset_universe(self) -> SamplesQuery:
-        return self._create_from(sample_set=self._sample_set, universe_set=self._sample_set,
-                                 unknown_set=self._unknown_set,
+    def reset_universe(self, include_unknown: bool = True) -> SamplesQuery:
+        if include_unknown:
+            universe_set = self._sample_set.union(self._unknown_set)
+            unknown_set = self._unknown_set
+        else:
+            universe_set = self._sample_set
+            unknown_set = SampleSet.create_empty()
+
+        return self._create_from(sample_set=self._sample_set, universe_set=universe_set,
+                                 unknown_set=unknown_set,
                                  queries_collection=self._queries_collection)
 
     def join(self, data_frame: pd.DataFrame, sample_ids_column: str = None,

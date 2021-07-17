@@ -222,12 +222,12 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def reset_universe(self) -> SamplesQuery:
+    def reset_universe(self, include_unknown: bool = True) -> SamplesQuery:
         """
         Resets the *universe* set to be the set of currently selected samples.
         That is, if `A` is a SamplesQuery consisting of some selected samples, then
         `B = A.reset_universe()` implies that `B.universe_set == A`.
-
+        :param include_unknown: Whether or not unknown matches should be included in the universe.
         :return: A SamplesQuery with the universe reset to whatever is selected.
         """
         pass

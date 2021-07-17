@@ -50,7 +50,7 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
     def unknown_set(self) -> SampleSet:
         return self._wrapped_query.unknown_set
 
-    def reset_universe(self) -> SamplesQuery:
+    def reset_universe(self, include_unknown: bool = True) -> SamplesQuery:
         return self._wrap_create(self._wrapped_query.reset_universe())
 
     def intersect(self, sample_set: SampleSet, query_message: str = None) -> SamplesQuery:

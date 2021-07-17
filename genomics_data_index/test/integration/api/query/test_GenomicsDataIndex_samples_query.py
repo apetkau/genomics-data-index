@@ -56,12 +56,14 @@ def test_query_isin_samples(loaded_database_connection: DataIndexConnection):
     query_result = query(loaded_database_connection).isin('SampleB')
     assert 1 == len(query_result)
     assert {sampleB.id} == set(query_result.sample_set)
+    assert 0 == len(query_result.unknown_set)
     assert 9 == len(query_result.universe_set)
 
 
 def test_query_isin_samples_no_exist(loaded_database_connection: DataIndexConnection):
     query_result = query(loaded_database_connection).isin('no_exist')
     assert 0 == len(query_result)
+    assert 0 == len(query_result.unknown_set)
     assert 9 == len(query_result.universe_set)
 
 
@@ -73,6 +75,7 @@ def test_query_isin_sample_set_single(loaded_database_connection: DataIndexConne
     query_result = query(loaded_database_connection).isin(sampleBSet)
     assert 1 == len(query_result)
     assert {sampleB.id} == set(query_result.sample_set)
+    assert 0 == len(query_result.unknown_set)
     assert 9 == len(query_result.universe_set)
 
 
@@ -84,6 +87,7 @@ def test_query_isin_samples_query_single(loaded_database_connection: DataIndexCo
     query_result = query(loaded_database_connection).isin(query_result_B)
     assert 1 == len(query_result)
     assert {sampleB.id} == set(query_result.sample_set)
+    assert 0 == len(query_result.unknown_set)
     assert 9 == len(query_result.universe_set)
 
 
@@ -92,6 +96,7 @@ def test_query_isin_samples_query_no_matches(loaded_database_connection: DataInd
 
     query_result = query(loaded_database_connection).isin(query_result_empty)
     assert 0 == len(query_result)
+    assert 0 == len(query_result.unknown_set)
     assert 9 == len(query_result.universe_set)
 
 
@@ -159,13 +164,53 @@ def test_query_and_or(loaded_database_connection: DataIndexConnection):
 
 
 def test_query_reset_universe(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+
+    # No unknowns
     query_result = query(loaded_database_connection).isin('SampleB')
     assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+    assert 0 == len(query_result.unknown_set)
     assert 9 == len(query_result.universe_set)
 
     query_result = query_result.reset_universe()
     assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+    assert 0 == len(query_result.unknown_set)
     assert 1 == len(query_result.universe_set)
+
+    # With unknowns
+    query_result = query(loaded_database_connection).hasa('reference:5061:G:A')
+    assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+    assert 1 == len(query_result.unknown_set)
+    assert {sampleA.id} == set(query_result.unknown_set)
+    assert 9 == len(query_result.universe_set)
+
+    query_result = query_result.reset_universe()
+    assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+    assert 1 == len(query_result.unknown_set)
+    assert {sampleA.id} == set(query_result.unknown_set)
+    assert 2 == len(query_result.universe_set)
+    assert {sampleA.id, sampleB.id} == set(query_result.universe_set)
+
+    # With unknowns but excluding them
+    query_result = query(loaded_database_connection).hasa('reference:5061:G:A')
+    assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+    assert 1 == len(query_result.unknown_set)
+    assert {sampleA.id} == set(query_result.unknown_set)
+    assert 9 == len(query_result.universe_set)
+
+    query_result = query_result.reset_universe(include_unknown=False)
+    assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+    assert 0 == len(query_result.unknown_set)
+    assert 1 == len(query_result.universe_set)
+    assert {sampleB.id} == set(query_result.universe_set)
 
 
 def test_query_isin_samples_multilple(loaded_database_connection: DataIndexConnection):
@@ -229,6 +274,7 @@ def test_query_isin_kmer(loaded_database_connection: DataIndexConnection):
                                                           units='kmer_jaccard')
     assert 3 == len(query_result)
     assert {sampleA.id, sampleB.id, sampleC.id} == set(query_result.sample_set)
+    assert 0 == len(query_result.unknown_set)
     assert 9 == len(query_result.universe_set)
     assert "isin_kmer_jaccard('SampleA', dist=1.0, k=31)" == query_result.query_expression()
 
