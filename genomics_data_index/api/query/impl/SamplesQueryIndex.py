@@ -121,6 +121,9 @@ class SamplesQueryIndex(SamplesQuery):
     def _union_sample_set(self, other: SampleSet) -> SampleSet:
         return self.sample_set.union(other)
 
+    def _union_unknown_set(self, other: SampleSet) -> SampleSet:
+        return self.unknown_set.union(other)
+
     def _get_has_kinds(self) -> List[str]:
         return self.HAS_KINDS
 
@@ -301,6 +304,7 @@ class SamplesQueryIndex(SamplesQuery):
             raise Exception(f'kind={kind} is not recognized for {self}. Must be one of {self._get_has_kinds()}')
 
         found_set_dict = self._query_connection.sample_service.find_sample_sets_by_features([query_feature])
+        unknown_set_dict = self._query_connection.sample_service.find_unknown_sample_sets_by_features([query_feature])
 
         if query_feature.id in found_set_dict:
             found_set = found_set_dict[query_feature.id]
@@ -308,9 +312,15 @@ class SamplesQueryIndex(SamplesQuery):
         else:
             intersect_found = SampleSet.create_empty()
 
+        if query_feature.id in unknown_set_dict:
+            unknown_set = unknown_set_dict[query_feature.id]
+            union_unknown = self._union_unknown_set(unknown_set)
+        else:
+            union_unknown = self._unknown_set
+
         queries_collection = self._queries_collection.append(query_feature)
         return self._create_from(intersect_found, universe_set=self._universe_set,
-                                 unknown_set=self._unknown_set,
+                                 unknown_set=union_unknown,
                                  queries_collection=queries_collection)
 
     def _prepare_isin_query_message(self, query_message_prefix: str,
