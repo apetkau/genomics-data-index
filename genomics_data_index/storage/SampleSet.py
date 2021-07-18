@@ -41,7 +41,7 @@ class SampleSet:
         else:
             raise Exception(f'Cannot union other of type [{type(other)}]')
 
-    def subtract(self, other: Union[Set[int], SampleSet, List[SampleSet]]) -> SampleSet:
+    def minus(self, other: Union[Set[int], SampleSet, List[SampleSet]]) -> SampleSet:
         if other is None:
             raise Exception('Cannot union other=[None]')
         elif isinstance(other, AllSampleSet):
@@ -73,21 +73,6 @@ class SampleSet:
             return self._bitmap.jaccard_index(SampleSet(other)._bitmap)
         else:
             raise Exception(f'Cannot union other of type [{type(other)}]')
-
-    def minus(self, other: Union[Set[int], SampleSet]):
-        if other is None:
-            return self
-        elif isinstance(other, AllSampleSet):
-            return self.create_empty()
-        elif isinstance(other, SampleSet):
-            complement_bitmap = self._bitmap - other._bitmap
-            return SampleSet(existing_bitmap=complement_bitmap)
-        elif isinstance(other, set):
-            other_set = BitMap(other)
-            complement_bitmap = self._bitmap - other_set
-            return SampleSet(existing_bitmap=complement_bitmap)
-        else:
-            raise Exception(f'Cannot intersect other of type [{type(other)}]')
 
     def is_empty(self) -> bool:
         return len(self._bitmap) == 0
@@ -133,6 +118,9 @@ class AllSampleSet(SampleSet):
 
     def is_empty(self) -> bool:
         return False
+
+    def minus(self, other: Union[Set[int], SampleSet, List[SampleSet]]) -> SampleSet:
+        raise Exception('Cannot subtract anything from AllSampleSet')
 
     def get_bytes(self) -> bytes:
         raise Exception('Cannot serialize AllSampleSet')

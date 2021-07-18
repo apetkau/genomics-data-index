@@ -1,3 +1,4 @@
+import pytest
 import math
 
 from genomics_data_index.storage.SampleSet import SampleSet
@@ -127,7 +128,7 @@ def test_jaccard_index_sample_ids_set():
     assert math.isclose(0.6, sample_set1.jaccard_index(sample_set_3), rel_tol=1e-3)
 
 
-def test_complement_sample_set():
+def test_minus_sample_set():
     set1 = SampleSet(sample_ids=[1, 3, 10])
     set2 = SampleSet(sample_ids=[3, 10, 20])
     set3 = SampleSet(sample_ids=[40, 60, 80, 100])
@@ -177,7 +178,7 @@ def test_create_all_sample_set():
     assert isinstance(other_set.intersection(all_set), SampleSet)
 
 
-def test_subtraction():
+def test_minus_2():
     sample_set1 = SampleSet(sample_ids=[1, 3, 10])
     sample_set1_identical = SampleSet(sample_ids=[1, 3, 10])
     sample_set2 = SampleSet(sample_ids=[3, 10, 20])
@@ -186,34 +187,50 @@ def test_subtraction():
     sample_set_empty = SampleSet(sample_ids=[])
     sample_set_non_overlap = SampleSet(sample_ids=[50, 100])
 
-    subtract = sample_set1.subtract(sample_set2)
+    subtract = sample_set1.minus(sample_set2)
     assert isinstance(subtract, SampleSet)
     assert {1} == set(subtract)
 
-    subtract = sample_set2.subtract(sample_set1)
+    subtract = sample_set2.minus(sample_set1)
     assert isinstance(subtract, SampleSet)
     assert {20} == set(subtract)
 
-    subtract = sample_set1.union(sample_set_empty)
+    subtract = sample_set1.minus(sample_set_empty)
     assert isinstance(subtract, SampleSet)
     assert {1, 3, 10} == set(subtract)
 
-    subtract = sample_set_empty.subtract(sample_set1)
+    subtract = sample_set_empty.minus(sample_set1)
     assert isinstance(subtract, SampleSet)
     assert set() == set(subtract)
 
-    subtract = sample_set1.subtract(sample_set_non_overlap)
+    subtract = sample_set1.minus(sample_set_non_overlap)
     assert isinstance(subtract, SampleSet)
     assert {1, 3, 10} == set(subtract)
 
-    subtract = sample_set1.subtract(sample_set1_identical)
+    subtract = sample_set1.minus(sample_set1_identical)
     assert isinstance(subtract, SampleSet)
     assert set() == set(subtract)
 
-    subtract = sample_set1.subtract(sample_set3)
+    subtract = sample_set1.minus(sample_set3)
     assert isinstance(subtract, SampleSet)
     assert {1, 10} == set(subtract)
 
-    subtract = sample_set1.subtract([sample_set3, sample_set4])
+    subtract = sample_set1.minus([sample_set3, sample_set4])
     assert isinstance(subtract, SampleSet)
     assert {10} == set(subtract)
+
+    # Pass in a set of integers
+    subtract = sample_set1.minus({1, 10})
+    assert isinstance(subtract, SampleSet)
+    assert {3} == set(subtract)
+
+    # Test case of all set
+    all_set = SampleSet.create_all()
+    subtract = sample_set1.minus(all_set)
+    assert isinstance(subtract, SampleSet)
+    assert set() == set(subtract)
+
+    # Test case of all set other
+    with pytest.raises(Exception) as execinfo:
+        all_set.minus(sample_set1)
+    assert 'Cannot subtract anything from AllSampleSet' in str(execinfo.value)
