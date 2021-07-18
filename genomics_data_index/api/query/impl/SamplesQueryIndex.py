@@ -72,6 +72,14 @@ class SamplesQueryIndex(SamplesQuery):
     def unknown_set(self) -> SampleSet:
         return self._unknown_set
 
+    @property
+    def _absent_set(self) -> SampleSet:
+        return self._universe_set.minus([self._sample_set, self._unknown_set])
+
+    @property
+    def absent_set(self) -> SampleSet:
+        return self._absent_set
+
     def reset_universe(self, include_unknown: bool = True) -> SamplesQuery:
         if include_unknown:
             universe_set = self._sample_set.union(self._unknown_set)
@@ -122,6 +130,27 @@ class SamplesQueryIndex(SamplesQuery):
                                  unknown_set=self._unknown_set,
                                  queries_collection=queries_collection)
 
+    def _found_in_self_and(self, found_in_other: SampleSet) -> SampleSet:
+        return self._sample_set.intersection(found_in_other)
+
+    def _unknown_in_self_and(self, found_in_other: SampleSet, unknown_in_other: SampleSet) -> SampleSet:
+        """
+        Given the above SampleSets, this returns the set of those unknown in self and the other sets
+        (representing another query). This is defined using the help of Kleene's three-valued logic truth tables
+        <https://en.wikipedia.org/wiki/Three-valued_logic#Kleene_and_Priest_logics>. Specifically, for two queries A
+        and B with sets of samples consisting of either found (True), Unknown, or absent (False), this will return the
+        sets of samples in the unknown state (U) in the truth table for AND(A,B).
+        :param found_in_other: The SampleSet found in the other query.
+        :param unknown_in_other: The SampleSet of unknowns in the other query.
+        :return: The SampleSet of unknowns in self AND the other query.
+        """
+        # Each corresponds to one of three possible combinations in the three-valued truth-table for A and B
+        # For those samples that should be in the unknown state (U) for "A AND B".
+        unknown_and_unknown = self._unknown_set.intersection(unknown_in_other)
+        unknown_and_found = self._unknown_set.intersection(found_in_other)
+        found_and_unknown = self._sample_set.intersection(unknown_in_other)
+        return unknown_and_unknown.union(unknown_and_found).union(found_and_unknown)
+
     def _intersect_sample_set(self, other: SampleSet) -> SampleSet:
         return self.sample_set.intersection(other)
 
@@ -130,6 +159,9 @@ class SamplesQueryIndex(SamplesQuery):
 
     def _union_unknown_set(self, other: SampleSet) -> SampleSet:
         return self.unknown_set.union(other)
+
+    def _intersect_unknown_set(self, other: SampleSet) -> SampleSet:
+        return self.unknown_set.intersection(other)
 
     def _get_has_kinds(self) -> List[str]:
         return self.HAS_KINDS
@@ -310,24 +342,28 @@ class SamplesQueryIndex(SamplesQuery):
         else:
             raise Exception(f'kind={kind} is not recognized for {self}. Must be one of {self._get_has_kinds()}')
 
-        found_set_dict = self._query_connection.sample_service.find_sample_sets_by_features([query_feature])
-        unknown_set_dict = self._query_connection.sample_service.find_unknown_sample_sets_by_features([query_feature])
+        found_hasa_set_dict = self._query_connection.sample_service.find_sample_sets_by_features([query_feature])
+        unknown_hasa_set_dict = self._query_connection.sample_service.find_unknown_sample_sets_by_features([query_feature])
 
-        if query_feature.id in found_set_dict:
-            found_set = found_set_dict[query_feature.id]
-            intersect_found = self._intersect_sample_set(found_set)
+        if query_feature.id in found_hasa_set_dict:
+            found_hasa_set = found_hasa_set_dict[query_feature.id]
+            found_in_query = self._found_in_self_and(found_hasa_set)
         else:
-            intersect_found = SampleSet.create_empty()
+            found_in_query = SampleSet.create_empty()
 
-        if query_feature.id in unknown_set_dict:
-            unknown_set = unknown_set_dict[query_feature.id]
-            union_unknown = self._union_unknown_set(unknown_set)
+        if query_feature.id in unknown_hasa_set_dict:
+            unknown_hasa_set = unknown_hasa_set_dict[query_feature.id]
         else:
-            union_unknown = self._unknown_set
+            unknown_hasa_set = SampleSet.create_empty()
+
+        unknown_in_query = self._unknown_in_self_and(found_in_other=found_in_query, unknown_in_other=unknown_hasa_set)
+
+        # Universe remains the same in this case.
+        universe_in_query = self._universe_set
 
         queries_collection = self._queries_collection.append(query_feature)
-        return self._create_from(intersect_found, universe_set=self._universe_set,
-                                 unknown_set=union_unknown,
+        return self._create_from(found_in_query, universe_set=universe_in_query,
+                                 unknown_set=unknown_in_query,
                                  queries_collection=queries_collection)
 
     def _prepare_isin_query_message(self, query_message_prefix: str,

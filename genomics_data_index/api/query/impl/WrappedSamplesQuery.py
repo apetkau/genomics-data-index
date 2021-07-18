@@ -50,6 +50,10 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
     def unknown_set(self) -> SampleSet:
         return self._wrapped_query.unknown_set
 
+    @property
+    def absent_set(self) -> SampleSet:
+        return self._wrapped_query.absent_set
+
     def reset_universe(self, include_unknown: bool = True) -> SamplesQuery:
         return self._wrap_create(self._wrapped_query.reset_universe())
 

@@ -63,6 +63,16 @@ class SamplesQuery(abc.ABC):
         """
         pass
 
+    @property
+    @abc.abstractmethod
+    def absent_set(self) -> SampleSet:
+        """
+        The set of samples :py:class:`genomics_data_index.storage.SampleSet` for which the query does not match.
+
+        :returns: A SampleSet defining the samples where the query does not match.
+        """
+        pass
+
     @abc.abstractmethod
     def join(self, data_frame: pd.DataFrame, sample_ids_column: str = None,
              sample_names_column: str = None, default_isa_kind: str = 'names',

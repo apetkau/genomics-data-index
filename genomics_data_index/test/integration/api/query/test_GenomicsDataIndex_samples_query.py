@@ -391,11 +391,13 @@ def test_query_single_mutation(loaded_database_connection: DataIndexConnection):
     db = loaded_database_connection.database
     sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    all_sample_ids = {i for i, in db.get_session().query(Sample.id).all()}
 
     query_result = query(loaded_database_connection).hasa(QueryFeatureMutationSPDI('reference:5061:G:A'))
     assert 1 == len(query_result)
     assert {sampleB.id} == set(query_result.sample_set)
     assert {sampleA.id} == set(query_result.unknown_set)
+    assert all_sample_ids - {sampleA.id} - {sampleB.id} == set(query_result.absent_set)
     assert 9 == len(query_result.universe_set)
     assert not query_result.has_tree()
 
@@ -405,11 +407,14 @@ def test_query_single_mutation_then_add_new_genomes_and_query(loaded_database_co
     db = loaded_database_connection.database
     sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    all_sample_ids = {i for i, in db.get_session().query(Sample.id).all()}
+    assert 9 == len(all_sample_ids)
 
     query_result = query(loaded_database_connection).hasa(QueryFeatureMutationSPDI('reference:5061:G:A'))
     assert 1 == len(query_result)
     assert {sampleB.id} == set(query_result.sample_set)
     assert {sampleA.id} == set(query_result.unknown_set)
+    assert all_sample_ids - {sampleA.id} - {sampleB.id} == set(query_result.absent_set)
     assert 9 == len(query_result.universe_set)
 
     # Insert new data which should increase the number of matches I get
@@ -418,11 +423,14 @@ def test_query_single_mutation_then_add_new_genomes_and_query(loaded_database_co
 
     sampleA_2 = db.get_session().query(Sample).filter(Sample.name == 'SampleA_2').one()
     sampleB_2 = db.get_session().query(Sample).filter(Sample.name == 'SampleB_2').one()
+    all_sample_ids = {i for i, in db.get_session().query(Sample.id).all()}
+    assert 12 == len(all_sample_ids)
 
     query_result = query(loaded_database_connection).hasa(QueryFeatureMutationSPDI('reference:5061:G:A'))
     assert 2 == len(query_result)
     assert {sampleB.id, sampleB_2.id} == set(query_result.sample_set)
     assert {sampleA.id, sampleA_2.id} == set(query_result.unknown_set)
+    assert all_sample_ids - {sampleA.id, sampleA_2.id, sampleB.id, sampleB_2.id} == set(query_result.absent_set)
     assert 12 == len(query_result.universe_set)
 
 
@@ -431,32 +439,94 @@ def test_query_multiple_mutation_unknowns(loaded_database_connection: DataIndexC
     sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
     sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+    all_sample_ids = {i for i, in db.get_session().query(Sample.id).all()}
 
+    # Initial query object
+    query_result = query(loaded_database_connection)
+    assert 9 == len(query_result)
+    assert 0 == len(query_result.unknown_set)
+    assert 9 == len(query_result.universe_set)
+    assert 0 == len(query_result.absent_set)
+
+    # Test order 'reference:5061:G:A' then 'reference:190:A:G'
     query_result = query(loaded_database_connection).hasa('reference:5061:G:A')
     assert 1 == len(query_result)
     assert {sampleB.id} == set(query_result.sample_set)
     assert {sampleA.id} == set(query_result.unknown_set)
+    assert all_sample_ids - {sampleA.id, sampleB.id} == set(query_result.absent_set)
     assert 9 == len(query_result.universe_set)
 
     query_result = query_result.hasa('reference:190:A:G')
     assert 1 == len(query_result)
     assert {sampleB.id} == set(query_result.sample_set)
-    assert {sampleA.id, sampleC.id} == set(query_result.unknown_set)
+    assert {sampleA.id} == set(query_result.unknown_set)
+    assert all_sample_ids - {sampleA.id, sampleB.id} == set(query_result.absent_set)
     assert 9 == len(query_result.universe_set)
 
-    # Empty query
+    # Test order 'reference:190:A:G' then 'reference:5061:G:A'
+    query_result = query(loaded_database_connection).hasa('reference:190:A:G')
+    assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+    assert {sampleA.id, sampleC.id} == set(query_result.unknown_set)
+    assert all_sample_ids - {sampleA.id, sampleB.id, sampleC.id} == set(query_result.absent_set)
+    assert 9 == len(query_result.universe_set)
+
+    query_result = query_result.hasa('reference:5061:G:A')
+    assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+    assert {sampleA.id} == set(query_result.unknown_set)
+    assert all_sample_ids - {sampleA.id, sampleB.id} == set(query_result.absent_set)
+    assert 9 == len(query_result.universe_set)
+
+    # Reset query
+    query_result = query(loaded_database_connection).hasa('reference:190:A:G')
+    assert {sampleB.id} == set(query_result.sample_set)
+    assert {sampleA.id, sampleC.id} == set(query_result.unknown_set)
+    assert all_sample_ids - {sampleA.id, sampleB.id, sampleC.id} == set(query_result.absent_set)
+
+    # Empty query with no unknowns
     query_result_empty = query_result.hasa('reference:800:1:G')
     assert 0 == len(query_result_empty)
     assert set() == set(query_result_empty.sample_set)
-    assert {sampleA.id, sampleC.id} == set(query_result_empty.unknown_set)
+    assert 0 == len(query_result_empty.unknown_set)
     assert 9 == len(query_result_empty.universe_set)
+    assert 9 == len(query_result_empty.absent_set)
 
-    # All unknown query
+    # Empty query with all unknowns
     query_result_unknown = query_result.hasa('reference:5160:1:G')
     assert 0 == len(query_result_unknown)
-    assert set() == set(query_result_unknown.sample_set)
     assert {sampleA.id, sampleB.id, sampleC.id} == set(query_result_unknown.unknown_set)
     assert 9 == len(query_result_unknown.universe_set)
+    assert all_sample_ids - {sampleA.id, sampleB.id, sampleC.id} == set(query_result.absent_set)
+
+    # Query for A,B then for mutation with B and verify A ends up in unknowns
+    query_result = query(loaded_database_connection).isin(['SampleA', 'SampleB'])
+    assert 2 == len(query_result)
+    assert {sampleA.id, sampleB.id} == set(query_result.sample_set)
+    assert 0 == len(query_result.unknown_set)
+    assert 9 == len(query_result.universe_set)
+    assert all_sample_ids - {sampleA.id, sampleB.id} == set(query_result.absent_set)
+
+    query_result = query_result.hasa('reference:5061:G:A')
+    assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+    assert {sampleA.id} == set(query_result.unknown_set)
+    assert 9 == len(query_result.universe_set)
+    assert all_sample_ids - {sampleA.id, sampleB.id} == set(query_result.absent_set)
+
+
+@pytest.mark.skip()
+def test_query_intersect_sample_set(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+
+    query_result = query(loaded_database_connection).hasa(QueryFeatureMutationSPDI('reference:5061:G:A'))
+    assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+    assert {sampleA.id} == set(query_result.unknown_set)
+    assert 9 == len(query_result.universe_set)
+    assert not query_result.has_tree()
 
 
 def test_query_mutation_hgvs(loaded_database_connection_annotations: DataIndexConnection):
