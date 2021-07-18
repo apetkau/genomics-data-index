@@ -625,12 +625,12 @@ def test_query_single_mutation_summary(loaded_database_connection: DataIndexConn
             '% Present', '% Absent', '% Unknown'] == df.columns.tolist()
     assert 'reference:5061:G:A' == df.iloc[0]['Query']
     assert 1 == df.iloc[0]['Present']
-    assert 8 == df.iloc[0]['Absent']
-    assert pd.isna(df.iloc[0]['Unknown'])
+    assert 7 == df.iloc[0]['Absent']
+    assert 1 == df.iloc[0]['Unknown']
     assert 9 == df.iloc[0]['Total']
     assert math.isclose((1 / 9) * 100, df.iloc[0]['% Present'])
-    assert math.isclose((8 / 9) * 100, df.iloc[0]['% Absent'])
-    assert pd.isna(df.iloc[0]['% Unknown'])
+    assert math.isclose((7 / 9) * 100, df.iloc[0]['% Absent'])
+    assert math.isclose((1 / 9) * 100, df.iloc[0]['% Unknown'])
 
 
 def test_query_single_mutation_two_samples(loaded_database_connection: DataIndexConnection):
@@ -869,19 +869,34 @@ def test_query_single_mutation_no_results_toframe(loaded_database_connection: Da
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
 
 
-def test_query_single_mutation_no_results_summary(loaded_database_connection: DataIndexConnection):
+def test_query_single_mutation_all_unknown_summary(loaded_database_connection: DataIndexConnection):
     df = query(loaded_database_connection).hasa('reference:1:1:A', kind='mutation').summary()
     assert 1 == len(df)
     assert ['Query', 'Present', 'Absent', 'Unknown', 'Total',
             '% Present', '% Absent', '% Unknown'] == df.columns.tolist()
     assert 'reference:1:1:A' == df.iloc[0]['Query']
     assert 0 == df.iloc[0]['Present']
+    assert 6 == df.iloc[0]['Absent']
+    assert 3 == df.iloc[0]['Unknown']
+    assert 9 == df.iloc[0]['Total']
+    assert math.isclose((0 / 9) * 100, df.iloc[0]['% Present'])
+    assert math.isclose((6 / 9) * 100, df.iloc[0]['% Absent'])
+    assert math.isclose((3 / 9) * 100, df.iloc[0]['% Unknown'])
+
+
+def test_query_single_mutation_all_absent_summary(loaded_database_connection: DataIndexConnection):
+    df = query(loaded_database_connection).hasa('reference:3000:1:A', kind='mutation').summary()
+    assert 1 == len(df)
+    assert ['Query', 'Present', 'Absent', 'Unknown', 'Total',
+            '% Present', '% Absent', '% Unknown'] == df.columns.tolist()
+    assert 'reference:3000:1:A' == df.iloc[0]['Query']
+    assert 0 == df.iloc[0]['Present']
     assert 9 == df.iloc[0]['Absent']
-    assert pd.isna(df.iloc[0]['Unknown'])
+    assert 0 == df.iloc[0]['Unknown']
     assert 9 == df.iloc[0]['Total']
     assert math.isclose((0 / 9) * 100, df.iloc[0]['% Present'])
     assert math.isclose((9 / 9) * 100, df.iloc[0]['% Absent'])
-    assert pd.isna(df.iloc[0]['% Unknown'])
+    assert math.isclose((0 / 9) * 100, df.iloc[0]['% Unknown'])
 
 
 def test_all_samples_summary(loaded_database_connection: DataIndexConnection):
@@ -892,11 +907,11 @@ def test_all_samples_summary(loaded_database_connection: DataIndexConnection):
     assert '' == df.iloc[0]['Query']
     assert 9 == df.iloc[0]['Present']
     assert 0 == df.iloc[0]['Absent']
-    assert pd.isna(df.iloc[0]['Unknown'])
+    assert 0 == df.iloc[0]['Unknown']
     assert 9 == df.iloc[0]['Total']
     assert math.isclose((9 / 9) * 100, df.iloc[0]['% Present'])
     assert math.isclose((0 / 9) * 100, df.iloc[0]['% Absent'])
-    assert pd.isna(df.iloc[0]['% Unknown'])
+    assert math.isclose((0 / 9) * 100, df.iloc[0]['% Unknown'])
 
 
 def test_join_custom_dataframe_no_query(loaded_database_connection: DataIndexConnection):

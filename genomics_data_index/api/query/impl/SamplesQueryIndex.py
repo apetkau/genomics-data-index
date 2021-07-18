@@ -185,11 +185,11 @@ class SamplesQueryIndex(SamplesQuery):
     def summary(self) -> pd.DataFrame:
         present = len(self)
         total = len(self.universe_set)
-        unknown = pd.NA
-        absent = total - present
+        unknown = len(self.unknown_set)
+        absent = total - present - unknown
         per_present = (present / total) * 100
         per_absent = (absent / total) * 100
-        per_unknown = pd.NA
+        per_unknown = (unknown / total) * 100
 
         return pd.DataFrame([{
             'Query': self._queries_collection.query_expression(),
