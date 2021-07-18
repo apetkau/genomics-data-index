@@ -175,3 +175,45 @@ def test_create_all_sample_set():
     assert other_set.intersection(all_set) == other_set
     assert isinstance(all_set.intersection(other_set), SampleSet)
     assert isinstance(other_set.intersection(all_set), SampleSet)
+
+
+def test_subtraction():
+    sample_set1 = SampleSet(sample_ids=[1, 3, 10])
+    sample_set1_identical = SampleSet(sample_ids=[1, 3, 10])
+    sample_set2 = SampleSet(sample_ids=[3, 10, 20])
+    sample_set3 = SampleSet(sample_ids=[3])
+    sample_set4 = SampleSet(sample_ids=[1])
+    sample_set_empty = SampleSet(sample_ids=[])
+    sample_set_non_overlap = SampleSet(sample_ids=[50, 100])
+
+    subtract = sample_set1.subtract(sample_set2)
+    assert isinstance(subtract, SampleSet)
+    assert {1} == set(subtract)
+
+    subtract = sample_set2.subtract(sample_set1)
+    assert isinstance(subtract, SampleSet)
+    assert {20} == set(subtract)
+
+    subtract = sample_set1.union(sample_set_empty)
+    assert isinstance(subtract, SampleSet)
+    assert {1, 3, 10} == set(subtract)
+
+    subtract = sample_set_empty.subtract(sample_set1)
+    assert isinstance(subtract, SampleSet)
+    assert set() == set(subtract)
+
+    subtract = sample_set1.subtract(sample_set_non_overlap)
+    assert isinstance(subtract, SampleSet)
+    assert {1, 3, 10} == set(subtract)
+
+    subtract = sample_set1.subtract(sample_set1_identical)
+    assert isinstance(subtract, SampleSet)
+    assert set() == set(subtract)
+
+    subtract = sample_set1.subtract(sample_set3)
+    assert isinstance(subtract, SampleSet)
+    assert {1, 10} == set(subtract)
+
+    subtract = sample_set1.subtract([sample_set3, sample_set4])
+    assert isinstance(subtract, SampleSet)
+    assert {10} == set(subtract)

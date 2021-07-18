@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterable, Generator, Union, Set
+from typing import Iterable, Generator, Union, Set, List
 
 from pyroaring import BitMap
 
@@ -38,6 +38,27 @@ class SampleSet:
             return SampleSet(existing_bitmap=self._bitmap.union(other._bitmap))
         elif isinstance(other, set):
             return SampleSet(self._bitmap.union(BitMap(other)))
+        else:
+            raise Exception(f'Cannot union other of type [{type(other)}]')
+
+    def subtract(self, other: Union[Set[int], SampleSet, List[SampleSet]]) -> SampleSet:
+        if other is None:
+            raise Exception('Cannot union other=[None]')
+        elif isinstance(other, AllSampleSet):
+            return SampleSet.create_empty()
+        elif isinstance(other, SampleSet):
+            return SampleSet(existing_bitmap=(self._bitmap - other._bitmap))
+        elif isinstance(other, set):
+            return SampleSet(existing_bitmap=(self._bitmap - BitMap(other)))
+        elif isinstance(other, list):
+            difference_bitmap = self._bitmap
+            for s in other:
+                if isinstance(s, SampleSet):
+                    difference_bitmap = difference_bitmap - s._bitmap
+                else:
+                    raise Exception(f'Got invalid type=[{type(s)}] in input other=[{other}]. '
+                                    f'Expected a list of SampleSet')
+            return SampleSet(existing_bitmap=difference_bitmap)
         else:
             raise Exception(f'Cannot union other of type [{type(other)}]')
 
