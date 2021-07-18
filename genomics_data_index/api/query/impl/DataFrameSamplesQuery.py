@@ -113,16 +113,16 @@ class DataFrameSamplesQuery(WrappedSamplesQuery):
         subset_query = self._wrapped_query.intersect(sample_set=subset_sample_set, query_message=query_message)
         return self._wrap_create(subset_query)
 
-    def toframe(self, exclude_absent: bool = True) -> pd.DataFrame:
-        samples_dataframe = super().toframe()
+    def toframe(self, include_absent: bool = False) -> pd.DataFrame:
+        samples_dataframe = super().toframe(include_absent=include_absent)
         samples_df_cols = list(samples_dataframe.columns)
         merged_df = self._data_frame.merge(samples_dataframe, how='inner', left_on=self._sample_ids_col,
                                            right_on='Sample ID')
         new_col_order = samples_df_cols + [col for col in list(merged_df.columns) if col not in samples_df_cols]
         return merged_df[new_col_order]
 
-    def reset_universe(self) -> SamplesQuery:
-        new_wrapped_query = self._wrapped_query.reset_universe()
+    def reset_universe(self, include_unknown: bool = True) -> SamplesQuery:
+        new_wrapped_query = self._wrapped_query.reset_universe(include_unknown=include_unknown)
         return self._wrap_create(new_wrapped_query, universe_set=new_wrapped_query.universe_set)
 
     def _wrap_create(self, wrapped_query: SamplesQuery, universe_set: SampleSet = None) -> WrappedSamplesQuery:

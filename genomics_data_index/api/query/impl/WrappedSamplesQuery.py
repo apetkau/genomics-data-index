@@ -73,8 +73,8 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
     def _wrap_create(self, wrapped_query: SamplesQuery, universe_set: SampleSet = None) -> WrappedSamplesQuery:
         pass
 
-    def toframe(self, exclude_absent: bool = True) -> pd.DataFrame:
-        return self._wrapped_query.toframe(exclude_absent=exclude_absent)
+    def toframe(self, include_absent: bool = False) -> pd.DataFrame:
+        return self._wrapped_query.toframe(include_absent=include_absent)
 
     def summary(self) -> pd.DataFrame:
         return self._wrapped_query.summary()

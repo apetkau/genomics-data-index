@@ -502,7 +502,7 @@ def test_create_dataframe_from_sample_set(database, sample_service: SampleServic
 
     df = sample_service.create_dataframe_from_sample_set(sample_set=sample_set,
                                                          universe_set=sample_set,
-                                                         exclude_absent=True,
+                                                         include_absent=False,
                                                          queries_expression=queries_expression)
     assert len(df) == 3
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
@@ -521,7 +521,7 @@ def test_create_dataframe_from_sample_set_subset_samples(database, sample_servic
 
     df = sample_service.create_dataframe_from_sample_set(sample_set,
                                                          universe_set=sample_set,
-                                                         exclude_absent=True,
+                                                         include_absent=False,
                                                          queries_expression=queries_expression)
     assert len(df) == 2
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
@@ -544,7 +544,7 @@ def test_create_dataframe_from_sample_set_subset_samples_include_all(database,
 
     df = sample_service.create_dataframe_from_sample_set(sample_set,
                                                          universe_set=universe_set,
-                                                         exclude_absent=False,
+                                                         include_absent=True,
                                                          queries_expression=queries_expression)
     assert len(df) == 3
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
@@ -566,7 +566,7 @@ def test_create_dataframe_from_sample_set_subset_samples_include_all_matching_un
 
     df = sample_service.create_dataframe_from_sample_set(sample_set,
                                                          universe_set=sample_set,
-                                                         exclude_absent=False,
+                                                         include_absent=True,
                                                          queries_expression=queries_expression)
     assert len(df) == 2
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
@@ -583,7 +583,7 @@ def test_create_dataframe_from_sample_set_empty(sample_service: SampleService, v
 
     df = sample_service.create_dataframe_from_sample_set(sample_set=sample_set,
                                                          universe_set=sample_set,
-                                                         exclude_absent=True,
+                                                         include_absent=False,
                                                          queries_expression=queries_expression)
     assert len(df) == 0
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
@@ -599,7 +599,7 @@ def test_create_dataframe_from_sample_set_with_query_expression(database, sample
 
     df = sample_service.create_dataframe_from_sample_set(sample_set,
                                                          universe_set=sample_set,
-                                                         exclude_absent=True,
+                                                         include_absent=False,
                                                          queries_expression=queries_expression)
     assert {'lmonocytogenes:abc:1'} == set(df['Query'].tolist())
 

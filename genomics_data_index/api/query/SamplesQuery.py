@@ -96,13 +96,13 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def toframe(self, exclude_absent: bool = True) -> pd.DataFrame:
+    def toframe(self, include_absent: bool = False) -> pd.DataFrame:
         """
         Converts the selected set of samples to a DataFrame with one row per sample. By default only samples selected
-        by this query will be returned (setting exclude_absent to False will return all samples in the defined universe
+        by this query will be returned (setting include_absent to True will return all samples in the defined universe
         as rows in the DataFrame with a column in the DataFrame used to define if the sample is present or absent).
 
-        :param exclude_absent: Whether or not samples absent in this query (but in the universe of samples) should be
+        :param include_absent: Whether or not samples absent in this query (but in the universe of samples) should be
         included.
 
         :return: A DataFrame of the samples in this query, one row per sample.

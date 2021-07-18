@@ -818,24 +818,33 @@ def test_query_single_mutation_dataframe(loaded_database_connection: DataIndexCo
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
     sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
 
+    # Case with no unknowns
     df = query(loaded_database_connection).hasa('reference:839:C:G', kind='mutation').toframe()
-
     assert 2 == len(df)
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
-
     df = df.sort_values(['Sample Name'])
     assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
     assert [sampleB.id, sampleC.id] == df['Sample ID'].tolist()
     assert {'reference:839:C:G'} == set(df['Query'].tolist())
+    assert ['Present', 'Present'] == df['Status'].tolist()
+
+    # Case with some unknowns
+    df = query(loaded_database_connection).hasa('reference:5061:G:A', kind='mutation').toframe()
+    assert 1 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    df = df.sort_values(['Sample Name'])
+    assert ['SampleB'] == df['Sample Name'].tolist()
+    assert [sampleB.id] == df['Sample ID'].tolist()
+    assert {'reference:5061:G:A'} == set(df['Query'].tolist())
+    assert ['Present'] == df['Status'].tolist()
 
 
 def test_query_single_mutation_dataframe_include_all(loaded_database_connection: DataIndexConnection):
+    # Case of no unknowns
     df = query(loaded_database_connection).hasa(
-        'reference:839:C:G', kind='mutation').toframe(exclude_absent=False)
-
+        'reference:839:C:G', kind='mutation').toframe(include_absent=True)
     assert 9 == len(df)
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
-
     df = df.sort_values(['Sample Name'])
     assert ['2014C-3598', '2014C-3599', '2014D-0067', '2014D-0068',
             'CFSAN002349', 'CFSAN023463',
