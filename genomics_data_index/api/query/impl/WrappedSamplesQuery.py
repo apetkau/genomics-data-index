@@ -179,8 +179,13 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
 
     def __str__(self) -> str:
         universe_length = len(self.universe_set)
-        percent_selected = (len(self) / universe_length) * 100
-        return f'<{self.__class__.__name__}[{percent_selected:0.0f}% ({len(self)}/{universe_length}) samples]>'
+        unknown_length = len(self.unknown_set)
+        selected_length = len(self)
+        percent_selected = (selected_length / universe_length) * 100
+        percent_unknown = (unknown_length / universe_length) * 100
+        return f'<{self.__class__.__name__}[selected={percent_selected:0.0f}% ' \
+               f'({selected_length}/{universe_length}) samples, unknown={percent_unknown:0.0f}% ' \
+               f'({unknown_length}/{universe_length}) samples]>'
 
     def __repr__(self) -> str:
         return str(self)
