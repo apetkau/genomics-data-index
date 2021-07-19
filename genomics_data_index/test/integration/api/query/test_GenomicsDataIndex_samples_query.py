@@ -789,18 +789,54 @@ def test_query_multiple_mutation_unknowns(loaded_database_connection: DataIndexC
     assert all_sample_ids - {sampleA.id, sampleB.id} == set(query_result.absent_set)
 
 
-@pytest.mark.skip()
 def test_query_intersect_sample_set(loaded_database_connection: DataIndexConnection):
     db = loaded_database_connection.database
     sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
 
-    query_result = query(loaded_database_connection).hasa(QueryFeatureMutationSPDI('reference:5061:G:A'))
+    query_result = query(loaded_database_connection).hasa('reference:5061:G:A')
     assert 1 == len(query_result)
     assert {sampleB.id} == set(query_result.sample_set)
     assert {sampleA.id} == set(query_result.unknown_set)
     assert 9 == len(query_result.universe_set)
-    assert not query_result.has_tree()
+
+    # Test intersect exclude unknown
+    query_intersect = query_result.intersect(SampleSet(sample_ids=[sampleB.id]))
+    assert 1 == len(query_intersect)
+    assert {sampleB.id} == set(query_intersect.sample_set)
+    assert 0 == len(query_intersect.unknown_set)
+    assert 9 == len(query_intersect.universe_set)
+
+    # Test intersect include unknown
+    query_intersect = query_result.intersect(SampleSet(sample_ids=[sampleA.id, sampleB.id]))
+    assert 1 == len(query_intersect)
+    assert {sampleB.id} == set(query_intersect.sample_set)
+    assert 1 == len(query_intersect.unknown_set)
+    assert {sampleA.id} == set(query_intersect.unknown_set)
+    assert 9 == len(query_intersect.universe_set)
+
+    # Test intersect include unknown and sample not in query
+    query_intersect = query_result.intersect(SampleSet(sample_ids=[sampleA.id, sampleB.id, sampleC.id]))
+    assert 1 == len(query_intersect)
+    assert {sampleB.id} == set(query_intersect.sample_set)
+    assert 1 == len(query_intersect.unknown_set)
+    assert {sampleA.id} == set(query_intersect.unknown_set)
+    assert 9 == len(query_intersect.universe_set)
+
+    # Test intersect only unknown and sample not in query
+    query_intersect = query_result.intersect(SampleSet(sample_ids=[sampleA.id, sampleC.id]))
+    assert 0 == len(query_intersect)
+    assert 1 == len(query_intersect.unknown_set)
+    assert {sampleA.id} == set(query_intersect.unknown_set)
+    assert 9 == len(query_intersect.universe_set)
+
+    # Test intersect only unknown
+    query_intersect = query_result.intersect(SampleSet(sample_ids=[sampleA.id]))
+    assert 0 == len(query_intersect)
+    assert 1 == len(query_intersect.unknown_set)
+    assert {sampleA.id} == set(query_intersect.unknown_set)
+    assert 9 == len(query_intersect.universe_set)
 
 
 def test_query_mutation_hgvs(loaded_database_connection_annotations: DataIndexConnection):

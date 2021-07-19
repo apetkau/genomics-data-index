@@ -121,13 +121,14 @@ class SamplesQueryIndex(SamplesQuery):
 
     def intersect(self, sample_set: SampleSet, query_message: str = None) -> SamplesQuery:
         intersected_set = self._intersect_sample_set(sample_set)
+        unknown_set = self._intersect_unknown_set(sample_set)
 
         if query_message is None:
             query_message = f'intersect(samples={len(sample_set)}'
 
         queries_collection = self._queries_collection.append(query_message)
         return self._create_from(sample_set=intersected_set, universe_set=self._universe_set,
-                                 unknown_set=self._unknown_set,
+                                 unknown_set=unknown_set,
                                  queries_collection=queries_collection)
 
     def _found_in_self_and(self, found_in_other: SampleSet) -> SampleSet:
