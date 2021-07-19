@@ -497,94 +497,92 @@ def test_create_dataframe_from_sample_set(database, sample_service: SampleServic
     sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
     sampleC = database.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
 
-    sample_set = SampleSet([sampleA.id, sampleB.id, sampleC.id])
-    queries_expression = ''
-
-    df = sample_service.create_dataframe_from_sample_set(sample_set=sample_set,
-                                                         universe_set=sample_set,
-                                                         include_absent=False,
-                                                         queries_expression=queries_expression)
+    # Only present
+    df = sample_service.create_dataframe_from_sample_set(present_set=SampleSet([sampleA.id, sampleB.id, sampleC.id]),
+                                                         absent_set=SampleSet.create_empty(),
+                                                         unknown_set=SampleSet.create_empty(),
+                                                         queries_expression='')
     assert len(df) == 3
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
-
     df = df.sort_values(['Sample Name'])
     assert ['SampleA', 'SampleB', 'SampleC'] == df['Sample Name'].tolist()
     assert [sampleA.id, sampleB.id, sampleC.id] == df['Sample ID'].tolist()
+    assert ['Present', 'Present', 'Present'] == df['Status'].tolist()
+
+    # Only absent
+    df = sample_service.create_dataframe_from_sample_set(present_set=SampleSet.create_empty(),
+                                                         absent_set=SampleSet([sampleA.id, sampleB.id, sampleC.id]),
+                                                         unknown_set=SampleSet.create_empty(),
+                                                         queries_expression='')
+    assert len(df) == 3
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    df = df.sort_values(['Sample Name'])
+    assert ['SampleA', 'SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert [sampleA.id, sampleB.id, sampleC.id] == df['Sample ID'].tolist()
+    assert ['Absent', 'Absent', 'Absent'] == df['Status'].tolist()
+
+    # Only unknown
+    df = sample_service.create_dataframe_from_sample_set(present_set=SampleSet.create_empty(),
+                                                         absent_set=SampleSet.create_empty(),
+                                                         unknown_set=SampleSet([sampleA.id, sampleB.id, sampleC.id]),
+                                                         queries_expression='')
+    assert len(df) == 3
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    df = df.sort_values(['Sample Name'])
+    assert ['SampleA', 'SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert [sampleA.id, sampleB.id, sampleC.id] == df['Sample ID'].tolist()
+    assert ['Unknown', 'Unknown', 'Unknown'] == df['Status'].tolist()
+
+    # Mix of each
+    df = sample_service.create_dataframe_from_sample_set(present_set=SampleSet([sampleA.id]),
+                                                         absent_set=SampleSet([sampleB.id]),
+                                                         unknown_set=SampleSet([sampleC.id]),
+                                                         queries_expression='')
+    assert len(df) == 3
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    df = df.sort_values(['Sample Name'])
+    assert ['SampleA', 'SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert [sampleA.id, sampleB.id, sampleC.id] == df['Sample ID'].tolist()
+    assert ['Present', 'Absent', 'Unknown'] == df['Status'].tolist()
 
 
 def test_create_dataframe_from_sample_set_subset_samples(database, sample_service: SampleService, variation_service):
     sampleA = database.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
     sampleC = database.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
 
-    sample_set = SampleSet([sampleA.id, sampleC.id])
-    queries_expression = ''
-
-    df = sample_service.create_dataframe_from_sample_set(sample_set,
-                                                         universe_set=sample_set,
-                                                         include_absent=False,
-                                                         queries_expression=queries_expression)
+    # Both present
+    df = sample_service.create_dataframe_from_sample_set(present_set=SampleSet([sampleA.id, sampleC.id]),
+                                                         absent_set=SampleSet.create_empty(),
+                                                         unknown_set=SampleSet.create_empty(),
+                                                         queries_expression='')
     assert len(df) == 2
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
-
-    df = df.sort_values(['Sample Name'])
-    assert ['SampleA', 'SampleC'] == df['Sample Name'].tolist()
-    assert [sampleA.id, sampleC.id] == df['Sample ID'].tolist()
-
-
-def test_create_dataframe_from_sample_set_subset_samples_include_all(database,
-                                                                     sample_service: SampleService,
-                                                                     variation_service):
-    sampleA = database.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
-    sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
-    sampleC = database.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
-
-    universe_set = SampleSet([sampleA.id, sampleB.id, sampleC.id])
-    sample_set = SampleSet([sampleA.id, sampleC.id])
-    queries_expression = ''
-
-    df = sample_service.create_dataframe_from_sample_set(sample_set,
-                                                         universe_set=universe_set,
-                                                         include_absent=True,
-                                                         queries_expression=queries_expression)
-    assert len(df) == 3
-    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
-
-    df = df.sort_values(['Sample Name'])
-    assert ['SampleA', 'SampleB', 'SampleC'] == df['Sample Name'].tolist()
-    assert [sampleA.id, sampleB.id, sampleC.id] == df['Sample ID'].tolist()
-    assert ['Present', 'Absent', 'Present'] == df['Status'].tolist()
-
-
-def test_create_dataframe_from_sample_set_subset_samples_include_all_matching_universe(database,
-                                                                                       sample_service: SampleService,
-                                                                                       variation_service):
-    sampleA = database.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
-    sampleC = database.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
-
-    sample_set = SampleSet([sampleA.id, sampleC.id])
-    queries_expression = ''
-
-    df = sample_service.create_dataframe_from_sample_set(sample_set,
-                                                         universe_set=sample_set,
-                                                         include_absent=True,
-                                                         queries_expression=queries_expression)
-    assert len(df) == 2
-    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
-
     df = df.sort_values(['Sample Name'])
     assert ['SampleA', 'SampleC'] == df['Sample Name'].tolist()
     assert [sampleA.id, sampleC.id] == df['Sample ID'].tolist()
     assert ['Present', 'Present'] == df['Status'].tolist()
+
+    # Mix
+    df = sample_service.create_dataframe_from_sample_set(present_set=SampleSet([sampleA.id]),
+                                                         absent_set=SampleSet.create_empty(),
+                                                         unknown_set=SampleSet([sampleC.id]),
+                                                         queries_expression='')
+    assert len(df) == 2
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    df = df.sort_values(['Sample Name'])
+    assert ['SampleA', 'SampleC'] == df['Sample Name'].tolist()
+    assert [sampleA.id, sampleC.id] == df['Sample ID'].tolist()
+    assert ['Present', 'Unknown'] == df['Status'].tolist()
 
 
 def test_create_dataframe_from_sample_set_empty(sample_service: SampleService, variation_service):
     sample_set = SampleSet.create_empty()
     queries_expression = ''
 
-    df = sample_service.create_dataframe_from_sample_set(sample_set=sample_set,
-                                                         universe_set=sample_set,
-                                                         include_absent=False,
-                                                         queries_expression=queries_expression)
+    df = sample_service.create_dataframe_from_sample_set(present_set=SampleSet.create_empty(),
+                                                         absent_set=SampleSet.create_empty(),
+                                                         unknown_set=SampleSet.create_empty(),
+                                                         queries_expression='')
     assert len(df) == 0
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
 
@@ -594,13 +592,11 @@ def test_create_dataframe_from_sample_set_with_query_expression(database, sample
     sampleA = database.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
     sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
 
-    sample_set = SampleSet([sampleA.id, sampleB.id])
-    queries_expression = 'lmonocytogenes:abc:1'
-
-    df = sample_service.create_dataframe_from_sample_set(sample_set,
-                                                         universe_set=sample_set,
-                                                         include_absent=False,
-                                                         queries_expression=queries_expression)
+    df = sample_service.create_dataframe_from_sample_set(present_set=SampleSet([sampleA.id]),
+                                                         absent_set=SampleSet([sampleB.id]),
+                                                         unknown_set=SampleSet.create_empty(),
+                                                         queries_expression='lmonocytogenes:abc:1')
+    assert len(df) == 2
     assert {'lmonocytogenes:abc:1'} == set(df['Query'].tolist())
 
 

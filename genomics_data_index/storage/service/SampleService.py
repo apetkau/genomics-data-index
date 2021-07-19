@@ -87,22 +87,22 @@ class SampleService:
 
         return SampleSet(sample_ids=sample_ids)
 
-    def create_dataframe_from_sample_set(self, sample_set: SampleSet,
-                                         universe_set: SampleSet,
-                                         include_absent: bool,
+    def create_dataframe_from_sample_set(self, present_set: SampleSet,
+                                         absent_set: SampleSet,
+                                         unknown_set: SampleSet,
                                          queries_expression: str) -> pd.DataFrame:
-        samples = self.find_samples_by_ids(sample_set)
+        sample_sets_status_list = [(present_set, 'Present'), (absent_set, 'Absent'), (unknown_set, 'Unknown')]
         data = []
-        for sample in samples:
-            data.append([queries_expression, sample.name, sample.id, 'Present'])
+        for sample_status in sample_sets_status_list:
+            sample_set = sample_status[0]
+            status = sample_status[1]
 
-        if include_absent:
-            complement_samples_set = self.find_samples_by_ids(universe_set.minus(sample_set))
-            for sample in complement_samples_set:
-                data.append([queries_expression, sample.name, sample.id, 'Absent'])
+            if not sample_set.is_empty():
+                samples = self.find_samples_by_ids(sample_set)
+                for sample in samples:
+                    data.append([queries_expression, sample.name, sample.id, status])
 
-        results_df = pd.DataFrame(data=data, columns=['Query', 'Sample Name', 'Sample ID', 'Status'])
-        return results_df
+        return pd.DataFrame(data=data, columns=['Query', 'Sample Name', 'Sample ID', 'Status'])
 
     def count_samples_associated_with_reference(self, reference_name: str) -> int:
         return self._connection.get_session().query(Sample) \
