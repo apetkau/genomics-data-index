@@ -96,16 +96,21 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def toframe(self, include_absent: bool = False) -> pd.DataFrame:
+    def toframe(self, include_present: bool = True, include_unknown: bool = False,
+                include_absent: bool = False) -> pd.DataFrame:
         """
         Converts the selected set of samples to a DataFrame with one row per sample. By default only samples selected
-        by this query will be returned (setting include_absent to True will return all samples in the defined universe
-        as rows in the DataFrame with a column in the DataFrame used to define if the sample is present or absent).
+        by this query will be returned (include_present = True). Setting include_absent to True will include all samples
+        where the current query is False, while include_unknown will return all samples where it is unknown if the
+        query is True or False (that is, it is unknown if these samples match the query).
 
-        :param include_absent: Whether or not samples absent in this query (but in the universe of samples) should be
+        :param include_present: Whether or not samples matching the query should be included.
+        :param include_unknown: Whether or not samples where it is unknown if they match the query or not should be included.
+        :param include_absent: Whether or not samples absent from this query (but in the universe of samples) should be
         included.
 
-        :return: A DataFrame of the samples in this query, one row per sample.
+        :return: A DataFrame of the samples in this query, one row per sample. The 'Status' column of the dataframe
+                 contains the status (Present, Absent, or Unknown) of the sample.
         """
         pass
 

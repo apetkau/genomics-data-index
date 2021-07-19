@@ -113,8 +113,11 @@ class DataFrameSamplesQuery(WrappedSamplesQuery):
         subset_query = self._wrapped_query.intersect(sample_set=subset_sample_set, query_message=query_message)
         return self._wrap_create(subset_query)
 
-    def toframe(self, include_absent: bool = False) -> pd.DataFrame:
-        samples_dataframe = super().toframe(include_absent=include_absent)
+    def toframe(self, include_present: bool = True, include_unknown: bool = False,
+                include_absent: bool = False) -> pd.DataFrame:
+        samples_dataframe = super().toframe(include_present=include_present,
+                                            include_unknown=include_unknown,
+                                            include_absent=include_absent)
         samples_df_cols = list(samples_dataframe.columns)
         merged_df = self._data_frame.merge(samples_dataframe, how='inner', left_on=self._sample_ids_col,
                                            right_on='Sample ID')

@@ -174,12 +174,18 @@ class SamplesQueryIndex(SamplesQuery):
                                                              database_connection=self._query_connection,
                                                              wrapped_query=self, **kwargs)
 
-    def toframe(self, include_absent: bool = False) -> pd.DataFrame:
+    def toframe(self, include_present: bool = True, include_unknown: bool = False,
+                include_absent: bool = False) -> pd.DataFrame:
         sample_service = self._query_connection.sample_service
         queries_expression = self._queries_collection.query_expression()
-        return sample_service.create_dataframe_from_sample_set(self.sample_set,
-                                                               universe_set=self.universe_set,
-                                                               include_absent=include_absent,
+
+        present_set = self.sample_set if include_present else SampleSet.create_empty()
+        absent_set = self.absent_set if include_absent else SampleSet.create_empty()
+        unknown_set = self.unknown_set if include_unknown else SampleSet.create_empty()
+
+        return sample_service.create_dataframe_from_sample_set(present_set=present_set,
+                                                               absent_set=absent_set,
+                                                               unknown_set=unknown_set,
                                                                queries_expression=queries_expression)
 
     def summary(self) -> pd.DataFrame:

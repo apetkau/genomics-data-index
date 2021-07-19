@@ -828,6 +828,11 @@ def test_query_single_mutation_dataframe(loaded_database_connection: DataIndexCo
     assert {'reference:839:C:G'} == set(df['Query'].tolist())
     assert ['Present', 'Present'] == df['Status'].tolist()
 
+    # Case with no unknowns, exclude present
+    df = query(loaded_database_connection).hasa('reference:839:C:G', kind='mutation').toframe(include_present=False)
+    assert 0 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+
     # Case with some unknowns
     df = query(loaded_database_connection).hasa('reference:5061:G:A', kind='mutation').toframe()
     assert 1 == len(df)
@@ -838,11 +843,16 @@ def test_query_single_mutation_dataframe(loaded_database_connection: DataIndexCo
     assert {'reference:5061:G:A'} == set(df['Query'].tolist())
     assert ['Present'] == df['Status'].tolist()
 
+    # Case with some unknowns, exclude present
+    df = query(loaded_database_connection).hasa('reference:5061:G:A', kind='mutation').toframe(include_present=False)
+    assert 0 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+
 
 def test_query_single_mutation_dataframe_include_all(loaded_database_connection: DataIndexConnection):
     # Case of no unknowns
     df = query(loaded_database_connection).hasa(
-        'reference:839:C:G', kind='mutation').toframe(include_absent=True)
+        'reference:839:C:G', kind='mutation').toframe(include_absent=True, include_unknown=True)
     assert 9 == len(df)
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
     df = df.sort_values(['Sample Name'])
@@ -853,6 +863,84 @@ def test_query_single_mutation_dataframe_include_all(loaded_database_connection:
             'Absent', 'Absent',
             'Absent', 'Present', 'Present'] == df['Status'].tolist()
     assert {'reference:839:C:G'} == set(df['Query'].tolist())
+
+    # Case of no unknowns but 'include_unknown' is False
+    df = query(loaded_database_connection).hasa(
+        'reference:839:C:G', kind='mutation').toframe(include_absent=True, include_unknown=False)
+    assert 9 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    df = df.sort_values(['Sample Name'])
+    assert ['2014C-3598', '2014C-3599', '2014D-0067', '2014D-0068',
+            'CFSAN002349', 'CFSAN023463',
+            'SampleA', 'SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert ['Absent', 'Absent', 'Absent', 'Absent',
+            'Absent', 'Absent',
+            'Absent', 'Present', 'Present'] == df['Status'].tolist()
+    assert {'reference:839:C:G'} == set(df['Query'].tolist())
+
+    # Case of some unknowns
+    df = query(loaded_database_connection).hasa(
+        'reference:5061:G:A', kind='mutation').toframe(include_absent=True, include_unknown=True)
+    assert 9 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    df = df.sort_values(['Sample Name'])
+    assert ['2014C-3598', '2014C-3599', '2014D-0067', '2014D-0068',
+            'CFSAN002349', 'CFSAN023463',
+            'SampleA', 'SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert ['Absent', 'Absent', 'Absent', 'Absent',
+            'Absent', 'Absent',
+            'Unknown', 'Present', 'Absent'] == df['Status'].tolist()
+    assert {'reference:5061:G:A'} == set(df['Query'].tolist())
+
+    # Case of some unknowns excluding unknowns
+    df = query(loaded_database_connection).hasa(
+        'reference:5061:G:A', kind='mutation').toframe(include_absent=True, include_unknown=False)
+    assert 8 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    df = df.sort_values(['Sample Name'])
+    assert ['2014C-3598', '2014C-3599', '2014D-0067', '2014D-0068',
+            'CFSAN002349', 'CFSAN023463',
+            'SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert ['Absent', 'Absent', 'Absent', 'Absent',
+            'Absent', 'Absent',
+            'Present', 'Absent'] == df['Status'].tolist()
+    assert {'reference:5061:G:A'} == set(df['Query'].tolist())
+
+    # Case of some unknowns, excluding absent
+    df = query(loaded_database_connection).hasa(
+        'reference:5061:G:A', kind='mutation').toframe(include_absent=False, include_unknown=True)
+    assert 2 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    df = df.sort_values(['Sample Name'])
+    assert ['SampleA', 'SampleB'] == df['Sample Name'].tolist()
+    assert ['Unknown', 'Present'] == df['Status'].tolist()
+    assert {'reference:5061:G:A'} == set(df['Query'].tolist())
+
+    # Case of some unknowns, only unknowns
+    df = query(loaded_database_connection).hasa(
+        'reference:5061:G:A', kind='mutation').toframe(include_present=False,
+                                                       include_absent=False, include_unknown=True)
+    assert 1 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    df = df.sort_values(['Sample Name'])
+    assert ['SampleA'] == df['Sample Name'].tolist()
+    assert ['Unknown'] == df['Status'].tolist()
+    assert {'reference:5061:G:A'} == set(df['Query'].tolist())
+
+    # Case of some unknowns, only absent
+    df = query(loaded_database_connection).hasa(
+        'reference:5061:G:A', kind='mutation').toframe(include_present=False, include_absent=True,
+                                                       include_unknown=False)
+    assert 7 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    df = df.sort_values(['Sample Name'])
+    assert ['2014C-3598', '2014C-3599', '2014D-0067', '2014D-0068',
+            'CFSAN002349', 'CFSAN023463',
+            'SampleC'] == df['Sample Name'].tolist()
+    assert ['Absent', 'Absent', 'Absent', 'Absent',
+            'Absent', 'Absent',
+            'Absent'] == df['Status'].tolist()
+    assert {'reference:5061:G:A'} == set(df['Query'].tolist())
 
 
 def test_query_chained_allele_dataframe(loaded_database_connection: DataIndexConnection):
