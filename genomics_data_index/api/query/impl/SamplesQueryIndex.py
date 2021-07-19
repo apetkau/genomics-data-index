@@ -265,10 +265,12 @@ class SamplesQueryIndex(SamplesQuery):
 
     def and_(self, other):
         if isinstance(other, SamplesQuery):
-            intersect_set = self._intersect_sample_set(other.sample_set)
+            present_set = self._found_in_self_and(other.sample_set)
+            unknown_set = self._unknown_in_self_and(other.sample_set, other.unknown_set)
+            universe_set = self.universe_set.union(other.universe_set)
             queries_collection = self._queries_collection.append(str(other))
-            return self._create_from(intersect_set, universe_set=self._universe_set,
-                                     unknown_set=self._unknown_set,
+            return self._create_from(present_set, universe_set=universe_set,
+                                     unknown_set=unknown_set,
                                      queries_collection=queries_collection)
         else:
             raise Exception(f'Cannot perform an "and" on object {other}')
