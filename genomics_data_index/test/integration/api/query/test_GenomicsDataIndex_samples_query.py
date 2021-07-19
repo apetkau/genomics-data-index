@@ -267,6 +267,22 @@ def test_query_and_or(loaded_database_connection: DataIndexConnection):
     assert 3 == len(query_result_onlyB_unknown_A_and_onlyC.universe_set)
     assert {sampleA.id, sampleB.id, sampleC.id} == set(query_result_onlyB_unknown_A_and_onlyC.universe_set)
 
+    # Test Python & (bitwise and) operator
+    query_result_onlyB_unknown_A_and_onlyA = query_result_onlyB_with_unknownA & query_result_onlyA
+    assert 0 == len(query_result_onlyB_unknown_A_and_onlyA)
+    assert 1 == len(query_result_onlyB_unknown_A_and_onlyA.unknown_set)
+    assert {sampleA.id} == set(query_result_onlyB_unknown_A_and_onlyA.unknown_set)
+    assert 1 == len(query_result_onlyB_unknown_A_and_onlyA.absent_set)
+    assert 2 == len(query_result_onlyB_unknown_A_and_onlyA.universe_set)
+    assert {sampleA.id, sampleB.id} == set(query_result_onlyB_unknown_A_and_onlyA.universe_set)
+
+    query_result_onlyB_unknown_A_and_onlyC = query_result_onlyB_with_unknownA & query_result_onlyC
+    assert 0 == len(query_result_onlyB_unknown_A_and_onlyC)
+    assert 0 == len(query_result_onlyB_unknown_A_and_onlyC.unknown_set)
+    assert 3 == len(query_result_onlyB_unknown_A_and_onlyC.absent_set)
+    assert 3 == len(query_result_onlyB_unknown_A_and_onlyC.universe_set)
+    assert {sampleA.id, sampleB.id, sampleC.id} == set(query_result_onlyB_unknown_A_and_onlyC.universe_set)
+
     # Test OR
     query_resultA_or_AB = query_resultA.or_(query_resultAB)
     assert 2 == len(query_resultA_or_AB)
@@ -345,6 +361,24 @@ def test_query_and_or(loaded_database_connection: DataIndexConnection):
     assert {sampleA.id, sampleB.id} == set(query_result_onlyB_unknown_A_or_onlyA.universe_set)
 
     query_result_onlyB_unknown_A_or_onlyC = query_result_onlyB_with_unknownA.or_(query_result_onlyC)
+    assert 2 == len(query_result_onlyB_unknown_A_or_onlyC)
+    assert {sampleB.id, sampleC.id} == set(query_result_onlyB_unknown_A_or_onlyC.sample_set)
+    assert 1 == len(query_result_onlyB_unknown_A_or_onlyC.unknown_set)
+    assert {sampleA.id} == set(query_result_onlyB_unknown_A_or_onlyC.unknown_set)
+    assert 0 == len(query_result_onlyB_unknown_A_or_onlyC.absent_set)
+    assert 3 == len(query_result_onlyB_unknown_A_or_onlyC.universe_set)
+    assert {sampleA.id, sampleB.id, sampleC.id} == set(query_result_onlyB_unknown_A_or_onlyC.universe_set)
+
+    # Test Python | (bitwise or) operator
+    query_result_onlyB_unknown_A_or_onlyA = query_result_onlyB_with_unknownA | query_result_onlyA
+    assert 2 == len(query_result_onlyB_unknown_A_or_onlyA)
+    assert 0 == len(query_result_onlyB_unknown_A_or_onlyA.unknown_set)
+    assert {sampleA.id, sampleB.id} == set(query_result_onlyB_unknown_A_or_onlyA.sample_set)
+    assert 0 == len(query_result_onlyB_unknown_A_or_onlyA.absent_set)
+    assert 2 == len(query_result_onlyB_unknown_A_or_onlyA.universe_set)
+    assert {sampleA.id, sampleB.id} == set(query_result_onlyB_unknown_A_or_onlyA.universe_set)
+
+    query_result_onlyB_unknown_A_or_onlyC = query_result_onlyB_with_unknownA | query_result_onlyC
     assert 2 == len(query_result_onlyB_unknown_A_or_onlyC)
     assert {sampleB.id, sampleC.id} == set(query_result_onlyB_unknown_A_or_onlyC.sample_set)
     assert 1 == len(query_result_onlyB_unknown_A_or_onlyC.unknown_set)
@@ -842,13 +876,21 @@ def test_query_single_mutation_complement(loaded_database_connection: DataIndexC
     assert all_sample_ids - {sampleA.id, sampleB.id} == set(query_result.absent_set)
     assert 9 == len(query_result.universe_set)
 
-    query_result = query_result.complement()
+    query_result_c = query_result.complement()
 
-    assert 7 == len(query_result)
-    assert all_sample_ids - {sampleA.id, sampleB.id} == set(query_result.sample_set)
-    assert {sampleA.id} == set(query_result.unknown_set)
-    assert {sampleB.id} == set(query_result.absent_set)
-    assert 9 == len(query_result.universe_set)
+    assert 7 == len(query_result_c)
+    assert all_sample_ids - {sampleA.id, sampleB.id} == set(query_result_c.sample_set)
+    assert {sampleA.id} == set(query_result_c.unknown_set)
+    assert {sampleB.id} == set(query_result_c.absent_set)
+    assert 9 == len(query_result_c.universe_set)
+
+    query_result_c = ~query_result
+
+    assert 7 == len(query_result_c)
+    assert all_sample_ids - {sampleA.id, sampleB.id} == set(query_result_c.sample_set)
+    assert {sampleA.id} == set(query_result_c.unknown_set)
+    assert {sampleB.id} == set(query_result_c.absent_set)
+    assert 9 == len(query_result_c.universe_set)
 
 
 def test_query_single_mutation_two_samples_complement(loaded_database_connection: DataIndexConnection):
@@ -865,17 +907,29 @@ def test_query_single_mutation_two_samples_complement(loaded_database_connection
     assert all_sample_ids - {sampleB.id, sampleC.id} == set(query_result.absent_set)
     assert 9 == len(query_result.universe_set)
 
-    query_result = query_result.complement()
+    query_result_c = query_result.complement()
 
-    assert 7 == len(query_result)
-    assert all_sample_ids - {sampleB.id, sampleC.id} == set(query_result.sample_set)
-    assert set() == set(query_result.unknown_set)
-    assert {sampleB.id, sampleC.id} == set(query_result.absent_set)
-    assert 9 == len(query_result.universe_set)
+    assert 7 == len(query_result_c)
+    assert all_sample_ids - {sampleB.id, sampleC.id} == set(query_result_c.sample_set)
+    assert set() == set(query_result_c.unknown_set)
+    assert {sampleB.id, sampleC.id} == set(query_result_c.absent_set)
+    assert 9 == len(query_result_c.universe_set)
 
-    assert sampleB.id not in query_result.sample_set
-    assert sampleC.id not in query_result.sample_set
-    assert sampleA.id in query_result.sample_set
+    assert sampleB.id not in query_result_c.sample_set
+    assert sampleC.id not in query_result_c.sample_set
+    assert sampleA.id in query_result_c.sample_set
+
+    query_result_c = ~query_result
+
+    assert 7 == len(query_result_c)
+    assert all_sample_ids - {sampleB.id, sampleC.id} == set(query_result_c.sample_set)
+    assert set() == set(query_result_c.unknown_set)
+    assert {sampleB.id, sampleC.id} == set(query_result_c.absent_set)
+    assert 9 == len(query_result_c.universe_set)
+
+    assert sampleB.id not in query_result_c.sample_set
+    assert sampleC.id not in query_result_c.sample_set
+    assert sampleA.id in query_result_c.sample_set
 
 
 def test_query_single_mutation_summary(loaded_database_connection: DataIndexConnection):

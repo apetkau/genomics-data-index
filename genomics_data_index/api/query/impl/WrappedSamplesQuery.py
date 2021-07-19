@@ -168,12 +168,6 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
     def to_distances(self, kind: str = 'kmer', **kwargs) -> Tuple[np.ndarray, List[str]]:
         return self._wrapped_query.to_distances(kind=kind, **kwargs)
 
-    def __and__(self, other):
-        return self.and_(other)
-
-    def __or__(self, other):
-        return self.or_(other)
-
     def __len__(self):
         return len(self._wrapped_query)
 

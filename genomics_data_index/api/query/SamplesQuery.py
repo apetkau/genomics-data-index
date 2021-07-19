@@ -428,25 +428,32 @@ class SamplesQuery(abc.ABC):
         """
         pass
 
-    @abc.abstractmethod
+    def __invert__(self):
+        """
+        Performs an **~** (invert, complement) operation on a SamplesQuery object.
+        If A is a SamplesQuery object then `~A` is equivalent to `A.complement()`.
+
+        :return: The complement of a SamplesQuery object.
+        """
+        return self.complement()
+
     def __and__(self, other):
         """
-        Performs an **and** operation (intersection) between two different SamplesQuery objects.
-        If A and B are two SamplesQuery objects then `A and B` is equivalent to `A.and_(B)`.
+        Performs an **&** (and) operation (intersection) between two different SamplesQuery objects.
+        If A and B are two SamplesQuery objects then `A & B` is equivalent to `A.and_(B)`.
 
         :return: The and (intersection) of two SamplesQuery objects.
         """
-        pass
+        return self.and_(other)
 
-    @abc.abstractmethod
     def __or__(self, other):
         """
-        Performs an **or** operation (union) between two different SamplesQuery objects.
-        If A and B are two SamplesQuery objects then `A or B` is equivalent to `A.or_(B)`.
+        Performs an **|** (or) operation (union) between two different SamplesQuery objects.
+        If A and B are two SamplesQuery objects then `A | B` is equivalent to `A.or_(B)`.
 
         :return: The or (union) of two SamplesQuery objects.
         """
-        pass
+        return self.or_(other)
 
     @abc.abstractmethod
     def __len__(self):

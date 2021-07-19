@@ -315,12 +315,6 @@ class SamplesQueryIndex(SamplesQuery):
     def has_tree(self) -> bool:
         return False
 
-    def __and__(self, other):
-        return self.and_(other)
-
-    def __or__(self, other):
-        return self.or_(other)
-
     def __len__(self):
         return len(self.sample_set)
 
