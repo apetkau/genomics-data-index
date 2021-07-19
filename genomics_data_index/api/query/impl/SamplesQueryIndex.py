@@ -290,9 +290,9 @@ class SamplesQueryIndex(SamplesQuery):
             return self.sample_set.is_empty()
 
     def complement(self):
-        complement_set = self.universe_set.minus(self.sample_set)
+        complement_present_set = self.absent_set
         query_collection = self._queries_collection.append('complement')
-        return self._create_from(sample_set=complement_set, universe_set=self._universe_set,
+        return self._create_from(sample_set=complement_present_set, universe_set=self._universe_set,
                                  unknown_set=self._unknown_set,
                                  queries_collection=query_collection)
 

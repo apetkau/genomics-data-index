@@ -591,31 +591,51 @@ def test_query_mutation_hgvs(loaded_database_connection_annotations: DataIndexCo
 
 def test_query_single_mutation_complement(loaded_database_connection: DataIndexConnection):
     db = loaded_database_connection.database
+    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    all_sample_ids = {i for i, in db.get_session().query(Sample.id).all()}
 
     query_result = query(loaded_database_connection).hasa(QueryFeatureMutationSPDI('reference:5061:G:A'))
     assert 1 == len(query_result)
     assert {sampleB.id} == set(query_result.sample_set)
+    assert {sampleA.id} == set(query_result.unknown_set)
+    assert all_sample_ids - {sampleA.id, sampleB.id} == set(query_result.absent_set)
     assert 9 == len(query_result.universe_set)
-    assert [sampleB.id] == query_result.tolist(names=False)
-    assert ['SampleB'] == query_result.tolist(names=True)
-    assert ['SampleB'] == query_result.tolist()
 
     query_result = query_result.complement()
-    assert 8 == len(query_result)
+
+    assert 7 == len(query_result)
+    assert all_sample_ids - {sampleA.id, sampleB.id} == set(query_result.sample_set)
+    assert {sampleA.id} == set(query_result.unknown_set)
+    assert {sampleB.id} == set(query_result.absent_set)
     assert 9 == len(query_result.universe_set)
-    assert not query_result.has_tree()
+
+
+def test_query_single_mutation_two_samples_complement(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+    all_sample_ids = {i for i, in db.get_session().query(Sample.id).all()}
+
+    query_result = query(loaded_database_connection).hasa(QueryFeatureMutationSPDI('reference:839:C:G'))
+    assert 2 == len(query_result)
+    assert {sampleB.id, sampleC.id} == set(query_result.sample_set)
+    assert set() == set(query_result.unknown_set)
+    assert all_sample_ids - {sampleB.id, sampleC.id} == set(query_result.absent_set)
+    assert 9 == len(query_result.universe_set)
+
+    query_result = query_result.complement()
+
+    assert 7 == len(query_result)
+    assert all_sample_ids - {sampleB.id, sampleC.id} == set(query_result.sample_set)
+    assert set() == set(query_result.unknown_set)
+    assert {sampleB.id, sampleC.id} == set(query_result.absent_set)
+    assert 9 == len(query_result.universe_set)
 
     assert sampleB.id not in query_result.sample_set
-
-    assert {'SampleA', 'SampleC', 'CFSAN002349', 'CFSAN023463',
-            '2014C-3598', '2014C-3599', '2014D-0067', '2014D-0068'} == set(query_result.tolist())
-
-    df = query_result.toframe()
-    assert {'reference:5061:G:A AND complement'} == set(df['Query'].tolist())
-    assert {'SampleA', 'SampleC', 'CFSAN002349', 'CFSAN023463',
-            '2014C-3598', '2014C-3599', '2014D-0067', '2014D-0068'} == set(df['Sample Name'].tolist())
-    assert {'Present'} == set(df['Status'].tolist())
+    assert sampleC.id not in query_result.sample_set
+    assert sampleA.id in query_result.sample_set
 
 
 def test_query_single_mutation_summary(loaded_database_connection: DataIndexConnection):
@@ -671,24 +691,6 @@ def test_query_single_mutation_default_kind(loaded_database_connection: DataInde
     assert 2 == len(query_result)
     assert {sampleB.id, sampleC.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)
-
-
-def test_query_single_mutation_two_samples_complement(loaded_database_connection: DataIndexConnection):
-    db = loaded_database_connection.database
-    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
-    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
-    sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
-
-    query_result = query(loaded_database_connection).hasa(QueryFeatureMutationSPDI('reference:839:C:G'))
-    assert 2 == len(query_result)
-    assert {sampleB.id, sampleC.id} == set(query_result.sample_set)
-    assert 9 == len(query_result.universe_set)
-
-    query_result = query_result.complement()
-    assert 7 == len(query_result)
-    assert sampleB.id not in query_result.sample_set
-    assert sampleC.id not in query_result.sample_set
-    assert sampleA.id in query_result.sample_set
 
 
 def test_query_single_mutation_no_results_is_empty(loaded_database_connection: DataIndexConnection):
