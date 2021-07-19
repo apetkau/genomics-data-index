@@ -133,6 +133,12 @@ class SamplesQueryIndex(SamplesQuery):
     def _found_in_self_and(self, found_in_other: SampleSet) -> SampleSet:
         return self._sample_set.intersection(found_in_other)
 
+    def _found_in_self_or(self, found_in_other: SampleSet) -> SampleSet:
+        return self._sample_set.union(found_in_other)
+
+    def _unknown_in_self_or(self, unknown_in_other: SampleSet, found_either: SampleSet):
+        return self._unknown_set.union(unknown_in_other).minus(found_either)
+
     def _unknown_in_self_and(self, found_in_other: SampleSet, unknown_in_other: SampleSet) -> SampleSet:
         """
         Given the above SampleSets, this returns the set of those unknown in self and the other sets
@@ -277,10 +283,13 @@ class SamplesQueryIndex(SamplesQuery):
 
     def or_(self, other: SamplesQuery) -> SamplesQuery:
         if isinstance(other, SamplesQuery):
-            union_set = self._union_sample_set(other.sample_set)
+            present_set = self._found_in_self_or(other.sample_set)
+            unknown_set = self._unknown_in_self_or(unknown_in_other=other.unknown_set, found_either=present_set)
+            universe_set = self.universe_set.union(other.universe_set)
+
             queries_collection = self._queries_collection.append(f'OR({str(other)}')
-            return self._create_from(union_set, universe_set=self._universe_set,
-                                     unknown_set=self._unknown_set,
+            return self._create_from(present_set, universe_set=universe_set,
+                                     unknown_set=unknown_set,
                                      queries_collection=queries_collection)
         else:
             raise Exception(f'Cannot perform an "or" on object {other}')

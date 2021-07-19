@@ -212,6 +212,7 @@ def test_query_and_or(loaded_database_connection: DataIndexConnection):
     assert 0 == len(query_resultA_and_B.unknown_set)
     assert 9 == len(query_resultA_and_B.universe_set)
 
+    # Test AND with unknowns
     query_resultA_and_B_unknown_A = query_resultA.and_(query_resultB_with_unknownA)
     assert 0 == len(query_resultA_and_B_unknown_A)
     assert 1 == len(query_resultA_and_B_unknown_A.unknown_set)
@@ -270,6 +271,7 @@ def test_query_and_or(loaded_database_connection: DataIndexConnection):
     query_resultA_or_AB = query_resultA.or_(query_resultAB)
     assert 2 == len(query_resultA_or_AB)
     assert {sampleA.id, sampleB.id} == set(query_resultA_or_AB.sample_set)
+    assert 7 == len(query_resultA_or_AB.absent_set)
     assert 0 == len(query_resultA_or_AB.unknown_set)
     assert 9 == len(query_resultA_or_AB.universe_set)
 
@@ -277,19 +279,79 @@ def test_query_and_or(loaded_database_connection: DataIndexConnection):
     assert 2 == len(query_resultAB_or_A)
     assert {sampleA.id, sampleB.id} == set(query_resultAB_or_A.sample_set)
     assert 0 == len(query_resultAB_or_A.unknown_set)
+    assert 7 == len(query_resultAB_or_A.absent_set)
     assert 9 == len(query_resultAB_or_A.universe_set)
 
     query_resultA_or_B = query_resultA.or_(query_resultB)
     assert 2 == len(query_resultA_or_B)
     assert {sampleA.id, sampleB.id} == set(query_resultA_or_B.sample_set)
     assert 0 == len(query_resultA_or_B.unknown_set)
+    assert 7 == len(query_resultA_or_B.absent_set)
     assert 9 == len(query_resultA_or_B.universe_set)
 
     query_resultA_or_B_or_C = query_resultA.or_(query_resultB).or_(query_resultC)
     assert 3 == len(query_resultA_or_B_or_C)
     assert {sampleA.id, sampleB.id, sampleC.id} == set(query_resultA_or_B_or_C.sample_set)
     assert 0 == len(query_resultA_or_B_or_C.unknown_set)
+    assert 6 == len(query_resultA_or_B_or_C.absent_set)
     assert 9 == len(query_resultA_or_B_or_C.universe_set)
+
+    # Test OR with unknowns
+    query_resultA_or_B_unknown_A = query_resultA.or_(query_resultB_with_unknownA)
+    assert 2 == len(query_resultA_or_B_unknown_A)
+    assert {sampleA.id, sampleB.id} == set(query_resultA_or_B_unknown_A.sample_set)
+    assert 0 == len(query_resultA_or_B_unknown_A.unknown_set)
+    assert 9 == len(query_resultA_or_B_unknown_A.universe_set)
+
+    query_resultAB_or_B_unknown_A = query_resultAB.or_(query_resultB_with_unknownA)
+    assert 2 == len(query_resultAB_or_B_unknown_A)
+    assert {sampleA.id, sampleB.id} == set(query_resultAB_or_B_unknown_A.sample_set)
+    assert 0 == len(query_resultAB_or_B_unknown_A.unknown_set)
+    assert 9 == len(query_resultAB_or_B_unknown_A.universe_set)
+
+    query_resultB_unknown_A_or_AB = query_resultB_with_unknownA.or_(query_resultAB)
+    assert 2 == len(query_resultB_unknown_A_or_AB)
+    assert {sampleA.id, sampleB.id} == set(query_resultB_unknown_A_or_AB.sample_set)
+    assert 0 == len(query_resultB_unknown_A_or_AB.unknown_set)
+    assert 9 == len(query_resultB_unknown_A_or_AB.universe_set)
+
+    query_resultB_or_B_unknown_A = query_resultB.or_(query_resultB_with_unknownA)
+    assert 1 == len(query_resultB_or_B_unknown_A)
+    assert {sampleB.id} == set(query_resultB_or_B_unknown_A.sample_set)
+    assert 1 == len(query_resultB_or_B_unknown_A.unknown_set)
+    assert {sampleA.id} == set(query_resultB_or_B_unknown_A.unknown_set)
+    assert 9 == len(query_resultB_or_B_unknown_A.universe_set)
+
+    query_resultB_unknown_A_or_B = query_resultB_with_unknownA.or_(query_resultB)
+    assert 1 == len(query_resultB_unknown_A_or_B)
+    assert {sampleB.id} == set(query_resultB_unknown_A_or_B.sample_set)
+    assert 1 == len(query_resultB_unknown_A_or_B.unknown_set)
+    assert {sampleA.id} == set(query_resultB_unknown_A_or_B.unknown_set)
+    assert 9 == len(query_resultB_unknown_A_or_B.universe_set)
+
+    query_result_onlyB_or_onlyA = query_result_onlyB.or_(query_result_onlyA)
+    assert 2 == len(query_result_onlyB_or_onlyA)
+    assert 0 == len(query_result_onlyB_or_onlyA.unknown_set)
+    assert {sampleA.id, sampleB.id} == set(query_result_onlyB_or_onlyA.sample_set)
+    assert 2 == len(query_result_onlyB_or_onlyA.universe_set)
+    assert {sampleA.id, sampleB.id} == set(query_result_onlyB_or_onlyA.universe_set)
+
+    query_result_onlyB_unknown_A_or_onlyA = query_result_onlyB_with_unknownA.or_(query_result_onlyA)
+    assert 2 == len(query_result_onlyB_unknown_A_or_onlyA)
+    assert 0 == len(query_result_onlyB_unknown_A_or_onlyA.unknown_set)
+    assert {sampleA.id, sampleB.id} == set(query_result_onlyB_unknown_A_or_onlyA.sample_set)
+    assert 0 == len(query_result_onlyB_unknown_A_or_onlyA.absent_set)
+    assert 2 == len(query_result_onlyB_unknown_A_or_onlyA.universe_set)
+    assert {sampleA.id, sampleB.id} == set(query_result_onlyB_unknown_A_or_onlyA.universe_set)
+
+    query_result_onlyB_unknown_A_or_onlyC = query_result_onlyB_with_unknownA.or_(query_result_onlyC)
+    assert 2 == len(query_result_onlyB_unknown_A_or_onlyC)
+    assert {sampleB.id, sampleC.id} == set(query_result_onlyB_unknown_A_or_onlyC.sample_set)
+    assert 1 == len(query_result_onlyB_unknown_A_or_onlyC.unknown_set)
+    assert {sampleA.id} == set(query_result_onlyB_unknown_A_or_onlyC.unknown_set)
+    assert 0 == len(query_result_onlyB_unknown_A_or_onlyC.absent_set)
+    assert 3 == len(query_result_onlyB_unknown_A_or_onlyC.universe_set)
+    assert {sampleA.id, sampleB.id, sampleC.id} == set(query_result_onlyB_unknown_A_or_onlyC.universe_set)
 
 
 def test_query_reset_universe(loaded_database_connection: DataIndexConnection):
