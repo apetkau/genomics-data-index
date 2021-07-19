@@ -278,10 +278,32 @@ def test_query_isa_sample_name(loaded_database_connection: DataIndexConnection):
     assert 9 == len(query_result.universe_set)
     assert not query_result.has_tree()
 
+    # Test case where there is an unknown in the result
+    query_result = query(loaded_database_connection).hasa('reference:1:1:T').isa('SampleB')
+    assert 0 == len(query_result)
+    assert {sampleB.id} == set(query_result.unknown_set)
+    assert 8 == len(query_result.absent_set)
+    assert 9 == len(query_result.universe_set)
 
-def test_query_isa_sample_no_exist(loaded_database_connection: DataIndexConnection):
+    # Test case where there is a match and unknown in the result
+    query_result = query(loaded_database_connection).hasa('reference:5061:G:A').isa('SampleB')
+    assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+    assert 0 == len(query_result.unknown_set)
+    assert 8 == len(query_result.absent_set)
+    assert 9 == len(query_result.universe_set)
+
+    # Test isa no exist
     query_result = query(loaded_database_connection).isa('no_exist')
     assert 0 == len(query_result)
+    assert 9 == len(query_result.universe_set)
+    assert 0 == len(query_result.unknown_set)
+
+    # Test isa no exist with unknown
+    query_result = query(loaded_database_connection).hasa('reference:5061:G:A').isa('no_exist')
+    assert 0 == len(query_result)
+    assert 0 == len(query_result.unknown_set)
+    assert 9 == len(query_result.absent_set)
     assert 9 == len(query_result.universe_set)
 
 
@@ -293,6 +315,24 @@ def test_query_isa_samples_query(loaded_database_connection: DataIndexConnection
     query_result = query(loaded_database_connection).isa(query_result_B)
     assert 1 == len(query_result)
     assert {sampleB.id} == set(query_result.sample_set)
+    assert 0 == len(query_result.unknown_set)
+    assert 8 == len(query_result.absent_set)
+    assert 9 == len(query_result.universe_set)
+
+    # with unknown in result
+    query_result = query(loaded_database_connection).hasa('reference:1:1:T').isa(query_result_B)
+    assert 0 == len(query_result)
+    assert 1 == len(query_result.unknown_set)
+    assert {sampleB.id} == set(query_result.unknown_set)
+    assert 8 == len(query_result.absent_set)
+    assert 9 == len(query_result.universe_set)
+
+    # with unknown that gets excluded
+    query_result = query(loaded_database_connection).hasa('reference:5061:G:A').isa(query_result_B)
+    assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+    assert 0 == len(query_result.unknown_set)
+    assert 8 == len(query_result.absent_set)
     assert 9 == len(query_result.universe_set)
 
 
