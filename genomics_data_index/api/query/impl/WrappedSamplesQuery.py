@@ -112,8 +112,8 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
         sample_service = self._query_connection.sample_service
         return {s.name: s.id for s in sample_service.find_samples_by_ids(self._wrapped_query.sample_set)}
 
-    def is_empty(self):
-        return self._wrapped_query.is_empty()
+    def is_empty(self, include_unknown=False) -> bool:
+        return self._wrapped_query.is_empty(include_unknown=include_unknown)
 
     def has_tree(self) -> bool:
         return self._wrapped_query.has_tree()

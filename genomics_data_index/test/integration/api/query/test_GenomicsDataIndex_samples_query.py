@@ -691,11 +691,20 @@ def test_query_single_mutation_two_samples_complement(loaded_database_connection
     assert sampleA.id in query_result.sample_set
 
 
-def test_query_single_mutation_no_results(loaded_database_connection: DataIndexConnection):
+def test_query_single_mutation_no_results_is_empty(loaded_database_connection: DataIndexConnection):
+    # Test is_empty for something with unknown positions
     query_result = query(loaded_database_connection).hasa(QueryFeatureMutationSPDI('reference:1:1:A'))
     assert 0 == len(query_result)
     assert query_result.is_empty()
     assert 9 == len(query_result.universe_set)
+    assert not query_result.is_empty(include_unknown=True)
+
+    # Test is_empty for something without unknown positions
+    query_result = query(loaded_database_connection).hasa(QueryFeatureMutationSPDI('reference:3000:1:A'))
+    assert 0 == len(query_result)
+    assert query_result.is_empty()
+    assert 9 == len(query_result.universe_set)
+    assert query_result.is_empty(include_unknown=True)
 
 
 def test_query_chained_mutation(loaded_database_connection: DataIndexConnection):

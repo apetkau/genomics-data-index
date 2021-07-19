@@ -283,8 +283,11 @@ class SamplesQueryIndex(SamplesQuery):
         else:
             raise Exception(f'Cannot perform an "or" on object {other}')
 
-    def is_empty(self) -> bool:
-        return self.sample_set.is_empty()
+    def is_empty(self, include_unknown=False) -> bool:
+        if include_unknown:
+            return self.sample_set.is_empty() and self.unknown_set.is_empty()
+        else:
+            return self.sample_set.is_empty()
 
     def complement(self):
         complement_set = self.universe_set.minus(self.sample_set)

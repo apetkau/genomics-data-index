@@ -380,9 +380,10 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def is_empty(self):
+    def is_empty(self, include_unknown=False) -> bool:
         """
         Whether or not the selected set of samples is empty.
+        :param include_unknown: Whether or not to include samples with unknown status.
         :return: True if the selected set of samples is empty, False otherwise.
         """
         pass
