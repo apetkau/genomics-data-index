@@ -382,13 +382,13 @@ class SamplesQueryIndex(SamplesQuery):
 
     def _isin_samples(self, data: Union[str, List[str], pd.Series, SamplesQuery, SampleSet],
                       query_message_prefix: str) -> SamplesQuery:
-        sample_set, query_infix = self._get_sample_set_query_infix_from_data(data)
+        present_set, unknown_set, query_infix = self._get_present_unknown_sets_query_infix_from_data(data)
         query_message = self._prepare_isin_query_message(query_message_prefix=query_message_prefix,
                                                          query_msg_infix=query_infix,
                                                          additional_messages='')
         queries_collection = self._queries_collection.append(query_message)
-        return self._create_from(sample_set=sample_set, universe_set=self._universe_set,
-                                 unknown_set=self._unknown_set,
+        return self._create_from(sample_set=present_set, universe_set=self._universe_set,
+                                 unknown_set=unknown_set,
                                  queries_collection=queries_collection)
 
     def _within_kmer_jaccard(self, data: Union[str, List[str], pd.Series, SamplesQuery, SampleSet],
@@ -422,8 +422,8 @@ class SamplesQueryIndex(SamplesQuery):
                             f'For additional distance queries you perhaps need to build or attach a tree to '
                             f'the query.')
 
-    def _get_sample_set_query_infix_from_data(self, data: Union[str, List[str], pd.Series, SamplesQuery, SampleSet]
-                                              ) -> Tuple[SampleSet, str]:
+    def _get_present_unknown_sets_query_infix_from_data(self, data: Union[str, List[str], pd.Series, SamplesQuery, SampleSet]
+                                              ) -> Tuple[SampleSet, SampleSet, str]:
         if isinstance(data, str) or isinstance(data, list):
             logger.debug(f'data=[{data}] contains sample names')
             if isinstance(data, str):
@@ -433,20 +433,22 @@ class SamplesQueryIndex(SamplesQuery):
                 query_msg = f'{data}'
             samples = self._query_connection.sample_service.get_existing_samples_by_names(data)
             sample_ids = {s.id for s in samples}
-            sample_set = SampleSet(sample_ids)
+            present_set = SampleSet(sample_ids)
         elif isinstance(data, SamplesQuery) or isinstance(data, SampleSet):
             logger.debug(f'data=[{data}] contains sample ids')
             if isinstance(data, SamplesQuery):
-                sample_set = data.sample_set
+                present_set = data.sample_set
                 query_msg = f'{data}'
             else:
-                sample_set = data
+                present_set = data
                 query_msg = f'set({len(data)} samples)'
         else:
             raise Exception(f'Unknown type for data=[{data}. Got type [{type(data)}]. '
                             'Must a string or list of strings (representing sample names) '
                             'or a set of sample IDs (as a SamplesQuery or SampleSet).')
-        return sample_set, query_msg
+        unknown_set = self.unknown_set.intersection(present_set)
+        present_set = self.sample_set.intersection(present_set)
+        return present_set, unknown_set, query_msg
 
     def _get_sample_names_query_infix_from_data(self, data: Union[str, List[str], pd.Series, SamplesQuery, SampleSet]
                                                 ) -> Tuple[Set[str], str]:
