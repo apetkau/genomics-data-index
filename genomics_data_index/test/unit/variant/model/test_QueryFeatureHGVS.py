@@ -1,5 +1,3 @@
-from typing import cast
-
 from genomics_data_index.storage.model.QueryFeatureHGVS import QueryFeatureHGVS
 
 
@@ -96,27 +94,3 @@ def test_create():
     assert not f.has_id()
     assert not f.is_nucleotide()
     assert not f.is_protein()
-
-
-def test_unknown():
-    f = QueryFeatureHGVS.create_from_id('hgvs:NC_011083:SEHA_RS01180:c.497C>A')
-    assert not f.is_unknown()
-    assert f.id == 'hgvs:NC_011083:SEHA_RS01180:c.497C>A'
-    assert f.id_minus_unknown == 'hgvs:NC_011083:SEHA_RS01180:c.497C>A'
-
-    u = f.to_unknown()
-    assert u.is_unknown()
-    assert u.id == 'hgvs:NC_011083:SEHA_RS01180:c.497C>A:unknown'
-    assert cast(QueryFeatureHGVS, u).id_minus_unknown == 'hgvs:NC_011083:SEHA_RS01180:c.497C>A'
-    assert not f.is_unknown()
-
-    ue = f.to_unknown_explode()
-    assert 1 == len(ue)
-    assert ue[0].is_unknown()
-    assert ue[0].id == 'hgvs:NC_011083:SEHA_RS01180:c.497C>A:unknown'
-    assert cast(QueryFeatureHGVS, ue[0]).id_minus_unknown == 'hgvs:NC_011083:SEHA_RS01180:c.497C>A'
-
-    uu = u.to_unknown()
-    assert uu.is_unknown()
-    assert uu.id == 'hgvs:NC_011083:SEHA_RS01180:c.497C>A:unknown'
-    assert cast(QueryFeatureHGVS, uu).id_minus_unknown == 'hgvs:NC_011083:SEHA_RS01180:c.497C>A'
