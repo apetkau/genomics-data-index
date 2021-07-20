@@ -280,7 +280,10 @@ class SampleService:
             except FeatureExplodeUnknownError as e:
                 logger.warning(f'Could map feature={feature} to a set of unknown features. Will assume no unknowns exist.')
 
-        unknown_features_sets = self.find_sample_sets_by_features(unknown_features)
+        if len(unknown_features) > 0:
+            unknown_features_sets = self.find_sample_sets_by_features(unknown_features)
+        else:
+            unknown_features_sets = set()
 
         features_to_unknown_sample_sets = {}
         for uid in unknown_features_sets:
