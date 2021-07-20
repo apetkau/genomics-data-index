@@ -358,7 +358,8 @@ class SamplesQueryIndex(SamplesQuery):
             raise Exception(f'kind={kind} is not recognized for {self}. Must be one of {self._get_has_kinds()}')
 
         found_hasa_set_dict = self._query_connection.sample_service.find_sample_sets_by_features([query_feature])
-        unknown_hasa_set_dict = self._query_connection.sample_service.find_unknown_sample_sets_by_features([query_feature])
+        unknown_hasa_set_dict = self._query_connection.sample_service.find_unknown_sample_sets_by_features(
+            [query_feature])
 
         if query_feature.id in found_hasa_set_dict:
             found_hasa_set = found_hasa_set_dict[query_feature.id]
@@ -409,14 +410,19 @@ class SamplesQueryIndex(SamplesQuery):
 
         if len(sample_names) == 0:
             sample_set_matches = SampleSet.create_empty()
+            unknown_matches = SampleSet.create_empty()
         else:
             sample_set_matches = kmer_service.find_matches_within(sample_names=list(sample_names),
                                                                   distance_threshold=distance,
                                                                   kmer_size=kmer_size,
                                                                   samples_universe=self._sample_set)
+            unknown_matches = kmer_service.find_matches_within(sample_names=list(sample_names),
+                                                               distance_threshold=distance,
+                                                               kmer_size=kmer_size,
+                                                               samples_universe=self._unknown_set)
         queries_collection = self._queries_collection.append(query_message)
         return self._create_from(sample_set=sample_set_matches, universe_set=self._universe_set,
-                                 unknown_set=self.unknown_set,
+                                 unknown_set=unknown_matches,
                                  queries_collection=queries_collection)
 
     def _within_distance(self, data: Union[str, List[str], pd.Series, SamplesQuery, SampleSet], distance: float,
@@ -428,8 +434,9 @@ class SamplesQueryIndex(SamplesQuery):
                             f'For additional distance queries you perhaps need to build or attach a tree to '
                             f'the query.')
 
-    def _get_present_unknown_sets_query_infix_from_data(self, data: Union[str, List[str], pd.Series, SamplesQuery, SampleSet]
-                                              ) -> Tuple[SampleSet, SampleSet, str]:
+    def _get_present_unknown_sets_query_infix_from_data(self,
+                                                        data: Union[str, List[str], pd.Series, SamplesQuery, SampleSet]
+                                                        ) -> Tuple[SampleSet, SampleSet, str]:
         if isinstance(data, str) or isinstance(data, list):
             logger.debug(f'data=[{data}] contains sample names')
             if isinstance(data, str):

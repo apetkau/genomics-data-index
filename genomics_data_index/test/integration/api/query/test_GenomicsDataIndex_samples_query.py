@@ -548,9 +548,18 @@ def test_query_isin_kmer(loaded_database_connection: DataIndexConnection):
         'SampleA', kind='distance', distance=1.0, units='kmer_jaccard')
     assert 1 == len(query_result)
     assert {sampleB.id} == set(query_result.sample_set)
-    assert {sampleC.id} == set(query_result.unknown_set)
+    assert {sampleA.id} == set(query_result.unknown_set)
     assert 9 == len(query_result.universe_set)
     assert "reference:5061:G:A AND isin_kmer_jaccard('SampleA', dist=1.0, k=31)" == query_result.query_expression()
+
+    # test with unknowns in query, isin should remove unknowns
+    query_result = query(loaded_database_connection).hasa('reference:5061:G:A').isin(
+        'SampleB', kind='distance', distance=0, units='kmer_jaccard')
+    assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+    assert 0 == len(query_result.unknown_set)
+    assert 9 == len(query_result.universe_set)
+    assert "reference:5061:G:A AND isin_kmer_jaccard('SampleB', dist=0, k=31)" == query_result.query_expression()
 
 
 def test_query_isin_kmer_samples_query(loaded_database_connection: DataIndexConnection):
