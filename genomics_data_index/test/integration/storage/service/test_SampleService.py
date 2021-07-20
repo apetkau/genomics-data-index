@@ -1,9 +1,11 @@
+import pytest
+
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.QueryFeatureHGVS import QueryFeatureHGVS
 from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
 from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
 from genomics_data_index.storage.model.db import Sample
-from genomics_data_index.storage.service.SampleService import SampleService
+from genomics_data_index.storage.service.SampleService import SampleService, FeatureExplodeUnknownError
 
 
 def count_samples(sample_service, variation_service):
@@ -701,3 +703,90 @@ def test_get_variants_samples_by_variation_features_no_matches(database, sample_
         features)
 
     assert 0 == len(feature_id_nucleotide_samples)
+
+
+def test_feature_explode_unknown(sample_service_snpeff_annotations):
+    sample_service = sample_service_snpeff_annotations
+
+    # MLST
+    unknowns = sample_service.feature_explode_unknown(QueryFeatureMLST('ecoli:abc:1'))
+    assert 1 == len(unknowns)
+    assert 'ecoli:abc:?' == unknowns[0].id
+
+    # MLST 2
+    unknowns = sample_service.feature_explode_unknown(QueryFeatureMLST('ecoli:abc:15'))
+    assert 1 == len(unknowns)
+    assert 'ecoli:abc:?' == unknowns[0].id
+
+    # SPDI and SNV, does not exist
+    unknowns = sample_service.feature_explode_unknown(QueryFeatureMutationSPDI('NC_011083:1:G:A'))
+    assert 1 == len(unknowns)
+    assert 'NC_011083:1:G:?' == unknowns[0].id
+
+    # SPDI and SNV, does not exist, deletion is number
+    unknowns = sample_service.feature_explode_unknown(QueryFeatureMutationSPDI('NC_011083:1:1:A'))
+    assert 1 == len(unknowns)
+    assert 'NC_011083:1:1:?' == unknowns[0].id
+
+    # SPDI and SNV does exist
+    unknowns = sample_service.feature_explode_unknown(QueryFeatureMutationSPDI('NC_011083:4384633:G:A'))
+    assert 1 == len(unknowns)
+    assert 'NC_011083:4384633:G:?' == unknowns[0].id
+
+    # SPDI and deletion
+    unknowns = sample_service.feature_explode_unknown(QueryFeatureMutationSPDI('NC_011083:3425558:AGCC:A'))
+    assert 4 == len(unknowns)
+    assert ['NC_011083:3425558:A:?', 'NC_011083:3425559:G:?',
+            'NC_011083:3425560:C:?', 'NC_011083:3425561:C:?'] == [u.id for u in unknowns]
+
+    # SPDI and insertion
+    unknowns = sample_service.feature_explode_unknown(QueryFeatureMutationSPDI('NC_011083:1944163:T:TGGC'))
+    assert 1 == len(unknowns)
+    assert 'NC_011083:1944163:T:?' == unknowns[0].id
+
+    # HGVS and SNV, nucleotide
+    unknowns = sample_service.feature_explode_unknown(
+        QueryFeatureHGVS.create_from_id('hgvs:NC_011083:SEHA_RS21795:c.798G>A'))
+    assert 1 == len(unknowns)
+    assert 'NC_011083:4384633:1:?' == unknowns[0].id
+
+    # HGVS and SNV, protein
+    unknowns = sample_service.feature_explode_unknown(
+        QueryFeatureHGVS.create_from_id('hgvs:NC_011083:SEHA_RS21795:p.Lys266Lys'))
+    assert 1 == len(unknowns)
+    assert 'NC_011083:4384633:1:?' == unknowns[0].id
+
+    # HGVS and deletion, nucleotide
+    unknowns = sample_service.feature_explode_unknown(
+        QueryFeatureHGVS.create_from_id('hgvs:NC_011083:SEHA_RS17245:c.123_125delGGC'))
+    assert 4 == len(unknowns)
+    assert ['NC_011083:3425558:1:?', 'NC_011083:3425559:1:?',
+            'NC_011083:3425560:1:?', 'NC_011083:3425561:1:?'] == [u.id for u in unknowns]
+
+    # HGVS and deletion, protein
+    unknowns = sample_service.feature_explode_unknown(
+        QueryFeatureHGVS.create_from_id('hgvs:NC_011083:SEHA_RS17245:p.Ala42del'))
+    assert 4 == len(unknowns)
+    assert ['NC_011083:3425558:1:?', 'NC_011083:3425559:1:?',
+            'NC_011083:3425560:1:?', 'NC_011083:3425561:1:?'] == [u.id for u in unknowns]
+
+    # HGVS and insertion, nucleotide
+    unknowns = sample_service.feature_explode_unknown(
+        QueryFeatureHGVS.create_from_id('hgvs:NC_011083:SEHA_RS10100:c.1293_1295dupGGC'))
+    assert 1 == len(unknowns)
+    assert 'NC_011083:1944163:1:?' == unknowns[0].id
+
+    # HGVS and complex/other, protein
+    unknowns = sample_service.feature_explode_unknown(
+        QueryFeatureHGVS.create_from_id('hgvs:NC_011083:SEHA_RS17780:p.ArgAla374HisThr'))
+    assert 5 == len(unknowns)
+    assert ['NC_011083:3535121:1:?', 'NC_011083:3535122:1:?',
+            'NC_011083:3535123:1:?', 'NC_011083:3535124:1:?',
+            'NC_011083:3535125:1:?'] == [u.id for u in unknowns]
+
+    # Make sure exception is thrown when it cannot find HGVS
+    with pytest.raises(FeatureExplodeUnknownError) as execinfo:
+        sample_service.feature_explode_unknown(
+            QueryFeatureHGVS.create_from_id('hgvs:NC_011083:SEHA_RS21795:p.Lys266Ala'))
+
+    assert 'is of type HGVS but the corresponding SPDI feature' in str(execinfo.value)

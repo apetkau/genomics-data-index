@@ -1,6 +1,7 @@
 from typing import List, Dict, Set, Union, cast, Type
 
 import pandas as pd
+import logging
 
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.NucleotideMutationTranslater import NucleotideMutationTranslater
@@ -13,6 +14,14 @@ from genomics_data_index.storage.model.db import NucleotideVariantsSamples, Refe
     SampleMLSTAlleles, MLSTAllelesSamples, Sample
 from genomics_data_index.storage.model.db import SampleNucleotideVariation
 from genomics_data_index.storage.service import DatabaseConnection
+
+logger = logging.getLogger(__name__)
+
+
+class FeatureExplodeUnknownError(Exception):
+
+    def __init__(self, msg: str):
+        super().__init__(msg)
 
 
 class SampleService:
@@ -32,6 +41,32 @@ class SampleService:
             .filter(Reference.name == reference_name) \
             .all()
         return samples
+
+    def feature_explode_unknown(self, feature: QueryFeature) -> List[QueryFeature]:
+        if isinstance(feature, QueryFeatureHGVS):
+            if feature.is_nucleotide():
+                variants_hgvs = self._connection.get_session().query(NucleotideVariantsSamples) \
+                    .filter(NucleotideVariantsSamples._id_hgvs_c == feature.id) \
+                    .all()
+            elif feature.is_protein():
+                variants_hgvs = self._connection.get_session().query(NucleotideVariantsSamples) \
+                    .filter(NucleotideVariantsSamples._id_hgvs_p == feature.id) \
+                    .all()
+            else:
+                raise Exception(f'feature=[{feature}] is neither nucleotide or protein')
+
+            if len(variants_hgvs) == 0:
+                raise FeatureExplodeUnknownError(f'feature={feature} is of type HGVS but the corresponding SPDI '
+                                                 f'feature does not exist in the database. Cannot convert to unknown '
+                                                 f'SPDI representation.')
+            else:
+                unknown_features = []
+                for variants_sample_obj in variants_hgvs:
+                    unknown_features.extend(QueryFeatureMutationSPDI(variants_sample_obj.spdi).to_unknown_explode())
+
+                return unknown_features
+        else:
+            return feature.to_unknown_explode()
 
     def get_samples_with_mlst_alleles(self, scheme_name: str) -> List[Sample]:
         """
@@ -237,7 +272,7 @@ class SampleService:
         unknown_to_features_dict = {}
         unknown_features = []
         for feature in features:
-            unknown_features_exploded = feature.to_unknown_explode()
+            unknown_features_exploded = self.feature_explode_unknown(feature)
             unknown_features.extend(unknown_features_exploded)
             for unknown_feature in unknown_features_exploded:
                 unknown_to_features_dict[unknown_feature.id] = feature
