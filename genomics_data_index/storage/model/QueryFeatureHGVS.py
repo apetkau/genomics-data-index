@@ -8,7 +8,8 @@ from genomics_data_index.storage.model.QueryFeature import QueryFeature
 
 class QueryFeatureHGVS(QueryFeatureMutation):
 
-    def __init__(self, sequence_name: str, gene: Optional[str], variant: str):
+    def __init__(self, sequence_name: str, gene: Optional[str], variant: str,
+                 unknown: bool = False):
         super().__init__()
 
         self._sequence_name = sequence_name
@@ -22,6 +23,8 @@ class QueryFeatureHGVS(QueryFeatureMutation):
                 self._hgvs_id = f'{sequence_name}:{gene}:{variant}'
         else:
             self._hgvs_id = None
+
+        self._unknown = unknown
 
     def has_gene(self) -> bool:
         return self._gene is not None
@@ -50,22 +53,33 @@ class QueryFeatureHGVS(QueryFeatureMutation):
     @property
     def id(self) -> Optional[str]:
         if self.has_id():
+            if self.is_unknown():
+                return self.id_minus_unknown + ':unknown'
+            else:
+                return self.id_minus_unknown
+        else:
+            return None
+
+    @property
+    def id_minus_unknown(self):
+        if self.has_id():
             return f'hgvs:{self._hgvs_id}'
         else:
             return None
 
     def is_unknown(self) -> bool:
-        raise NotImplementedError('Not implemented')
+        return self._unknown
 
     @property
     def scope(self) -> str:
         return self.sequence
 
     def to_unknown(self) -> QueryFeature:
-        raise NotImplementedError('Not implemented')
+        return QueryFeatureHGVS(sequence_name=self._sequence_name, gene=self._gene,
+                                variant=self._variant, unknown=True)
 
     def to_unknown_explode(self) -> List[QueryFeature]:
-        raise NotImplementedError('Not implemented')
+        return [self.to_unknown()]
 
     @classmethod
     def create(cls, sequence_name: str, gene: Optional[str], variant: str) -> QueryFeatureHGVS:
