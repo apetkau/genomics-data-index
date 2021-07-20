@@ -272,10 +272,13 @@ class SampleService:
         unknown_to_features_dict = {}
         unknown_features = []
         for feature in features:
-            unknown_features_exploded = self.feature_explode_unknown(feature)
-            unknown_features.extend(unknown_features_exploded)
-            for unknown_feature in unknown_features_exploded:
-                unknown_to_features_dict[unknown_feature.id] = feature
+            try:
+                unknown_features_exploded = self.feature_explode_unknown(feature)
+                unknown_features.extend(unknown_features_exploded)
+                for unknown_feature in unknown_features_exploded:
+                    unknown_to_features_dict[unknown_feature.id] = feature
+            except FeatureExplodeUnknownError as e:
+                logger.warning(f'Could map feature={feature} to a set of unknown features. Will assume no unknowns exist.')
 
         unknown_features_sets = self.find_sample_sets_by_features(unknown_features)
 
