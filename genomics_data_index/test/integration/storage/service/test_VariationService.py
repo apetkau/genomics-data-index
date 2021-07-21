@@ -38,6 +38,30 @@ def test_insert_variants_saved_files(database, snippy_nucleotide_data_package, r
     assert 3 == len(genomic_mask_files)
 
 
+def test_insert_variants_saved_files_set_no_index_package(database, snippy_nucleotide_data_package_no_index_missing,
+                                                          reference_service_with_data,
+                                                          sample_service, filesystem_storage):
+    variation_service = VariationService(database_connection=database,
+                                         reference_service=reference_service_with_data,
+                                         sample_service=sample_service,
+                                         variation_dir=filesystem_storage.variation_dir,
+                                         index_unknown_missing=True)
+
+    session = database.get_session()
+
+    variation_service.insert(feature_scope_name='genome', data_package=snippy_nucleotide_data_package_no_index_missing)
+
+    samples = session.query(Sample).all()
+
+    assert {'SampleA', 'SampleB', 'SampleC'} == {s.name for s in samples}
+
+    variation_files = {v.nucleotide_variants_file for s in samples for v in s.sample_nucleotide_variation}
+    assert 3 == len(variation_files)
+
+    genomic_mask_files = {v.masked_regions_file for s in samples for v in s.sample_nucleotide_variation}
+    assert 3 == len(genomic_mask_files)
+
+
 def test_read_index(database, snippy_nucleotide_data_package, reference_service_with_data,
                     sample_service, filesystem_storage):
     variation_service = VariationService(database_connection=database,

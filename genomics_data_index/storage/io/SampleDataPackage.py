@@ -6,12 +6,15 @@ from genomics_data_index.storage.io.SampleData import SampleData
 
 class SampleDataPackage(abc.ABC):
 
-    def __init__(self):
-        pass
+    def __init__(self, index_unknown_missing: bool):
+        self._index_unknown_missing = index_unknown_missing
 
     @abc.abstractmethod
     def sample_names(self) -> Set[str]:
         pass
+
+    def index_unknown_missing(self) -> bool:
+        return self._index_unknown_missing
 
     def process_all_data(self) -> Dict[str, SampleData]:
         processed_data = {}
