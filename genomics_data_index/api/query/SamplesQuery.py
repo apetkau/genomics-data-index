@@ -125,6 +125,22 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
+    def select_absent(self) -> SamplesQuery:
+        """
+        Creates a new query with only the absent samples selected.
+        :return: A new query with only the absent samples selected.
+        """
+        pass
+
+    @abc.abstractmethod
+    def select_unknown(self) -> SamplesQuery:
+        """
+        Creates a new query with only the unknown samples selected.
+        :return: A new query with only the unknown samples selected.
+        """
+        pass
+
+    @abc.abstractmethod
     def features_summary(self, kind: str = 'mutations', selection: str = 'all', **kwargs) -> pd.DataFrame:
         """
         Summarizes the selected features in a DataFrame. Please specify the kind of features with the kind parameter.

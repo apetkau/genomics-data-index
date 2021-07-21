@@ -48,6 +48,12 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
     def absent_set(self) -> SampleSet:
         return self._wrapped_query.absent_set
 
+    def select_absent(self) -> SamplesQuery:
+        return self._wrap_create(self._wrapped_query.select_absent())
+
+    def select_unknown(self) -> SamplesQuery:
+        return self._wrap_create(self._wrapped_query.select_unknown())
+
     def reset_universe(self, include_unknown: bool = True) -> SamplesQuery:
         return self._wrap_create(self._wrapped_query.reset_universe())
 

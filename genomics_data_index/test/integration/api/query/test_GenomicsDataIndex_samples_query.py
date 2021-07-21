@@ -803,6 +803,40 @@ def test_query_single_mutation_then_add_new_genomes_and_query(loaded_database_co
     assert 12 == len(query_result.universe_set)
 
 
+def test_select_unknown_select_absent(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    all_sample_ids = {i for i, in db.get_session().query(Sample.id).all()}
+
+    query_result = query(loaded_database_connection).hasa('reference:5061:G:A')
+    assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+    assert 1 == len(query_result.unknown_set)
+    assert {sampleA.id} == set(query_result.unknown_set)
+    assert 7 == len(query_result.absent_set)
+    assert all_sample_ids - {sampleA.id, sampleB.id} == set(query_result.absent_set)
+    assert 9 == len(query_result.universe_set)
+
+    # Select unknown
+    selected_result = query_result.select_unknown()
+    assert 1 == len(selected_result)
+    assert {sampleA.id} == set(selected_result.sample_set)
+    assert 0 == len(selected_result.unknown_set)
+    assert 8 == len(selected_result.absent_set)
+    assert all_sample_ids - {sampleA.id} == set(selected_result.absent_set)
+    assert 9 == len(selected_result.universe_set)
+
+    # Select absent
+    selected_result = query_result.select_absent()
+    assert 7 == len(selected_result)
+    assert all_sample_ids - {sampleA.id, sampleB.id} == set(selected_result.sample_set)
+    assert 0 == len(selected_result.unknown_set)
+    assert 2 == len(selected_result.absent_set)
+    assert {sampleA.id, sampleB.id} == set(selected_result.absent_set)
+    assert 9 == len(selected_result.universe_set)
+
+
 def test_query_multiple_mutation_unknowns(loaded_database_connection: DataIndexConnection):
     db = loaded_database_connection.database
     sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
