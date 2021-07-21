@@ -790,3 +790,27 @@ def test_feature_explode_unknown(sample_service_snpeff_annotations):
             QueryFeatureHGVS.create_from_id('hgvs:NC_011083:SEHA_RS21795:p.Lys266Ala'))
 
     assert 'is of type HGVS but the corresponding SPDI feature' in str(execinfo.value)
+
+
+def test_get_sample_set_by_names(database, sample_service: SampleService, variation_service):
+    sampleA = database.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = database.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+
+    # Test getting sample sets
+    assert {sampleA.id} == set(sample_service.get_sample_set_by_names(['SampleA']))
+    assert {sampleB.id} == set(sample_service.get_sample_set_by_names(['SampleB']))
+    assert {sampleA.id, sampleB.id} == set(sample_service.get_sample_set_by_names(['SampleA', 'SampleB']))
+    assert {sampleA.id, sampleB.id} == set(sample_service.get_sample_set_by_names({'SampleA', 'SampleB'}))
+    assert {sampleA.id, sampleB.id, sampleC.id} == set(
+        sample_service.get_sample_set_by_names(['SampleA', 'SampleB', 'SampleC']))
+
+    # Test empty sample set
+    sample_set = sample_service.get_sample_set_by_names([])
+    assert isinstance(sample_set, SampleSet)
+    assert 0 == len(sample_set)
+
+    # Test case of trying to get ids for samples that don't exist in database.
+    with pytest.raises(Exception) as execinfo:
+        sample_service.get_sample_set_by_names(['SampleA', 'Sample_invalid'])
+    assert 'Did not find an equal number of sample names and ids' in str(execinfo.value)

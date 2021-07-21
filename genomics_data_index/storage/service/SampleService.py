@@ -367,3 +367,26 @@ class SampleService:
             .all()
 
         return dict(sample_tuples)
+
+    def get_sample_set_by_names(self, sample_names: Union[List[str], Set[str]]) -> SampleSet:
+        """
+        Given a collection of sample names, get a SampleSet of the corresponding IDs.
+        :param sample_names: The names to convert to an ID set.
+        :return: A SampleSet with all the corresponding samples by the passed names. Raises an exception
+                 if some sample names have no ids.
+        """
+        if isinstance(sample_names, list):
+            sample_names = set(sample_names)
+        elif not isinstance(sample_names, set):
+            raise Exception(f'Invalid type=[{type(sample_names)}] for passed sample_names. Must be list or set.')
+
+        sample_ids_tuples = self._connection.get_session().query(Sample.id) \
+            .filter(Sample.name.in_(sample_names)) \
+            .all()
+        sample_ids = {i for i, in sample_ids_tuples}
+
+        if len(sample_names) != len(sample_ids):
+            raise Exception(f'Did not find an equal number of sample names and ids. '
+                            f'Number sample_names={len(sample_names)}. Number of returned sample_ids={len(sample_ids)}')
+
+        return SampleSet(sample_ids=sample_ids)
