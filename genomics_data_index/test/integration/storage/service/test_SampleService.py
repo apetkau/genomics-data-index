@@ -814,3 +814,7 @@ def test_get_sample_set_by_names(database, sample_service: SampleService, variat
     with pytest.raises(Exception) as execinfo:
         sample_service.get_sample_set_by_names(['SampleA', 'Sample_invalid'])
     assert 'Did not find an equal number of sample names and ids' in str(execinfo.value)
+
+    # Test case of ignoring not found samples
+    assert {sampleA.id} == set(sample_service.get_sample_set_by_names(['SampleA', 'Sample_invalid'],
+                                                                      ignore_not_found=True))

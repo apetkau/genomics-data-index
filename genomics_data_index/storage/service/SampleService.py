@@ -368,12 +368,13 @@ class SampleService:
 
         return dict(sample_tuples)
 
-    def get_sample_set_by_names(self, sample_names: Union[List[str], Set[str]]) -> SampleSet:
+    def get_sample_set_by_names(self, sample_names: Union[List[str], Set[str]], ignore_not_found: bool = False) -> SampleSet:
         """
         Given a collection of sample names, get a SampleSet of the corresponding IDs.
         :param sample_names: The names to convert to an ID set.
-        :return: A SampleSet with all the corresponding samples by the passed names. Raises an exception
-                 if some sample names have no ids.
+        :param ignore_not_found: Whether or not to ignore sample names that were not found.
+        :return: A SampleSet with all the corresponding samples by the passed names. If ignore_not_found is false,
+                 raises an exception if some sample names have no ids.
         """
         if isinstance(sample_names, list):
             sample_names = set(sample_names)
@@ -384,9 +385,20 @@ class SampleService:
             .filter(Sample.name.in_(sample_names)) \
             .all()
         sample_ids = {i for i, in sample_ids_tuples}
+        sample_set = SampleSet(sample_ids=sample_ids)
 
-        if len(sample_names) != len(sample_ids):
+        if ignore_not_found or len(sample_names) == len(sample_set):
+            return sample_set
+        else:
+            # Find matching sample names to ids we did find for a nicer error message
+            found_sample_names = {s.name for s in self.find_samples_by_ids(sample_set)}
+            names_not_found = sample_names - found_sample_names
+            if len(names_not_found) > 10:
+                small_not_found = list(names_not_found)[:10]
+                msg = f'[{", ".join(small_not_found)}, ...]'
+            else:
+                msg = f'{names_not_found}'
+
             raise Exception(f'Did not find an equal number of sample names and ids. '
-                            f'Number sample_names={len(sample_names)}. Number of returned sample_ids={len(sample_ids)}')
-
-        return SampleSet(sample_ids=sample_ids)
+                            f'Number sample_names={len(sample_names)}. Number returned sample_ids={len(sample_ids)}. '
+                            f'Sample names with missing ids {msg}')
