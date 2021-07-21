@@ -92,14 +92,19 @@ class SamplesQueryIndex(SamplesQuery):
                                  unknown_set=unknown_set,
                                  queries_collection=self._queries_collection)
 
-    def set_universe(self, universe_set: SampleSet) -> SamplesQuery:
+    def set_universe(self, universe_set: SampleSet, query_message: str = None) -> SamplesQuery:
         if universe_set is None:
             universe_set = SampleSet.create_empty()
+
+        if query_message is None:
+            query_message = f'set_universe({len(universe_set)} samples)'
+
+        queries_collection = self._queries_collection.append(query_message)
 
         sample_set = self.sample_set.intersection(universe_set)
         unknown_set = self.unknown_set.intersection(universe_set)
         return self._create_from(sample_set=sample_set, universe_set=universe_set,
-                                 unknown_set=unknown_set, queries_collection=self._queries_collection)
+                                 unknown_set=unknown_set, queries_collection=queries_collection)
 
     def join(self, data_frame: pd.DataFrame, sample_ids_column: str = None,
              sample_names_column: str = None, default_isa_kind: str = 'sample',

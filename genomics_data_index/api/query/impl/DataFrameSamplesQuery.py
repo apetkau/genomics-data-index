@@ -21,7 +21,6 @@ class DataFrameSamplesQuery(WrappedSamplesQuery):
     ISA_KINDS = ['dataframe']
 
     def __init__(self, connection: DataIndexConnection, wrapped_query: SamplesQuery,
-                 universe_set: SampleSet,
                  data_frame: pd.DataFrame,
                  sample_ids_col: str,
                  default_isa_kind: str,
@@ -33,8 +32,6 @@ class DataFrameSamplesQuery(WrappedSamplesQuery):
 
         :param connection: A connection to a database containing samples.
         :param wrapped_query: The SamplesQuery to wrap around/decorate.
-        :param universe_set: The :py:class:`genomics_data_index.storage.SampleSet` representing a set of samples defining
-                       the universe (used for e.g., complement() operations).
         :param data_frame: The DataFrame to join to this query. This dataframe must have a column which matches rows to
                            the Sample IDs stored in database defined by the connection object.
         :param sample_ids_col: The name of the column in the DataFrame defining the Sample ID for a particular row.
@@ -44,7 +41,7 @@ class DataFrameSamplesQuery(WrappedSamplesQuery):
                                    to be used when running A.isa(data, kind='...', isa_column='...').
         :return: A new DataFrameSamplesQuery object.
         """
-        super().__init__(connection=connection, wrapped_query=wrapped_query, universe_set=universe_set)
+        super().__init__(connection=connection, wrapped_query=wrapped_query)
         self._sample_ids_col = sample_ids_col
         self._data_frame = data_frame
         self._default_isa_kind = default_isa_kind
@@ -126,17 +123,13 @@ class DataFrameSamplesQuery(WrappedSamplesQuery):
 
     def reset_universe(self, include_unknown: bool = True) -> SamplesQuery:
         new_wrapped_query = self._wrapped_query.reset_universe(include_unknown=include_unknown)
-        return self._wrap_create(new_wrapped_query, universe_set=new_wrapped_query.universe_set)
+        return self._wrap_create(new_wrapped_query)
 
-    def _wrap_create(self, wrapped_query: SamplesQuery, universe_set: SampleSet = None) -> WrappedSamplesQuery:
-        if universe_set is None:
-            universe_set = self.universe_set
-
+    def _wrap_create(self, wrapped_query: SamplesQuery) -> WrappedSamplesQuery:
         return DataFrameSamplesQuery(connection=self._query_connection,
                                      wrapped_query=wrapped_query,
                                      data_frame=self._data_frame,
                                      sample_ids_col=self._sample_ids_col,
-                                     universe_set=universe_set,
                                      default_isa_kind=self._default_isa_kind,
                                      default_isa_column=self._default_isa_column)
 
@@ -187,12 +180,10 @@ class DataFrameSamplesQuery(WrappedSamplesQuery):
         if query_message is None:
             query_message = f'dataframe(ids_col=[{sample_ids_column}])'
 
-        wrapped_query_intersect = wrapped_query.intersect(sample_set=df_sample_set,
-                                                          query_message=query_message)
+        wrapped_query_intersect = wrapped_query.set_universe(universe_set, query_message=query_message)
 
         return DataFrameSamplesQuery(connection=connection,
                                      wrapped_query=wrapped_query_intersect,
-                                     universe_set=universe_set,
                                      data_frame=data_frame,
                                      sample_ids_col=sample_ids_column,
                                      default_isa_column=default_isa_column,

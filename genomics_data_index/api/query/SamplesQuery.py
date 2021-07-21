@@ -248,13 +248,14 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def set_universe(self, universe_set: SampleSet) -> SamplesQuery:
+    def set_universe(self, universe_set: SampleSet, query_message: str = None) -> SamplesQuery:
         """
         Sets the *universe* set to be equal to the passed set. Will intersect any selected/unknown sample sets.
         That is, if `A` is a SamplesQuery consisting of some selected samples and `U` is a universe of samples, then
         `B = A.set_universe(U)` implies that: (1) `B.universe_set == U`, (2) `B.sample_set == A.sample_set.intersect(U)`,
         (3) `B.unknown_set == A.unknown_set.intersect(U)`, and (4) `B.absent_set == A.absent_set.intersect(U)`.
         :param universe_set: The new universe set.
+        :param query_message: An (optional) message to append to the query message string representing this operation.
         :return: A SamplesQuery with the universe set to the passed set.
         """
         pass

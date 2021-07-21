@@ -85,7 +85,7 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
 
         if isinstance(samples_query, TreeSamplesQuery):
             samples_query = cast(TreeSamplesQuery, samples_query)
-            return samples_query._wrap_create(self, self.universe_set)
+            return samples_query._wrap_create(self)
         else:
             raise Exception(f'Build tree is not of type {TreeSamplesQuery.__class__}')
 
@@ -94,7 +94,7 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
 
         if isinstance(samples_query, TreeSamplesQuery):
             samples_query = cast(TreeSamplesQuery, samples_query)
-            return samples_query._wrap_create(self, self.universe_set)
+            return samples_query._wrap_create(self)
         else:
             raise Exception(f'Build tree is not of type {TreeSamplesQuery.__class__}')
 

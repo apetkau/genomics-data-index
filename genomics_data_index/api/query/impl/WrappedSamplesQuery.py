@@ -18,7 +18,7 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
     queries. For example by including a tree or a DataFrame.
     """
 
-    def __init__(self, connection: DataIndexConnection, wrapped_query: SamplesQuery, universe_set: SampleSet = None):
+    def __init__(self, connection: DataIndexConnection, wrapped_query: SamplesQuery):
         """
         Builds a new WrappedSamplesQuery from the given information. In most normal operations WrappedSamplesQuery objects
         are not created directly but are instead created from an :py:class:`genomics_data_index.api.GenomicsDataIndex`
@@ -26,21 +26,15 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
 
         :param connection: A connection to a database containing samples.
         :param wrapped_query: The SamplesQuery to wrap around/decorate.
-        :param universe_set: The :py:class:`genomics_data_index.storage.SampleSet` representing a set of samples defining
-                       the universe (used for e.g., complement() operations).
         :return: A new WrappedSamplesQuery object.
         """
         super().__init__()
         self._query_connection = connection
         self._wrapped_query = wrapped_query
-        self._universe_set = universe_set
 
     @property
     def universe_set(self) -> SampleSet:
-        if self._universe_set is None:
-            return self._wrapped_query.universe_set
-        else:
-            return self._universe_set
+        return self._wrapped_query.universe_set
 
     @property
     def sample_set(self) -> SampleSet:
@@ -57,8 +51,8 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
     def reset_universe(self, include_unknown: bool = True) -> SamplesQuery:
         return self._wrap_create(self._wrapped_query.reset_universe())
 
-    def set_universe(self, universe_set: SampleSet) -> SamplesQuery:
-        return self._wrap_create(self._wrapped_query.set_universe(universe_set))
+    def set_universe(self, universe_set: SampleSet, query_message: str = None) -> SamplesQuery:
+        return self._wrap_create(self._wrapped_query.set_universe(universe_set, query_message=query_message))
 
     def intersect(self, sample_set: SampleSet, query_message: str = None) -> SamplesQuery:
         intersected_query = self._wrapped_query.intersect(sample_set=sample_set, query_message=query_message)
@@ -73,7 +67,7 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
                                                           default_isa_column=default_isa_column))
 
     @abc.abstractmethod
-    def _wrap_create(self, wrapped_query: SamplesQuery, universe_set: SampleSet = None) -> WrappedSamplesQuery:
+    def _wrap_create(self, wrapped_query: SamplesQuery) -> WrappedSamplesQuery:
         pass
 
     def toframe(self, include_present: bool = True, include_unknown: bool = False,
