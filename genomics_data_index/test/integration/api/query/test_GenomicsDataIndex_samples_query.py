@@ -1692,6 +1692,7 @@ def test_join_custom_dataframe_single_query_sample_names_with_unknowns(loaded_da
 
 def test_join_custom_dataframe_extra_sample_names(loaded_database_connection: DataIndexConnection):
     db = loaded_database_connection.database
+    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
     sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
 
@@ -1709,18 +1710,37 @@ def test_join_custom_dataframe_extra_sample_names(loaded_database_connection: Da
     assert 3 == len(query_result)
     assert 3 == len(query_result.universe_set)
 
-    query_result = query_result.hasa('reference:839:C:G', kind='mutation')
-    df = query_result.toframe()
-
+    # No unknowns
+    query_result_test = query_result.hasa('reference:839:C:G', kind='mutation')
+    assert 2 == len(query_result_test)
+    assert 0 == len(query_result_test.unknown_set)
+    assert 1 == len(query_result_test.absent_set)
+    assert 3 == len(query_result_test.universe_set)
+    df = query_result_test.toframe(include_unknown=True)
     assert 2 == len(df)
-    assert 3 == len(query_result.universe_set)
-    assert {'Query', 'Sample Name', 'Sample ID', 'Status', 'Color', 'Samples'} == set(df.columns.tolist())
-
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status', 'Samples', 'Color'] == df.columns.tolist()
     df = df.sort_values(['Sample Name'])
     assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert ['Present', 'Present'] == df['Status'].tolist()
     assert [sampleB.id, sampleC.id] == df['Sample ID'].tolist()
     assert ['green', 'blue'] == df['Color'].tolist()
     assert {'dataframe(names_col=[Samples]) AND reference:839:C:G'} == set(df['Query'].tolist())
+
+    # With unknowns
+    query_result_test = query_result.hasa('reference:5061:G:A', kind='mutation')
+    assert 1 == len(query_result_test)
+    assert 1 == len(query_result_test.unknown_set)
+    assert 1 == len(query_result_test.absent_set)
+    assert 3 == len(query_result_test.universe_set)
+    df = query_result_test.toframe(include_unknown=True)
+    assert 2 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status', 'Samples', 'Color'] == df.columns.tolist()
+    df = df.sort_values(['Sample Name'])
+    assert ['SampleA', 'SampleB'] == df['Sample Name'].tolist()
+    assert ['Unknown', 'Present'] == df['Status'].tolist()
+    assert [sampleA.id, sampleB.id] == df['Sample ID'].tolist()
+    assert ['red', 'green'] == df['Color'].tolist()
+    assert {'dataframe(names_col=[Samples]) AND reference:5061:G:A'} == set(df['Query'].tolist())
 
 
 def test_join_custom_dataframe_missing_sample_names(loaded_database_connection: DataIndexConnection):
@@ -1789,23 +1809,26 @@ def test_query_then_join_dataframe_single_query(loaded_database_connection: Data
     assert 9 == len(query_result)
     assert 9 == len(query_result.universe_set)
 
-    query_result = query_result.hasa('reference:839:C:G', kind='mutation')
-    assert 2 == len(query_result)
-    assert 9 == len(query_result.universe_set)
-    assert {sampleB.id, sampleC.id} == set(query_result.sample_set)
+    # Case: no unknowns
+    query_result_test = query_result.hasa('reference:839:C:G', kind='mutation')
+    assert 2 == len(query_result_test)
+    assert 0 == len(query_result_test.unknown_set)
+    assert 7 == len(query_result_test.absent_set)
+    assert 9 == len(query_result_test.universe_set)
+    assert {sampleB.id, sampleC.id} == set(query_result_test.sample_set)
 
-    df = query_result.toframe()
+    df = query_result_test.toframe()
 
     assert 2 == len(df)
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
     assert {'reference:839:C:G'} == set(df['Query'].tolist())
 
     # Now join data frame
-    query_result = query_result.join(data_frame=metadata_df, sample_ids_column='Sample ID')
-    assert 2 == len(query_result)
-    assert 3 == len(query_result.universe_set)
+    query_result_test = query_result_test.join(data_frame=metadata_df, sample_ids_column='Sample ID')
+    assert 2 == len(query_result_test)
+    assert 3 == len(query_result_test.universe_set)
 
-    df = query_result.toframe()
+    df = query_result_test.toframe(include_unknown=True)
 
     assert 2 == len(df)
     assert ['Query', 'Sample Name', 'Sample ID', 'Status', 'Color'] == df.columns.tolist()
@@ -1813,8 +1836,41 @@ def test_query_then_join_dataframe_single_query(loaded_database_connection: Data
 
     df = df.sort_values(['Sample Name'])
     assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert ['Present', 'Present'] == df['Status'].tolist()
     assert [sampleB.id, sampleC.id] == df['Sample ID'].tolist()
     assert ['green', 'blue'] == df['Color'].tolist()
+
+    # Case: some unknowns
+    query_result_test = query_result.hasa('reference:5061:G:A', kind='mutation')
+    assert 1 == len(query_result_test)
+    assert 1 == len(query_result_test.unknown_set)
+    assert 7 == len(query_result_test.absent_set)
+    assert 9 == len(query_result_test.universe_set)
+
+    df = query_result_test.toframe(include_unknown=True)
+
+    assert 2 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    assert {'reference:5061:G:A'} == set(df['Query'].tolist())
+
+    # Now join data frame
+    query_result_test = query_result_test.join(data_frame=metadata_df, sample_ids_column='Sample ID')
+    assert 1 == len(query_result_test)
+    assert 1 == len(query_result_test.unknown_set)
+    assert 1 == len(query_result_test.absent_set)
+    assert 3 == len(query_result_test.universe_set)
+
+    df = query_result_test.toframe(include_unknown=True)
+
+    assert 2 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status', 'Color'] == df.columns.tolist()
+    assert {'reference:5061:G:A AND dataframe(ids_col=[Sample ID])'} == set(df['Query'].tolist())
+
+    df = df.sort_values(['Sample Name'])
+    assert ['SampleA', 'SampleB'] == df['Sample Name'].tolist()
+    assert ['Unknown', 'Present'] == df['Status'].tolist()
+    assert [sampleA.id, sampleB.id] == df['Sample ID'].tolist()
+    assert ['red', 'green'] == df['Color'].tolist()
 
 
 def test_query_join_dataframe_isa_dataframe_column(loaded_database_connection: DataIndexConnection):
