@@ -1,5 +1,4 @@
 import abc
-from typing import List
 
 from genomics_data_index.storage.model.QueryFeature import QueryFeature
 

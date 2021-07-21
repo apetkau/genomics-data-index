@@ -1,8 +1,8 @@
 import pandas as pd
-
-from genomics_data_index.storage.io.mutation.VcfVariantsReader import VcfVariantsReader
-from genomics_data_index.storage.MaskedGenomicRegions import MaskedGenomicRegions
 from pybedtools import BedTool
+
+from genomics_data_index.storage.MaskedGenomicRegions import MaskedGenomicRegions
+from genomics_data_index.storage.io.mutation.VcfVariantsReader import VcfVariantsReader
 
 
 def test_mask_to_features():

@@ -72,7 +72,7 @@ def test_read_index(database, snippy_nucleotide_data_package, reference_service_
 
 
 def test_count_on_reference_no_index_unknowns(database, snippy_nucleotide_data_package, reference_service_with_data,
-                                        sample_service, filesystem_storage):
+                                              sample_service, filesystem_storage):
     variation_service = VariationService(database_connection=database,
                                          reference_service=reference_service_with_data,
                                          sample_service=sample_service,
@@ -90,7 +90,7 @@ def test_count_on_reference_no_index_unknowns(database, snippy_nucleotide_data_p
 
 
 def test_count_on_reference_with_index_unknowns(database, snippy_nucleotide_data_package, reference_service_with_data,
-                                        sample_service, filesystem_storage):
+                                                sample_service, filesystem_storage):
     variation_service = VariationService(database_connection=database,
                                          reference_service=reference_service_with_data,
                                          sample_service=sample_service,
@@ -127,16 +127,16 @@ def test_insert_variants_masked_regions(database, snippy_nucleotide_data_package
     assert 329 == len(genomic_masks['SampleC'])
 
     assert 632 == session.query(NucleotideVariantsSamples).count()
-    assert 521 == session.query(NucleotideVariantsSamples)\
-                         .filter(NucleotideVariantsSamples.var_type == 'UNKNOWN_MISSING')\
-                         .count()
-    assert 111 == session.query(NucleotideVariantsSamples)\
-                         .filter(NucleotideVariantsSamples.var_type != 'UNKNOWN_MISSING')\
-                         .count()
+    assert 521 == session.query(NucleotideVariantsSamples) \
+        .filter(NucleotideVariantsSamples.var_type == 'UNKNOWN_MISSING') \
+        .count()
+    assert 111 == session.query(NucleotideVariantsSamples) \
+        .filter(NucleotideVariantsSamples.var_type != 'UNKNOWN_MISSING') \
+        .count()
 
 
 def test_mutation_counts_on_reference(database, snippy_nucleotide_data_package, reference_service_with_data,
-                            sample_service, filesystem_storage):
+                                      sample_service, filesystem_storage):
     variation_service = VariationService(database_connection=database,
                                          reference_service=reference_service_with_data,
                                          sample_service=sample_service,
@@ -164,8 +164,9 @@ def test_mutation_counts_on_reference(database, snippy_nucleotide_data_package, 
     assert 1 == mutation_counts['reference:888:1:?']
 
 
-def test_get_variants_on_reference_no_index_unknowns(database, snippy_nucleotide_data_package, reference_service_with_data,
-                                   sample_service, filesystem_storage):
+def test_get_variants_on_reference_no_index_unknowns(database, snippy_nucleotide_data_package,
+                                                     reference_service_with_data,
+                                                     sample_service, filesystem_storage):
     variation_service = VariationService(database_connection=database,
                                          reference_service=reference_service_with_data,
                                          sample_service=sample_service,
@@ -189,7 +190,7 @@ def test_get_variants_on_reference_no_index_unknowns(database, snippy_nucleotide
 
 
 def test_get_variants_on_reference_index_unknowns(database, snippy_nucleotide_data_package, reference_service_with_data,
-                                   sample_service, filesystem_storage):
+                                                  sample_service, filesystem_storage):
     variation_service = VariationService(database_connection=database,
                                          reference_service=reference_service_with_data,
                                          sample_service=sample_service,
@@ -231,8 +232,9 @@ def test_get_variants_on_reference_index_unknowns(database, snippy_nucleotide_da
     assert 'reference:87:1:?' not in mutations
 
 
-def test_insert_variants_examine_variation_with_unknown(database, snippy_nucleotide_data_package, reference_service_with_data,
-                                           sample_service, filesystem_storage):
+def test_insert_variants_examine_variation_with_unknown(database, snippy_nucleotide_data_package,
+                                                        reference_service_with_data,
+                                                        sample_service, filesystem_storage):
     variation_service = VariationService(database_connection=database,
                                          reference_service=reference_service_with_data,
                                          sample_service=sample_service,
@@ -553,8 +555,8 @@ def test_insert_variants_regular_vcf_reader_examine_variation(database, regular_
 
 
 def test_insert_variants_regular_vcf_reader_examine_variation_no_unknown(database, regular_nucleotide_data_package,
-                                                              reference_service_with_data,
-                                                              sample_service, filesystem_storage):
+                                                                         reference_service_with_data,
+                                                                         sample_service, filesystem_storage):
     variation_service = VariationService(database_connection=database,
                                          reference_service=reference_service_with_data,
                                          sample_service=sample_service,

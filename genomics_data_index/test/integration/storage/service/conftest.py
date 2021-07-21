@@ -143,7 +143,8 @@ def variation_service(database, reference_service_with_data,
 
 @pytest.fixture
 def variation_service_index_unknowns(database, reference_service_with_data,
-                      snippy_nucleotide_data_package, sample_service, filesystem_storage) -> VariationService:
+                                     snippy_nucleotide_data_package, sample_service,
+                                     filesystem_storage) -> VariationService:
     var_service = VariationService(database_connection=database,
                                    reference_service=reference_service_with_data,
                                    sample_service=sample_service,

@@ -314,10 +314,12 @@ def test_find_unknown_sample_sets_by_features_variations_different_feature_defin
     sample_sets = sample_service.find_unknown_sample_sets_by_features([QueryFeatureMutationSPDI('reference:1167:AT:A')])
     assert {sampleA.id} == set(sample_sets[f'reference:1167:AT:A'])
 
-    sample_sets = sample_service.find_unknown_sample_sets_by_features([QueryFeatureMutationSPDI('reference:1167:ATT:A')])
+    sample_sets = sample_service.find_unknown_sample_sets_by_features(
+        [QueryFeatureMutationSPDI('reference:1167:ATT:A')])
     assert {sampleA.id} == set(sample_sets[f'reference:1167:ATT:A'])
 
-    sample_sets = sample_service.find_unknown_sample_sets_by_features([QueryFeatureMutationSPDI('reference:1167:1:AGG')])
+    sample_sets = sample_service.find_unknown_sample_sets_by_features(
+        [QueryFeatureMutationSPDI('reference:1167:1:AGG')])
     assert 0 == len(sample_sets)
 
     sample_sets = sample_service.find_unknown_sample_sets_by_features([QueryFeatureMutationSPDI('reference:1167:2:AT')])

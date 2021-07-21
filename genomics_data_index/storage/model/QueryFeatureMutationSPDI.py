@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import Union, List
 
 from genomics_data_index.storage.model import NUCLEOTIDE_UNKNOWN
-from genomics_data_index.storage.model.QueryFeatureMutation import QueryFeatureMutation
 from genomics_data_index.storage.model.QueryFeature import QueryFeature
+from genomics_data_index.storage.model.QueryFeatureMutation import QueryFeatureMutation
 
 
 class QueryFeatureMutationSPDI(QueryFeatureMutation):
@@ -114,7 +114,8 @@ class QueryFeatureMutationSPDI(QueryFeatureMutation):
         elif self.has_deletion_sequence():
             unknowns = []
             for i, c in enumerate(self.ref):
-                unknowns.append(QueryFeatureMutationSPDI(f'{self.sequence}:{self.position + i}:{c}:{NUCLEOTIDE_UNKNOWN}'))
+                unknowns.append(
+                    QueryFeatureMutationSPDI(f'{self.sequence}:{self.position + i}:{c}:{NUCLEOTIDE_UNKNOWN}'))
         else:
             unknowns = []
             for i in range(self.ref):

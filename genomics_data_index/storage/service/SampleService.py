@@ -1,7 +1,7 @@
+import logging
 from typing import List, Dict, Set, Union, cast, Type
 
 import pandas as pd
-import logging
 
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.NucleotideMutationTranslater import NucleotideMutationTranslater
@@ -278,7 +278,8 @@ class SampleService:
                 for unknown_feature in unknown_features_exploded:
                     unknown_to_features_dict[unknown_feature.id] = feature
             except FeatureExplodeUnknownError as e:
-                logger.warning(f'Could map feature={feature} to a set of unknown features. Will assume no unknowns exist.')
+                logger.warning(
+                    f'Could map feature={feature} to a set of unknown features. Will assume no unknowns exist.')
 
         if len(unknown_features) > 0:
             unknown_features_sets = self.find_sample_sets_by_features(unknown_features)
@@ -368,7 +369,8 @@ class SampleService:
 
         return dict(sample_tuples)
 
-    def get_sample_set_by_names(self, sample_names: Union[List[str], Set[str]], ignore_not_found: bool = False) -> SampleSet:
+    def get_sample_set_by_names(self, sample_names: Union[List[str], Set[str]],
+                                ignore_not_found: bool = False) -> SampleSet:
         """
         Given a collection of sample names, get a SampleSet of the corresponding IDs.
         :param sample_names: The names to convert to an ID set.

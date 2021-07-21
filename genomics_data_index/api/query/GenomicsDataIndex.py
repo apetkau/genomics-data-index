@@ -13,9 +13,9 @@ from genomics_data_index.api.query.impl.SamplesQueryIndex import SamplesQueryInd
 from genomics_data_index.api.query.impl.TreeSamplesQueryFactory import TreeSamplesQueryFactory
 from genomics_data_index.configuration.Project import Project
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
+from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.NucleotideMutationTranslater import NucleotideMutationTranslater
 from genomics_data_index.storage.service.VariationService import VariationService
-from genomics_data_index.storage.SampleSet import SampleSet
 
 logger = logging.getLogger(__name__)
 

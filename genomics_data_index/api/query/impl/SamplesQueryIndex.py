@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Union, List, Set, Tuple, cast
+from typing import Union, List, Set, Tuple
 
 import numpy as np
 import pandas as pd

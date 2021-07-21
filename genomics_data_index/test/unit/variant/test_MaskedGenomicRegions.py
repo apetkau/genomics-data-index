@@ -260,13 +260,13 @@ def test_positions_iter_multiple_sequences():
     masked_positions = list(masked_region.positions_iter())
     assert len(masked_positions) == 7
     assert set(masked_positions) == {('ref', 0), ('ref', 1), ('ref', 2), ('ref', 3), ('ref', 4),
-                                ('ref2', 1), ('ref2', 2)}
+                                     ('ref2', 1), ('ref2', 2)}
 
     # 1-based coordinates
     masked_positions = list(masked_region.positions_iter(start_position_index='1'))
     assert len(masked_positions) == 7
     assert set(masked_positions) == {('ref', 1), ('ref', 2), ('ref', 3), ('ref', 4), ('ref', 5),
-                                ('ref2', 2), ('ref2', 3)}
+                                     ('ref2', 2), ('ref2', 3)}
 
 
 def test_positions_iter_multiple_sequences_one_empty():

@@ -115,7 +115,8 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
         name_ids = {s.name: s.id for s in sample_service.find_samples_by_ids(self._wrapped_query.sample_set)}
 
         if include_unknowns:
-            name_ids_unknown = {s.name: s.id for s in sample_service.find_samples_by_ids(self._wrapped_query.unknown_set)}
+            name_ids_unknown = {s.name: s.id for s in
+                                sample_service.find_samples_by_ids(self._wrapped_query.unknown_set)}
             name_ids.update(name_ids_unknown)
 
         return name_ids

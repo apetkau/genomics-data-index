@@ -17,7 +17,6 @@ logger = logging.getLogger(__name__)
 
 
 class VcfVariantsReader(NucleotideFeaturesReader):
-
     VCF_FRAME_COLUMNS = ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE', 'VARIANT_ID']
 
     def __init__(self, sample_files_map: Dict[str, NucleotideSampleData],
