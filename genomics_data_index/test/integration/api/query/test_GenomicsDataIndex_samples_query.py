@@ -1949,6 +1949,59 @@ def test_query_join_dataframe_isa_dataframe_column(loaded_database_connection: D
     assert 3 == len(sub_result.universe_set)
 
 
+def test_query_with_unknown_join_dataframe_isa_dataframe_column(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+
+    metadata_df = pd.DataFrame([
+        [sampleA.id, 'red', 'small'],
+        [sampleB.id, 'red', 'big'],
+        [sampleC.id, 'blue', 'big']
+    ], columns=['Sample ID', 'Color', 'Size'])
+
+    query_result = query(loaded_database_connection).hasa('reference:5061:G:A').join(data_frame=metadata_df,
+                                                                                     sample_ids_column='Sample ID')
+    assert 1 == len(query_result)
+    assert 1 == len(query_result.unknown_set)
+    assert 1 == len(query_result.absent_set)
+    assert 3 == len(query_result.universe_set)
+
+    # By default, isa should select by 'sample'
+    sub_result = query_result.isa('SampleB')
+    assert 1 == len(sub_result)
+    assert 0 == len(sub_result.unknown_set)
+    assert 2 == len(sub_result.absent_set)
+    assert 3 == len(sub_result.universe_set)
+    assert {sampleB.id} == set(sub_result.sample_set)
+
+    # isa by sample where sample is unknown
+    sub_result = query_result.isa('SampleA')
+    assert 0 == len(sub_result)
+    assert 1 == len(sub_result.unknown_set)
+    assert 2 == len(sub_result.absent_set)
+    assert 3 == len(sub_result.universe_set)
+    assert {sampleA.id} == set(sub_result.unknown_set)
+
+    # If we explicitly pass kind='dataframe' should select by column in dataframe
+    sub_result = query_result.isa('red', isa_column='Color', kind='dataframe')
+    assert 1 == len(sub_result)
+    assert 1 == len(sub_result.unknown_set)
+    assert 1 == len(sub_result.absent_set)
+    assert 3 == len(sub_result.universe_set)
+    assert {sampleA.id} == set(sub_result.unknown_set)
+    assert {sampleB.id} == set(sub_result.sample_set)
+
+    # isa where we exclude unknown
+    sub_result = query_result.isa('big', isa_column='Size', kind='dataframe')
+    assert 1 == len(sub_result)
+    assert 0 == len(sub_result.unknown_set)
+    assert 2 == len(sub_result.absent_set)
+    assert 3 == len(sub_result.universe_set)
+    assert {sampleB.id} == set(sub_result.sample_set)
+
+
 def test_query_join_dataframe_isin_dataframe_column(loaded_database_connection: DataIndexConnection):
     db = loaded_database_connection.database
     sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
