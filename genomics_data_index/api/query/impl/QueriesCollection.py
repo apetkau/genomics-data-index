@@ -15,6 +15,10 @@ class QueriesCollection:
         new_queries_list.append(query_obj)
         return QueriesCollection(new_queries_list)
 
+    @property
+    def last(self):
+        return self._queries[-1]
+
     def query_expression(self) -> str:
         query_strs = [str(q) for q in self._queries]
         return ' AND '.join(query_strs)
