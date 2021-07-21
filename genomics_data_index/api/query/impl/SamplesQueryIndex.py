@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Union, List, Set, Tuple
+from typing import Union, List, Set, Tuple, Dict
 
 import numpy as np
 import pandas as pd
@@ -374,6 +374,12 @@ class SamplesQueryIndex(SamplesQuery):
     def __repr__(self) -> str:
         return str(self)
 
+    def _get_samples_or_empty(self, feature: QueryFeature, feature_id_set_dict: Dict[str, SampleSet]) -> SampleSet:
+        if feature.id in feature_id_set_dict:
+            return feature_id_set_dict[feature.id]
+        else:
+            return SampleSet.create_empty()
+
     def hasa(self, property: Union[QueryFeature, str, pd.Series], kind='mutation') -> SamplesQuery:
         if isinstance(property, QueryFeature):
             query_feature = property
@@ -396,18 +402,11 @@ class SamplesQueryIndex(SamplesQuery):
         unknown_hasa_set_dict = self._query_connection.sample_service.find_unknown_sample_sets_by_features(
             [query_feature])
 
-        if query_feature.id in found_hasa_set_dict:
-            found_hasa_set = found_hasa_set_dict[query_feature.id]
-            found_in_query = self._found_in_self_and(found_hasa_set)
-        else:
-            found_in_query = SampleSet.create_empty()
+        found_hasa_set = self._get_samples_or_empty(query_feature, found_hasa_set_dict)
+        unknown_hasa_set = self._get_samples_or_empty(query_feature, unknown_hasa_set_dict)
 
-        if query_feature.id in unknown_hasa_set_dict:
-            unknown_hasa_set = unknown_hasa_set_dict[query_feature.id]
-        else:
-            unknown_hasa_set = SampleSet.create_empty()
-
-        unknown_in_query = self._unknown_in_self_and(found_in_other=found_in_query, unknown_in_other=unknown_hasa_set)
+        found_in_query = self._found_in_self_and(found_hasa_set)
+        unknown_in_query = self._unknown_in_self_and(found_in_other=found_hasa_set, unknown_in_other=unknown_hasa_set)
 
         # Universe remains the same in this case.
         universe_in_query = self._universe_set
