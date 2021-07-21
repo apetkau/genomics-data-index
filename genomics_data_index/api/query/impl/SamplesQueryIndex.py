@@ -329,12 +329,21 @@ class SamplesQueryIndex(SamplesQuery):
                f'({selected_length}/{universe_length}) samples, unknown={percent_unknown:0.0f}% ' \
                f'({unknown_length}/{universe_length}) samples]>'
 
-    def tolist(self, names=True):
+    def tolist(self, names: bool = True, include_present: bool = True,
+               include_unknown: bool = False, include_absent: bool = False):
+        sample_set = SampleSet.create_empty()
+        if include_present:
+            sample_set = sample_set.union(self.sample_set)
+        if include_absent:
+            sample_set = sample_set.union(self.absent_set)
+        if include_unknown:
+            sample_set = sample_set.union(self.unknown_set)
+
         if names:
             sample_service = self._query_connection.sample_service
-            return [s.name for s in sample_service.find_samples_by_ids(self._sample_set)]
+            return [s.name for s in sample_service.find_samples_by_ids(sample_set)]
         else:
-            return list(self.sample_set)
+            return list(sample_set)
 
     def __repr__(self) -> str:
         return str(self)
