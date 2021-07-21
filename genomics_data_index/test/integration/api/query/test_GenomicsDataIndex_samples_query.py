@@ -438,6 +438,71 @@ def test_query_reset_universe(loaded_database_connection: DataIndexConnection):
     assert {sampleB.id} == set(query_result.universe_set)
 
 
+def test_query_set_universe(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+
+    # No unknowns
+    query_result = query(loaded_database_connection).isin('SampleB')
+    assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+    assert 0 == len(query_result.unknown_set)
+    assert 8 == len(query_result.absent_set)
+    assert 9 == len(query_result.universe_set)
+
+    query_result_su = query_result.set_universe(SampleSet(sample_ids=[sampleA.id, sampleB.id]))
+    assert 1 == len(query_result_su)
+    assert {sampleB.id} == set(query_result_su.sample_set)
+    assert 0 == len(query_result_su.unknown_set)
+    assert 1 == len(query_result_su.absent_set)
+    assert {sampleA.id} == set(query_result_su.absent_set)
+    assert 2 == len(query_result_su.universe_set)
+    assert {sampleA.id, sampleB.id} == set(query_result_su.universe_set)
+
+    query_result_su = query_result.set_universe(SampleSet(sample_ids=[sampleB.id]))
+    assert 1 == len(query_result_su)
+    assert {sampleB.id} == set(query_result_su.sample_set)
+    assert 0 == len(query_result_su.unknown_set)
+    assert 0 == len(query_result_su.absent_set)
+    assert 1 == len(query_result_su.universe_set)
+    assert {sampleB.id} == set(query_result_su.universe_set)
+
+    # With unknowns
+    query_result = query(loaded_database_connection).hasa('reference:5061:G:A')
+    assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+    assert 1 == len(query_result.unknown_set)
+    assert {sampleA.id} == set(query_result.unknown_set)
+    assert 7 == len(query_result.absent_set)
+    assert 9 == len(query_result.universe_set)
+
+    query_result_su = query_result.set_universe(SampleSet(sample_ids=[sampleA.id, sampleB.id]))
+    assert 1 == len(query_result_su)
+    assert {sampleB.id} == set(query_result_su.sample_set)
+    assert 1 == len(query_result_su.unknown_set)
+    assert 0 == len(query_result_su.absent_set)
+    assert 2 == len(query_result_su.universe_set)
+    assert {sampleA.id, sampleB.id} == set(query_result_su.universe_set)
+
+    query_result_su = query_result.set_universe(SampleSet(sample_ids=[sampleB.id]))
+    assert 1 == len(query_result_su)
+    assert {sampleB.id} == set(query_result_su.sample_set)
+    assert 0 == len(query_result_su.unknown_set)
+    assert 0 == len(query_result_su.absent_set)
+    assert 1 == len(query_result_su.universe_set)
+    assert {sampleB.id} == set(query_result_su.universe_set)
+
+    query_result_su = query_result.set_universe(SampleSet(sample_ids=[sampleA.id, sampleB.id, sampleC.id]))
+    assert 1 == len(query_result_su)
+    assert {sampleB.id} == set(query_result_su.sample_set)
+    assert 1 == len(query_result_su.unknown_set)
+    assert 1 == len(query_result_su.absent_set)
+    assert 3 == len(query_result_su.universe_set)
+    assert {sampleA.id, sampleB.id, sampleC.id} == set(query_result_su.universe_set)
+
+
 def test_query_isin_samples_multilple(loaded_database_connection: DataIndexConnection):
     db = loaded_database_connection.database
     sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
@@ -1660,6 +1725,7 @@ def test_join_custom_dataframe_extra_sample_names(loaded_database_connection: Da
 
 def test_join_custom_dataframe_missing_sample_names(loaded_database_connection: DataIndexConnection):
     db = loaded_database_connection.database
+    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
     sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
 
     df = pd.DataFrame([
@@ -1675,17 +1741,35 @@ def test_join_custom_dataframe_missing_sample_names(loaded_database_connection: 
     assert 2 == len(df)
     assert 2 == len(query_result.universe_set)
 
-    df = query_result.hasa('reference:839:C:G', kind='mutation').toframe()
-
-    assert 1 == len(df)
-    assert 2 == len(query_result.universe_set)
+    # No unknowns
+    query_result_test = query_result.hasa('reference:839:C:G', kind='mutation')
+    assert 2 == len(query_result_test.universe_set)
+    assert 0 == len(query_result_test.unknown_set)
+    assert 1 == len(query_result_test.absent_set)
+    assert 1 == len(query_result_test)
     assert {'Query', 'Sample Name', 'Sample ID', 'Status', 'Color', 'Samples'} == set(df.columns.tolist())
-
-    df = df.sort_values(['Sample Name'])
+    df = query_result_test.toframe(include_unknown=True).sort_values(['Sample Name'])
+    assert 1 == len(df)
     assert ['SampleC'] == df['Sample Name'].tolist()
+    assert ['Present'] == df['Status'].tolist()
     assert [sampleC.id] == df['Sample ID'].tolist()
     assert ['blue'] == df['Color'].tolist()
     assert {'dataframe(names_col=[Samples]) AND reference:839:C:G'} == set(df['Query'].tolist())
+
+    # One unknown, one present but it's missing from dataframe
+    query_result_test = query_result.hasa('reference:5061:G:A', kind='mutation')
+    assert 2 == len(query_result_test.universe_set)
+    assert 1 == len(query_result_test.unknown_set)
+    assert 1 == len(query_result_test.absent_set)
+    assert 0 == len(query_result_test)
+    assert {'Query', 'Sample Name', 'Sample ID', 'Status', 'Color', 'Samples'} == set(df.columns.tolist())
+    df = query_result_test.toframe(include_unknown=True).sort_values(['Sample Name'])
+    assert 1 == len(df)
+    assert ['SampleA'] == df['Sample Name'].tolist()
+    assert ['Unknown'] == df['Status'].tolist()
+    assert [sampleA.id] == df['Sample ID'].tolist()
+    assert ['red'] == df['Color'].tolist()
+    assert {'dataframe(names_col=[Samples]) AND reference:5061:G:A'} == set(df['Query'].tolist())
 
 
 def test_query_then_join_dataframe_single_query(loaded_database_connection: DataIndexConnection):
