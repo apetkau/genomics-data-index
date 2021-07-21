@@ -419,11 +419,15 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def tolist(self, names=True) -> List[Union[int, str]]:
+    def tolist(self, names: bool = True, include_present: bool = True,
+               include_unknown: bool = False, include_absent: bool = False) -> Union[List[str], List[int]]:
         """
         Converts the set of selected samples into a list of either sample names or sample IDs.
 
         :param names: If True (default) return a list of sample names as strings, if False return a list of sample IDs.
+        :param include_present: If True (default) include selected samples.
+        :param include_unknown: If True, include unknown samples.
+        :param include_absent: If True, include absent samples from selection.
         :return: A list of sample names or IDs.
         """
         pass

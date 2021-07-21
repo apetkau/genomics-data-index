@@ -105,8 +105,10 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
     def query_expression(self) -> str:
         return self._wrapped_query.query_expression()
 
-    def tolist(self, names=True):
-        return self._wrapped_query.tolist(names=names)
+    def tolist(self, names: bool = True, include_present: bool = True,
+               include_unknown: bool = False, include_absent: bool = False) -> Union[List[str], List[int]]:
+        return self._wrapped_query.tolist(names=names, include_present=include_present,
+                                          include_unknown=include_unknown, include_absent=include_absent)
 
     def _get_sample_name_ids(self, include_unknowns: bool = True) -> Dict[str, int]:
         sample_service = self._query_connection.sample_service

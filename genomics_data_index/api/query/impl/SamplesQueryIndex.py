@@ -330,7 +330,7 @@ class SamplesQueryIndex(SamplesQuery):
                f'({unknown_length}/{universe_length}) samples]>'
 
     def tolist(self, names: bool = True, include_present: bool = True,
-               include_unknown: bool = False, include_absent: bool = False):
+               include_unknown: bool = False, include_absent: bool = False) -> Union[List[str], List[int]]:
         sample_set = SampleSet.create_empty()
         if include_present:
             sample_set = sample_set.union(self.sample_set)
