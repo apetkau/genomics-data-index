@@ -44,9 +44,8 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
 
         sample_names, query_infix = self._get_sample_names_query_infix_from_data(data)
         if len(sample_names) == 0:
-            found_samples = SampleSet.create_empty()
+            found_sample_ids = SampleSet.create_empty()
         else:
-            sample_name_ids_self = self._get_sample_name_ids()
             sample_leaves_list = []
             for name in sample_names:
                 sample_leaves = self._tree.get_leaves_by_name(name)
@@ -67,12 +66,11 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
                 ancestor_node = first_sample_leaf.get_common_ancestor(sample_leaves_list)
                 found_sample_names = ancestor_node.get_leaf_names()
 
-            found_samples_list = []
-            for name in found_sample_names:
-                if name in sample_name_ids_self:
-                    found_samples_list.append(sample_name_ids_self[name])
-            found_samples = SampleSet(found_samples_list)
-        return self.intersect(found_samples, f'within(mrca of {query_infix})')
+            # Ignore not found since the reference genome in the tree will be unlikely to be recorded as a sample
+            # in the database
+            found_sample_ids = self._query_connection.sample_service.get_sample_set_by_names(found_sample_names,
+                                                                                             ignore_not_found=True)
+        return self.intersect(found_sample_ids, f'within(mrca of {query_infix})')
 
     def _isin_internal(self, data: Union[str, List[str], SamplesQuery, SampleSet], kind: str, **kwargs) -> SamplesQuery:
         if kind == 'distance':

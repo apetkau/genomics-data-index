@@ -2394,6 +2394,27 @@ def test_within_constructed_tree_larger_tree(loaded_database_connection: DataInd
             "<MutationTreeSamplesQuery[selected=22% (2/9) samples, unknown=0% (0/9) samples]>)"
             } == set(df['Query'].tolist())
 
+    # hasa putting all in unknown and then mrca of A and B, by name
+    df = query_result.hasa('reference:1:1:T').isin(
+        ['SampleA', 'SampleB'], kind='mrca').toframe(include_unknown=True).sort_values('Sample Name')
+    assert 3 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    assert ['SampleA', 'SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert ['Unknown', 'Unknown', 'Unknown'] == df['Status'].tolist()
+    assert {"mutation_tree(genome) AND reference:1:1:T AND within(mrca of ['SampleA', 'SampleB'])"
+            } == set(df['Query'].tolist())
+
+    # hasa mrca of A and B (by name) and then putting all in unknown
+    df = query_result.isin(
+        ['SampleA', 'SampleB'], kind='mrca').hasa(
+        'reference:1:1:T').toframe(include_unknown=True).sort_values('Sample Name')
+    assert 3 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    assert ['SampleA', 'SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert ['Unknown', 'Unknown', 'Unknown'] == df['Status'].tolist()
+    assert {"mutation_tree(genome) AND within(mrca of ['SampleA', 'SampleB']) AND reference:1:1:T"
+            } == set(df['Query'].tolist())
+
     # hasa only A in unknown and then mrca of A and B, samples query
     query_result_AB = query_result.isin(['SampleA', 'SampleB'], kind='samples')
     df = query_result.hasa('reference:5061:G:A').isin(
@@ -2404,6 +2425,37 @@ def test_within_constructed_tree_larger_tree(loaded_database_connection: DataInd
     assert ['Unknown', 'Present'] == df['Status'].tolist()
     assert {"mutation_tree(genome) AND reference:5061:G:A AND within(mrca of "
             "<MutationTreeSamplesQuery[selected=22% (2/9) samples, unknown=0% (0/9) samples]>)"
+            } == set(df['Query'].tolist())
+
+    # hasa only A in unknown and then mrca of A and B, by name
+    df = query_result.hasa('reference:5061:G:A').isin(
+        ['SampleA', 'SampleB'], kind='mrca').toframe(include_unknown=True).sort_values('Sample Name')
+    assert 2 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    assert ['SampleA', 'SampleB'] == df['Sample Name'].tolist()
+    assert ['Unknown', 'Present'] == df['Status'].tolist()
+    assert {"mutation_tree(genome) AND reference:5061:G:A AND within(mrca of ['SampleA', 'SampleB'])"
+            } == set(df['Query'].tolist())
+
+    # mrca of A and B (by name) and hasa putting only A in unknown (and matching B)
+    df = query_result.isin(
+        ['SampleA', 'SampleB'], kind='mrca').hasa(
+        'reference:5061:G:A').toframe(include_unknown=True).sort_values('Sample Name')
+    assert 2 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    assert ['SampleA', 'SampleB'] == df['Sample Name'].tolist()
+    assert ['Unknown', 'Present'] == df['Status'].tolist()
+    assert {"mutation_tree(genome) AND within(mrca of ['SampleA', 'SampleB']) AND reference:5061:G:A"
+            } == set(df['Query'].tolist())
+
+    # hasa only A in unknown and then mrca of A, by name
+    df = query_result.hasa('reference:5061:G:A').isin(
+        'SampleA', kind='mrca').toframe(include_unknown=True).sort_values('Sample Name')
+    assert 1 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    assert ['SampleA'] == df['Sample Name'].tolist()
+    assert ['Unknown'] == df['Status'].tolist()
+    assert {"mutation_tree(genome) AND reference:5061:G:A AND within(mrca of ['SampleA'])"
             } == set(df['Query'].tolist())
 
 
