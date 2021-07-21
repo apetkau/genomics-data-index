@@ -229,7 +229,7 @@ class SamplesQueryIndex(SamplesQuery):
             '% Unknown': per_unknown,
         }])
 
-    def summary_features(self, kind: str = 'mutations', selection: str = 'all', **kwargs) -> pd.DataFrame:
+    def features_summary(self, kind: str = 'mutations', selection: str = 'all', **kwargs) -> pd.DataFrame:
         if kind == 'mutations':
             return self._summary_features_mutations(kind=kind, selection=selection, **kwargs)
         else:
@@ -255,7 +255,7 @@ class SamplesQueryIndex(SamplesQuery):
         if selection == 'all':
             features_results_df = features_all_df
         elif selection == 'unique':
-            features_complement_df = self.complement().summary_features(kind=kind, selection='all',
+            features_complement_df = self.complement().features_summary(kind=kind, selection='all',
                                                                         ncores=ncores, batch_size=batch_size,
                                                                         mutation_type=mutation_type)
             features_merged_df = features_all_df.merge(features_complement_df, left_index=True, right_index=True,
@@ -281,7 +281,7 @@ class SamplesQueryIndex(SamplesQuery):
 
     def tofeaturesset(self, kind: str = 'mutations', selection: str = 'all',
                       ncores: int = 1) -> Set[str]:
-        return set(self.summary_features(kind=kind, selection=selection, ncores=ncores,
+        return set(self.features_summary(kind=kind, selection=selection, ncores=ncores,
                                          ignore_annotations=True).index)
 
     def and_(self, other):
