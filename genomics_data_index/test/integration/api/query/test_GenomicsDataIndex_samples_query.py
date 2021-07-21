@@ -2526,6 +2526,64 @@ def test_within_joined_mutations_tree(prebuilt_tree: Tree, loaded_database_conne
             '<MutationTreeSamplesQuery[selected=11% (1/9) samples, unknown=0% (0/9) samples]>)'
             } == set(df['Query'].tolist())
 
+    # hasa to put A, B, and C in unknown and then subs/site using samples query to only select B and C
+    query_result_C = query_result.isin(['SampleC'], kind='samples')
+    df = query_result.hasa('reference:1:1:T').isin(query_result_C, kind='distance', distance=2,
+                           units='substitutions/site').toframe(include_unknown=True).sort_values('Sample Name')
+    assert 2 == len(df)
+    assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert ['Unknown', 'Unknown'] == df['Status'].tolist()
+    assert {'join_tree(4 leaves) AND reference:1:1:T AND within(2 substitutions/site of '
+            '<MutationTreeSamplesQuery[selected=11% (1/9) samples, unknown=0% (0/9) samples]>)'
+            } == set(df['Query'].tolist())
+
+    # hasa to put A, B, and C in unknown and then subs/site using samples query to select A, B, and C
+    query_result_C = query_result.isin(['SampleC'], kind='samples')
+    df = query_result.hasa('reference:1:1:T').isin(query_result_C, kind='distance', distance=4,
+                           units='substitutions/site').toframe(include_unknown=True).sort_values('Sample Name')
+    assert 3 == len(df)
+    assert ['SampleA', 'SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert ['Unknown', 'Unknown', 'Unknown'] == df['Status'].tolist()
+    assert {'join_tree(4 leaves) AND reference:1:1:T AND within(4 substitutions/site of '
+            '<MutationTreeSamplesQuery[selected=11% (1/9) samples, unknown=0% (0/9) samples]>)'
+            } == set(df['Query'].tolist())
+
+    # hasa to put A, B, and C in unknown and then subs/site using sample names to only select B and C
+    df = query_result.hasa('reference:1:1:T').isin(['SampleC'], kind='distance', distance=2,
+                           units='substitutions/site').toframe(include_unknown=True).sort_values('Sample Name')
+    assert 2 == len(df)
+    assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert ['Unknown', 'Unknown'] == df['Status'].tolist()
+    assert {"join_tree(4 leaves) AND reference:1:1:T AND within(2 substitutions/site of ['SampleC'])"
+            } == set(df['Query'].tolist())
+
+    # hasa to put A, B, and C in unknown and then subs/site using sample names to select A, B, and C
+    df = query_result.hasa('reference:1:1:T').isin(['SampleA', 'SampleC'], kind='distance', distance=2,
+                           units='substitutions/site').toframe(include_unknown=True).sort_values('Sample Name')
+    assert 3 == len(df)
+    assert ['SampleA', 'SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert ['Unknown', 'Unknown', 'Unknown'] == df['Status'].tolist()
+    assert {"join_tree(4 leaves) AND reference:1:1:T AND within(2 substitutions/site of ['SampleA', 'SampleC'])"
+            } == set(df['Query'].tolist())
+
+    # hasa to put A in unknown, select B and then subs/site using sample names to select A, B, and C
+    df = query_result.hasa('reference:5061:G:A').isin(['SampleA', 'SampleC'], kind='distance', distance=2,
+                           units='substitutions/site').toframe(include_unknown=True).sort_values('Sample Name')
+    assert 2 == len(df)
+    assert ['SampleA', 'SampleB'] == df['Sample Name'].tolist()
+    assert ['Unknown', 'Present'] == df['Status'].tolist()
+    assert {"join_tree(4 leaves) AND reference:5061:G:A AND within(2 substitutions/site of ['SampleA', 'SampleC'])"
+            } == set(df['Query'].tolist())
+
+    # subs/site using sample names to select A, B, and C, and then hasa to put A in unknown, select B
+    df = query_result.isin(['SampleA', 'SampleC'], kind='distance', distance=2, units='substitutions/site').hasa(
+        'reference:5061:G:A').toframe(include_unknown=True).sort_values('Sample Name')
+    assert 2 == len(df)
+    assert ['SampleA', 'SampleB'] == df['Sample Name'].tolist()
+    assert ['Unknown', 'Present'] == df['Status'].tolist()
+    assert {"join_tree(4 leaves) AND within(2 substitutions/site of ['SampleA', 'SampleC']) AND reference:5061:G:A"
+            } == set(df['Query'].tolist())
+
     # subs samples query
     df = query_result.isin(['SampleC'], kind='distance', distance=2 * 5180,
                            units='substitutions').toframe().sort_values('Sample Name')

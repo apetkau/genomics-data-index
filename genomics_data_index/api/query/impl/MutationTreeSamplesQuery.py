@@ -78,7 +78,7 @@ class MutationTreeSamplesQuery(TreeSamplesQuery):
         if len(sample_names) == 0:
             found_samples_set = SampleSet.create_empty()
         else:
-            sample_name_ids_self = self._get_sample_name_ids()
+            sample_name_ids_self = self._get_sample_name_ids(include_unknowns=True)
             found_samples_set = set()
             for sample_name in sample_names:
                 sample_leaves = self._tree.get_leaves_by_name(sample_name)

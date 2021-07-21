@@ -108,9 +108,15 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
     def tolist(self, names=True):
         return self._wrapped_query.tolist(names=names)
 
-    def _get_sample_name_ids(self) -> Dict[str, int]:
+    def _get_sample_name_ids(self, include_unknowns: bool = True) -> Dict[str, int]:
         sample_service = self._query_connection.sample_service
-        return {s.name: s.id for s in sample_service.find_samples_by_ids(self._wrapped_query.sample_set)}
+        name_ids = {s.name: s.id for s in sample_service.find_samples_by_ids(self._wrapped_query.sample_set)}
+
+        if include_unknowns:
+            name_ids_unknown = {s.name: s.id for s in sample_service.find_samples_by_ids(self._wrapped_query.unknown_set)}
+            name_ids.update(name_ids_unknown)
+
+        return name_ids
 
     def is_empty(self, include_unknown=False) -> bool:
         return self._wrapped_query.is_empty(include_unknown=include_unknown)
