@@ -26,7 +26,8 @@ def setup_services(root_dir: Path, database_file: Path) -> Dict[str, Any]:
                                          reference_service=reference_service,
                                          sample_service=sample_service,
                                          variation_dir=filesystem_storage.variation_dir,
-                                         index_unknown_missing=False)
+                                         index_unknown_missing=False,
+                                         sql_select_limit=50)
     kmer_service = KmerService(database_connection=db_connection,
                                sample_service=sample_service,
                                features_dir=filesystem_storage.kmer_dir)
