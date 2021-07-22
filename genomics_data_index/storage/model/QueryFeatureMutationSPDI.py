@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from typing import Union
+from typing import Union, List
 
 from genomics_data_index.storage.model import NUCLEOTIDE_UNKNOWN
+from genomics_data_index.storage.model.QueryFeature import QueryFeature
 from genomics_data_index.storage.model.QueryFeatureMutation import QueryFeatureMutation
 
 
@@ -75,6 +76,15 @@ class QueryFeatureMutationSPDI(QueryFeatureMutation):
     def ref(self) -> Union[str, int]:
         return self._ref
 
+    def has_deletion_sequence(self) -> bool:
+        return isinstance(self.ref, str)
+
+    def deletion_length(self) -> int:
+        if self.has_deletion_sequence():
+            return len(self.deletion)
+        else:
+            return self.deletion
+
     @property
     def deletion(self) -> Union[str, int]:
         return self.ref
@@ -93,7 +103,21 @@ class QueryFeatureMutationSPDI(QueryFeatureMutation):
     def to_unknown(self) -> QueryFeature:
         return QueryFeatureMutationSPDI(':'.join([
             self._seq_name,
-            self._pos,
-            self._ref,
+            str(self._pos),
+            str(self._ref),
             NUCLEOTIDE_UNKNOWN
         ]))
+
+    def to_unknown_explode(self) -> List[QueryFeature]:
+        if self.deletion_length() == 1:
+            unknowns = [self.to_unknown()]
+        elif self.has_deletion_sequence():
+            unknowns = []
+            for i, c in enumerate(self.ref):
+                unknowns.append(
+                    QueryFeatureMutationSPDI(f'{self.sequence}:{self.position + i}:{c}:{NUCLEOTIDE_UNKNOWN}'))
+        else:
+            unknowns = []
+            for i in range(self.ref):
+                unknowns.append(QueryFeatureMutationSPDI(f'{self.sequence}:{self.position + i}:1:{NUCLEOTIDE_UNKNOWN}'))
+        return unknowns

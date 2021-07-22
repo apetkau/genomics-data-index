@@ -227,3 +227,71 @@ def test_overlaps_region_multiple_regions():
     assert masked_region.overlaps_range('ref2', 31, 35)
     assert masked_region.overlaps_range('ref2', 39, 45)
     assert not masked_region.overlaps_range('ref2', 40, 45)
+
+
+def test_positions_iter():
+    masked_region = MaskedGenomicRegions(BedTool([('ref', 0, 5)]))
+
+    # 0-based coordinates (default)
+    masked_positions = list(masked_region.positions_iter())
+    assert masked_positions == [('ref', 0), ('ref', 1), ('ref', 2), ('ref', 3), ('ref', 4)]
+
+    # 1-based coordinates
+    masked_positions = list(masked_region.positions_iter(start_position_index='1'))
+    assert masked_positions == [('ref', 1), ('ref', 2), ('ref', 3), ('ref', 4), ('ref', 5)]
+
+
+def test_positions_iter_empty():
+    masked_region = MaskedGenomicRegions.empty_mask()
+
+    # 0-based coordinates (default)
+    masked_positions = list(masked_region.positions_iter())
+    assert masked_positions == []
+
+    # 1-based coordinates
+    masked_positions = list(masked_region.positions_iter(start_position_index='1'))
+    assert masked_positions == []
+
+
+def test_positions_iter_multiple_sequences():
+    masked_region = MaskedGenomicRegions(BedTool([('ref', 0, 5), ('ref2', 1, 3)]))
+
+    # 0-based coordinates (default)
+    masked_positions = list(masked_region.positions_iter())
+    assert len(masked_positions) == 7
+    assert set(masked_positions) == {('ref', 0), ('ref', 1), ('ref', 2), ('ref', 3), ('ref', 4),
+                                     ('ref2', 1), ('ref2', 2)}
+
+    # 1-based coordinates
+    masked_positions = list(masked_region.positions_iter(start_position_index='1'))
+    assert len(masked_positions) == 7
+    assert set(masked_positions) == {('ref', 1), ('ref', 2), ('ref', 3), ('ref', 4), ('ref', 5),
+                                     ('ref2', 2), ('ref2', 3)}
+
+
+def test_positions_iter_multiple_sequences_one_empty():
+    masked_region = MaskedGenomicRegions(BedTool([('ref', 0, 5), ('ref2', 1, 1)]))
+
+    # 0-based coordinates (default)
+    masked_positions = list(masked_region.positions_iter())
+    assert len(masked_positions) == 5
+    assert set(masked_positions) == {('ref', 0), ('ref', 1), ('ref', 2), ('ref', 3), ('ref', 4)}
+
+    # 1-based coordinates
+    masked_positions = list(masked_region.positions_iter(start_position_index='1'))
+    assert len(masked_positions) == 5
+    assert set(masked_positions) == {('ref', 1), ('ref', 2), ('ref', 3), ('ref', 4), ('ref', 5)}
+
+
+def test_positions_iter_multiple_ranges():
+    masked_region = MaskedGenomicRegions(BedTool([('ref', 0, 5), ('ref', 10, 13)]))
+
+    # 0-based coordinates (default)
+    masked_positions = list(masked_region.positions_iter())
+    assert masked_positions == [('ref', 0), ('ref', 1), ('ref', 2), ('ref', 3), ('ref', 4),
+                                ('ref', 10), ('ref', 11), ('ref', 12)]
+
+    # 1-based coordinates
+    masked_positions = list(masked_region.positions_iter(start_position_index='1'))
+    assert masked_positions == [('ref', 1), ('ref', 2), ('ref', 3), ('ref', 4), ('ref', 5),
+                                ('ref', 11), ('ref', 12), ('ref', 13)]

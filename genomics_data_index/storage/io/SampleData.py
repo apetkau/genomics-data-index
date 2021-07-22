@@ -5,6 +5,8 @@ import logging
 import uuid
 from pathlib import Path
 
+from genomics_data_index.storage.util import TRACE_LEVEL
+
 logger = logging.getLogger(__name__)
 
 persistence_namespace = uuid.UUID('260bb0a7-6573-4282-bcdb-f4008aa42af8')
@@ -37,7 +39,7 @@ class SampleData(abc.ABC):
 
     def persist(self, output_dir: Path) -> SampleData:
         if not self.is_preprocessed():
-            logger.debug(f'Processing sample [{self.sample_name}] and saving to [{output_dir}]')
+            logger.log(TRACE_LEVEL, f'Processing sample [{self.sample_name}] and saving to [{output_dir}]')
             return self._do_preprocess_and_persist(output_dir)
         else:
             return self._do_persist(output_dir)

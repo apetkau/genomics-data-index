@@ -10,6 +10,9 @@
     * SnpEff results will be included when loading assemblies.
 * [analysis]: Added the ability to analyze and index sequence reads (by mapping to a reference genome using [snippy](https://github.com/tseemann/snippy)).
 * [analysis]: Added ability to insert new genomes into an existing index.
+* [analysis]: Added ability to index and query missing data.
+    * The resulting samples for each query can be divided up into 3 categories (**True/Present**, **False/Absent**, **Unknown/Unknown**). Different sample sets track these different categories (`q.sample_set`, `q.unknown_set`, `q.absent_set`).
+* [developer]: Added custom TRACE log level.
 
 # 0.1.0
 

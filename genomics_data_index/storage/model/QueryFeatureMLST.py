@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import List
+
 from genomics_data_index.storage.model import MLST_UNKNOWN_ALLELE
 from genomics_data_index.storage.model.QueryFeature import QueryFeature
 
@@ -69,3 +71,6 @@ class QueryFeatureMLST(QueryFeature):
             self._locus,
             MLST_UNKNOWN_ALLELE
         ]))
+
+    def to_unknown_explode(self) -> List[QueryFeature]:
+        return [self.to_unknown()]

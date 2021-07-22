@@ -12,6 +12,7 @@ from genomics_data_index.storage.io.mutation.NucleotideSampleData import Nucleot
 from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
 from genomics_data_index.storage.io.mutation.VariationFile import VariationFile
 from genomics_data_index.storage.io.mutation.VcfVariantsReader import VcfVariantsReader
+from genomics_data_index.storage.model import NUCLEOTIDE_UNKNOWN_TYPE
 from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
 from genomics_data_index.storage.model.db import NucleotideVariantsSamples, SampleNucleotideVariation, Sample, \
     FeatureSamples
@@ -27,34 +28,47 @@ class VariationService(FeatureService):
     MUTATION_TYPES = ['snp', 'indel', 'all', 'other']
 
     def __init__(self, database_connection: DatabaseConnection, variation_dir: Path,
-                 reference_service: ReferenceService, sample_service: SampleService):
+                 reference_service: ReferenceService, sample_service: SampleService,
+                 index_unknown_missing: bool):
         super().__init__(database_connection=database_connection,
                          features_dir=variation_dir,
                          sample_service=sample_service)
         self._reference_service = reference_service
+        self._index_unknown_missing = index_unknown_missing
 
     def _reference_sequence_names(self, reference_name: str) -> List[str]:
         return list(self._reference_service.get_reference_sequences(reference_name).keys())
 
-    def count_on_reference(self, reference_name: str, include_unknown: bool) -> int:
-        reference_sequence_names = self._reference_sequence_names(reference_name)
-        return self._connection.get_session().query(NucleotideVariantsSamples) \
-            .filter(NucleotideVariantsSamples.sequence.in_(reference_sequence_names)) \
-            .count()
+    def _query_include_unknown(self, query, include_unknown: bool):
+        if not include_unknown:
+            return query.filter(NucleotideVariantsSamples.var_type != NUCLEOTIDE_UNKNOWN_TYPE)
+        else:
+            return query
 
-    def mutation_counts_on_reference(self, reference_name: str, include_unknown: bool) -> Dict[str, int]:
+    def count_on_reference(self, reference_name: str, include_unknown: bool = False) -> int:
         reference_sequence_names = self._reference_sequence_names(reference_name)
-        mutations = self._connection.get_session().query(NucleotideVariantsSamples) \
-            .filter(NucleotideVariantsSamples.sequence.in_(reference_sequence_names)) \
-            .all()
+
+        query = self._connection.get_session().query(NucleotideVariantsSamples) \
+            .filter(NucleotideVariantsSamples.sequence.in_(reference_sequence_names))
+
+        return self._query_include_unknown(query, include_unknown=include_unknown).count()
+
+    def mutation_counts_on_reference(self, reference_name: str, include_unknown: bool = False) -> Dict[str, int]:
+        reference_sequence_names = self._reference_sequence_names(reference_name)
+
+        query = self._connection.get_session().query(NucleotideVariantsSamples) \
+            .filter(NucleotideVariantsSamples.sequence.in_(reference_sequence_names))
+        mutations = self._query_include_unknown(query, include_unknown=include_unknown).all()
 
         return {m.spdi: len(m.sample_ids) for m in mutations}
 
     def get_variants_on_reference(self, reference_name: str, include_unknown: bool) -> Dict[str, int]:
         reference_sequence_names = self._reference_sequence_names(reference_name)
-        mutations = self._connection.get_session().query(NucleotideVariantsSamples) \
-            .filter(NucleotideVariantsSamples.sequence.in_(reference_sequence_names)) \
-            .all()
+
+        query = self._connection.get_session().query(NucleotideVariantsSamples) \
+            .filter(NucleotideVariantsSamples.sequence.in_(reference_sequence_names))
+
+        mutations = self._query_include_unknown(query, include_unknown=include_unknown).all()
 
         return {m.spdi: m for m in mutations}
 
@@ -234,9 +248,18 @@ class VariationService(FeatureService):
     def _create_persisted_features_reader(self, sample_data_dict: Dict[str, SampleData],
                                           data_package: SampleDataPackage) -> FeaturesReader:
         sample_data_dict = cast(Dict[str, NucleotideSampleData], sample_data_dict)
-        return VcfVariantsReader(sample_data_dict)
+        index_unknown_missing = self._index_unknown_missing and data_package.index_unknown_missing()
+        if not index_unknown_missing:
+            logger.debug(f'index_unknown_missing={index_unknown_missing} so will not '
+                         'index missing/unknown positions')
+        else:
+            logger.debug(f'index_unknown_missing={index_unknown_missing}')
+        return VcfVariantsReader(sample_data_dict, include_masked_regions=index_unknown_missing)
 
-    def read_index(self, feature_ids: List[str]) -> Dict[str, FeatureSamples]:
+    def read_index(self, feature_ids: Union[List[str], Set[str]]) -> Dict[str, FeatureSamples]:
+        if isinstance(feature_ids, list):
+            feature_ids = set(feature_ids)
+
         feature_samples = self._connection.get_session().query(NucleotideVariantsSamples) \
             .filter(NucleotideVariantsSamples._spdi.in_(feature_ids)) \
             .all()

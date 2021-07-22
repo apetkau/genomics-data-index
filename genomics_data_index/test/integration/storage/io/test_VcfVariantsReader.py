@@ -41,7 +41,7 @@ def vcf_and_mask_files(sample_dirs) -> Dict[str, Dict[str, Path]]:
     }
 
 
-def variants_reader_internal(sample_dirs) -> VcfVariantsReader:
+def variants_reader_internal(sample_dirs, include_masked_regions: bool) -> VcfVariantsReader:
     tmp_dir = Path(tempfile.mkdtemp())
     vcf_masks = vcf_and_mask_files(sample_dirs)
     file_processor = SerialSampleFilesProcessor(tmp_dir)
@@ -50,17 +50,17 @@ def variants_reader_internal(sample_dirs) -> VcfVariantsReader:
                                                                               'masks'],
                                                                           sample_files_processor=file_processor)
     processed_files = cast(Dict[str, NucleotideSampleData], data_package.process_all_data())
-    return VcfVariantsReader.create(processed_files)
+    return VcfVariantsReader.create(processed_files, include_masked_regions=include_masked_regions)
 
 
 @pytest.fixture
 def variants_reader(sample_dirs) -> VcfVariantsReader:
-    return variants_reader_internal(sample_dirs)
+    return variants_reader_internal(sample_dirs, include_masked_regions=False)
 
 
 @pytest.fixture
 def variants_reader_empty(sample_dirs_empty) -> VcfVariantsReader:
-    return variants_reader_internal(sample_dirs_empty)
+    return variants_reader_internal(sample_dirs_empty, include_masked_regions=False)
 
 
 @pytest.fixture
@@ -76,7 +76,7 @@ def variants_reader_snpeff_annotations_single_sample() -> VcfVariantsReader:
                                                                           masked_genomic_files_map=None,
                                                                           sample_files_processor=file_processor)
     processed_files = cast(Dict[str, NucleotideSampleData], data_package.process_all_data())
-    return VcfVariantsReader.create(processed_files)
+    return VcfVariantsReader.create(processed_files, include_masked_regions=False)
 
 
 @pytest.fixture
@@ -87,7 +87,7 @@ def variants_reader_snpeff_annotations_multiple_samples() -> VcfVariantsReader:
                                                                           masked_genomic_files_map=None,
                                                                           sample_files_processor=file_processor)
     processed_files = cast(Dict[str, NucleotideSampleData], data_package.process_all_data())
-    return VcfVariantsReader.create(processed_files)
+    return VcfVariantsReader.create(processed_files, include_masked_regions=False)
 
 
 @pytest.fixture
@@ -104,7 +104,7 @@ def variants_reader_empty_masks(sample_dirs) -> VcfVariantsReader:
     data_package = NucleotideSampleDataPackage.create_from_sequence_masks(sample_vcf_map=sample_vcf_map,
                                                                           sample_files_processor=file_processor)
     processed_files = cast(Dict[str, NucleotideSampleData], data_package.process_all_data())
-    return VcfVariantsReader.create(processed_files)
+    return VcfVariantsReader.create(processed_files, include_masked_regions=False)
 
 
 @pytest.fixture
@@ -112,18 +112,23 @@ def variants_reader_default_no_data() -> VcfVariantsReader:
     return VcfVariantsReader(sample_files_map={})
 
 
-def variants_reader_from_snippy_internal(sample_dirs) -> VcfVariantsReader:
+def variants_reader_from_snippy_internal(sample_dirs, include_masked_regions: bool) -> VcfVariantsReader:
     tmp_dir = Path(tempfile.mkdtemp())
     file_processor = SerialSampleFilesProcessor(tmp_dir)
     data_package = NucleotideSampleDataPackage.create_from_snippy(sample_dirs=sample_dirs,
                                                                   sample_files_processor=file_processor)
     processed_files = cast(Dict[str, NucleotideSampleData], data_package.process_all_data())
-    return VcfVariantsReader.create(processed_files)
+    return VcfVariantsReader.create(processed_files, include_masked_regions=include_masked_regions)
 
 
 @pytest.fixture
 def variants_reader_from_snippy(sample_dirs) -> VcfVariantsReader:
-    return variants_reader_from_snippy_internal(sample_dirs)
+    return variants_reader_from_snippy_internal(sample_dirs, include_masked_regions=False)
+
+
+@pytest.fixture
+def variants_reader_from_snippy_masked(sample_dirs) -> VcfVariantsReader:
+    return variants_reader_from_snippy_internal(sample_dirs, include_masked_regions=True)
 
 
 @pytest.fixture
@@ -133,7 +138,7 @@ def variants_reader_snpeff() -> VcfVariantsReader:
     data_package = NucleotideSampleDataPackage.create_from_sequence_masks(sample_vcf_map=snpeff_sample_vcfs,
                                                                           sample_files_processor=file_processor)
     processed_files = cast(Dict[str, NucleotideSampleData], data_package.process_all_data())
-    return VcfVariantsReader.create(processed_files)
+    return VcfVariantsReader.create(processed_files, include_masked_regions=False)
 
 
 def test_get_variants_table(variants_reader):
@@ -151,29 +156,64 @@ def test_get_variants_table(variants_reader):
     assert ['OTHER'] == df.loc[(df['SAMPLE'] == 'SampleC') & (df['POS'] == 1984), 'TYPE'].tolist()
 
 
-def test_get_genomic_masks(variants_reader):
+def test_get_genomic_masks_and_mask_to_features(variants_reader):
     mask = variants_reader.get_genomic_masked_region('SampleA')
     assert 437 == len(mask)
     assert {'reference'} == mask.sequence_names()
+    assert 437 == len(variants_reader.mask_to_features(mask))
 
     mask = variants_reader.get_genomic_masked_region('SampleB')
     assert 276 == len(mask)
     assert {'reference'} == mask.sequence_names()
+    assert 276 == len(variants_reader.mask_to_features(mask))
 
     mask = variants_reader.get_genomic_masked_region('SampleC')
     assert 329 == len(mask)
     assert {'reference'} == mask.sequence_names()
+    assert 329 == len(variants_reader.mask_to_features(mask))
 
 
 def test_get_genomic_masks_empty(variants_reader_empty_masks):
     mask = variants_reader_empty_masks.get_genomic_masked_region('SampleA')
     assert mask.is_empty()
+    assert 0 == len(variants_reader_empty_masks.mask_to_features(mask))
 
     mask = variants_reader_empty_masks.get_genomic_masked_region('SampleB')
     assert mask.is_empty()
+    assert 0 == len(variants_reader_empty_masks.mask_to_features(mask))
 
     mask = variants_reader_empty_masks.get_genomic_masked_region('SampleC')
     assert mask.is_empty()
+    assert 0 == len(variants_reader_empty_masks.mask_to_features(mask))
+
+
+@pytest.mark.skip()
+def test_combine_vcf_mask(variants_reader, sample_dirs):
+    expected_columns = ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE', 'VARIANT_ID',
+                        'ANN.Allele', 'ANN.Annotation', 'ANN.Annotation_Impact', 'ANN.Gene_Name', 'ANN.Gene_ID',
+                        'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p']
+
+    vcf_mask_files_dict = vcf_and_mask_files(sample_dirs)
+
+    sampleA_vcf = vcf_mask_files_dict['vcfs']['SampleA']
+    sampleA_vcf_df = variants_reader.read_vcf(sampleA_vcf, 'SampleA')
+    assert 46 == len(sampleA_vcf_df)
+    assert 461 in sampleA_vcf_df['POS'].tolist()
+
+    mask = variants_reader.get_genomic_masked_region('SampleA')
+    sampleA_mask_df = variants_reader.mask_to_features(mask)
+    assert 437 == len(sampleA_mask_df)
+    assert 461 in sampleA_mask_df['POS'].tolist()
+
+    combined_df = variants_reader.combine_vcf_mask(vcf_frame=sampleA_vcf_df, mask_frame=sampleA_mask_df)
+
+    assert expected_columns == combined_df.columns.tolist()
+    assert 482 == len(combined_df)
+    assert 436 == len(combined_df[combined_df['TYPE'] == 'UNKNOWN_MISSING'])
+    assert 46 == len(combined_df[combined_df['TYPE'] != 'UNKNOWN_MISSING'])
+
+    # Make sure it's the SNV/SNP from the VCF file that I keep and not the missing position in this file
+    assert combined_df[combined_df['POS'] == 461]['TYPE'] == 'INDEL'
 
 
 def test_get_samples_list(variants_reader):
@@ -225,6 +265,23 @@ def test_snippy_get_variants_table(variants_reader_from_snippy):
     assert {'SampleA', 'SampleB', 'SampleC'} == set(df['SAMPLE'].tolist()), 'Incorrect sample names'
 
 
+def test_snippy_get_variants_table_masked(variants_reader_from_snippy_masked):
+    df = variants_reader_from_snippy_masked.get_features_table()
+
+    assert 1170 == len(df), 'Data has incorrect length'
+    assert {'SampleA', 'SampleB', 'SampleC'} == set(df['SAMPLE'].tolist()), 'Incorrect sample names'
+
+    # Missing/unknown
+    assert 437 == len(df[(df['SAMPLE'] == 'SampleA') & (df['TYPE'] == 'UNKNOWN_MISSING')])
+    assert 276 == len(df[(df['SAMPLE'] == 'SampleB') & (df['TYPE'] == 'UNKNOWN_MISSING')])
+    assert 329 == len(df[(df['SAMPLE'] == 'SampleC') & (df['TYPE'] == 'UNKNOWN_MISSING')])
+
+    # Variants
+    assert 45 == len(df[(df['SAMPLE'] == 'SampleA') & (df['TYPE'] != 'UNKNOWN_MISSING')])
+    assert 50 == len(df[(df['SAMPLE'] == 'SampleB') & (df['TYPE'] != 'UNKNOWN_MISSING')])
+    assert 33 == len(df[(df['SAMPLE'] == 'SampleC') & (df['TYPE'] != 'UNKNOWN_MISSING')])
+
+
 def test_snippy_get_genomic_masks(variants_reader_from_snippy):
     mask = variants_reader_from_snippy.get_genomic_masked_region('SampleA')
     assert 437 == len(mask)
@@ -245,16 +302,25 @@ def test_snippy_get_samples_list(variants_reader_from_snippy):
 
 def test_snippy_get_samples_list_two_files():
     sample_dirs = [data_dir / 'SampleA', data_dir / 'SampleB']
-    reader = variants_reader_from_snippy_internal(sample_dirs)
+    reader = variants_reader_from_snippy_internal(sample_dirs, include_masked_regions=False)
 
     assert {'SampleA', 'SampleB'} == set(reader.samples_list())
 
 
 def test_snippy_read_empty_vcf(sample_dirs_empty):
-    reader = variants_reader_from_snippy_internal(sample_dirs_empty)
+    reader = variants_reader_from_snippy_internal(sample_dirs_empty, include_masked_regions=False)
     df = reader.get_features_table()
 
     assert 0 == len(df), 'Data has incorrect length'
+
+
+def test_snippy_read_empty_vcf_include_masked_regions(sample_dirs_empty):
+    reader = variants_reader_from_snippy_internal(sample_dirs_empty, include_masked_regions=True)
+    df = reader.get_features_table()
+
+    assert 437 == len(df), 'Data has incorrect length'
+    assert {'UNKNOWN_MISSING'} == set(df['TYPE'])
+    assert {'?'} == set(df['ALT'])
 
 
 def test_read_snpeff(variants_reader_default_no_data: VcfVariantsReader):

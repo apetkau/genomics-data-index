@@ -46,8 +46,8 @@ class ExperimentalTreeSamplesQuery(MutationTreeSamplesQuery):
     def universe_tree(self) -> Tree:
         return self._universe_tree
 
-    def reset_universe(self) -> SamplesQuery:
-        wrapped_reset_universe = self._wrapped_query.reset_universe()
+    def reset_universe(self, include_unknown: bool = True) -> SamplesQuery:
+        wrapped_reset_universe = self._wrapped_query.reset_universe(include_unknown=include_unknown)
         universe_tree = self._tree_copy_prune(from_query=wrapped_reset_universe, preserve_branch_length=True)
         return ExperimentalTreeSamplesQuery(connection=self._query_connection,
                                             wrapped_query=wrapped_reset_universe,

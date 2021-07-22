@@ -52,6 +52,27 @@ class SamplesQuery(abc.ABC):
         """
         pass
 
+    @property
+    @abc.abstractmethod
+    def unknown_set(self) -> SampleSet:
+        """
+        The set of samples :py:class:`genomics_data_index.storage.SampleSet` for which it is unknown
+        whether they match this query or not (e.g., due to missing/unknown data on a region of the genome).
+
+        :returns: A SampleSet defining the samples where it is unknown if they match the query or not.
+        """
+        pass
+
+    @property
+    @abc.abstractmethod
+    def absent_set(self) -> SampleSet:
+        """
+        The set of samples :py:class:`genomics_data_index.storage.SampleSet` for which the query does not match.
+
+        :returns: A SampleSet defining the samples where the query does not match.
+        """
+        pass
+
     @abc.abstractmethod
     def join(self, data_frame: pd.DataFrame, sample_ids_column: str = None,
              sample_names_column: str = None, default_isa_kind: str = 'names',
@@ -75,16 +96,21 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def toframe(self, exclude_absent: bool = True) -> pd.DataFrame:
+    def toframe(self, include_present: bool = True, include_unknown: bool = False,
+                include_absent: bool = False) -> pd.DataFrame:
         """
         Converts the selected set of samples to a DataFrame with one row per sample. By default only samples selected
-        by this query will be returned (setting exclude_absent to False will return all samples in the defined universe
-        as rows in the DataFrame with a column in the DataFrame used to define if the sample is present or absent).
+        by this query will be returned (include_present = True). Setting include_absent to True will include all samples
+        where the current query is False, while include_unknown will return all samples where it is unknown if the
+        query is True or False (that is, it is unknown if these samples match the query).
 
-        :param exclude_absent: Whether or not samples absent in this query (but in the universe of samples) should be
+        :param include_present: Whether or not samples matching the query should be included.
+        :param include_unknown: Whether or not samples where it is unknown if they match the query or not should be included.
+        :param include_absent: Whether or not samples absent from this query (but in the universe of samples) should be
         included.
 
-        :return: A DataFrame of the samples in this query, one row per sample.
+        :return: A DataFrame of the samples in this query, one row per sample. The 'Status' column of the dataframe
+                 contains the status (Present, Absent, or Unknown) of the sample.
         """
         pass
 
@@ -99,7 +125,23 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def summary_features(self, kind: str = 'mutations', selection: str = 'all', **kwargs) -> pd.DataFrame:
+    def select_absent(self) -> SamplesQuery:
+        """
+        Creates a new query with only the absent samples selected.
+        :return: A new query with only the absent samples selected.
+        """
+        pass
+
+    @abc.abstractmethod
+    def select_unknown(self) -> SamplesQuery:
+        """
+        Creates a new query with only the unknown samples selected.
+        :return: A new query with only the unknown samples selected.
+        """
+        pass
+
+    @abc.abstractmethod
+    def features_summary(self, kind: str = 'mutations', selection: str = 'all', **kwargs) -> pd.DataFrame:
         """
         Summarizes the selected features in a DataFrame. Please specify the kind of features with the kind parameter.
 
@@ -211,13 +253,26 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def reset_universe(self) -> SamplesQuery:
+    def reset_universe(self, include_unknown: bool = True) -> SamplesQuery:
         """
         Resets the *universe* set to be the set of currently selected samples.
         That is, if `A` is a SamplesQuery consisting of some selected samples, then
         `B = A.reset_universe()` implies that `B.universe_set == A`.
-
+        :param include_unknown: Whether or not unknown matches should be included in the universe.
         :return: A SamplesQuery with the universe reset to whatever is selected.
+        """
+        pass
+
+    @abc.abstractmethod
+    def set_universe(self, universe_set: SampleSet, query_message: str = None) -> SamplesQuery:
+        """
+        Sets the *universe* set to be equal to the passed set. Will intersect any selected/unknown sample sets.
+        That is, if `A` is a SamplesQuery consisting of some selected samples and `U` is a universe of samples, then
+        `B = A.set_universe(U)` implies that: (1) `B.universe_set == U`, (2) `B.sample_set == A.sample_set.intersect(U)`,
+        (3) `B.unknown_set == A.unknown_set.intersect(U)`, and (4) `B.absent_set == A.absent_set.intersect(U)`.
+        :param universe_set: The new universe set.
+        :param query_message: An (optional) message to append to the query message string representing this operation.
+        :return: A SamplesQuery with the universe set to the passed set.
         """
         pass
 
@@ -354,9 +409,10 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def is_empty(self):
+    def is_empty(self, include_unknown=False) -> bool:
         """
         Whether or not the selected set of samples is empty.
+        :param include_unknown: Whether or not to include samples with unknown status.
         :return: True if the selected set of samples is empty, False otherwise.
         """
         pass
@@ -392,34 +448,45 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def tolist(self, names=True) -> List[Union[int, str]]:
+    def tolist(self, names: bool = True, include_present: bool = True,
+               include_unknown: bool = False, include_absent: bool = False) -> Union[List[str], List[int]]:
         """
         Converts the set of selected samples into a list of either sample names or sample IDs.
 
         :param names: If True (default) return a list of sample names as strings, if False return a list of sample IDs.
+        :param include_present: If True (default) include selected samples.
+        :param include_unknown: If True, include unknown samples.
+        :param include_absent: If True, include absent samples from selection.
         :return: A list of sample names or IDs.
         """
         pass
 
-    @abc.abstractmethod
+    def __invert__(self):
+        """
+        Performs an **~** (invert, complement) operation on a SamplesQuery object.
+        If A is a SamplesQuery object then `~A` is equivalent to `A.complement()`.
+
+        :return: The complement of a SamplesQuery object.
+        """
+        return self.complement()
+
     def __and__(self, other):
         """
-        Performs an **and** operation (intersection) between two different SamplesQuery objects.
-        If A and B are two SamplesQuery objects then `A and B` is equivalent to `A.and_(B)`.
+        Performs an **&** (and) operation (intersection) between two different SamplesQuery objects.
+        If A and B are two SamplesQuery objects then `A & B` is equivalent to `A.and_(B)`.
 
         :return: The and (intersection) of two SamplesQuery objects.
         """
-        pass
+        return self.and_(other)
 
-    @abc.abstractmethod
     def __or__(self, other):
         """
-        Performs an **or** operation (union) between two different SamplesQuery objects.
-        If A and B are two SamplesQuery objects then `A or B` is equivalent to `A.or_(B)`.
+        Performs an **|** (or) operation (union) between two different SamplesQuery objects.
+        If A and B are two SamplesQuery objects then `A | B` is equivalent to `A.or_(B)`.
 
         :return: The or (union) of two SamplesQuery objects.
         """
-        pass
+        return self.or_(other)
 
     @abc.abstractmethod
     def __len__(self):

@@ -58,7 +58,7 @@ def test_insert_mlst_results_multiple_schemes(database, mlst_data_package_basic,
 
     mlst_alleles_all = session.query(MLSTAllelesSamples).all()
     mlst_alleles_all_id = {allele.sla: allele for allele in mlst_alleles_all}
-    assert num_loci * num_schemes + 1 == len(mlst_alleles_all)
+    assert num_loci * num_schemes + 2 == len(mlst_alleles_all)
 
     assert {'lmonocytogenes', 'ecoli', 'campylobacter'} == {allele.scheme for allele in mlst_alleles_all}
 
@@ -92,7 +92,7 @@ def test_insert_mlst_results_multiple_schemes_override_scheme(database, mlst_dat
     mlst_alleles_samples = session.query(MLSTAllelesSamples).all()
     mlst_alleles_samples_id_allele = {allele.sla: allele for allele in mlst_alleles_samples}
 
-    assert num_loci * num_alt_schemes + 1 == len(mlst_alleles_samples)
+    assert num_loci * num_alt_schemes + 2 == len(mlst_alleles_samples)
     assert 2 == len(mlst_alleles_samples_id_allele['lmonocytogenes:abcZ:1'].sample_ids)
     assert 2 == len(mlst_alleles_samples_id_allele['lmonocytogenes:fumC:23'].sample_ids)
 
@@ -244,7 +244,7 @@ def test_multiple_inserts_different_schemes(database, mlst_data_package_basic,
     mlst_service.insert(data_package=mlst_data_package_basic)
 
     features_count = session.query(MLSTAllelesSamples).count()
-    assert 27 == features_count
+    assert 28 == features_count
 
     sample_2014C_3598 = session.query(Sample).filter(Sample.name == '2014C-3598').one()
     sample_2014C_3599 = session.query(Sample).filter(Sample.name == '2014C-3599').one()

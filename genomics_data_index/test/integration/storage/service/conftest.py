@@ -52,6 +52,13 @@ def snippy_nucleotide_data_package() -> NucleotideSampleDataPackage:
     return NucleotideSampleDataPackage.create_from_snippy(sample_dirs,
                                                           sample_files_processor=SerialSampleFilesProcessor(tmp_dir))
 
+@pytest.fixture
+def snippy_nucleotide_data_package_no_index_missing() -> NucleotideSampleDataPackage:
+    tmp_dir = Path(tempfile.mkdtemp())
+    return NucleotideSampleDataPackage.create_from_snippy(sample_dirs,
+                                                          sample_files_processor=SerialSampleFilesProcessor(tmp_dir),
+                                                          index_unknown_missing=False)
+
 
 @pytest.fixture
 def snippy_nucleotide_data_package_AB() -> NucleotideSampleDataPackage:
@@ -121,7 +128,8 @@ def sample_service_snpeff_annotations(database, reference_service_with_snpeff_da
     var_service = VariationService(database_connection=database,
                                    reference_service=reference_service_with_snpeff_data,
                                    sample_service=sample_service,
-                                   variation_dir=filesystem_storage.variation_dir)
+                                   variation_dir=filesystem_storage.variation_dir,
+                                   index_unknown_missing=False)
     var_service.insert(feature_scope_name='NC_011083',
                        data_package=snpeff_nucleotide_data_package)
     return sample_service
@@ -133,7 +141,22 @@ def variation_service(database, reference_service_with_data,
     var_service = VariationService(database_connection=database,
                                    reference_service=reference_service_with_data,
                                    sample_service=sample_service,
-                                   variation_dir=filesystem_storage.variation_dir)
+                                   variation_dir=filesystem_storage.variation_dir,
+                                   index_unknown_missing=False)
+    var_service.insert(feature_scope_name='genome',
+                       data_package=snippy_nucleotide_data_package)
+    return var_service
+
+
+@pytest.fixture
+def variation_service_index_unknowns(database, reference_service_with_data,
+                                     snippy_nucleotide_data_package, sample_service,
+                                     filesystem_storage) -> VariationService:
+    var_service = VariationService(database_connection=database,
+                                   reference_service=reference_service_with_data,
+                                   sample_service=sample_service,
+                                   variation_dir=filesystem_storage.variation_dir,
+                                   index_unknown_missing=True)
     var_service.insert(feature_scope_name='genome',
                        data_package=snippy_nucleotide_data_package)
     return var_service
@@ -146,7 +169,8 @@ def variation_service_non_snippy_vcfs(database, reference_service_with_data,
     var_service = VariationService(database_connection=database,
                                    reference_service=reference_service_with_data,
                                    sample_service=sample_service,
-                                   variation_dir=filesystem_storage.variation_dir)
+                                   variation_dir=filesystem_storage.variation_dir,
+                                   index_unknown_missing=False)
     var_service.insert(feature_scope_name='genome',
                        data_package=regular_nucleotide_data_package)
     return var_service

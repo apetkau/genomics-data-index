@@ -1,3 +1,4 @@
+import logging
 from typing import List, Dict, Set, Union, cast, Type
 
 import pandas as pd
@@ -13,6 +14,14 @@ from genomics_data_index.storage.model.db import NucleotideVariantsSamples, Refe
     SampleMLSTAlleles, MLSTAllelesSamples, Sample
 from genomics_data_index.storage.model.db import SampleNucleotideVariation
 from genomics_data_index.storage.service import DatabaseConnection
+
+logger = logging.getLogger(__name__)
+
+
+class FeatureExplodeUnknownError(Exception):
+
+    def __init__(self, msg: str):
+        super().__init__(msg)
 
 
 class SampleService:
@@ -32,6 +41,32 @@ class SampleService:
             .filter(Reference.name == reference_name) \
             .all()
         return samples
+
+    def feature_explode_unknown(self, feature: QueryFeature) -> List[QueryFeature]:
+        if isinstance(feature, QueryFeatureHGVS):
+            if feature.is_nucleotide():
+                variants_hgvs = self._connection.get_session().query(NucleotideVariantsSamples) \
+                    .filter(NucleotideVariantsSamples._id_hgvs_c == feature.id) \
+                    .all()
+            elif feature.is_protein():
+                variants_hgvs = self._connection.get_session().query(NucleotideVariantsSamples) \
+                    .filter(NucleotideVariantsSamples._id_hgvs_p == feature.id) \
+                    .all()
+            else:
+                raise Exception(f'feature=[{feature}] is neither nucleotide or protein')
+
+            if len(variants_hgvs) == 0:
+                raise FeatureExplodeUnknownError(f'feature={feature} is of type HGVS but the corresponding SPDI '
+                                                 f'feature does not exist in the database. Cannot convert to unknown '
+                                                 f'SPDI representation.')
+            else:
+                unknown_features = []
+                for variants_sample_obj in variants_hgvs:
+                    unknown_features.extend(QueryFeatureMutationSPDI(variants_sample_obj.spdi).to_unknown_explode())
+
+                return unknown_features
+        else:
+            return feature.to_unknown_explode()
 
     def get_samples_with_mlst_alleles(self, scheme_name: str) -> List[Sample]:
         """
@@ -87,22 +122,22 @@ class SampleService:
 
         return SampleSet(sample_ids=sample_ids)
 
-    def create_dataframe_from_sample_set(self, sample_set: SampleSet,
-                                         universe_set: SampleSet,
-                                         exclude_absent: bool,
+    def create_dataframe_from_sample_set(self, present_set: SampleSet,
+                                         absent_set: SampleSet,
+                                         unknown_set: SampleSet,
                                          queries_expression: str) -> pd.DataFrame:
-        samples = self.find_samples_by_ids(sample_set)
+        sample_sets_status_list = [(present_set, 'Present'), (absent_set, 'Absent'), (unknown_set, 'Unknown')]
         data = []
-        for sample in samples:
-            data.append([queries_expression, sample.name, sample.id, 'Present'])
+        for sample_status in sample_sets_status_list:
+            sample_set = sample_status[0]
+            status = sample_status[1]
 
-        if not exclude_absent:
-            complement_samples_set = self.find_samples_by_ids(universe_set.minus(sample_set))
-            for sample in complement_samples_set:
-                data.append([queries_expression, sample.name, sample.id, 'Absent'])
+            if not sample_set.is_empty():
+                samples = self.find_samples_by_ids(sample_set)
+                for sample in samples:
+                    data.append([queries_expression, sample.name, sample.id, status])
 
-        results_df = pd.DataFrame(data=data, columns=['Query', 'Sample Name', 'Sample ID', 'Status'])
-        return results_df
+        return pd.DataFrame(data=data, columns=['Query', 'Sample Name', 'Sample ID', 'Status'])
 
     def count_samples_associated_with_reference(self, reference_name: str) -> int:
         return self._connection.get_session().query(Sample) \
@@ -166,7 +201,10 @@ class SampleService:
         for feature in features:
             if isinstance(feature, QueryFeatureMutationSPDI):
                 dbf = NucleotideMutationTranslater.to_db_feature(feature)
-                standardized_features_to_input_feature[dbf.id] = feature.id
+                if dbf.id in standardized_features_to_input_feature:
+                    standardized_features_to_input_feature[dbf.id].append(feature.id)
+                else:
+                    standardized_features_to_input_feature[dbf.id] = [feature.id]
                 standardized_features_ids.add(dbf.id)
             elif isinstance(feature, QueryFeatureHGVS):
                 if feature.is_nucleotide():
@@ -201,7 +239,15 @@ class SampleService:
         else:
             variants_hgvs_p = []
 
-        unstandardized_variants = {standardized_features_to_input_feature[v.spdi]: v for v in variants_spdi}
+        # Map back unstandardized IDs to the actual variant object
+        # Use this because some features can have multiple identifiers for the same feature
+        # (e.g., ref:10:A:T and ref:10:1:T). I want to make sure I map each passed id to the
+        # same object (that is, in this example, I want to return a dictionary with two keys, one for each ID)
+        unstandardized_variants = {}
+        for v in variants_spdi:
+            for vid in standardized_features_to_input_feature[v.spdi]:
+                unstandardized_variants[vid] = v
+
         unstandardized_variants.update({v.id_hgvs_c: v for v in variants_hgvs_c})
         unstandardized_variants.update({v.id_hgvs_p: v for v in variants_hgvs_p})
         return unstandardized_variants
@@ -221,6 +267,43 @@ class SampleService:
             raise Exception(f'Should only be one feature type but instead got: {feature_types}.')
         else:
             return feature_types.pop()
+
+    def find_unknown_sample_sets_by_features(self, features: List[QueryFeature]) -> Dict[str, SampleSet]:
+        unknown_to_features_dict = {}
+        unknown_features = []
+        for feature in features:
+            try:
+                unknown_features_exploded = self.feature_explode_unknown(feature)
+                unknown_features.extend(unknown_features_exploded)
+                for unknown_feature in unknown_features_exploded:
+                    unknown_to_features_dict[unknown_feature.id] = feature
+            except FeatureExplodeUnknownError as e:
+                logger.warning(
+                    f'Could map feature={feature} to a set of unknown features. Will assume no unknowns exist.')
+
+        if len(unknown_features) > 0:
+            unknown_features_sets = self.find_sample_sets_by_features(unknown_features)
+        else:
+            unknown_features_sets = set()
+
+        features_to_unknown_sample_sets = {}
+        for uid in unknown_features_sets:
+            fid = unknown_to_features_dict[uid].id
+            sample_set = unknown_features_sets[uid]
+
+            # If we've already set this sample set with the same feature,
+            # We need to merge together the unknown sample sets
+            # This can occur if, e.g., we have a large deletion and are iterating over each
+            # Base in the deletion in turn (e.g., ref:10:ATT:A -> gets converted to
+            # ['ref:10:A:?', 'ref:11:T:?', 'ref:12:T:?'], we need to merge unknown sample results
+            # for each of these features in turn.
+            if fid in features_to_unknown_sample_sets:
+                previous_sample_set = features_to_unknown_sample_sets[fid]
+                features_to_unknown_sample_sets[fid] = previous_sample_set.union(sample_set)
+            else:
+                features_to_unknown_sample_sets[fid] = sample_set
+
+        return features_to_unknown_sample_sets
 
     def find_sample_sets_by_features(self, features: List[QueryFeature]) -> Dict[str, SampleSet]:
         feature_type = self._get_feature_type(features)
@@ -285,3 +368,39 @@ class SampleService:
             .all()
 
         return dict(sample_tuples)
+
+    def get_sample_set_by_names(self, sample_names: Union[List[str], Set[str]],
+                                ignore_not_found: bool = False) -> SampleSet:
+        """
+        Given a collection of sample names, get a SampleSet of the corresponding IDs.
+        :param sample_names: The names to convert to an ID set.
+        :param ignore_not_found: Whether or not to ignore sample names that were not found.
+        :return: A SampleSet with all the corresponding samples by the passed names. If ignore_not_found is false,
+                 raises an exception if some sample names have no ids.
+        """
+        if isinstance(sample_names, list):
+            sample_names = set(sample_names)
+        elif not isinstance(sample_names, set):
+            raise Exception(f'Invalid type=[{type(sample_names)}] for passed sample_names. Must be list or set.')
+
+        sample_ids_tuples = self._connection.get_session().query(Sample.id) \
+            .filter(Sample.name.in_(sample_names)) \
+            .all()
+        sample_ids = {i for i, in sample_ids_tuples}
+        sample_set = SampleSet(sample_ids=sample_ids)
+
+        if ignore_not_found or len(sample_names) == len(sample_set):
+            return sample_set
+        else:
+            # Find matching sample names to ids we did find for a nicer error message
+            found_sample_names = {s.name for s in self.find_samples_by_ids(sample_set)}
+            names_not_found = sample_names - found_sample_names
+            if len(names_not_found) > 10:
+                small_not_found = list(names_not_found)[:10]
+                msg = f'[{", ".join(small_not_found)}, ...]'
+            else:
+                msg = f'{names_not_found}'
+
+            raise Exception(f'Did not find an equal number of sample names and ids. '
+                            f'Number sample_names={len(sample_names)}. Number returned sample_ids={len(sample_ids)}. '
+                            f'Sample names with missing ids {msg}')

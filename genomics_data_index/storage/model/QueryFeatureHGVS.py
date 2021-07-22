@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from typing import Optional
+from typing import Optional, List
 
+from genomics_data_index.storage.model.QueryFeature import QueryFeature
 from genomics_data_index.storage.model.QueryFeatureMutation import QueryFeatureMutation
 
 
@@ -61,6 +62,9 @@ class QueryFeatureHGVS(QueryFeatureMutation):
         return self.sequence
 
     def to_unknown(self) -> QueryFeature:
+        raise NotImplementedError('Not implemented')
+
+    def to_unknown_explode(self) -> List[QueryFeature]:
         raise NotImplementedError('Not implemented')
 
     @classmethod

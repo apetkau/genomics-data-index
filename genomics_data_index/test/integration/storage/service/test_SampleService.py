@@ -1,9 +1,11 @@
+import pytest
+
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.QueryFeatureHGVS import QueryFeatureHGVS
 from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
 from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
 from genomics_data_index.storage.model.db import Sample
-from genomics_data_index.storage.service.SampleService import SampleService
+from genomics_data_index.storage.service.SampleService import SampleService, FeatureExplodeUnknownError
 
 
 def count_samples(sample_service, variation_service):
@@ -202,6 +204,128 @@ def test_find_sample_sets_by_features_variations(database, sample_service, varia
     assert {sampleB.id} == set(sample_sets[f'reference:5061:G:A'])
 
 
+def test_find_unknown_sample_sets_by_features_variations_no_index_unknowns(database, sample_service, variation_service):
+    sample_sets = sample_service.find_unknown_sample_sets_by_features([QueryFeatureMutationSPDI('reference:5061:G:A')])
+    assert 0 == len(sample_sets)
+
+
+def test_find_unknown_sample_sets_by_features_variations_with_index_unknowns(database,
+                                                                             sample_service,
+                                                                             variation_service_index_unknowns):
+    sampleA = database.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+
+    sample_sets = sample_service.find_unknown_sample_sets_by_features([QueryFeatureMutationSPDI('reference:5061:G:A')])
+
+    assert 1 == len(sample_sets)
+    assert f'reference:5061:G:A' in sample_sets
+    assert {sampleA.id} == set(sample_sets[f'reference:5061:G:A'])
+
+
+def test_find_unknown_sample_sets_by_features_variations_with_index_unknowns_multiple(database,
+                                                                                      sample_service,
+                                                                                      variation_service_index_unknowns):
+    sampleA = database.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = database.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+
+    # Test 3 features, two of which are in same location
+    features = [QueryFeatureMutationSPDI('reference:5061:G:A'),
+                QueryFeatureMutationSPDI('reference:87:1:A'),
+                QueryFeatureMutationSPDI('reference:87:G:T'),
+                ]
+    sample_sets = sample_service.find_unknown_sample_sets_by_features(features)
+
+    assert 3 == len(sample_sets)
+    assert {sampleA.id} == set(sample_sets[f'reference:5061:G:A'])
+    assert {sampleA.id, sampleB.id, sampleC.id} == set(sample_sets[f'reference:87:1:A'])
+    assert {sampleA.id, sampleB.id, sampleC.id} == set(sample_sets[f'reference:87:G:T'])
+
+    # Test 3 features, two of which are in same location, one is an insertion
+    features = [QueryFeatureMutationSPDI('reference:5061:G:A'),
+                QueryFeatureMutationSPDI('reference:87:ATCG:A'),
+                QueryFeatureMutationSPDI('reference:87:G:T'),
+                ]
+    sample_sets = sample_service.find_unknown_sample_sets_by_features(features)
+
+    assert 3 == len(sample_sets)
+    assert {sampleA.id} == set(sample_sets[f'reference:5061:G:A'])
+    assert {sampleA.id, sampleB.id, sampleC.id} == set(sample_sets[f'reference:87:ATCG:A'])
+    assert {sampleA.id, sampleB.id, sampleC.id} == set(sample_sets[f'reference:87:G:T'])
+
+    # Test 3 features, two of which are in same location, one is a deletion
+    features = [QueryFeatureMutationSPDI('reference:5061:G:A'),
+                QueryFeatureMutationSPDI('reference:87:T:A'),
+                QueryFeatureMutationSPDI('reference:87:G:TCG'),
+                ]
+    sample_sets = sample_service.find_unknown_sample_sets_by_features(features)
+
+    assert 3 == len(sample_sets)
+    assert {sampleA.id} == set(sample_sets[f'reference:5061:G:A'])
+    assert {sampleA.id, sampleB.id, sampleC.id} == set(sample_sets[f'reference:87:T:A'])
+    assert {sampleA.id, sampleB.id, sampleC.id} == set(sample_sets[f'reference:87:G:TCG'])
+
+    # Test 4 features, three are complex, one with integer deletion
+    features = [QueryFeatureMutationSPDI('reference:5061:G:A'),
+                QueryFeatureMutationSPDI('reference:87:TCCG:AAAGG'),
+                QueryFeatureMutationSPDI('reference:87:GGGGA:TCG'),
+                QueryFeatureMutationSPDI('reference:87:3:TCG'),
+                ]
+    sample_sets = sample_service.find_unknown_sample_sets_by_features(features)
+
+    assert 4 == len(sample_sets)
+    assert {sampleA.id} == set(sample_sets[f'reference:5061:G:A'])
+    assert {sampleA.id, sampleB.id, sampleC.id} == set(sample_sets[f'reference:87:TCCG:AAAGG'])
+    assert {sampleA.id, sampleB.id, sampleC.id} == set(sample_sets[f'reference:87:GGGGA:TCG'])
+    assert {sampleA.id, sampleB.id, sampleC.id} == set(sample_sets[f'reference:87:3:TCG'])
+
+
+def test_find_unknown_sample_sets_by_features_variations_different_feature_definitions(database,
+                                                                                       sample_service,
+                                                                                       variation_service_index_unknowns):
+    sampleA = database.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = database.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+
+    # Test 3 unknowns
+    sample_sets = sample_service.find_unknown_sample_sets_by_features([QueryFeatureMutationSPDI('reference:87:1:A')])
+    assert {sampleA.id, sampleB.id, sampleC.id} == set(sample_sets[f'reference:87:1:A'])
+
+    # Test 2 unknowns
+    sample_sets = sample_service.find_unknown_sample_sets_by_features([QueryFeatureMutationSPDI('reference:5088:1:G')])
+    assert {sampleA.id, sampleC.id} == set(sample_sets[f'reference:5088:1:G'])
+
+    # Test 1 unknown
+    sample_sets = sample_service.find_unknown_sample_sets_by_features([QueryFeatureMutationSPDI('reference:202:1:GCG')])
+    assert {sampleA.id} == set(sample_sets[f'reference:202:1:GCG'])
+
+    # Test on edge of unknown and indels
+    sample_sets = sample_service.find_unknown_sample_sets_by_features([QueryFeatureMutationSPDI('reference:1167:1:A')])
+    assert 0 == len(sample_sets)
+
+    sample_sets = sample_service.find_unknown_sample_sets_by_features([QueryFeatureMutationSPDI('reference:1168:1:A')])
+    assert {sampleA.id} == set(sample_sets[f'reference:1168:1:A'])
+
+    sample_sets = sample_service.find_unknown_sample_sets_by_features([QueryFeatureMutationSPDI('reference:1169:1:A')])
+    assert 0 == len(sample_sets)
+
+    sample_sets = sample_service.find_unknown_sample_sets_by_features([QueryFeatureMutationSPDI('reference:1167:2:A')])
+    assert {sampleA.id} == set(sample_sets[f'reference:1167:2:A'])
+
+    sample_sets = sample_service.find_unknown_sample_sets_by_features([QueryFeatureMutationSPDI('reference:1167:AT:A')])
+    assert {sampleA.id} == set(sample_sets[f'reference:1167:AT:A'])
+
+    sample_sets = sample_service.find_unknown_sample_sets_by_features(
+        [QueryFeatureMutationSPDI('reference:1167:ATT:A')])
+    assert {sampleA.id} == set(sample_sets[f'reference:1167:ATT:A'])
+
+    sample_sets = sample_service.find_unknown_sample_sets_by_features(
+        [QueryFeatureMutationSPDI('reference:1167:1:AGG')])
+    assert 0 == len(sample_sets)
+
+    sample_sets = sample_service.find_unknown_sample_sets_by_features([QueryFeatureMutationSPDI('reference:1167:2:AT')])
+    assert {sampleA.id} == set(sample_sets[f'reference:1167:2:AT'])
+
+
 def test_find_sample_sets_by_features_variations_hgvs(database, sample_service_snpeff_annotations):
     sample_sh14_001 = database.get_session().query(Sample).filter(Sample.name == 'SH14-001').one()
     sample_sh14_014 = database.get_session().query(Sample).filter(Sample.name == 'SH14-014').one()
@@ -377,94 +501,92 @@ def test_create_dataframe_from_sample_set(database, sample_service: SampleServic
     sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
     sampleC = database.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
 
-    sample_set = SampleSet([sampleA.id, sampleB.id, sampleC.id])
-    queries_expression = ''
-
-    df = sample_service.create_dataframe_from_sample_set(sample_set=sample_set,
-                                                         universe_set=sample_set,
-                                                         exclude_absent=True,
-                                                         queries_expression=queries_expression)
+    # Only present
+    df = sample_service.create_dataframe_from_sample_set(present_set=SampleSet([sampleA.id, sampleB.id, sampleC.id]),
+                                                         absent_set=SampleSet.create_empty(),
+                                                         unknown_set=SampleSet.create_empty(),
+                                                         queries_expression='')
     assert len(df) == 3
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
-
     df = df.sort_values(['Sample Name'])
     assert ['SampleA', 'SampleB', 'SampleC'] == df['Sample Name'].tolist()
     assert [sampleA.id, sampleB.id, sampleC.id] == df['Sample ID'].tolist()
+    assert ['Present', 'Present', 'Present'] == df['Status'].tolist()
+
+    # Only absent
+    df = sample_service.create_dataframe_from_sample_set(present_set=SampleSet.create_empty(),
+                                                         absent_set=SampleSet([sampleA.id, sampleB.id, sampleC.id]),
+                                                         unknown_set=SampleSet.create_empty(),
+                                                         queries_expression='')
+    assert len(df) == 3
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    df = df.sort_values(['Sample Name'])
+    assert ['SampleA', 'SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert [sampleA.id, sampleB.id, sampleC.id] == df['Sample ID'].tolist()
+    assert ['Absent', 'Absent', 'Absent'] == df['Status'].tolist()
+
+    # Only unknown
+    df = sample_service.create_dataframe_from_sample_set(present_set=SampleSet.create_empty(),
+                                                         absent_set=SampleSet.create_empty(),
+                                                         unknown_set=SampleSet([sampleA.id, sampleB.id, sampleC.id]),
+                                                         queries_expression='')
+    assert len(df) == 3
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    df = df.sort_values(['Sample Name'])
+    assert ['SampleA', 'SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert [sampleA.id, sampleB.id, sampleC.id] == df['Sample ID'].tolist()
+    assert ['Unknown', 'Unknown', 'Unknown'] == df['Status'].tolist()
+
+    # Mix of each
+    df = sample_service.create_dataframe_from_sample_set(present_set=SampleSet([sampleA.id]),
+                                                         absent_set=SampleSet([sampleB.id]),
+                                                         unknown_set=SampleSet([sampleC.id]),
+                                                         queries_expression='')
+    assert len(df) == 3
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    df = df.sort_values(['Sample Name'])
+    assert ['SampleA', 'SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert [sampleA.id, sampleB.id, sampleC.id] == df['Sample ID'].tolist()
+    assert ['Present', 'Absent', 'Unknown'] == df['Status'].tolist()
 
 
 def test_create_dataframe_from_sample_set_subset_samples(database, sample_service: SampleService, variation_service):
     sampleA = database.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
     sampleC = database.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
 
-    sample_set = SampleSet([sampleA.id, sampleC.id])
-    queries_expression = ''
-
-    df = sample_service.create_dataframe_from_sample_set(sample_set,
-                                                         universe_set=sample_set,
-                                                         exclude_absent=True,
-                                                         queries_expression=queries_expression)
+    # Both present
+    df = sample_service.create_dataframe_from_sample_set(present_set=SampleSet([sampleA.id, sampleC.id]),
+                                                         absent_set=SampleSet.create_empty(),
+                                                         unknown_set=SampleSet.create_empty(),
+                                                         queries_expression='')
     assert len(df) == 2
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
-
-    df = df.sort_values(['Sample Name'])
-    assert ['SampleA', 'SampleC'] == df['Sample Name'].tolist()
-    assert [sampleA.id, sampleC.id] == df['Sample ID'].tolist()
-
-
-def test_create_dataframe_from_sample_set_subset_samples_include_all(database,
-                                                                     sample_service: SampleService,
-                                                                     variation_service):
-    sampleA = database.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
-    sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
-    sampleC = database.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
-
-    universe_set = SampleSet([sampleA.id, sampleB.id, sampleC.id])
-    sample_set = SampleSet([sampleA.id, sampleC.id])
-    queries_expression = ''
-
-    df = sample_service.create_dataframe_from_sample_set(sample_set,
-                                                         universe_set=universe_set,
-                                                         exclude_absent=False,
-                                                         queries_expression=queries_expression)
-    assert len(df) == 3
-    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
-
-    df = df.sort_values(['Sample Name'])
-    assert ['SampleA', 'SampleB', 'SampleC'] == df['Sample Name'].tolist()
-    assert [sampleA.id, sampleB.id, sampleC.id] == df['Sample ID'].tolist()
-    assert ['Present', 'Absent', 'Present'] == df['Status'].tolist()
-
-
-def test_create_dataframe_from_sample_set_subset_samples_include_all_matching_universe(database,
-                                                                                       sample_service: SampleService,
-                                                                                       variation_service):
-    sampleA = database.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
-    sampleC = database.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
-
-    sample_set = SampleSet([sampleA.id, sampleC.id])
-    queries_expression = ''
-
-    df = sample_service.create_dataframe_from_sample_set(sample_set,
-                                                         universe_set=sample_set,
-                                                         exclude_absent=False,
-                                                         queries_expression=queries_expression)
-    assert len(df) == 2
-    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
-
     df = df.sort_values(['Sample Name'])
     assert ['SampleA', 'SampleC'] == df['Sample Name'].tolist()
     assert [sampleA.id, sampleC.id] == df['Sample ID'].tolist()
     assert ['Present', 'Present'] == df['Status'].tolist()
+
+    # Mix
+    df = sample_service.create_dataframe_from_sample_set(present_set=SampleSet([sampleA.id]),
+                                                         absent_set=SampleSet.create_empty(),
+                                                         unknown_set=SampleSet([sampleC.id]),
+                                                         queries_expression='')
+    assert len(df) == 2
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    df = df.sort_values(['Sample Name'])
+    assert ['SampleA', 'SampleC'] == df['Sample Name'].tolist()
+    assert [sampleA.id, sampleC.id] == df['Sample ID'].tolist()
+    assert ['Present', 'Unknown'] == df['Status'].tolist()
 
 
 def test_create_dataframe_from_sample_set_empty(sample_service: SampleService, variation_service):
     sample_set = SampleSet.create_empty()
     queries_expression = ''
 
-    df = sample_service.create_dataframe_from_sample_set(sample_set=sample_set,
-                                                         universe_set=sample_set,
-                                                         exclude_absent=True,
-                                                         queries_expression=queries_expression)
+    df = sample_service.create_dataframe_from_sample_set(present_set=SampleSet.create_empty(),
+                                                         absent_set=SampleSet.create_empty(),
+                                                         unknown_set=SampleSet.create_empty(),
+                                                         queries_expression='')
     assert len(df) == 0
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
 
@@ -474,13 +596,11 @@ def test_create_dataframe_from_sample_set_with_query_expression(database, sample
     sampleA = database.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
     sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
 
-    sample_set = SampleSet([sampleA.id, sampleB.id])
-    queries_expression = 'lmonocytogenes:abc:1'
-
-    df = sample_service.create_dataframe_from_sample_set(sample_set,
-                                                         universe_set=sample_set,
-                                                         exclude_absent=True,
-                                                         queries_expression=queries_expression)
+    df = sample_service.create_dataframe_from_sample_set(present_set=SampleSet([sampleA.id]),
+                                                         absent_set=SampleSet([sampleB.id]),
+                                                         unknown_set=SampleSet.create_empty(),
+                                                         queries_expression='lmonocytogenes:abc:1')
+    assert len(df) == 2
     assert {'lmonocytogenes:abc:1'} == set(df['Query'].tolist())
 
 
@@ -501,6 +621,15 @@ def test_get_variants_samples_by_variation_features_only_spdi(database, sample_s
     assert 1 == len(feature_id_nucleotide_samples)
     assert f'reference:5061:G:A' in feature_id_nucleotide_samples
     assert {sampleB.id} == set(feature_id_nucleotide_samples[f'reference:5061:G:A'].sample_ids)
+
+    # Test case of two features which are identical but different names
+    feature_id_nucleotide_samples = sample_service.get_variants_samples_by_variation_features(
+        [QueryFeatureMutationSPDI('reference:5061:G:A'),
+         QueryFeatureMutationSPDI('reference:5061:1:A')])
+
+    assert 2 == len(feature_id_nucleotide_samples)
+    assert {sampleB.id} == set(feature_id_nucleotide_samples[f'reference:5061:G:A'].sample_ids)
+    assert {sampleB.id} == set(feature_id_nucleotide_samples[f'reference:5061:1:A'].sample_ids)
 
 
 def test_get_variants_samples_by_variation_features_only_hgvs_c(database, sample_service_snpeff_annotations):
@@ -576,3 +705,118 @@ def test_get_variants_samples_by_variation_features_no_matches(database, sample_
         features)
 
     assert 0 == len(feature_id_nucleotide_samples)
+
+
+def test_feature_explode_unknown(sample_service_snpeff_annotations):
+    sample_service = sample_service_snpeff_annotations
+
+    # MLST
+    unknowns = sample_service.feature_explode_unknown(QueryFeatureMLST('ecoli:abc:1'))
+    assert 1 == len(unknowns)
+    assert 'ecoli:abc:?' == unknowns[0].id
+
+    # MLST 2
+    unknowns = sample_service.feature_explode_unknown(QueryFeatureMLST('ecoli:abc:15'))
+    assert 1 == len(unknowns)
+    assert 'ecoli:abc:?' == unknowns[0].id
+
+    # SPDI and SNV, does not exist
+    unknowns = sample_service.feature_explode_unknown(QueryFeatureMutationSPDI('NC_011083:1:G:A'))
+    assert 1 == len(unknowns)
+    assert 'NC_011083:1:G:?' == unknowns[0].id
+
+    # SPDI and SNV, does not exist, deletion is number
+    unknowns = sample_service.feature_explode_unknown(QueryFeatureMutationSPDI('NC_011083:1:1:A'))
+    assert 1 == len(unknowns)
+    assert 'NC_011083:1:1:?' == unknowns[0].id
+
+    # SPDI and SNV does exist
+    unknowns = sample_service.feature_explode_unknown(QueryFeatureMutationSPDI('NC_011083:4384633:G:A'))
+    assert 1 == len(unknowns)
+    assert 'NC_011083:4384633:G:?' == unknowns[0].id
+
+    # SPDI and deletion
+    unknowns = sample_service.feature_explode_unknown(QueryFeatureMutationSPDI('NC_011083:3425558:AGCC:A'))
+    assert 4 == len(unknowns)
+    assert ['NC_011083:3425558:A:?', 'NC_011083:3425559:G:?',
+            'NC_011083:3425560:C:?', 'NC_011083:3425561:C:?'] == [u.id for u in unknowns]
+
+    # SPDI and insertion
+    unknowns = sample_service.feature_explode_unknown(QueryFeatureMutationSPDI('NC_011083:1944163:T:TGGC'))
+    assert 1 == len(unknowns)
+    assert 'NC_011083:1944163:T:?' == unknowns[0].id
+
+    # HGVS and SNV, nucleotide
+    unknowns = sample_service.feature_explode_unknown(
+        QueryFeatureHGVS.create_from_id('hgvs:NC_011083:SEHA_RS21795:c.798G>A'))
+    assert 1 == len(unknowns)
+    assert 'NC_011083:4384633:1:?' == unknowns[0].id
+
+    # HGVS and SNV, protein
+    unknowns = sample_service.feature_explode_unknown(
+        QueryFeatureHGVS.create_from_id('hgvs:NC_011083:SEHA_RS21795:p.Lys266Lys'))
+    assert 1 == len(unknowns)
+    assert 'NC_011083:4384633:1:?' == unknowns[0].id
+
+    # HGVS and deletion, nucleotide
+    unknowns = sample_service.feature_explode_unknown(
+        QueryFeatureHGVS.create_from_id('hgvs:NC_011083:SEHA_RS17245:c.123_125delGGC'))
+    assert 4 == len(unknowns)
+    assert ['NC_011083:3425558:1:?', 'NC_011083:3425559:1:?',
+            'NC_011083:3425560:1:?', 'NC_011083:3425561:1:?'] == [u.id for u in unknowns]
+
+    # HGVS and deletion, protein
+    unknowns = sample_service.feature_explode_unknown(
+        QueryFeatureHGVS.create_from_id('hgvs:NC_011083:SEHA_RS17245:p.Ala42del'))
+    assert 4 == len(unknowns)
+    assert ['NC_011083:3425558:1:?', 'NC_011083:3425559:1:?',
+            'NC_011083:3425560:1:?', 'NC_011083:3425561:1:?'] == [u.id for u in unknowns]
+
+    # HGVS and insertion, nucleotide
+    unknowns = sample_service.feature_explode_unknown(
+        QueryFeatureHGVS.create_from_id('hgvs:NC_011083:SEHA_RS10100:c.1293_1295dupGGC'))
+    assert 1 == len(unknowns)
+    assert 'NC_011083:1944163:1:?' == unknowns[0].id
+
+    # HGVS and complex/other, protein
+    unknowns = sample_service.feature_explode_unknown(
+        QueryFeatureHGVS.create_from_id('hgvs:NC_011083:SEHA_RS17780:p.ArgAla374HisThr'))
+    assert 5 == len(unknowns)
+    assert ['NC_011083:3535121:1:?', 'NC_011083:3535122:1:?',
+            'NC_011083:3535123:1:?', 'NC_011083:3535124:1:?',
+            'NC_011083:3535125:1:?'] == [u.id for u in unknowns]
+
+    # Make sure exception is thrown when it cannot find HGVS
+    with pytest.raises(FeatureExplodeUnknownError) as execinfo:
+        sample_service.feature_explode_unknown(
+            QueryFeatureHGVS.create_from_id('hgvs:NC_011083:SEHA_RS21795:p.Lys266Ala'))
+
+    assert 'is of type HGVS but the corresponding SPDI feature' in str(execinfo.value)
+
+
+def test_get_sample_set_by_names(database, sample_service: SampleService, variation_service):
+    sampleA = database.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = database.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+
+    # Test getting sample sets
+    assert {sampleA.id} == set(sample_service.get_sample_set_by_names(['SampleA']))
+    assert {sampleB.id} == set(sample_service.get_sample_set_by_names(['SampleB']))
+    assert {sampleA.id, sampleB.id} == set(sample_service.get_sample_set_by_names(['SampleA', 'SampleB']))
+    assert {sampleA.id, sampleB.id} == set(sample_service.get_sample_set_by_names({'SampleA', 'SampleB'}))
+    assert {sampleA.id, sampleB.id, sampleC.id} == set(
+        sample_service.get_sample_set_by_names(['SampleA', 'SampleB', 'SampleC']))
+
+    # Test empty sample set
+    sample_set = sample_service.get_sample_set_by_names([])
+    assert isinstance(sample_set, SampleSet)
+    assert 0 == len(sample_set)
+
+    # Test case of trying to get ids for samples that don't exist in database.
+    with pytest.raises(Exception) as execinfo:
+        sample_service.get_sample_set_by_names(['SampleA', 'Sample_invalid'])
+    assert 'Did not find an equal number of sample names and ids' in str(execinfo.value)
+
+    # Test case of ignoring not found samples
+    assert {sampleA.id} == set(sample_service.get_sample_set_by_names(['SampleA', 'Sample_invalid'],
+                                                                      ignore_not_found=True))

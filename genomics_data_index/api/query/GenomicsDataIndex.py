@@ -13,6 +13,7 @@ from genomics_data_index.api.query.impl.SamplesQueryIndex import SamplesQueryInd
 from genomics_data_index.api.query.impl.TreeSamplesQueryFactory import TreeSamplesQueryFactory
 from genomics_data_index.configuration.Project import Project
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
+from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.NucleotideMutationTranslater import NucleotideMutationTranslater
 from genomics_data_index.storage.service.VariationService import VariationService
 
@@ -166,13 +167,15 @@ class GenomicsDataIndex:
 
     def _query_all_samples(self, connection: DataIndexConnection):
         all_samples = connection.sample_service.get_all_sample_ids()
-        return SamplesQueryIndex(connection=connection, sample_set=all_samples, universe_set=all_samples)
+        return SamplesQueryIndex(connection=connection, sample_set=all_samples, universe_set=all_samples,
+                                 unknown_set=SampleSet.create_empty())
 
     def _query_reference(self, kind: str, connection: DataIndexConnection, reference_name: str):
         reference_samples = connection.sample_service.get_samples_set_associated_with_reference(reference_name)
         reference_genome = connection.reference_service.find_reference_genome(reference_name)
 
         sample_query = SamplesQueryIndex(connection=connection, sample_set=reference_samples,
+                                         unknown_set=SampleSet.create_empty(),
                                          universe_set=reference_samples)
 
         if reference_genome.has_tree():

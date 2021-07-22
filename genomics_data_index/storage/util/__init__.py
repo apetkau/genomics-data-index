@@ -4,6 +4,8 @@ from typing import List
 
 logger = logging.getLogger(__name__)
 
+TRACE_LEVEL = 5
+
 
 def execute_commands(commands: List[List[str]]):
     try:

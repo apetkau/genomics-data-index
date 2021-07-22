@@ -56,12 +56,14 @@ def test_query_isin_samples(loaded_database_connection: DataIndexConnection):
     query_result = query(loaded_database_connection).isin('SampleB')
     assert 1 == len(query_result)
     assert {sampleB.id} == set(query_result.sample_set)
+    assert 0 == len(query_result.unknown_set)
     assert 9 == len(query_result.universe_set)
 
 
 def test_query_isin_samples_no_exist(loaded_database_connection: DataIndexConnection):
     query_result = query(loaded_database_connection).isin('no_exist')
     assert 0 == len(query_result)
+    assert 0 == len(query_result.unknown_set)
     assert 9 == len(query_result.universe_set)
 
 
@@ -73,6 +75,7 @@ def test_query_isin_sample_set_single(loaded_database_connection: DataIndexConne
     query_result = query(loaded_database_connection).isin(sampleBSet)
     assert 1 == len(query_result)
     assert {sampleB.id} == set(query_result.sample_set)
+    assert 0 == len(query_result.unknown_set)
     assert 9 == len(query_result.universe_set)
 
 
@@ -84,6 +87,7 @@ def test_query_isin_samples_query_single(loaded_database_connection: DataIndexCo
     query_result = query(loaded_database_connection).isin(query_result_B)
     assert 1 == len(query_result)
     assert {sampleB.id} == set(query_result.sample_set)
+    assert 0 == len(query_result.unknown_set)
     assert 9 == len(query_result.universe_set)
 
 
@@ -92,7 +96,40 @@ def test_query_isin_samples_query_no_matches(loaded_database_connection: DataInd
 
     query_result = query(loaded_database_connection).isin(query_result_empty)
     assert 0 == len(query_result)
+    assert 0 == len(query_result.unknown_set)
     assert 9 == len(query_result.universe_set)
+
+
+def test_query_isin_samples_with_unknown(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+
+    query_result = query(loaded_database_connection).hasa('reference:5061:G:A')
+
+    assert {sampleB.id} == set(query_result.sample_set)
+    assert {sampleA.id} == set(query_result.unknown_set)
+
+    # case isin with present and unknown
+    query_result_isin = query_result.isin(['SampleA', 'SampleB'])
+    assert 1 == len(query_result_isin)
+    assert {sampleB.id} == set(query_result_isin.sample_set)
+    assert {sampleA.id} == set(query_result_isin.unknown_set)
+    assert 9 == len(query_result_isin.universe_set)
+
+    # isin with only unknown
+    query_result_isin = query_result.isin('SampleA')
+    assert 0 == len(query_result_isin)
+    assert set() == set(query_result_isin.sample_set)
+    assert {sampleA.id} == set(query_result_isin.unknown_set)
+    assert 9 == len(query_result_isin.universe_set)
+
+    # isin with only present
+    query_result_isin = query_result.isin('SampleB')
+    assert 1 == len(query_result_isin)
+    assert {sampleB.id} == set(query_result_isin.sample_set)
+    assert set() == set(query_result_isin.unknown_set)
+    assert 9 == len(query_result_isin.universe_set)
 
 
 def test_query_and_or(loaded_database_connection: DataIndexConnection):
@@ -104,68 +141,366 @@ def test_query_and_or(loaded_database_connection: DataIndexConnection):
     query_resultA = query(loaded_database_connection).isa('SampleA')
     assert 1 == len(query_resultA)
     assert {sampleA.id} == set(query_resultA.sample_set)
+    assert 0 == len(query_resultA.unknown_set)
     assert 9 == len(query_resultA.universe_set)
+
+    query_result_onlyA = query_resultA.reset_universe()
+    assert 1 == len(query_result_onlyA)
+    assert {sampleA.id} == set(query_result_onlyA.sample_set)
+    assert 0 == len(query_result_onlyA.unknown_set)
+    assert 1 == len(query_result_onlyA.universe_set)
 
     query_resultB = query(loaded_database_connection).isa('SampleB')
     assert 1 == len(query_resultB)
     assert {sampleB.id} == set(query_resultB.sample_set)
+    assert 0 == len(query_resultB.unknown_set)
     assert 9 == len(query_resultB.universe_set)
+
+    query_result_onlyB = query_resultB.reset_universe()
+    assert 1 == len(query_result_onlyB)
+    assert {sampleB.id} == set(query_result_onlyB.sample_set)
+    assert 0 == len(query_result_onlyB.unknown_set)
+    assert 1 == len(query_result_onlyB.universe_set)
+
+    query_resultB_with_unknownA = query(loaded_database_connection).hasa('reference:5061:G:A')
+    assert 1 == len(query_resultB_with_unknownA)
+    assert {sampleB.id} == set(query_resultB_with_unknownA.sample_set)
+    assert 1 == len(query_resultB_with_unknownA.unknown_set)
+    assert {sampleA.id} == set(query_resultB_with_unknownA.unknown_set)
+    assert 9 == len(query_resultB_with_unknownA.universe_set)
+
+    query_result_onlyB_with_unknownA = query_resultB_with_unknownA.reset_universe(include_unknown=True)
+    assert 1 == len(query_result_onlyB_with_unknownA)
+    assert {sampleB.id} == set(query_result_onlyB_with_unknownA.sample_set)
+    assert 1 == len(query_result_onlyB_with_unknownA.unknown_set)
+    assert {sampleA.id} == set(query_result_onlyB_with_unknownA.unknown_set)
+    assert 2 == len(query_result_onlyB_with_unknownA.universe_set)
+    assert {sampleA.id, sampleB.id} == set(query_result_onlyB_with_unknownA.universe_set)
 
     query_resultC = query(loaded_database_connection).isa('SampleC')
     assert 1 == len(query_resultC)
     assert {sampleC.id} == set(query_resultC.sample_set)
     assert 9 == len(query_resultC.universe_set)
 
+    query_result_onlyC = query_resultC.reset_universe()
+    assert 1 == len(query_result_onlyC)
+    assert {sampleC.id} == set(query_result_onlyC.sample_set)
+    assert 1 == len(query_result_onlyC.universe_set)
+    assert {sampleC.id} == set(query_result_onlyC.universe_set)
+
     query_resultAB = query(loaded_database_connection).isin(['SampleA', 'SampleB'])
     assert 2 == len(query_resultAB)
     assert {sampleA.id, sampleB.id} == set(query_resultAB.sample_set)
+    assert 0 == len(query_resultC.unknown_set)
     assert 9 == len(query_resultAB.universe_set)
 
     # Test AND
     query_resultA_and_AB = query_resultA.and_(query_resultAB)
     assert 1 == len(query_resultA_and_AB)
     assert {sampleA.id} == set(query_resultA_and_AB.sample_set)
+    assert 0 == len(query_resultA_and_AB.unknown_set)
     assert 9 == len(query_resultA_and_AB.universe_set)
 
     query_resultAB_and_A = query_resultAB.and_(query_resultA)
     assert 1 == len(query_resultAB_and_A)
     assert {sampleA.id} == set(query_resultAB_and_A.sample_set)
+    assert 0 == len(query_resultAB_and_A.unknown_set)
     assert 9 == len(query_resultAB_and_A.universe_set)
 
     query_resultA_and_B = query_resultA.and_(query_resultB)
     assert 0 == len(query_resultA_and_B)
+    assert 0 == len(query_resultA_and_B.unknown_set)
     assert 9 == len(query_resultA_and_B.universe_set)
+
+    # Test AND with unknowns
+    query_resultA_and_B_unknown_A = query_resultA.and_(query_resultB_with_unknownA)
+    assert 0 == len(query_resultA_and_B_unknown_A)
+    assert 1 == len(query_resultA_and_B_unknown_A.unknown_set)
+    assert {sampleA.id} == set(query_resultA_and_B_unknown_A.unknown_set)
+    assert 9 == len(query_resultA_and_B_unknown_A.universe_set)
+
+    query_resultAB_and_B_unknown_A = query_resultAB.and_(query_resultB_with_unknownA)
+    assert 1 == len(query_resultAB_and_B_unknown_A)
+    assert {sampleB.id} == set(query_resultAB_and_B_unknown_A.sample_set)
+    assert 1 == len(query_resultAB_and_B_unknown_A.unknown_set)
+    assert {sampleA.id} == set(query_resultAB_and_B_unknown_A.unknown_set)
+    assert 9 == len(query_resultAB_and_B_unknown_A.universe_set)
+
+    query_resultB_unknown_A_and_AB = query_resultB_with_unknownA.and_(query_resultAB)
+    assert 1 == len(query_resultB_unknown_A_and_AB)
+    assert {sampleB.id} == set(query_resultB_unknown_A_and_AB.sample_set)
+    assert 1 == len(query_resultB_unknown_A_and_AB.unknown_set)
+    assert {sampleA.id} == set(query_resultB_unknown_A_and_AB.unknown_set)
+    assert 9 == len(query_resultB_unknown_A_and_AB.universe_set)
+
+    query_resultB_and_B_unknown_A = query_resultB.and_(query_resultB_with_unknownA)
+    assert 1 == len(query_resultB_and_B_unknown_A)
+    assert {sampleB.id} == set(query_resultB_and_B_unknown_A.sample_set)
+    assert 0 == len(query_resultB_and_B_unknown_A.unknown_set)
+    assert 9 == len(query_resultB_and_B_unknown_A.universe_set)
+
+    query_resultB_unknown_A_and_B = query_resultB_with_unknownA.and_(query_resultB)
+    assert 1 == len(query_resultB_unknown_A_and_B)
+    assert {sampleB.id} == set(query_resultB_unknown_A_and_B.sample_set)
+    assert 0 == len(query_resultB_unknown_A_and_B.unknown_set)
+    assert 9 == len(query_resultB_unknown_A_and_B.universe_set)
+
+    query_result_onlyB_and_onlyA = query_result_onlyB.and_(query_result_onlyA)
+    assert 0 == len(query_result_onlyB_and_onlyA)
+    assert 0 == len(query_result_onlyB_and_onlyA.unknown_set)
+    assert {sampleA.id, sampleB.id} == set(query_result_onlyB_and_onlyA.absent_set)
+    assert 2 == len(query_result_onlyB_and_onlyA.universe_set)
+    assert {sampleA.id, sampleB.id} == set(query_result_onlyB_and_onlyA.universe_set)
+
+    query_result_onlyB_unknown_A_and_onlyA = query_result_onlyB_with_unknownA.and_(query_result_onlyA)
+    assert 0 == len(query_result_onlyB_unknown_A_and_onlyA)
+    assert 1 == len(query_result_onlyB_unknown_A_and_onlyA.unknown_set)
+    assert {sampleA.id} == set(query_result_onlyB_unknown_A_and_onlyA.unknown_set)
+    assert 1 == len(query_result_onlyB_unknown_A_and_onlyA.absent_set)
+    assert 2 == len(query_result_onlyB_unknown_A_and_onlyA.universe_set)
+    assert {sampleA.id, sampleB.id} == set(query_result_onlyB_unknown_A_and_onlyA.universe_set)
+
+    query_result_onlyB_unknown_A_and_onlyC = query_result_onlyB_with_unknownA.and_(query_result_onlyC)
+    assert 0 == len(query_result_onlyB_unknown_A_and_onlyC)
+    assert 0 == len(query_result_onlyB_unknown_A_and_onlyC.unknown_set)
+    assert 3 == len(query_result_onlyB_unknown_A_and_onlyC.absent_set)
+    assert 3 == len(query_result_onlyB_unknown_A_and_onlyC.universe_set)
+    assert {sampleA.id, sampleB.id, sampleC.id} == set(query_result_onlyB_unknown_A_and_onlyC.universe_set)
+
+    # Test Python & (bitwise and) operator
+    query_result_onlyB_unknown_A_and_onlyA = query_result_onlyB_with_unknownA & query_result_onlyA
+    assert 0 == len(query_result_onlyB_unknown_A_and_onlyA)
+    assert 1 == len(query_result_onlyB_unknown_A_and_onlyA.unknown_set)
+    assert {sampleA.id} == set(query_result_onlyB_unknown_A_and_onlyA.unknown_set)
+    assert 1 == len(query_result_onlyB_unknown_A_and_onlyA.absent_set)
+    assert 2 == len(query_result_onlyB_unknown_A_and_onlyA.universe_set)
+    assert {sampleA.id, sampleB.id} == set(query_result_onlyB_unknown_A_and_onlyA.universe_set)
+
+    query_result_onlyB_unknown_A_and_onlyC = query_result_onlyB_with_unknownA & query_result_onlyC
+    assert 0 == len(query_result_onlyB_unknown_A_and_onlyC)
+    assert 0 == len(query_result_onlyB_unknown_A_and_onlyC.unknown_set)
+    assert 3 == len(query_result_onlyB_unknown_A_and_onlyC.absent_set)
+    assert 3 == len(query_result_onlyB_unknown_A_and_onlyC.universe_set)
+    assert {sampleA.id, sampleB.id, sampleC.id} == set(query_result_onlyB_unknown_A_and_onlyC.universe_set)
 
     # Test OR
     query_resultA_or_AB = query_resultA.or_(query_resultAB)
     assert 2 == len(query_resultA_or_AB)
     assert {sampleA.id, sampleB.id} == set(query_resultA_or_AB.sample_set)
+    assert 7 == len(query_resultA_or_AB.absent_set)
+    assert 0 == len(query_resultA_or_AB.unknown_set)
     assert 9 == len(query_resultA_or_AB.universe_set)
 
     query_resultAB_or_A = query_resultAB.or_(query_resultA)
     assert 2 == len(query_resultAB_or_A)
     assert {sampleA.id, sampleB.id} == set(query_resultAB_or_A.sample_set)
+    assert 0 == len(query_resultAB_or_A.unknown_set)
+    assert 7 == len(query_resultAB_or_A.absent_set)
     assert 9 == len(query_resultAB_or_A.universe_set)
 
     query_resultA_or_B = query_resultA.or_(query_resultB)
     assert 2 == len(query_resultA_or_B)
     assert {sampleA.id, sampleB.id} == set(query_resultA_or_B.sample_set)
+    assert 0 == len(query_resultA_or_B.unknown_set)
+    assert 7 == len(query_resultA_or_B.absent_set)
     assert 9 == len(query_resultA_or_B.universe_set)
 
     query_resultA_or_B_or_C = query_resultA.or_(query_resultB).or_(query_resultC)
     assert 3 == len(query_resultA_or_B_or_C)
     assert {sampleA.id, sampleB.id, sampleC.id} == set(query_resultA_or_B_or_C.sample_set)
+    assert 0 == len(query_resultA_or_B_or_C.unknown_set)
+    assert 6 == len(query_resultA_or_B_or_C.absent_set)
     assert 9 == len(query_resultA_or_B_or_C.universe_set)
+
+    # Test OR with unknowns
+    query_resultA_or_B_unknown_A = query_resultA.or_(query_resultB_with_unknownA)
+    assert 2 == len(query_resultA_or_B_unknown_A)
+    assert {sampleA.id, sampleB.id} == set(query_resultA_or_B_unknown_A.sample_set)
+    assert 0 == len(query_resultA_or_B_unknown_A.unknown_set)
+    assert 9 == len(query_resultA_or_B_unknown_A.universe_set)
+
+    query_resultAB_or_B_unknown_A = query_resultAB.or_(query_resultB_with_unknownA)
+    assert 2 == len(query_resultAB_or_B_unknown_A)
+    assert {sampleA.id, sampleB.id} == set(query_resultAB_or_B_unknown_A.sample_set)
+    assert 0 == len(query_resultAB_or_B_unknown_A.unknown_set)
+    assert 9 == len(query_resultAB_or_B_unknown_A.universe_set)
+
+    query_resultB_unknown_A_or_AB = query_resultB_with_unknownA.or_(query_resultAB)
+    assert 2 == len(query_resultB_unknown_A_or_AB)
+    assert {sampleA.id, sampleB.id} == set(query_resultB_unknown_A_or_AB.sample_set)
+    assert 0 == len(query_resultB_unknown_A_or_AB.unknown_set)
+    assert 9 == len(query_resultB_unknown_A_or_AB.universe_set)
+
+    query_resultB_or_B_unknown_A = query_resultB.or_(query_resultB_with_unknownA)
+    assert 1 == len(query_resultB_or_B_unknown_A)
+    assert {sampleB.id} == set(query_resultB_or_B_unknown_A.sample_set)
+    assert 1 == len(query_resultB_or_B_unknown_A.unknown_set)
+    assert {sampleA.id} == set(query_resultB_or_B_unknown_A.unknown_set)
+    assert 9 == len(query_resultB_or_B_unknown_A.universe_set)
+
+    query_resultB_unknown_A_or_B = query_resultB_with_unknownA.or_(query_resultB)
+    assert 1 == len(query_resultB_unknown_A_or_B)
+    assert {sampleB.id} == set(query_resultB_unknown_A_or_B.sample_set)
+    assert 1 == len(query_resultB_unknown_A_or_B.unknown_set)
+    assert {sampleA.id} == set(query_resultB_unknown_A_or_B.unknown_set)
+    assert 9 == len(query_resultB_unknown_A_or_B.universe_set)
+
+    query_result_onlyB_or_onlyA = query_result_onlyB.or_(query_result_onlyA)
+    assert 2 == len(query_result_onlyB_or_onlyA)
+    assert 0 == len(query_result_onlyB_or_onlyA.unknown_set)
+    assert {sampleA.id, sampleB.id} == set(query_result_onlyB_or_onlyA.sample_set)
+    assert 2 == len(query_result_onlyB_or_onlyA.universe_set)
+    assert {sampleA.id, sampleB.id} == set(query_result_onlyB_or_onlyA.universe_set)
+
+    query_result_onlyB_unknown_A_or_onlyA = query_result_onlyB_with_unknownA.or_(query_result_onlyA)
+    assert 2 == len(query_result_onlyB_unknown_A_or_onlyA)
+    assert 0 == len(query_result_onlyB_unknown_A_or_onlyA.unknown_set)
+    assert {sampleA.id, sampleB.id} == set(query_result_onlyB_unknown_A_or_onlyA.sample_set)
+    assert 0 == len(query_result_onlyB_unknown_A_or_onlyA.absent_set)
+    assert 2 == len(query_result_onlyB_unknown_A_or_onlyA.universe_set)
+    assert {sampleA.id, sampleB.id} == set(query_result_onlyB_unknown_A_or_onlyA.universe_set)
+
+    query_result_onlyB_unknown_A_or_onlyC = query_result_onlyB_with_unknownA.or_(query_result_onlyC)
+    assert 2 == len(query_result_onlyB_unknown_A_or_onlyC)
+    assert {sampleB.id, sampleC.id} == set(query_result_onlyB_unknown_A_or_onlyC.sample_set)
+    assert 1 == len(query_result_onlyB_unknown_A_or_onlyC.unknown_set)
+    assert {sampleA.id} == set(query_result_onlyB_unknown_A_or_onlyC.unknown_set)
+    assert 0 == len(query_result_onlyB_unknown_A_or_onlyC.absent_set)
+    assert 3 == len(query_result_onlyB_unknown_A_or_onlyC.universe_set)
+    assert {sampleA.id, sampleB.id, sampleC.id} == set(query_result_onlyB_unknown_A_or_onlyC.universe_set)
+
+    # Test Python | (bitwise or) operator
+    query_result_onlyB_unknown_A_or_onlyA = query_result_onlyB_with_unknownA | query_result_onlyA
+    assert 2 == len(query_result_onlyB_unknown_A_or_onlyA)
+    assert 0 == len(query_result_onlyB_unknown_A_or_onlyA.unknown_set)
+    assert {sampleA.id, sampleB.id} == set(query_result_onlyB_unknown_A_or_onlyA.sample_set)
+    assert 0 == len(query_result_onlyB_unknown_A_or_onlyA.absent_set)
+    assert 2 == len(query_result_onlyB_unknown_A_or_onlyA.universe_set)
+    assert {sampleA.id, sampleB.id} == set(query_result_onlyB_unknown_A_or_onlyA.universe_set)
+
+    query_result_onlyB_unknown_A_or_onlyC = query_result_onlyB_with_unknownA | query_result_onlyC
+    assert 2 == len(query_result_onlyB_unknown_A_or_onlyC)
+    assert {sampleB.id, sampleC.id} == set(query_result_onlyB_unknown_A_or_onlyC.sample_set)
+    assert 1 == len(query_result_onlyB_unknown_A_or_onlyC.unknown_set)
+    assert {sampleA.id} == set(query_result_onlyB_unknown_A_or_onlyC.unknown_set)
+    assert 0 == len(query_result_onlyB_unknown_A_or_onlyC.absent_set)
+    assert 3 == len(query_result_onlyB_unknown_A_or_onlyC.universe_set)
+    assert {sampleA.id, sampleB.id, sampleC.id} == set(query_result_onlyB_unknown_A_or_onlyC.universe_set)
 
 
 def test_query_reset_universe(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+
+    # No unknowns
     query_result = query(loaded_database_connection).isin('SampleB')
     assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+    assert 0 == len(query_result.unknown_set)
     assert 9 == len(query_result.universe_set)
 
     query_result = query_result.reset_universe()
     assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+    assert 0 == len(query_result.unknown_set)
     assert 1 == len(query_result.universe_set)
+
+    # With unknowns
+    query_result = query(loaded_database_connection).hasa('reference:5061:G:A')
+    assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+    assert 1 == len(query_result.unknown_set)
+    assert {sampleA.id} == set(query_result.unknown_set)
+    assert 9 == len(query_result.universe_set)
+
+    query_result = query_result.reset_universe()
+    assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+    assert 1 == len(query_result.unknown_set)
+    assert {sampleA.id} == set(query_result.unknown_set)
+    assert 2 == len(query_result.universe_set)
+    assert {sampleA.id, sampleB.id} == set(query_result.universe_set)
+
+    # With unknowns but excluding them
+    query_result = query(loaded_database_connection).hasa('reference:5061:G:A')
+    assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+    assert 1 == len(query_result.unknown_set)
+    assert {sampleA.id} == set(query_result.unknown_set)
+    assert 9 == len(query_result.universe_set)
+
+    query_result = query_result.reset_universe(include_unknown=False)
+    assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+    assert 0 == len(query_result.unknown_set)
+    assert 1 == len(query_result.universe_set)
+    assert {sampleB.id} == set(query_result.universe_set)
+
+
+def test_query_set_universe(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+
+    # No unknowns
+    query_result = query(loaded_database_connection).isin('SampleB')
+    assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+    assert 0 == len(query_result.unknown_set)
+    assert 8 == len(query_result.absent_set)
+    assert 9 == len(query_result.universe_set)
+
+    query_result_su = query_result.set_universe(SampleSet(sample_ids=[sampleA.id, sampleB.id]))
+    assert 1 == len(query_result_su)
+    assert {sampleB.id} == set(query_result_su.sample_set)
+    assert 0 == len(query_result_su.unknown_set)
+    assert 1 == len(query_result_su.absent_set)
+    assert {sampleA.id} == set(query_result_su.absent_set)
+    assert 2 == len(query_result_su.universe_set)
+    assert {sampleA.id, sampleB.id} == set(query_result_su.universe_set)
+
+    query_result_su = query_result.set_universe(SampleSet(sample_ids=[sampleB.id]))
+    assert 1 == len(query_result_su)
+    assert {sampleB.id} == set(query_result_su.sample_set)
+    assert 0 == len(query_result_su.unknown_set)
+    assert 0 == len(query_result_su.absent_set)
+    assert 1 == len(query_result_su.universe_set)
+    assert {sampleB.id} == set(query_result_su.universe_set)
+
+    # With unknowns
+    query_result = query(loaded_database_connection).hasa('reference:5061:G:A')
+    assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+    assert 1 == len(query_result.unknown_set)
+    assert {sampleA.id} == set(query_result.unknown_set)
+    assert 7 == len(query_result.absent_set)
+    assert 9 == len(query_result.universe_set)
+
+    query_result_su = query_result.set_universe(SampleSet(sample_ids=[sampleA.id, sampleB.id]))
+    assert 1 == len(query_result_su)
+    assert {sampleB.id} == set(query_result_su.sample_set)
+    assert 1 == len(query_result_su.unknown_set)
+    assert 0 == len(query_result_su.absent_set)
+    assert 2 == len(query_result_su.universe_set)
+    assert {sampleA.id, sampleB.id} == set(query_result_su.universe_set)
+
+    query_result_su = query_result.set_universe(SampleSet(sample_ids=[sampleB.id]))
+    assert 1 == len(query_result_su)
+    assert {sampleB.id} == set(query_result_su.sample_set)
+    assert 0 == len(query_result_su.unknown_set)
+    assert 0 == len(query_result_su.absent_set)
+    assert 1 == len(query_result_su.universe_set)
+    assert {sampleB.id} == set(query_result_su.universe_set)
+
+    query_result_su = query_result.set_universe(SampleSet(sample_ids=[sampleA.id, sampleB.id, sampleC.id]))
+    assert 1 == len(query_result_su)
+    assert {sampleB.id} == set(query_result_su.sample_set)
+    assert 1 == len(query_result_su.unknown_set)
+    assert 1 == len(query_result_su.absent_set)
+    assert 3 == len(query_result_su.universe_set)
+    assert {sampleA.id, sampleB.id, sampleC.id} == set(query_result_su.universe_set)
 
 
 def test_query_isin_samples_multilple(loaded_database_connection: DataIndexConnection):
@@ -201,10 +536,32 @@ def test_query_isa_sample_name(loaded_database_connection: DataIndexConnection):
     assert 9 == len(query_result.universe_set)
     assert not query_result.has_tree()
 
+    # Test case where there is an unknown in the result
+    query_result = query(loaded_database_connection).hasa('reference:1:1:T').isa('SampleB')
+    assert 0 == len(query_result)
+    assert {sampleB.id} == set(query_result.unknown_set)
+    assert 8 == len(query_result.absent_set)
+    assert 9 == len(query_result.universe_set)
 
-def test_query_isa_sample_no_exist(loaded_database_connection: DataIndexConnection):
+    # Test case where there is a match and unknown in the result
+    query_result = query(loaded_database_connection).hasa('reference:5061:G:A').isa('SampleB')
+    assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+    assert 0 == len(query_result.unknown_set)
+    assert 8 == len(query_result.absent_set)
+    assert 9 == len(query_result.universe_set)
+
+    # Test isa no exist
     query_result = query(loaded_database_connection).isa('no_exist')
     assert 0 == len(query_result)
+    assert 9 == len(query_result.universe_set)
+    assert 0 == len(query_result.unknown_set)
+
+    # Test isa no exist with unknown
+    query_result = query(loaded_database_connection).hasa('reference:5061:G:A').isa('no_exist')
+    assert 0 == len(query_result)
+    assert 0 == len(query_result.unknown_set)
+    assert 9 == len(query_result.absent_set)
     assert 9 == len(query_result.universe_set)
 
 
@@ -216,7 +573,46 @@ def test_query_isa_samples_query(loaded_database_connection: DataIndexConnection
     query_result = query(loaded_database_connection).isa(query_result_B)
     assert 1 == len(query_result)
     assert {sampleB.id} == set(query_result.sample_set)
+    assert 0 == len(query_result.unknown_set)
+    assert 8 == len(query_result.absent_set)
     assert 9 == len(query_result.universe_set)
+
+    # with unknown in result
+    query_result = query(loaded_database_connection).hasa('reference:1:1:T').isa(query_result_B)
+    assert 0 == len(query_result)
+    assert 1 == len(query_result.unknown_set)
+    assert {sampleB.id} == set(query_result.unknown_set)
+    assert 8 == len(query_result.absent_set)
+    assert 9 == len(query_result.universe_set)
+
+    # with unknown that gets excluded
+    query_result = query(loaded_database_connection).hasa('reference:5061:G:A').isa(query_result_B)
+    assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+    assert 0 == len(query_result.unknown_set)
+    assert 8 == len(query_result.absent_set)
+    assert 9 == len(query_result.universe_set)
+
+
+def test_tolist(loaded_database_connection: DataIndexConnection):
+    conn = loaded_database_connection
+
+    assert {'SampleA', 'SampleB'} == set(query(conn).isin(['SampleA', 'SampleB']).tolist())
+    assert {'SampleB'} == set(query(conn).hasa('reference:5061:G:A').tolist())
+    assert {'SampleA', 'SampleB'} == set(query(conn).hasa('reference:5061:G:A').tolist(include_unknown=True))
+    assert {'SampleA', 'SampleB', 'SampleC', '2014C-3598', '2014C-3599', '2014D-0067', '2014D-0068',
+            'CFSAN002349', 'CFSAN023463'
+            } == set(query(conn).hasa('reference:5061:G:A').tolist(include_unknown=True, include_absent=True))
+    assert {'SampleA', 'SampleC', '2014C-3598', '2014C-3599', '2014D-0067', '2014D-0068',
+            'CFSAN002349', 'CFSAN023463'
+            } == set(query(conn).hasa('reference:5061:G:A').tolist(include_present=False,
+                                                                   include_unknown=True, include_absent=True))
+    assert {'SampleC', '2014C-3598', '2014C-3599', '2014D-0067', '2014D-0068',
+            'CFSAN002349', 'CFSAN023463'
+            } == set(query(conn).hasa('reference:5061:G:A').tolist(include_present=False,
+                                                                   include_unknown=False, include_absent=True))
+    assert {'SampleA'} == set(query(conn).hasa('reference:5061:G:A').tolist(include_present=False,
+                                                                            include_unknown=True, include_absent=False))
 
 
 def test_query_isin_kmer(loaded_database_connection: DataIndexConnection):
@@ -229,8 +625,27 @@ def test_query_isin_kmer(loaded_database_connection: DataIndexConnection):
                                                           units='kmer_jaccard')
     assert 3 == len(query_result)
     assert {sampleA.id, sampleB.id, sampleC.id} == set(query_result.sample_set)
+    assert 0 == len(query_result.unknown_set)
     assert 9 == len(query_result.universe_set)
     assert "isin_kmer_jaccard('SampleA', dist=1.0, k=31)" == query_result.query_expression()
+
+    # test with unknowns in query
+    query_result = query(loaded_database_connection).hasa('reference:5061:G:A').isin(
+        'SampleA', kind='distance', distance=1.0, units='kmer_jaccard')
+    assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+    assert {sampleA.id} == set(query_result.unknown_set)
+    assert 9 == len(query_result.universe_set)
+    assert "reference:5061:G:A AND isin_kmer_jaccard('SampleA', dist=1.0, k=31)" == query_result.query_expression()
+
+    # test with unknowns in query, isin should remove unknowns
+    query_result = query(loaded_database_connection).hasa('reference:5061:G:A').isin(
+        'SampleB', kind='distance', distance=0, units='kmer_jaccard')
+    assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+    assert 0 == len(query_result.unknown_set)
+    assert 9 == len(query_result.universe_set)
+    assert "reference:5061:G:A AND isin_kmer_jaccard('SampleB', dist=0, k=31)" == query_result.query_expression()
 
 
 def test_query_isin_kmer_samples_query(loaded_database_connection: DataIndexConnection):
@@ -245,7 +660,8 @@ def test_query_isin_kmer_samples_query(loaded_database_connection: DataIndexConn
     assert 3 == len(query_result)
     assert {sampleA.id, sampleB.id, sampleC.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)
-    assert "isin_kmer_jaccard(<SamplesQueryIndex[11% (1/9) samples]>, dist=1.0, k=31)" == query_result.query_expression()
+    assert "isin_kmer_jaccard(<SamplesQueryIndex[selected=11% (1/9) samples, " \
+           "unknown=0% (0/9) samples]>, dist=1.0, k=31)" == query_result.query_expression()
 
 
 def test_query_isin_kmer_samples_set(loaded_database_connection: DataIndexConnection):
@@ -270,7 +686,8 @@ def test_query_isin_kmer_samples_query_no_matches(loaded_database_connection: Da
                                                           units='kmer_jaccard')
     assert 0 == len(query_result)
     assert 9 == len(query_result.universe_set)
-    assert "isin_kmer_jaccard(<SamplesQueryIndex[0% (0/9) samples]>, dist=1.0, k=31)" == query_result.query_expression()
+    assert "isin_kmer_jaccard(<SamplesQueryIndex[selected=0% (0/9) samples, " \
+           "unknown=0% (0/9) samples]>, dist=1.0, k=31)" == query_result.query_expression()
 
 
 def test_query_within_kmer_default(loaded_database_connection: DataIndexConnection):
@@ -341,11 +758,15 @@ def test_query_isin_kmer_1_match(loaded_database_connection: DataIndexConnection
 
 def test_query_single_mutation(loaded_database_connection: DataIndexConnection):
     db = loaded_database_connection.database
+    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    all_sample_ids = {i for i, in db.get_session().query(Sample.id).all()}
 
     query_result = query(loaded_database_connection).hasa(QueryFeatureMutationSPDI('reference:5061:G:A'))
     assert 1 == len(query_result)
     assert {sampleB.id} == set(query_result.sample_set)
+    assert {sampleA.id} == set(query_result.unknown_set)
+    assert all_sample_ids - {sampleA.id} - {sampleB.id} == set(query_result.absent_set)
     assert 9 == len(query_result.universe_set)
     assert not query_result.has_tree()
 
@@ -353,23 +774,198 @@ def test_query_single_mutation(loaded_database_connection: DataIndexConnection):
 def test_query_single_mutation_then_add_new_genomes_and_query(loaded_database_connection: DataIndexConnection,
                                                               snippy_data_package_2: NucleotideSampleDataPackage):
     db = loaded_database_connection.database
+    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    all_sample_ids = {i for i, in db.get_session().query(Sample.id).all()}
+    assert 9 == len(all_sample_ids)
 
     query_result = query(loaded_database_connection).hasa(QueryFeatureMutationSPDI('reference:5061:G:A'))
     assert 1 == len(query_result)
     assert {sampleB.id} == set(query_result.sample_set)
+    assert {sampleA.id} == set(query_result.unknown_set)
+    assert all_sample_ids - {sampleA.id} - {sampleB.id} == set(query_result.absent_set)
     assert 9 == len(query_result.universe_set)
 
     # Insert new data which should increase the number of matches I get
     loaded_database_connection.variation_service.insert(data_package=snippy_data_package_2,
                                                         feature_scope_name='genome')
 
+    sampleA_2 = db.get_session().query(Sample).filter(Sample.name == 'SampleA_2').one()
     sampleB_2 = db.get_session().query(Sample).filter(Sample.name == 'SampleB_2').one()
+    all_sample_ids = {i for i, in db.get_session().query(Sample.id).all()}
+    assert 12 == len(all_sample_ids)
 
     query_result = query(loaded_database_connection).hasa(QueryFeatureMutationSPDI('reference:5061:G:A'))
     assert 2 == len(query_result)
     assert {sampleB.id, sampleB_2.id} == set(query_result.sample_set)
+    assert {sampleA.id, sampleA_2.id} == set(query_result.unknown_set)
+    assert all_sample_ids - {sampleA.id, sampleA_2.id, sampleB.id, sampleB_2.id} == set(query_result.absent_set)
     assert 12 == len(query_result.universe_set)
+
+
+def test_select_unknown_select_absent(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    all_sample_ids = {i for i, in db.get_session().query(Sample.id).all()}
+
+    query_result = query(loaded_database_connection).hasa('reference:5061:G:A')
+    assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+    assert 1 == len(query_result.unknown_set)
+    assert {sampleA.id} == set(query_result.unknown_set)
+    assert 7 == len(query_result.absent_set)
+    assert all_sample_ids - {sampleA.id, sampleB.id} == set(query_result.absent_set)
+    assert 9 == len(query_result.universe_set)
+
+    # Select unknown
+    selected_result = query_result.select_unknown()
+    assert 1 == len(selected_result)
+    assert {sampleA.id} == set(selected_result.sample_set)
+    assert 0 == len(selected_result.unknown_set)
+    assert 8 == len(selected_result.absent_set)
+    assert all_sample_ids - {sampleA.id} == set(selected_result.absent_set)
+    assert 9 == len(selected_result.universe_set)
+
+    # Select absent
+    selected_result = query_result.select_absent()
+    assert 7 == len(selected_result)
+    assert all_sample_ids - {sampleA.id, sampleB.id} == set(selected_result.sample_set)
+    assert 0 == len(selected_result.unknown_set)
+    assert 2 == len(selected_result.absent_set)
+    assert {sampleA.id, sampleB.id} == set(selected_result.absent_set)
+    assert 9 == len(selected_result.universe_set)
+
+
+def test_query_multiple_mutation_unknowns(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+    all_sample_ids = {i for i, in db.get_session().query(Sample.id).all()}
+
+    # Initial query object
+    query_result = query(loaded_database_connection)
+    assert 9 == len(query_result)
+    assert 0 == len(query_result.unknown_set)
+    assert 9 == len(query_result.universe_set)
+    assert 0 == len(query_result.absent_set)
+
+    # Test order 'reference:5061:G:A' then 'reference:190:A:G'
+    query_result = query(loaded_database_connection).hasa('reference:5061:G:A')
+    assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+    assert {sampleA.id} == set(query_result.unknown_set)
+    assert all_sample_ids - {sampleA.id, sampleB.id} == set(query_result.absent_set)
+    assert 9 == len(query_result.universe_set)
+
+    query_result = query_result.hasa('reference:190:A:G')
+    assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+    assert {sampleA.id} == set(query_result.unknown_set)
+    assert all_sample_ids - {sampleA.id, sampleB.id} == set(query_result.absent_set)
+    assert 9 == len(query_result.universe_set)
+
+    # Test order 'reference:190:A:G' then 'reference:5061:G:A'
+    query_result = query(loaded_database_connection).hasa('reference:190:A:G')
+    assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+    assert {sampleA.id, sampleC.id} == set(query_result.unknown_set)
+    assert all_sample_ids - {sampleA.id, sampleB.id, sampleC.id} == set(query_result.absent_set)
+    assert 9 == len(query_result.universe_set)
+
+    query_result = query_result.hasa('reference:5061:G:A')
+    assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+    assert {sampleA.id} == set(query_result.unknown_set)
+    assert all_sample_ids - {sampleA.id, sampleB.id} == set(query_result.absent_set)
+    assert 9 == len(query_result.universe_set)
+
+    # Reset query
+    query_result = query(loaded_database_connection).hasa('reference:190:A:G')
+    assert {sampleB.id} == set(query_result.sample_set)
+    assert {sampleA.id, sampleC.id} == set(query_result.unknown_set)
+    assert all_sample_ids - {sampleA.id, sampleB.id, sampleC.id} == set(query_result.absent_set)
+
+    # Empty query with no unknowns
+    query_result_empty = query_result.hasa('reference:800:1:G')
+    assert 0 == len(query_result_empty)
+    assert set() == set(query_result_empty.sample_set)
+    assert 0 == len(query_result_empty.unknown_set)
+    assert 9 == len(query_result_empty.universe_set)
+    assert 9 == len(query_result_empty.absent_set)
+
+    # Empty query with all unknowns
+    query_result_unknown = query_result.hasa('reference:5160:1:G')
+    assert 0 == len(query_result_unknown)
+    assert {sampleA.id, sampleB.id, sampleC.id} == set(query_result_unknown.unknown_set)
+    assert 9 == len(query_result_unknown.universe_set)
+    assert all_sample_ids - {sampleA.id, sampleB.id, sampleC.id} == set(query_result.absent_set)
+
+    # Query for A,B then for mutation with B and verify A ends up in unknowns
+    query_result = query(loaded_database_connection).isin(['SampleA', 'SampleB'])
+    assert 2 == len(query_result)
+    assert {sampleA.id, sampleB.id} == set(query_result.sample_set)
+    assert 0 == len(query_result.unknown_set)
+    assert 9 == len(query_result.universe_set)
+    assert all_sample_ids - {sampleA.id, sampleB.id} == set(query_result.absent_set)
+
+    query_result = query_result.hasa('reference:5061:G:A')
+    assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+    assert {sampleA.id} == set(query_result.unknown_set)
+    assert 9 == len(query_result.universe_set)
+    assert all_sample_ids - {sampleA.id, sampleB.id} == set(query_result.absent_set)
+
+
+def test_query_intersect_sample_set(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+
+    query_result = query(loaded_database_connection).hasa('reference:5061:G:A')
+    assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+    assert {sampleA.id} == set(query_result.unknown_set)
+    assert 9 == len(query_result.universe_set)
+
+    # Test intersect exclude unknown
+    query_intersect = query_result.intersect(SampleSet(sample_ids=[sampleB.id]))
+    assert 1 == len(query_intersect)
+    assert {sampleB.id} == set(query_intersect.sample_set)
+    assert 0 == len(query_intersect.unknown_set)
+    assert 9 == len(query_intersect.universe_set)
+
+    # Test intersect include unknown
+    query_intersect = query_result.intersect(SampleSet(sample_ids=[sampleA.id, sampleB.id]))
+    assert 1 == len(query_intersect)
+    assert {sampleB.id} == set(query_intersect.sample_set)
+    assert 1 == len(query_intersect.unknown_set)
+    assert {sampleA.id} == set(query_intersect.unknown_set)
+    assert 9 == len(query_intersect.universe_set)
+
+    # Test intersect include unknown and sample not in query
+    query_intersect = query_result.intersect(SampleSet(sample_ids=[sampleA.id, sampleB.id, sampleC.id]))
+    assert 1 == len(query_intersect)
+    assert {sampleB.id} == set(query_intersect.sample_set)
+    assert 1 == len(query_intersect.unknown_set)
+    assert {sampleA.id} == set(query_intersect.unknown_set)
+    assert 9 == len(query_intersect.universe_set)
+
+    # Test intersect only unknown and sample not in query
+    query_intersect = query_result.intersect(SampleSet(sample_ids=[sampleA.id, sampleC.id]))
+    assert 0 == len(query_intersect)
+    assert 1 == len(query_intersect.unknown_set)
+    assert {sampleA.id} == set(query_intersect.unknown_set)
+    assert 9 == len(query_intersect.universe_set)
+
+    # Test intersect only unknown
+    query_intersect = query_result.intersect(SampleSet(sample_ids=[sampleA.id]))
+    assert 0 == len(query_intersect)
+    assert 1 == len(query_intersect.unknown_set)
+    assert {sampleA.id} == set(query_intersect.unknown_set)
+    assert 9 == len(query_intersect.universe_set)
 
 
 def test_query_mutation_hgvs(loaded_database_connection_annotations: DataIndexConnection):
@@ -434,31 +1030,71 @@ def test_query_mutation_hgvs(loaded_database_connection_annotations: DataIndexCo
 
 def test_query_single_mutation_complement(loaded_database_connection: DataIndexConnection):
     db = loaded_database_connection.database
+    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    all_sample_ids = {i for i, in db.get_session().query(Sample.id).all()}
 
     query_result = query(loaded_database_connection).hasa(QueryFeatureMutationSPDI('reference:5061:G:A'))
     assert 1 == len(query_result)
     assert {sampleB.id} == set(query_result.sample_set)
+    assert {sampleA.id} == set(query_result.unknown_set)
+    assert all_sample_ids - {sampleA.id, sampleB.id} == set(query_result.absent_set)
     assert 9 == len(query_result.universe_set)
-    assert [sampleB.id] == query_result.tolist(names=False)
-    assert ['SampleB'] == query_result.tolist(names=True)
-    assert ['SampleB'] == query_result.tolist()
 
-    query_result = query_result.complement()
-    assert 8 == len(query_result)
+    query_result_c = query_result.complement()
+
+    assert 7 == len(query_result_c)
+    assert all_sample_ids - {sampleA.id, sampleB.id} == set(query_result_c.sample_set)
+    assert {sampleA.id} == set(query_result_c.unknown_set)
+    assert {sampleB.id} == set(query_result_c.absent_set)
+    assert 9 == len(query_result_c.universe_set)
+
+    query_result_c = ~query_result
+
+    assert 7 == len(query_result_c)
+    assert all_sample_ids - {sampleA.id, sampleB.id} == set(query_result_c.sample_set)
+    assert {sampleA.id} == set(query_result_c.unknown_set)
+    assert {sampleB.id} == set(query_result_c.absent_set)
+    assert 9 == len(query_result_c.universe_set)
+
+
+def test_query_single_mutation_two_samples_complement(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+    all_sample_ids = {i for i, in db.get_session().query(Sample.id).all()}
+
+    query_result = query(loaded_database_connection).hasa(QueryFeatureMutationSPDI('reference:839:C:G'))
+    assert 2 == len(query_result)
+    assert {sampleB.id, sampleC.id} == set(query_result.sample_set)
+    assert set() == set(query_result.unknown_set)
+    assert all_sample_ids - {sampleB.id, sampleC.id} == set(query_result.absent_set)
     assert 9 == len(query_result.universe_set)
-    assert not query_result.has_tree()
 
-    assert sampleB.id not in query_result.sample_set
+    query_result_c = query_result.complement()
 
-    assert {'SampleA', 'SampleC', 'CFSAN002349', 'CFSAN023463',
-            '2014C-3598', '2014C-3599', '2014D-0067', '2014D-0068'} == set(query_result.tolist())
+    assert 7 == len(query_result_c)
+    assert all_sample_ids - {sampleB.id, sampleC.id} == set(query_result_c.sample_set)
+    assert set() == set(query_result_c.unknown_set)
+    assert {sampleB.id, sampleC.id} == set(query_result_c.absent_set)
+    assert 9 == len(query_result_c.universe_set)
 
-    df = query_result.toframe()
-    assert {'reference:5061:G:A AND complement'} == set(df['Query'].tolist())
-    assert {'SampleA', 'SampleC', 'CFSAN002349', 'CFSAN023463',
-            '2014C-3598', '2014C-3599', '2014D-0067', '2014D-0068'} == set(df['Sample Name'].tolist())
-    assert {'Present'} == set(df['Status'].tolist())
+    assert sampleB.id not in query_result_c.sample_set
+    assert sampleC.id not in query_result_c.sample_set
+    assert sampleA.id in query_result_c.sample_set
+
+    query_result_c = ~query_result
+
+    assert 7 == len(query_result_c)
+    assert all_sample_ids - {sampleB.id, sampleC.id} == set(query_result_c.sample_set)
+    assert set() == set(query_result_c.unknown_set)
+    assert {sampleB.id, sampleC.id} == set(query_result_c.absent_set)
+    assert 9 == len(query_result_c.universe_set)
+
+    assert sampleB.id not in query_result_c.sample_set
+    assert sampleC.id not in query_result_c.sample_set
+    assert sampleA.id in query_result_c.sample_set
 
 
 def test_query_single_mutation_summary(loaded_database_connection: DataIndexConnection):
@@ -468,12 +1104,12 @@ def test_query_single_mutation_summary(loaded_database_connection: DataIndexConn
             '% Present', '% Absent', '% Unknown'] == df.columns.tolist()
     assert 'reference:5061:G:A' == df.iloc[0]['Query']
     assert 1 == df.iloc[0]['Present']
-    assert 8 == df.iloc[0]['Absent']
-    assert pd.isna(df.iloc[0]['Unknown'])
+    assert 7 == df.iloc[0]['Absent']
+    assert 1 == df.iloc[0]['Unknown']
     assert 9 == df.iloc[0]['Total']
     assert math.isclose((1 / 9) * 100, df.iloc[0]['% Present'])
-    assert math.isclose((8 / 9) * 100, df.iloc[0]['% Absent'])
-    assert pd.isna(df.iloc[0]['% Unknown'])
+    assert math.isclose((7 / 9) * 100, df.iloc[0]['% Absent'])
+    assert math.isclose((1 / 9) * 100, df.iloc[0]['% Unknown'])
 
 
 def test_query_single_mutation_two_samples(loaded_database_connection: DataIndexConnection):
@@ -516,29 +1152,20 @@ def test_query_single_mutation_default_kind(loaded_database_connection: DataInde
     assert 9 == len(query_result.universe_set)
 
 
-def test_query_single_mutation_two_samples_complement(loaded_database_connection: DataIndexConnection):
-    db = loaded_database_connection.database
-    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
-    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
-    sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
-
-    query_result = query(loaded_database_connection).hasa(QueryFeatureMutationSPDI('reference:839:C:G'))
-    assert 2 == len(query_result)
-    assert {sampleB.id, sampleC.id} == set(query_result.sample_set)
-    assert 9 == len(query_result.universe_set)
-
-    query_result = query_result.complement()
-    assert 7 == len(query_result)
-    assert sampleB.id not in query_result.sample_set
-    assert sampleC.id not in query_result.sample_set
-    assert sampleA.id in query_result.sample_set
-
-
-def test_query_single_mutation_no_results(loaded_database_connection: DataIndexConnection):
+def test_query_single_mutation_no_results_is_empty(loaded_database_connection: DataIndexConnection):
+    # Test is_empty for something with unknown positions
     query_result = query(loaded_database_connection).hasa(QueryFeatureMutationSPDI('reference:1:1:A'))
     assert 0 == len(query_result)
     assert query_result.is_empty()
     assert 9 == len(query_result.universe_set)
+    assert not query_result.is_empty(include_unknown=True)
+
+    # Test is_empty for something without unknown positions
+    query_result = query(loaded_database_connection).hasa(QueryFeatureMutationSPDI('reference:3000:1:A'))
+    assert 0 == len(query_result)
+    assert query_result.is_empty()
+    assert 9 == len(query_result.universe_set)
+    assert query_result.is_empty(include_unknown=True)
 
 
 def test_query_chained_mutation(loaded_database_connection: DataIndexConnection):
@@ -567,19 +1194,41 @@ def test_query_chained_mutation_has_mutation(loaded_database_connection: DataInd
 
 def test_query_mlst_allele(loaded_database_connection: DataIndexConnection):
     db = loaded_database_connection.database
-    sample1 = db.get_session().query(Sample).filter(Sample.name == 'CFSAN002349').one()
-    sample2 = db.get_session().query(Sample).filter(Sample.name == 'CFSAN023463').one()
+    sample_CFSAN002349 = db.get_session().query(Sample).filter(Sample.name == 'CFSAN002349').one()
+    sample_CFSAN023463 = db.get_session().query(Sample).filter(Sample.name == 'CFSAN023463').one()
+    sample_2014D_0067 = db.get_session().query(Sample).filter(Sample.name == '2014D-0067').one()
+    sample_2014D_0068 = db.get_session().query(Sample).filter(Sample.name == '2014D-0068').one()
     sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
     sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
 
+    # No unknowns
     query_result = query(loaded_database_connection).hasa(QueryFeatureMLST('lmonocytogenes:abcZ:1'))
     assert 5 == len(query_result)
-    assert {sample1.id, sample2.id, sampleA.id, sampleB.id, sampleC.id} == set(query_result.sample_set)
+    assert {sample_CFSAN002349.id, sample_CFSAN023463.id, sampleA.id, sampleB.id, sampleC.id} == set(query_result.sample_set)
+    assert 0 == len(query_result.unknown_set)
+    assert 4 == len(query_result.absent_set)
     assert 9 == len(query_result.universe_set)
 
     assert {'CFSAN002349', 'CFSAN023463', 'SampleA', 'SampleB', 'SampleC'} == set(query_result.tolist())
-    assert {sample1.id, sample2.id, sampleA.id, sampleB.id, sampleC.id} == set(query_result.tolist(names=False))
+    assert {sample_CFSAN002349.id, sample_CFSAN023463.id, sampleA.id, sampleB.id, sampleC.id} == set(query_result.tolist(names=False))
+
+    # With unknown and present
+    query_result = query(loaded_database_connection).hasa(QueryFeatureMLST('campylobacter:uncA:6'))
+    assert 1 == len(query_result)
+    assert {sample_2014D_0068.id} == set(query_result.sample_set)
+    assert 1 == len(query_result.unknown_set)
+    assert {sample_2014D_0067.id} == set(query_result.unknown_set)
+    assert 7 == len(query_result.absent_set)
+    assert 9 == len(query_result.universe_set)
+
+    # With unknown and absent
+    query_result = query(loaded_database_connection).hasa(QueryFeatureMLST('campylobacter:uncA:5'))
+    assert 0 == len(query_result)
+    assert 1 == len(query_result.unknown_set)
+    assert {sample_2014D_0067.id} == set(query_result.unknown_set)
+    assert 8 == len(query_result.absent_set)
+    assert 9 == len(query_result.universe_set)
 
 
 def test_query_chained_mlst_alleles(loaded_database_connection: DataIndexConnection):
@@ -610,6 +1259,7 @@ def test_query_chained_mlst_nucleotide(loaded_database_connection: DataIndexConn
     db = loaded_database_connection.database
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
     sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+    all_sample_ids = {i for i, in db.get_session().query(Sample.id).all()}
 
     # Test query mutation then MLST
     query_result = query(loaded_database_connection) \
@@ -617,43 +1267,71 @@ def test_query_chained_mlst_nucleotide(loaded_database_connection: DataIndexConn
         .hasa('lmonocytogenes:cat:12', kind='mlst')
     assert 1 == len(query_result)
     assert {sampleC.id} == set(query_result.sample_set)
+    assert 0 == len(query_result.unknown_set)
+    assert 8 == len(query_result.absent_set)
+    assert all_sample_ids - {sampleC.id} == set(query_result.absent_set)
     assert 9 == len(query_result.universe_set)
 
     assert ['SampleC'] == query_result.tolist()
     assert [sampleC.id] == query_result.tolist(names=False)
 
-    # Test query MLST then mutation
+    # Test query MLST then mutation with a deletion that will be switched to unknown
     query_result = query(loaded_database_connection) \
         .hasa('lmonocytogenes:cat:11', kind='mlst') \
         .hasa('reference:3897:GCGCA:G', kind='mutation')
-    assert 1 == len(query_result)
-    assert {sampleB.id} == set(query_result.sample_set)
+    assert 0 == len(query_result)
+    assert 1 == len(query_result.unknown_set)
+    assert {sampleB.id} == set(query_result.unknown_set)
+    assert 8 == len(query_result.absent_set)
+    assert all_sample_ids - {sampleB.id} == set(query_result.absent_set)
     assert 9 == len(query_result.universe_set)
 
-    assert ['SampleB'] == query_result.tolist()
-    assert [sampleB.id] == query_result.tolist(names=False)
-
-    # Test query MLST (with unknown allele) then mutation
+    # Test query MLST (with unknown allele) then mutation with a deletion that will be switched to unknown
     query_result = query(loaded_database_connection) \
         .hasa('lmonocytogenes:ldh:5', kind='mlst') \
         .hasa('reference:3897:GCGCA:G', kind='mutation')
-    assert 1 == len(query_result)
-    assert {sampleC.id} == set(query_result.sample_set)
+    assert 0 == len(query_result)
+    assert 2 == len(query_result.unknown_set)
+    assert {sampleB.id, sampleC.id} == set(query_result.unknown_set)
+    assert 7 == len(query_result.absent_set)
+    assert all_sample_ids - {sampleB.id, sampleC.id} == set(query_result.absent_set)
     assert 9 == len(query_result.universe_set)
 
-    assert ['SampleC'] == query_result.tolist()
-    assert [sampleC.id] == query_result.tolist(names=False)
-
-    # Test the unknown allele of MLST
+    # Test the unknown allele of MLST with a deletion that will be switched to unknown
     query_result = query(loaded_database_connection) \
         .hasa('lmonocytogenes:ldh:?', kind='mlst') \
         .hasa('reference:3897:GCGCA:G', kind='mutation')
-    assert 1 == len(query_result)
-    assert {sampleB.id} == set(query_result.sample_set)
+    assert 0 == len(query_result)
+    assert 1 == len(query_result.unknown_set)
+    assert {sampleB.id} == set(query_result.unknown_set)
+    assert 8 == len(query_result.absent_set)
+    assert all_sample_ids - {sampleB.id} == set(query_result.absent_set)
     assert 9 == len(query_result.universe_set)
 
-    assert ['SampleB'] == query_result.tolist()
-    assert [sampleB.id] == query_result.tolist(names=False)
+    # Test query MLST (with unknown allele) then mutation (no issues with unknown/found overlap)
+    query_result = query(loaded_database_connection) \
+        .hasa('lmonocytogenes:ldh:5', kind='mlst') \
+        .hasa('reference:839:C:G', kind='mutation')
+    print(query_result.toframe(include_unknown=True)[['Sample Name', 'Status']])
+    assert 1 == len(query_result)
+    assert {sampleC.id} == set(query_result.sample_set)
+    assert 1 == len(query_result.unknown_set)
+    assert {sampleB.id} == set(query_result.unknown_set)
+    assert 7 == len(query_result.absent_set)
+    assert all_sample_ids - {sampleB.id, sampleC.id} == set(query_result.absent_set)
+    assert 9 == len(query_result.universe_set)
+
+    # Test query mutation (no issues with unknown/found overlap) then MLST (with unknown allele)
+    query_result = query(loaded_database_connection) \
+        .hasa('reference:839:C:G', kind='mutation') \
+        .hasa('lmonocytogenes:ldh:5', kind='mlst')
+    assert 1 == len(query_result)
+    assert {sampleC.id} == set(query_result.sample_set)
+    assert 1 == len(query_result.unknown_set)
+    assert {sampleB.id} == set(query_result.unknown_set)
+    assert 7 == len(query_result.absent_set)
+    assert all_sample_ids - {sampleB.id, sampleC.id} == set(query_result.absent_set)
+    assert 9 == len(query_result.universe_set)
 
 
 def test_query_single_mutation_dataframe(loaded_database_connection: DataIndexConnection):
@@ -661,24 +1339,43 @@ def test_query_single_mutation_dataframe(loaded_database_connection: DataIndexCo
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
     sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
 
+    # Case with no unknowns
     df = query(loaded_database_connection).hasa('reference:839:C:G', kind='mutation').toframe()
-
     assert 2 == len(df)
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
-
     df = df.sort_values(['Sample Name'])
     assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
     assert [sampleB.id, sampleC.id] == df['Sample ID'].tolist()
     assert {'reference:839:C:G'} == set(df['Query'].tolist())
+    assert ['Present', 'Present'] == df['Status'].tolist()
+
+    # Case with no unknowns, exclude present
+    df = query(loaded_database_connection).hasa('reference:839:C:G', kind='mutation').toframe(include_present=False)
+    assert 0 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+
+    # Case with some unknowns
+    df = query(loaded_database_connection).hasa('reference:5061:G:A', kind='mutation').toframe()
+    assert 1 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    df = df.sort_values(['Sample Name'])
+    assert ['SampleB'] == df['Sample Name'].tolist()
+    assert [sampleB.id] == df['Sample ID'].tolist()
+    assert {'reference:5061:G:A'} == set(df['Query'].tolist())
+    assert ['Present'] == df['Status'].tolist()
+
+    # Case with some unknowns, exclude present
+    df = query(loaded_database_connection).hasa('reference:5061:G:A', kind='mutation').toframe(include_present=False)
+    assert 0 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
 
 
 def test_query_single_mutation_dataframe_include_all(loaded_database_connection: DataIndexConnection):
+    # Case of no unknowns
     df = query(loaded_database_connection).hasa(
-        'reference:839:C:G', kind='mutation').toframe(exclude_absent=False)
-
+        'reference:839:C:G', kind='mutation').toframe(include_absent=True, include_unknown=True)
     assert 9 == len(df)
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
-
     df = df.sort_values(['Sample Name'])
     assert ['2014C-3598', '2014C-3599', '2014D-0067', '2014D-0068',
             'CFSAN002349', 'CFSAN023463',
@@ -687,6 +1384,84 @@ def test_query_single_mutation_dataframe_include_all(loaded_database_connection:
             'Absent', 'Absent',
             'Absent', 'Present', 'Present'] == df['Status'].tolist()
     assert {'reference:839:C:G'} == set(df['Query'].tolist())
+
+    # Case of no unknowns but 'include_unknown' is False
+    df = query(loaded_database_connection).hasa(
+        'reference:839:C:G', kind='mutation').toframe(include_absent=True, include_unknown=False)
+    assert 9 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    df = df.sort_values(['Sample Name'])
+    assert ['2014C-3598', '2014C-3599', '2014D-0067', '2014D-0068',
+            'CFSAN002349', 'CFSAN023463',
+            'SampleA', 'SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert ['Absent', 'Absent', 'Absent', 'Absent',
+            'Absent', 'Absent',
+            'Absent', 'Present', 'Present'] == df['Status'].tolist()
+    assert {'reference:839:C:G'} == set(df['Query'].tolist())
+
+    # Case of some unknowns
+    df = query(loaded_database_connection).hasa(
+        'reference:5061:G:A', kind='mutation').toframe(include_absent=True, include_unknown=True)
+    assert 9 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    df = df.sort_values(['Sample Name'])
+    assert ['2014C-3598', '2014C-3599', '2014D-0067', '2014D-0068',
+            'CFSAN002349', 'CFSAN023463',
+            'SampleA', 'SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert ['Absent', 'Absent', 'Absent', 'Absent',
+            'Absent', 'Absent',
+            'Unknown', 'Present', 'Absent'] == df['Status'].tolist()
+    assert {'reference:5061:G:A'} == set(df['Query'].tolist())
+
+    # Case of some unknowns excluding unknowns
+    df = query(loaded_database_connection).hasa(
+        'reference:5061:G:A', kind='mutation').toframe(include_absent=True, include_unknown=False)
+    assert 8 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    df = df.sort_values(['Sample Name'])
+    assert ['2014C-3598', '2014C-3599', '2014D-0067', '2014D-0068',
+            'CFSAN002349', 'CFSAN023463',
+            'SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert ['Absent', 'Absent', 'Absent', 'Absent',
+            'Absent', 'Absent',
+            'Present', 'Absent'] == df['Status'].tolist()
+    assert {'reference:5061:G:A'} == set(df['Query'].tolist())
+
+    # Case of some unknowns, excluding absent
+    df = query(loaded_database_connection).hasa(
+        'reference:5061:G:A', kind='mutation').toframe(include_absent=False, include_unknown=True)
+    assert 2 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    df = df.sort_values(['Sample Name'])
+    assert ['SampleA', 'SampleB'] == df['Sample Name'].tolist()
+    assert ['Unknown', 'Present'] == df['Status'].tolist()
+    assert {'reference:5061:G:A'} == set(df['Query'].tolist())
+
+    # Case of some unknowns, only unknowns
+    df = query(loaded_database_connection).hasa(
+        'reference:5061:G:A', kind='mutation').toframe(include_present=False,
+                                                       include_absent=False, include_unknown=True)
+    assert 1 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    df = df.sort_values(['Sample Name'])
+    assert ['SampleA'] == df['Sample Name'].tolist()
+    assert ['Unknown'] == df['Status'].tolist()
+    assert {'reference:5061:G:A'} == set(df['Query'].tolist())
+
+    # Case of some unknowns, only absent
+    df = query(loaded_database_connection).hasa(
+        'reference:5061:G:A', kind='mutation').toframe(include_present=False, include_absent=True,
+                                                       include_unknown=False)
+    assert 7 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    df = df.sort_values(['Sample Name'])
+    assert ['2014C-3598', '2014C-3599', '2014D-0067', '2014D-0068',
+            'CFSAN002349', 'CFSAN023463',
+            'SampleC'] == df['Sample Name'].tolist()
+    assert ['Absent', 'Absent', 'Absent', 'Absent',
+            'Absent', 'Absent',
+            'Absent'] == df['Status'].tolist()
+    assert {'reference:5061:G:A'} == set(df['Query'].tolist())
 
 
 def test_query_chained_allele_dataframe(loaded_database_connection: DataIndexConnection):
@@ -712,19 +1487,34 @@ def test_query_single_mutation_no_results_toframe(loaded_database_connection: Da
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
 
 
-def test_query_single_mutation_no_results_summary(loaded_database_connection: DataIndexConnection):
+def test_query_single_mutation_all_unknown_summary(loaded_database_connection: DataIndexConnection):
     df = query(loaded_database_connection).hasa('reference:1:1:A', kind='mutation').summary()
     assert 1 == len(df)
     assert ['Query', 'Present', 'Absent', 'Unknown', 'Total',
             '% Present', '% Absent', '% Unknown'] == df.columns.tolist()
     assert 'reference:1:1:A' == df.iloc[0]['Query']
     assert 0 == df.iloc[0]['Present']
+    assert 6 == df.iloc[0]['Absent']
+    assert 3 == df.iloc[0]['Unknown']
+    assert 9 == df.iloc[0]['Total']
+    assert math.isclose((0 / 9) * 100, df.iloc[0]['% Present'])
+    assert math.isclose((6 / 9) * 100, df.iloc[0]['% Absent'])
+    assert math.isclose((3 / 9) * 100, df.iloc[0]['% Unknown'])
+
+
+def test_query_single_mutation_all_absent_summary(loaded_database_connection: DataIndexConnection):
+    df = query(loaded_database_connection).hasa('reference:3000:1:A', kind='mutation').summary()
+    assert 1 == len(df)
+    assert ['Query', 'Present', 'Absent', 'Unknown', 'Total',
+            '% Present', '% Absent', '% Unknown'] == df.columns.tolist()
+    assert 'reference:3000:1:A' == df.iloc[0]['Query']
+    assert 0 == df.iloc[0]['Present']
     assert 9 == df.iloc[0]['Absent']
-    assert pd.isna(df.iloc[0]['Unknown'])
+    assert 0 == df.iloc[0]['Unknown']
     assert 9 == df.iloc[0]['Total']
     assert math.isclose((0 / 9) * 100, df.iloc[0]['% Present'])
     assert math.isclose((9 / 9) * 100, df.iloc[0]['% Absent'])
-    assert pd.isna(df.iloc[0]['% Unknown'])
+    assert math.isclose((0 / 9) * 100, df.iloc[0]['% Unknown'])
 
 
 def test_all_samples_summary(loaded_database_connection: DataIndexConnection):
@@ -735,11 +1525,11 @@ def test_all_samples_summary(loaded_database_connection: DataIndexConnection):
     assert '' == df.iloc[0]['Query']
     assert 9 == df.iloc[0]['Present']
     assert 0 == df.iloc[0]['Absent']
-    assert pd.isna(df.iloc[0]['Unknown'])
+    assert 0 == df.iloc[0]['Unknown']
     assert 9 == df.iloc[0]['Total']
     assert math.isclose((9 / 9) * 100, df.iloc[0]['% Present'])
     assert math.isclose((0 / 9) * 100, df.iloc[0]['% Absent'])
-    assert pd.isna(df.iloc[0]['% Unknown'])
+    assert math.isclose((0 / 9) * 100, df.iloc[0]['% Unknown'])
 
 
 def test_join_custom_dataframe_no_query(loaded_database_connection: DataIndexConnection):
@@ -917,8 +1707,9 @@ def test_join_custom_dataframe_query_reset_universe(loaded_database_connection: 
     assert 2 == len(query_result.universe_set)
 
 
-def test_join_custom_dataframe_single_query_sample_names(loaded_database_connection: DataIndexConnection):
+def test_join_custom_dataframe_single_query_sample_names_with_unknowns(loaded_database_connection: DataIndexConnection):
     db = loaded_database_connection.database
+    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
     sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
 
@@ -935,26 +1726,58 @@ def test_join_custom_dataframe_single_query_sample_names(loaded_database_connect
     assert 3 == len(query_result)
     assert 3 == len(query_result.universe_set)
 
-    query_result = query_result.hasa('reference:839:C:G', kind='mutation')
-
-    assert 2 == len(query_result)
-    assert 3 == len(query_result.universe_set)
-    assert {sampleB.id, sampleC.id} == set(query_result.sample_set)
-
-    df = query_result.toframe()
-
+    # No unknowns
+    query_result_test = query_result.hasa('reference:839:C:G', kind='mutation')
+    assert 2 == len(query_result_test)
+    assert 0 == len(query_result_test.unknown_set)
+    assert 3 == len(query_result_test.universe_set)
+    assert {sampleB.id, sampleC.id} == set(query_result_test.sample_set)
+    df = query_result_test.toframe()
     assert 2 == len(df)
-    assert {'Query', 'Sample Name', 'Sample ID', 'Status', 'Color', 'Samples'} == set(df.columns.tolist())
-
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status', 'Samples', 'Color'] == df.columns.tolist()
     df = df.sort_values(['Sample Name'])
     assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
     assert [sampleB.id, sampleC.id] == df['Sample ID'].tolist()
     assert ['green', 'blue'] == df['Color'].tolist()
     assert {'dataframe(names_col=[Samples]) AND reference:839:C:G'} == set(df['Query'].tolist())
 
+    # With one unknown and one present
+    query_result_test = query_result.hasa('reference:5061:G:A', kind='mutation')
+    assert 1 == len(query_result_test)
+    assert 1 == len(query_result_test.unknown_set)
+    assert 3 == len(query_result_test.universe_set)
+    assert {sampleA.id} == set(query_result_test.unknown_set)
+    assert {sampleB.id} == set(query_result_test.sample_set)
+    df = query_result_test.toframe(include_unknown=True)
+    assert 2 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status', 'Samples', 'Color'] == df.columns.tolist()
+    df = df.sort_values(['Sample Name'])
+    assert ['SampleA', 'SampleB'] == df['Sample Name'].tolist()
+    assert ['Unknown', 'Present'] == df['Status'].tolist()
+    assert [sampleA.id, sampleB.id] == df['Sample ID'].tolist()
+    assert ['red', 'green'] == df['Color'].tolist()
+    assert {'dataframe(names_col=[Samples]) AND reference:5061:G:A'} == set(df['Query'].tolist())
+
+    # With all unknown
+    query_result_test = query_result.hasa('reference:1:1:T', kind='mutation')
+    assert 0 == len(query_result_test)
+    assert 3 == len(query_result_test.unknown_set)
+    assert 3 == len(query_result_test.universe_set)
+    assert {sampleA.id, sampleB.id, sampleC.id} == set(query_result_test.unknown_set)
+    df = query_result_test.toframe(include_unknown=True)
+    assert 3 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status', 'Samples', 'Color'] == df.columns.tolist()
+    df = df.sort_values(['Sample Name'])
+    assert ['SampleA', 'SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert ['Unknown', 'Unknown', 'Unknown'] == df['Status'].tolist()
+    assert [sampleA.id, sampleB.id, sampleC.id] == df['Sample ID'].tolist()
+    assert ['red', 'green', 'blue'] == df['Color'].tolist()
+    assert {'dataframe(names_col=[Samples]) AND reference:1:1:T'} == set(df['Query'].tolist())
+
 
 def test_join_custom_dataframe_extra_sample_names(loaded_database_connection: DataIndexConnection):
     db = loaded_database_connection.database
+    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
     sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
 
@@ -972,22 +1795,42 @@ def test_join_custom_dataframe_extra_sample_names(loaded_database_connection: Da
     assert 3 == len(query_result)
     assert 3 == len(query_result.universe_set)
 
-    query_result = query_result.hasa('reference:839:C:G', kind='mutation')
-    df = query_result.toframe()
-
+    # No unknowns
+    query_result_test = query_result.hasa('reference:839:C:G', kind='mutation')
+    assert 2 == len(query_result_test)
+    assert 0 == len(query_result_test.unknown_set)
+    assert 1 == len(query_result_test.absent_set)
+    assert 3 == len(query_result_test.universe_set)
+    df = query_result_test.toframe(include_unknown=True)
     assert 2 == len(df)
-    assert 3 == len(query_result.universe_set)
-    assert {'Query', 'Sample Name', 'Sample ID', 'Status', 'Color', 'Samples'} == set(df.columns.tolist())
-
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status', 'Samples', 'Color'] == df.columns.tolist()
     df = df.sort_values(['Sample Name'])
     assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert ['Present', 'Present'] == df['Status'].tolist()
     assert [sampleB.id, sampleC.id] == df['Sample ID'].tolist()
     assert ['green', 'blue'] == df['Color'].tolist()
     assert {'dataframe(names_col=[Samples]) AND reference:839:C:G'} == set(df['Query'].tolist())
 
+    # With unknowns
+    query_result_test = query_result.hasa('reference:5061:G:A', kind='mutation')
+    assert 1 == len(query_result_test)
+    assert 1 == len(query_result_test.unknown_set)
+    assert 1 == len(query_result_test.absent_set)
+    assert 3 == len(query_result_test.universe_set)
+    df = query_result_test.toframe(include_unknown=True)
+    assert 2 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status', 'Samples', 'Color'] == df.columns.tolist()
+    df = df.sort_values(['Sample Name'])
+    assert ['SampleA', 'SampleB'] == df['Sample Name'].tolist()
+    assert ['Unknown', 'Present'] == df['Status'].tolist()
+    assert [sampleA.id, sampleB.id] == df['Sample ID'].tolist()
+    assert ['red', 'green'] == df['Color'].tolist()
+    assert {'dataframe(names_col=[Samples]) AND reference:5061:G:A'} == set(df['Query'].tolist())
+
 
 def test_join_custom_dataframe_missing_sample_names(loaded_database_connection: DataIndexConnection):
     db = loaded_database_connection.database
+    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
     sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
 
     df = pd.DataFrame([
@@ -1003,17 +1846,35 @@ def test_join_custom_dataframe_missing_sample_names(loaded_database_connection: 
     assert 2 == len(df)
     assert 2 == len(query_result.universe_set)
 
-    df = query_result.hasa('reference:839:C:G', kind='mutation').toframe()
-
+    # No unknowns
+    query_result_test = query_result.hasa('reference:839:C:G', kind='mutation')
+    assert 2 == len(query_result_test.universe_set)
+    assert 0 == len(query_result_test.unknown_set)
+    assert 1 == len(query_result_test.absent_set)
+    assert 1 == len(query_result_test)
+    df = query_result_test.toframe(include_unknown=True).sort_values(['Sample Name'])
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status', 'Samples', 'Color'] == df.columns.tolist()
     assert 1 == len(df)
-    assert 2 == len(query_result.universe_set)
-    assert {'Query', 'Sample Name', 'Sample ID', 'Status', 'Color', 'Samples'} == set(df.columns.tolist())
-
-    df = df.sort_values(['Sample Name'])
     assert ['SampleC'] == df['Sample Name'].tolist()
+    assert ['Present'] == df['Status'].tolist()
     assert [sampleC.id] == df['Sample ID'].tolist()
     assert ['blue'] == df['Color'].tolist()
     assert {'dataframe(names_col=[Samples]) AND reference:839:C:G'} == set(df['Query'].tolist())
+
+    # One unknown, one present but it's missing from dataframe
+    query_result_test = query_result.hasa('reference:5061:G:A', kind='mutation')
+    assert 2 == len(query_result_test.universe_set)
+    assert 1 == len(query_result_test.unknown_set)
+    assert 1 == len(query_result_test.absent_set)
+    assert 0 == len(query_result_test)
+    df = query_result_test.toframe(include_unknown=True).sort_values(['Sample Name'])
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status', 'Samples', 'Color'] == df.columns.tolist()
+    assert 1 == len(df)
+    assert ['SampleA'] == df['Sample Name'].tolist()
+    assert ['Unknown'] == df['Status'].tolist()
+    assert [sampleA.id] == df['Sample ID'].tolist()
+    assert ['red'] == df['Color'].tolist()
+    assert {'dataframe(names_col=[Samples]) AND reference:5061:G:A'} == set(df['Query'].tolist())
 
 
 def test_query_then_join_dataframe_single_query(loaded_database_connection: DataIndexConnection):
@@ -1033,23 +1894,26 @@ def test_query_then_join_dataframe_single_query(loaded_database_connection: Data
     assert 9 == len(query_result)
     assert 9 == len(query_result.universe_set)
 
-    query_result = query_result.hasa('reference:839:C:G', kind='mutation')
-    assert 2 == len(query_result)
-    assert 9 == len(query_result.universe_set)
-    assert {sampleB.id, sampleC.id} == set(query_result.sample_set)
+    # Case: no unknowns
+    query_result_test = query_result.hasa('reference:839:C:G', kind='mutation')
+    assert 2 == len(query_result_test)
+    assert 0 == len(query_result_test.unknown_set)
+    assert 7 == len(query_result_test.absent_set)
+    assert 9 == len(query_result_test.universe_set)
+    assert {sampleB.id, sampleC.id} == set(query_result_test.sample_set)
 
-    df = query_result.toframe()
+    df = query_result_test.toframe()
 
     assert 2 == len(df)
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
     assert {'reference:839:C:G'} == set(df['Query'].tolist())
 
     # Now join data frame
-    query_result = query_result.join(data_frame=metadata_df, sample_ids_column='Sample ID')
-    assert 2 == len(query_result)
-    assert 3 == len(query_result.universe_set)
+    query_result_test = query_result_test.join(data_frame=metadata_df, sample_ids_column='Sample ID')
+    assert 2 == len(query_result_test)
+    assert 3 == len(query_result_test.universe_set)
 
-    df = query_result.toframe()
+    df = query_result_test.toframe(include_unknown=True)
 
     assert 2 == len(df)
     assert ['Query', 'Sample Name', 'Sample ID', 'Status', 'Color'] == df.columns.tolist()
@@ -1057,8 +1921,41 @@ def test_query_then_join_dataframe_single_query(loaded_database_connection: Data
 
     df = df.sort_values(['Sample Name'])
     assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert ['Present', 'Present'] == df['Status'].tolist()
     assert [sampleB.id, sampleC.id] == df['Sample ID'].tolist()
     assert ['green', 'blue'] == df['Color'].tolist()
+
+    # Case: some unknowns
+    query_result_test = query_result.hasa('reference:5061:G:A', kind='mutation')
+    assert 1 == len(query_result_test)
+    assert 1 == len(query_result_test.unknown_set)
+    assert 7 == len(query_result_test.absent_set)
+    assert 9 == len(query_result_test.universe_set)
+
+    df = query_result_test.toframe(include_unknown=True)
+
+    assert 2 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    assert {'reference:5061:G:A'} == set(df['Query'].tolist())
+
+    # Now join data frame
+    query_result_test = query_result_test.join(data_frame=metadata_df, sample_ids_column='Sample ID')
+    assert 1 == len(query_result_test)
+    assert 1 == len(query_result_test.unknown_set)
+    assert 1 == len(query_result_test.absent_set)
+    assert 3 == len(query_result_test.universe_set)
+
+    df = query_result_test.toframe(include_unknown=True)
+
+    assert 2 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status', 'Color'] == df.columns.tolist()
+    assert {'reference:5061:G:A AND dataframe(ids_col=[Sample ID])'} == set(df['Query'].tolist())
+
+    df = df.sort_values(['Sample Name'])
+    assert ['SampleA', 'SampleB'] == df['Sample Name'].tolist()
+    assert ['Unknown', 'Present'] == df['Status'].tolist()
+    assert [sampleA.id, sampleB.id] == df['Sample ID'].tolist()
+    assert ['red', 'green'] == df['Color'].tolist()
 
 
 def test_query_join_dataframe_isa_dataframe_column(loaded_database_connection: DataIndexConnection):
@@ -1135,6 +2032,59 @@ def test_query_join_dataframe_isa_dataframe_column(loaded_database_connection: D
     sub_result = query_result.isa(r'^ed', regex=True)
     assert 0 == len(sub_result)
     assert 3 == len(sub_result.universe_set)
+
+
+def test_query_with_unknown_join_dataframe_isa_dataframe_column(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+
+    metadata_df = pd.DataFrame([
+        [sampleA.id, 'red', 'small'],
+        [sampleB.id, 'red', 'big'],
+        [sampleC.id, 'blue', 'big']
+    ], columns=['Sample ID', 'Color', 'Size'])
+
+    query_result = query(loaded_database_connection).hasa('reference:5061:G:A').join(data_frame=metadata_df,
+                                                                                     sample_ids_column='Sample ID')
+    assert 1 == len(query_result)
+    assert 1 == len(query_result.unknown_set)
+    assert 1 == len(query_result.absent_set)
+    assert 3 == len(query_result.universe_set)
+
+    # By default, isa should select by 'sample'
+    sub_result = query_result.isa('SampleB')
+    assert 1 == len(sub_result)
+    assert 0 == len(sub_result.unknown_set)
+    assert 2 == len(sub_result.absent_set)
+    assert 3 == len(sub_result.universe_set)
+    assert {sampleB.id} == set(sub_result.sample_set)
+
+    # isa by sample where sample is unknown
+    sub_result = query_result.isa('SampleA')
+    assert 0 == len(sub_result)
+    assert 1 == len(sub_result.unknown_set)
+    assert 2 == len(sub_result.absent_set)
+    assert 3 == len(sub_result.universe_set)
+    assert {sampleA.id} == set(sub_result.unknown_set)
+
+    # If we explicitly pass kind='dataframe' should select by column in dataframe
+    sub_result = query_result.isa('red', isa_column='Color', kind='dataframe')
+    assert 1 == len(sub_result)
+    assert 1 == len(sub_result.unknown_set)
+    assert 1 == len(sub_result.absent_set)
+    assert 3 == len(sub_result.universe_set)
+    assert {sampleA.id} == set(sub_result.unknown_set)
+    assert {sampleB.id} == set(sub_result.sample_set)
+
+    # isa where we exclude unknown
+    sub_result = query_result.isa('big', isa_column='Size', kind='dataframe')
+    assert 1 == len(sub_result)
+    assert 0 == len(sub_result.unknown_set)
+    assert 2 == len(sub_result.absent_set)
+    assert 3 == len(sub_result.universe_set)
+    assert {sampleB.id} == set(sub_result.sample_set)
 
 
 def test_query_join_dataframe_isin_dataframe_column(loaded_database_connection: DataIndexConnection):
@@ -1583,7 +2533,7 @@ def test_within_constructed_tree(loaded_database_connection: DataIndexConnection
     assert 2 == len(df)
     assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
     assert {'reference:839:C:G AND mutation_tree(genome) AND within(26 substitutions of '
-            '<MutationTreeSamplesQuery[11% (1/9) samples]>)'
+            '<MutationTreeSamplesQuery[selected=11% (1/9) samples, unknown=0% (0/9) samples]>)'
             } == set(df['Query'].tolist())
 
     # subs using samples query, empty result
@@ -1616,7 +2566,7 @@ def test_within_constructed_tree(loaded_database_connection: DataIndexConnection
     assert 1 == len(df)
     assert ['SampleC'] == df['Sample Name'].tolist()
     assert {"reference:839:C:G AND mutation_tree(genome) AND within(1 substitutions of "
-            "<MutationTreeSamplesQuery[11% (1/9) samples]>)"
+            "<MutationTreeSamplesQuery[selected=11% (1/9) samples, unknown=0% (0/9) samples]>)"
             } == set(df['Query'].tolist())
 
     # mrca
@@ -1634,7 +2584,7 @@ def test_within_constructed_tree(loaded_database_connection: DataIndexConnection
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
     assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
     assert {"reference:839:C:G AND mutation_tree(genome) AND within(mrca of "
-            "<MutationTreeSamplesQuery[22% (2/9) samples]>)"
+            "<MutationTreeSamplesQuery[selected=22% (2/9) samples, unknown=0% (0/9) samples]>)"
             } == set(df['Query'].tolist())
 
     # mrca of samples query, single sample as result
@@ -1644,7 +2594,7 @@ def test_within_constructed_tree(loaded_database_connection: DataIndexConnection
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
     assert ['SampleB'] == df['Sample Name'].tolist()
     assert {"reference:839:C:G AND mutation_tree(genome) AND within(mrca of "
-            "<MutationTreeSamplesQuery[11% (1/9) samples]>)"
+            "<MutationTreeSamplesQuery[selected=11% (1/9) samples, unknown=0% (0/9) samples]>)"
             } == set(df['Query'].tolist())
 
     # mrca of samples query, empty_results
@@ -1655,29 +2605,35 @@ def test_within_constructed_tree(loaded_database_connection: DataIndexConnection
 
     # Samples isin()
     df = query_result.isin(['SampleA', 'SampleC']).toframe().sort_values('Sample Name')
-    assert 2 == len(df)
+    assert 1 == len(df)
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
-    assert ['SampleA', 'SampleC'] == df['Sample Name'].tolist()
+    assert ['SampleC'] == df['Sample Name'].tolist()
     assert {"reference:839:C:G AND mutation_tree(genome) AND isin_samples(['SampleA', 'SampleC'])"
             } == set(df['Query'].tolist())
 
     # Samples isin from samples query()
     query_result_AC = query_result.isin(['SampleA', 'SampleC'], kind='samples')
     df = query_result.isin(query_result_AC).toframe().sort_values('Sample Name')
-    assert 2 == len(df)
+    assert 1 == len(df)
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
-    assert ['SampleA', 'SampleC'] == df['Sample Name'].tolist()
+    assert ['SampleC'] == df['Sample Name'].tolist()
     assert {
-               "reference:839:C:G AND mutation_tree(genome) AND isin_samples(<MutationTreeSamplesQuery[22% (2/9) samples]>)"
+               "reference:839:C:G AND mutation_tree(genome) AND "
+               "isin_samples(<MutationTreeSamplesQuery[selected=11% (1/9) samples, unknown=0% (0/9) samples]>)"
            } == set(df['Query'].tolist())
 
     # Sample isa()
-    df = query_result.isa('SampleA').toframe().sort_values('Sample Name')
+    df = query_result.isa('SampleC').toframe().sort_values('Sample Name')
     assert 1 == len(df)
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
-    assert ['SampleA'] == df['Sample Name'].tolist()
-    assert {"reference:839:C:G AND mutation_tree(genome) AND isa_sample('SampleA')"
+    assert ['SampleC'] == df['Sample Name'].tolist()
+    assert {"reference:839:C:G AND mutation_tree(genome) AND isa_sample('SampleC')"
             } == set(df['Query'].tolist())
+
+    # Sample isa() empty
+    df = query_result.isa('SampleA').toframe().sort_values('Sample Name')
+    assert 0 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
 
     # kmer jaccard still works
     df = query_result.within('SampleA', distance=0.5, units='kmer_jaccard').toframe().sort_values('Sample Name')
@@ -1726,7 +2682,7 @@ def test_within_constructed_tree_larger_tree(loaded_database_connection: DataInd
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
     assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
     assert {"mutation_tree(genome) AND within(mrca of "
-            "<MutationTreeSamplesQuery[22% (2/9) samples]>)"
+            "<MutationTreeSamplesQuery[selected=22% (2/9) samples, unknown=0% (0/9) samples]>)"
             } == set(df['Query'].tolist())
 
     # mrca A and B
@@ -1744,7 +2700,7 @@ def test_within_constructed_tree_larger_tree(loaded_database_connection: DataInd
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
     assert ['SampleA', 'SampleB', 'SampleC'] == df['Sample Name'].tolist()
     assert {"mutation_tree(genome) AND within(mrca of "
-            "<MutationTreeSamplesQuery[22% (2/9) samples]>)"
+            "<MutationTreeSamplesQuery[selected=22% (2/9) samples, unknown=0% (0/9) samples]>)"
             } == set(df['Query'].tolist())
 
     # mrca of A and B, samples set
@@ -1755,6 +2711,82 @@ def test_within_constructed_tree_larger_tree(loaded_database_connection: DataInd
     assert ['SampleA', 'SampleB', 'SampleC'] == df['Sample Name'].tolist()
     assert {"mutation_tree(genome) AND within(mrca of "
             "set(2 samples))"
+            } == set(df['Query'].tolist())
+
+    # hasa putting all in unknown and then mrca of A and B, samples query
+    query_result_AB = query_result.isin(['SampleA', 'SampleB'], kind='samples')
+    df = query_result.hasa('reference:1:1:T').isin(
+        query_result_AB, kind='mrca').toframe(include_unknown=True).sort_values('Sample Name')
+    assert 3 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    assert ['SampleA', 'SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert ['Unknown', 'Unknown', 'Unknown'] == df['Status'].tolist()
+    assert {"mutation_tree(genome) AND reference:1:1:T AND within(mrca of "
+            "<MutationTreeSamplesQuery[selected=22% (2/9) samples, unknown=0% (0/9) samples]>)"
+            } == set(df['Query'].tolist())
+
+    # hasa putting all in unknown and then mrca of A and B, by name
+    df = query_result.hasa('reference:1:1:T').isin(
+        ['SampleA', 'SampleB'], kind='mrca').toframe(include_unknown=True).sort_values('Sample Name')
+    assert 3 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    assert ['SampleA', 'SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert ['Unknown', 'Unknown', 'Unknown'] == df['Status'].tolist()
+    assert {"mutation_tree(genome) AND reference:1:1:T AND within(mrca of ['SampleA', 'SampleB'])"
+            } == set(df['Query'].tolist())
+
+    # hasa mrca of A and B (by name) and then putting all in unknown
+    df = query_result.isin(
+        ['SampleA', 'SampleB'], kind='mrca').hasa(
+        'reference:1:1:T').toframe(include_unknown=True).sort_values('Sample Name')
+    assert 3 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    assert ['SampleA', 'SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert ['Unknown', 'Unknown', 'Unknown'] == df['Status'].tolist()
+    assert {"mutation_tree(genome) AND within(mrca of ['SampleA', 'SampleB']) AND reference:1:1:T"
+            } == set(df['Query'].tolist())
+
+    # hasa only A in unknown and then mrca of A and B, samples query
+    query_result_AB = query_result.isin(['SampleA', 'SampleB'], kind='samples')
+    df = query_result.hasa('reference:5061:G:A').isin(
+        query_result_AB, kind='mrca').toframe(include_unknown=True).sort_values('Sample Name')
+    assert 2 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    assert ['SampleA', 'SampleB'] == df['Sample Name'].tolist()
+    assert ['Unknown', 'Present'] == df['Status'].tolist()
+    assert {"mutation_tree(genome) AND reference:5061:G:A AND within(mrca of "
+            "<MutationTreeSamplesQuery[selected=22% (2/9) samples, unknown=0% (0/9) samples]>)"
+            } == set(df['Query'].tolist())
+
+    # hasa only A in unknown and then mrca of A and B, by name
+    df = query_result.hasa('reference:5061:G:A').isin(
+        ['SampleA', 'SampleB'], kind='mrca').toframe(include_unknown=True).sort_values('Sample Name')
+    assert 2 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    assert ['SampleA', 'SampleB'] == df['Sample Name'].tolist()
+    assert ['Unknown', 'Present'] == df['Status'].tolist()
+    assert {"mutation_tree(genome) AND reference:5061:G:A AND within(mrca of ['SampleA', 'SampleB'])"
+            } == set(df['Query'].tolist())
+
+    # mrca of A and B (by name) and hasa putting only A in unknown (and matching B)
+    df = query_result.isin(
+        ['SampleA', 'SampleB'], kind='mrca').hasa(
+        'reference:5061:G:A').toframe(include_unknown=True).sort_values('Sample Name')
+    assert 2 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    assert ['SampleA', 'SampleB'] == df['Sample Name'].tolist()
+    assert ['Unknown', 'Present'] == df['Status'].tolist()
+    assert {"mutation_tree(genome) AND within(mrca of ['SampleA', 'SampleB']) AND reference:5061:G:A"
+            } == set(df['Query'].tolist())
+
+    # hasa only A in unknown and then mrca of A, by name
+    df = query_result.hasa('reference:5061:G:A').isin(
+        'SampleA', kind='mrca').toframe(include_unknown=True).sort_values('Sample Name')
+    assert 1 == len(df)
+    assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
+    assert ['SampleA'] == df['Sample Name'].tolist()
+    assert ['Unknown'] == df['Status'].tolist()
+    assert {"mutation_tree(genome) AND reference:5061:G:A AND within(mrca of ['SampleA'])"
             } == set(df['Query'].tolist())
 
 
@@ -1783,7 +2815,7 @@ def test_within_joined_mutations_tree(prebuilt_tree: Tree, loaded_database_conne
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
     assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
     assert {"join_tree(4 leaves) AND within(mrca of "
-            "<MutationTreeSamplesQuery[22% (2/9) samples]>)"
+            "<MutationTreeSamplesQuery[selected=22% (2/9) samples, unknown=0% (0/9) samples]>)"
             } == set(df['Query'].tolist())
 
     # mrca A and B
@@ -1801,7 +2833,7 @@ def test_within_joined_mutations_tree(prebuilt_tree: Tree, loaded_database_conne
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
     assert ['SampleA', 'SampleB', 'SampleC'] == df['Sample Name'].tolist()
     assert {"join_tree(4 leaves) AND within(mrca of "
-            "<MutationTreeSamplesQuery[22% (2/9) samples]>)"
+            "<MutationTreeSamplesQuery[selected=22% (2/9) samples, unknown=0% (0/9) samples]>)"
             } == set(df['Query'].tolist())
 
     # mrca of A and B, samples set
@@ -1822,7 +2854,70 @@ def test_within_joined_mutations_tree(prebuilt_tree: Tree, loaded_database_conne
     assert 2 == len(df)
     assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
     assert {'join_tree(4 leaves) AND within(2 substitutions/site of '
-            '<MutationTreeSamplesQuery[11% (1/9) samples]>)'
+            '<MutationTreeSamplesQuery[selected=11% (1/9) samples, unknown=0% (0/9) samples]>)'
+            } == set(df['Query'].tolist())
+
+    # hasa to put A, B, and C in unknown and then subs/site using samples query to only select B and C
+    query_result_C = query_result.isin(['SampleC'], kind='samples')
+    df = query_result.hasa('reference:1:1:T').isin(query_result_C, kind='distance', distance=2,
+                                                   units='substitutions/site').toframe(
+        include_unknown=True).sort_values('Sample Name')
+    assert 2 == len(df)
+    assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert ['Unknown', 'Unknown'] == df['Status'].tolist()
+    assert {'join_tree(4 leaves) AND reference:1:1:T AND within(2 substitutions/site of '
+            '<MutationTreeSamplesQuery[selected=11% (1/9) samples, unknown=0% (0/9) samples]>)'
+            } == set(df['Query'].tolist())
+
+    # hasa to put A, B, and C in unknown and then subs/site using samples query to select A, B, and C
+    query_result_C = query_result.isin(['SampleC'], kind='samples')
+    df = query_result.hasa('reference:1:1:T').isin(query_result_C, kind='distance', distance=4,
+                                                   units='substitutions/site').toframe(
+        include_unknown=True).sort_values('Sample Name')
+    assert 3 == len(df)
+    assert ['SampleA', 'SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert ['Unknown', 'Unknown', 'Unknown'] == df['Status'].tolist()
+    assert {'join_tree(4 leaves) AND reference:1:1:T AND within(4 substitutions/site of '
+            '<MutationTreeSamplesQuery[selected=11% (1/9) samples, unknown=0% (0/9) samples]>)'
+            } == set(df['Query'].tolist())
+
+    # hasa to put A, B, and C in unknown and then subs/site using sample names to only select B and C
+    df = query_result.hasa('reference:1:1:T').isin(['SampleC'], kind='distance', distance=2,
+                                                   units='substitutions/site').toframe(
+        include_unknown=True).sort_values('Sample Name')
+    assert 2 == len(df)
+    assert ['SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert ['Unknown', 'Unknown'] == df['Status'].tolist()
+    assert {"join_tree(4 leaves) AND reference:1:1:T AND within(2 substitutions/site of ['SampleC'])"
+            } == set(df['Query'].tolist())
+
+    # hasa to put A, B, and C in unknown and then subs/site using sample names to select A, B, and C
+    df = query_result.hasa('reference:1:1:T').isin(['SampleA', 'SampleC'], kind='distance', distance=2,
+                                                   units='substitutions/site').toframe(
+        include_unknown=True).sort_values('Sample Name')
+    assert 3 == len(df)
+    assert ['SampleA', 'SampleB', 'SampleC'] == df['Sample Name'].tolist()
+    assert ['Unknown', 'Unknown', 'Unknown'] == df['Status'].tolist()
+    assert {"join_tree(4 leaves) AND reference:1:1:T AND within(2 substitutions/site of ['SampleA', 'SampleC'])"
+            } == set(df['Query'].tolist())
+
+    # hasa to put A in unknown, select B and then subs/site using sample names to select A, B, and C
+    df = query_result.hasa('reference:5061:G:A').isin(['SampleA', 'SampleC'], kind='distance', distance=2,
+                                                      units='substitutions/site').toframe(
+        include_unknown=True).sort_values('Sample Name')
+    assert 2 == len(df)
+    assert ['SampleA', 'SampleB'] == df['Sample Name'].tolist()
+    assert ['Unknown', 'Present'] == df['Status'].tolist()
+    assert {"join_tree(4 leaves) AND reference:5061:G:A AND within(2 substitutions/site of ['SampleA', 'SampleC'])"
+            } == set(df['Query'].tolist())
+
+    # subs/site using sample names to select A, B, and C, and then hasa to put A in unknown, select B
+    df = query_result.isin(['SampleA', 'SampleC'], kind='distance', distance=2, units='substitutions/site').hasa(
+        'reference:5061:G:A').toframe(include_unknown=True).sort_values('Sample Name')
+    assert 2 == len(df)
+    assert ['SampleA', 'SampleB'] == df['Sample Name'].tolist()
+    assert ['Unknown', 'Present'] == df['Status'].tolist()
+    assert {"join_tree(4 leaves) AND within(2 substitutions/site of ['SampleA', 'SampleC']) AND reference:5061:G:A"
             } == set(df['Query'].tolist())
 
     # subs samples query
@@ -1866,7 +2961,7 @@ def test_summary_features_kindmutations(loaded_database_connection: DataIndexCon
     expected_df['Total'] = 9
     expected_df['Percent'] = 100 * (expected_df['Count'] / expected_df['Total'])
 
-    mutations_df = query(loaded_database_connection).summary_features(ignore_annotations=True)
+    mutations_df = query(loaded_database_connection).features_summary(ignore_annotations=True)
     mutations_df = mutations_df.sort_index()
 
     assert len(expected_df) == len(mutations_df)
@@ -1896,7 +2991,7 @@ def test_summary_features_kindmutations_unique(loaded_database_connection: DataI
 
     q = query(loaded_database_connection)
 
-    mutations_df = q.isa('SampleA').summary_features(selection='unique', ignore_annotations=True)
+    mutations_df = q.isa('SampleA').features_summary(selection='unique', ignore_annotations=True)
     mutations_df = mutations_df.sort_index()
 
     assert len(expected_df) == len(mutations_df)
@@ -1919,7 +3014,7 @@ def test_summary_features_kindmutations_unique(loaded_database_connection: DataI
     expected_df['Total'] = 1
     expected_df['Percent'] = 100 * (expected_df['Count'] / expected_df['Total'])
 
-    mutations_df = q.isa('SampleB').summary_features(selection='unique', ignore_annotations=True)
+    mutations_df = q.isa('SampleB').features_summary(selection='unique', ignore_annotations=True)
     mutations_df = mutations_df.sort_index()
 
     assert len(expected_df) == len(mutations_df)
@@ -1941,7 +3036,7 @@ def test_summary_features_kindmutations_unique(loaded_database_connection: DataI
     expected_df['Total'] = 1
     expected_df['Percent'] = 100 * (expected_df['Count'] / expected_df['Total'])
 
-    mutations_df = q.isa('SampleC').summary_features(selection='unique', ignore_annotations=True)
+    mutations_df = q.isa('SampleC').features_summary(selection='unique', ignore_annotations=True)
     mutations_df = mutations_df.sort_index()
 
     assert len(expected_df) == len(mutations_df)
@@ -1963,7 +3058,7 @@ def test_summary_features_kindmutations_unique(loaded_database_connection: DataI
     expected_df['Total'] = 2
     expected_df['Percent'] = 100 * (expected_df['Count'] / expected_df['Total'])
 
-    mutations_df = q.isin(['SampleB', 'SampleC']).summary_features(selection='unique', ignore_annotations=True)
+    mutations_df = q.isin(['SampleB', 'SampleC']).features_summary(selection='unique', ignore_annotations=True)
     mutations_df = mutations_df.sort_index()
 
     assert len(expected_df) == len(mutations_df)
@@ -1988,7 +3083,7 @@ def test_summary_features_kindmutations_unique(loaded_database_connection: DataI
     expected_df['Total'] = 3
     expected_df['Percent'] = 100 * (expected_df['Count'] / expected_df['Total'])
 
-    mutations_df = q.isin(['SampleA', 'SampleB', 'SampleC']).summary_features(selection='unique',
+    mutations_df = q.isin(['SampleA', 'SampleB', 'SampleC']).features_summary(selection='unique',
                                                                               ignore_annotations=True)
     mutations_df = mutations_df.sort_index()
 
@@ -2003,7 +3098,7 @@ def test_summary_features_kindmutations_unique(loaded_database_connection: DataI
     assert math.isclose(100 * (1 / 3), mutations_df.loc['reference:3656:CATT:C', 'Percent'])
 
     # Unique to None
-    mutations_df = q.isin([]).summary_features(selection='unique', ignore_annotations=True)
+    mutations_df = q.isin([]).features_summary(selection='unique', ignore_annotations=True)
     mutations_df = mutations_df.sort_index()
 
     assert 0 == len(mutations_df)
@@ -2015,7 +3110,7 @@ def test_summary_features_kindmutations_annotations(loaded_database_connection_a
     q = query(loaded_database_connection_annotations)
 
     # 1 sample
-    mutations_df = q.isa('SH10-014').summary_features(ignore_annotations=False)
+    mutations_df = q.isa('SH10-014').features_summary(ignore_annotations=False)
 
     assert ['Sequence', 'Position', 'Deletion', 'Insertion',
             'Count', 'Total', 'Percent', 'Annotation', 'Annotation_Impact',
@@ -2049,7 +3144,7 @@ def test_summary_features_kindmutations_annotations(loaded_database_connection_a
         mutations_df.loc['NC_011083:4555461:T:TC'].fillna('NA'))
 
     # 3 samples
-    mutations_df = q.isin(['SH10-014', 'SH14-001', 'SH14-014']).summary_features(ignore_annotations=False)
+    mutations_df = q.isin(['SH10-014', 'SH14-001', 'SH14-014']).features_summary(ignore_annotations=False)
 
     ## Convert percent to int to make it easier to compare in assert statements
     mutations_df['Percent'] = mutations_df['Percent'].astype(int)
@@ -2076,14 +3171,14 @@ def test_summary_features_kindmutations_annotations(loaded_database_connection_a
         mutations_df.loc['NC_011083:4555461:T:TC'].fillna('NA'))
 
     # Test ignore annotations
-    mutations_df = q.isin(['SH10-014', 'SH14-001', 'SH14-014']).summary_features(ignore_annotations=True)
+    mutations_df = q.isin(['SH10-014', 'SH14-001', 'SH14-014']).features_summary(ignore_annotations=True)
 
     assert ['Sequence', 'Position', 'Deletion', 'Insertion',
             'Count', 'Total', 'Percent'] == list(mutations_df.columns)
     assert 177 == len(mutations_df)
 
     ## Test unique
-    mutations_df = q.isa('SH10-014').summary_features(selection='unique', ignore_annotations=False)
+    mutations_df = q.isa('SH10-014').features_summary(selection='unique', ignore_annotations=False)
 
     ## Convert percent to int to make it easier to compare in assert statements
     mutations_df['Percent'] = mutations_df['Percent'].astype(int)
@@ -2117,7 +3212,7 @@ def test_summary_features_two(loaded_database_connection: DataIndexConnection):
     expected_df['Percent'] = 100 * (expected_df['Count'] / expected_df['Total'])
 
     mutations_df = query(loaded_database_connection).hasa(
-        'reference:839:C:G', kind='mutation').summary_features()
+        'reference:839:C:G', kind='mutation').features_summary()
     mutations_df = mutations_df.sort_index()
 
     assert len(expected_df) == len(mutations_df)

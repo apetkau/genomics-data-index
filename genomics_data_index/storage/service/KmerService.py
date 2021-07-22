@@ -40,8 +40,9 @@ class KmerService:
                                    'sample_names'. Currently only 'union' is supported (this parameter is here to
                                    make a bit more clear how results are combined until I implement additional ways of
                                    merging results).
-        :samples_universe: The universe of samples to search through. Can be used to restrict which samples we will
+        :param samples_universe: The universe of samples to search through. Can be used to restrict which samples we will
                            consider for matches. Set to 'None' to search for matches in all samples in the system.
+        :return: A SampleSet of the matches.
         """
         if results_merge_type != 'union':
             raise Exception(f'results_merge_type=[{results_merge_type}] is not supported. '

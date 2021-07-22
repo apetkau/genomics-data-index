@@ -14,8 +14,9 @@ class NucleotideSampleDataPackage(SampleDataPackage):
 
     def __init__(self, sample_data: List[SampleData],
                  sample_names: Set[str],
-                 sample_files_processor: SampleFilesProcessor):
-        super().__init__()
+                 sample_files_processor: SampleFilesProcessor,
+                 index_unknown_missing: bool = True):
+        super().__init__(index_unknown_missing=index_unknown_missing)
         self._sample_data = sample_data
         self._sample_files_processor = sample_files_processor
         self._sample_names = sample_names
@@ -29,7 +30,8 @@ class NucleotideSampleDataPackage(SampleDataPackage):
     @classmethod
     def create_from_sequence_masks(cls, sample_vcf_map: Dict[str, Path],
                                    masked_genomic_files_map: Dict[str, Path] = None,
-                                   sample_files_processor: SampleFilesProcessor = NullSampleFilesProcessor.instance()) -> NucleotideSampleDataPackage:
+                                   sample_files_processor: SampleFilesProcessor = NullSampleFilesProcessor.instance(),
+                                   index_unknown_missing: bool = True) -> NucleotideSampleDataPackage:
         if masked_genomic_files_map is None:
             masked_genomic_files_map = {}
 
@@ -53,12 +55,14 @@ class NucleotideSampleDataPackage(SampleDataPackage):
 
         return NucleotideSampleDataPackage(sample_data=sample_data_list,
                                            sample_names=sample_names_set,
-                                           sample_files_processor=sample_files_processor
+                                           sample_files_processor=sample_files_processor,
+                                           index_unknown_missing=index_unknown_missing
                                            )
 
     @classmethod
     def create_from_snippy(cls, sample_dirs: List[Path],
-                           sample_files_processor: SampleFilesProcessor = NullSampleFilesProcessor.instance()) -> NucleotideSampleDataPackage:
+                           sample_files_processor: SampleFilesProcessor = NullSampleFilesProcessor.instance(),
+                           index_unknown_missing: bool = True) -> NucleotideSampleDataPackage:
 
         sample_names_set = set()
         sample_data_list = []
@@ -74,5 +78,6 @@ class NucleotideSampleDataPackage(SampleDataPackage):
 
         return NucleotideSampleDataPackage(sample_data=sample_data_list,
                                            sample_names=sample_names_set,
-                                           sample_files_processor=sample_files_processor
+                                           sample_files_processor=sample_files_processor,
+                                           index_unknown_missing=index_unknown_missing
                                            )

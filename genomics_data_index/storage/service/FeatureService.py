@@ -66,6 +66,9 @@ class FeatureService(abc.ABC):
         return features_df
 
     def _create_feature_objects(self, features_df: pd.DataFrame, sample_names: Set[str]) -> List[FeatureSamples]:
+        logger.debug(f'Aggregating samples by feature identifiers within a table of {len(features_df)} rows'
+                     f' across {len(sample_names)} samples')
+
         sample_name_ids = self._sample_service.find_sample_name_ids(sample_names)
 
         features_df['_FEATURE_ID'] = features_df.apply(self._create_feature_identifier, axis='columns')
@@ -74,7 +77,11 @@ class FeatureService(abc.ABC):
         index_df = features_df.groupby('_FEATURE_ID').agg(self.aggregate_feature_column())
         index_df = self._modify_df_types(index_df).reset_index()
 
-        return index_df.apply(self._create_feature_object, axis='columns').tolist()
+        feature_objects_list = index_df.apply(self._create_feature_object, axis='columns').tolist()
+
+        logger.debug(f'Finished aggregating {len(sample_names)} samples into a table of {len(index_df)} features '
+                     f'from an original table size of {len(features_df)} rows.')
+        return feature_objects_list
 
     @abc.abstractmethod
     def check_samples_have_features(self, sample_names: Set[str], feature_scope_name: str) -> bool:

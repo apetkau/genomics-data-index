@@ -124,7 +124,8 @@ class DataIndexConnection:
         return size_df
 
     @classmethod
-    def connect(cls, database_connection: str, database_dir: Path) -> DataIndexConnection:
+    def connect(cls, database_connection: str, database_dir: Path,
+                index_unknown_missing: bool = True) -> DataIndexConnection:
         filesystem_storage = FilesystemStorage(Path(database_dir))
         dpt = DatabasePathTranslator(filesystem_storage.root_dir)
         logger.debug(f'Using database directory {database_dir}')
@@ -138,7 +139,8 @@ class DataIndexConnection:
         variation_service = VariationService(database_connection=database,
                                              variation_dir=filesystem_storage.variation_dir,
                                              reference_service=reference_service,
-                                             sample_service=sample_service)
+                                             sample_service=sample_service,
+                                             index_unknown_missing=index_unknown_missing)
 
         alignment_service = CoreAlignmentService(database=database,
                                                  reference_service=reference_service,

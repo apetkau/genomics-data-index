@@ -1,18 +1,24 @@
 from typing import Generator, Set
+import logging
 
 from genomics_data_index.storage.io.SampleData import SampleData
 from genomics_data_index.storage.io.SampleDataPackage import SampleDataPackage
 from genomics_data_index.storage.io.mlst.MLSTFeaturesReader import MLSTFeaturesReader
 from genomics_data_index.storage.io.mlst.MLSTSampleData import MLSTSampleData
 
+logger = logging.getLogger(__name__)
+
 
 class MLSTSampleDataPackage(SampleDataPackage):
 
-    def __init__(self, mlst_reader: MLSTFeaturesReader):
-        super().__init__()
+    def __init__(self, mlst_reader: MLSTFeaturesReader, index_unknown_missing: bool = True):
+        super().__init__(index_unknown_missing=index_unknown_missing)
         self._mlst_reader = mlst_reader
 
     def get_features_reader(self) -> MLSTFeaturesReader:
+        if not self.index_unknown_missing():
+            logger.warning(f'index_unknown_missing=False for MLSTSampleDataPackage, but right now '
+                           f'missing data for MLST results is always indexed so this will be ignored.')
         return self._mlst_reader
 
     def sample_names(self) -> Set[str]:

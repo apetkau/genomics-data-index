@@ -23,14 +23,16 @@ def test_summaries_loaded_data(loaded_database_genomic_data_store: GenomicsDataI
     assert 1 == gds.count_references()
     assert ['genome'] == gds.reference_names()
 
-    # Mutations
-    assert 112 == gds.count_mutations('genome')
+    assert 111 == gds.count_mutations('genome')
+    assert 632 == gds.count_mutations('genome', include_unknown=True)
+
+    # Mutations ignore unknown spdi
     ms = gds.mutations_summary('genome', id_type='spdi', ignore_annotations=True)
-    assert 112 == len(ms)
+    assert 111 == len(ms)
     assert 'Mutation' == ms.index.name
     assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Count', 'Total', 'Percent'] == list(ms.columns)
 
-    # Convert percent to int to make it easier to compare in assert statements
+    ## Convert percent to int to make it easier to compare in assert statements
     ms['Percent'] = ms['Percent'].astype(int)
 
     assert ['reference', 839, 1, 'G', 2, 3, 66] == ms.loc['reference:839:1:G'].values.tolist()
@@ -38,12 +40,30 @@ def test_summaries_loaded_data(loaded_database_genomic_data_store: GenomicsDataI
     assert ['reference', 1048, 1, 'G', 1, 3, 33] == ms.loc['reference:1048:1:G'].values.tolist()
     assert ['reference', 3897, 5, 'G', 2, 3, 66] == ms.loc['reference:3897:5:G'].values.tolist()
 
-    ms = gds.mutations_summary('genome', id_type='spdi_ref', ignore_annotations=True)
-    assert 112 == len(ms)
+    # Mutations include unknown spdi
+    ms = gds.mutations_summary('genome', id_type='spdi', ignore_annotations=True, include_unknown=True)
+    assert 632 == len(ms)
     assert 'Mutation' == ms.index.name
     assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Count', 'Total', 'Percent'] == list(ms.columns)
 
-    # Convert percent to int to make it easier to compare in assert statements
+    ## Convert percent to int to make it easier to compare in assert statements
+    ms['Percent'] = ms['Percent'].astype(int)
+
+    assert ['reference', 839, 1, 'G', 2, 3, 66] == ms.loc['reference:839:1:G'].values.tolist()
+    assert ['reference', 866, 9, 'G', 1, 3, 33] == ms.loc['reference:866:9:G'].values.tolist()
+    assert ['reference', 1048, 1, 'G', 1, 3, 33] == ms.loc['reference:1048:1:G'].values.tolist()
+    assert ['reference', 3897, 5, 'G', 2, 3, 66] == ms.loc['reference:3897:5:G'].values.tolist()
+    assert ['reference', 89, 1, '?', 3, 3, 100] == ms.loc['reference:89:1:?'].values.tolist()
+    assert ['reference', 5100, 1, '?', 2, 3, 66] == ms.loc['reference:5100:1:?'].values.tolist()
+    assert ['reference', 649, 1, '?', 1, 3, 33] == ms.loc['reference:649:1:?'].values.tolist()
+
+    # Mutations spdi ref
+    ms = gds.mutations_summary('genome', id_type='spdi_ref', ignore_annotations=True)
+    assert 111 == len(ms)
+    assert 'Mutation' == ms.index.name
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Count', 'Total', 'Percent'] == list(ms.columns)
+
+    ## Convert percent to int to make it easier to compare in assert statements
     ms['Percent'] = ms['Percent'].astype(int)
 
     assert ['reference', 839, 'C', 'G', 2, 3, 66] == ms.loc['reference:839:C:G'].values.tolist()
@@ -51,16 +71,33 @@ def test_summaries_loaded_data(loaded_database_genomic_data_store: GenomicsDataI
     assert ['reference', 1048, 'C', 'G', 1, 3, 33] == ms.loc['reference:1048:C:G'].values.tolist()
     assert ['reference', 3897, 'GCGCA', 'G', 2, 3, 66] == ms.loc['reference:3897:GCGCA:G'].values.tolist()
 
-    # Include annotations (which should all be empty)
+    # Mutations spdi ref include unknowns
+    ms = gds.mutations_summary('genome', id_type='spdi_ref', ignore_annotations=True, include_unknown=True)
+    assert 632 == len(ms)
+    assert 'Mutation' == ms.index.name
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Count', 'Total', 'Percent'] == list(ms.columns)
+
+    ## Convert percent to int to make it easier to compare in assert statements
+    ms['Percent'] = ms['Percent'].astype(int)
+
+    assert ['reference', 839, 'C', 'G', 2, 3, 66] == ms.loc['reference:839:C:G'].values.tolist()
+    assert ['reference', 866, 'GCCAGATCC', 'G', 1, 3, 33] == ms.loc['reference:866:GCCAGATCC:G'].values.tolist()
+    assert ['reference', 1048, 'C', 'G', 1, 3, 33] == ms.loc['reference:1048:C:G'].values.tolist()
+    assert ['reference', 3897, 'GCGCA', 'G', 2, 3, 66] == ms.loc['reference:3897:GCGCA:G'].values.tolist()
+    assert ['reference', 89, 'A', '?', 3, 3, 100] == ms.loc['reference:89:A:?'].values.tolist()
+    assert ['reference', 5100, 'T', '?', 2, 3, 66] == ms.loc['reference:5100:T:?'].values.tolist()
+    assert ['reference', 649, 'T', '?', 1, 3, 33] == ms.loc['reference:649:T:?'].values.tolist()
+
+    # Mutations include annotations (which should all be empty)
     ms = gds.mutations_summary('genome', id_type='spdi', ignore_annotations=False)
-    assert 112 == len(ms)
+    assert 111 == len(ms)
     assert 'Mutation' == ms.index.name
     assert ['Sequence', 'Position', 'Deletion', 'Insertion',
             'Count', 'Total', 'Percent', 'Annotation', 'Annotation_Impact',
             'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
             'HGVS.c', 'HGVS.p', 'ID_HGVS.c', 'ID_HGVS.p'] == list(ms.columns)
 
-    # Convert percent to int to make it easier to compare in assert statements
+    ## Convert percent to int to make it easier to compare in assert statements
     ms['Percent'] = ms['Percent'].astype(int)
 
     assert ['reference', 839, 1, 'G', 2, 3, 66] + ['NA'] * 10 == ms.loc['reference:839:1:G'].fillna(
