@@ -20,6 +20,8 @@ from genomics_data_index.storage.service import DatabaseConnection
 from genomics_data_index.storage.service.FeatureService import FeatureService
 from genomics_data_index.storage.service.ReferenceService import ReferenceService
 from genomics_data_index.storage.service.SampleService import SampleService
+from genomics_data_index.storage.util.ListSliceIter import ListSliceIter
+from genomics_data_index.storage.util import TRACE_LEVEL
 
 logger = logging.getLogger(__name__)
 
@@ -29,12 +31,13 @@ class VariationService(FeatureService):
 
     def __init__(self, database_connection: DatabaseConnection, variation_dir: Path,
                  reference_service: ReferenceService, sample_service: SampleService,
-                 index_unknown_missing: bool):
+                 index_unknown_missing: bool, sql_select_limit: int):
         super().__init__(database_connection=database_connection,
                          features_dir=variation_dir,
                          sample_service=sample_service)
         self._reference_service = reference_service
         self._index_unknown_missing = index_unknown_missing
+        self._sql_select_limit = sql_select_limit
 
     def _reference_sequence_names(self, reference_name: str) -> List[str]:
         return list(self._reference_service.get_reference_sequences(reference_name).keys())
@@ -257,11 +260,25 @@ class VariationService(FeatureService):
         return VcfVariantsReader(sample_data_dict, include_masked_regions=index_unknown_missing)
 
     def read_index(self, feature_ids: Union[List[str], Set[str]]) -> Dict[str, FeatureSamples]:
-        if isinstance(feature_ids, list):
-            feature_ids = set(feature_ids)
+        if isinstance(feature_ids, set):
+            feature_ids = list(feature_ids)
 
-        feature_samples = self._connection.get_session().query(NucleotideVariantsSamples) \
-            .filter(NucleotideVariantsSamples._spdi.in_(feature_ids)) \
-            .all()
+        feature_ids_slicer = ListSliceIter(feature_ids, slice_size=self._sql_select_limit)
 
-        return {f.id: f for f in feature_samples}
+        feature_ids_to_feature_samples_dict = {}
+        logger.debug(f'Reading nucleotide/variation index for {len(feature_ids)} feature ids '
+                     f'dividing up into a maximum of {self._sql_select_limit} feature ids per SQL query')
+        slice_number = 0
+        for feature_ids_slice in feature_ids_slicer.islice():
+            logger.log(TRACE_LEVEL, f'Reading feature ids slice={slice_number}')
+            feature_samples = self._connection.get_session().query(NucleotideVariantsSamples) \
+                .filter(NucleotideVariantsSamples._spdi.in_(feature_ids_slice)) \
+                .all()
+            feature_ids_samples_subdict = {f.id: f for f in feature_samples}
+            feature_ids_to_feature_samples_dict.update(feature_ids_samples_subdict)
+
+            slice_number = slice_number + 1
+        logger.debug(f'Finished reading nucleotide/variation index for {len(feature_ids)} feature ids,'
+                     f' found a total of {len(feature_ids_to_feature_samples_dict)} already in the database')
+
+        return feature_ids_to_feature_samples_dict

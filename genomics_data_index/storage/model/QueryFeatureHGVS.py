@@ -68,7 +68,7 @@ class QueryFeatureHGVS(QueryFeatureMutation):
         raise NotImplementedError('Not implemented')
 
     @classmethod
-    def create(cls, sequence_name: str, gene: Optional[str], variant: str) -> QueryFeatureHGVS:
+    def create(cls, sequence_name: str, gene: Optional[str], variant: Optional[str]) -> QueryFeatureHGVS:
         # If variant is given as nucleotide coordinates with respect to the sequence 'n.' then ignore gene id
         if variant is not None and variant.startswith('n.'):
             gene = None
