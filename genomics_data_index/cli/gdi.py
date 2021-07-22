@@ -39,18 +39,22 @@ from genomics_data_index.storage.service.MLSTService import MLSTService
 from genomics_data_index.storage.service.SampleService import SampleService
 from genomics_data_index.storage.service.TreeService import TreeService
 from genomics_data_index.storage.service.VariationService import VariationService
+from genomics_data_index.storage.util import TRACE_LEVEL
 
 logger = logging.getLogger('genomics_data_index')
 max_cores = multiprocessing.cpu_count()
 
-LOG_LEVELS = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
+LOG_LEVELS = ['TRACE', 'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
 
 click.option = partial(click.option, show_default=True)
 
 
 def setup_logging(log_level: str) -> None:
-    if log_level == 'DEBUG':
+    if log_level == 'DEBUG' or log_level == 'TRACE':
         log_format = '%(asctime)s %(levelname)s %(name)s.%(funcName)s,%(lineno)s: %(message)s'
+
+        if log_level == 'TRACE':
+            log_level = TRACE_LEVEL
     else:
         log_format = '%(asctime)s %(levelname)s: %(message)s'
 

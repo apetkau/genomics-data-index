@@ -4,6 +4,8 @@ from typing import Dict, Any, List
 import pandas as pd
 from pandas.api.types import CategoricalDtype
 
+from genomics_data_index.storage.util import TRACE_LEVEL
+
 logger = logging.getLogger(__name__)
 
 
@@ -84,7 +86,7 @@ class VcfSnpEffAnnotationParser:
 
                 return [x.strip() for x in ann_info.split('|')]
         else:
-            logger.debug(f"VCF does not contain 'ANN' in vcf_info, keys=[{vcf_info.keys()}]")
+            logger.log(TRACE_LEVEL, f"VCF does not contain 'ANN' in vcf_info, keys=[{vcf_info.keys()}]")
             return []
 
     def _setup_vcf_df_index(self, vcf_df: pd.DataFrame) -> pd.DataFrame:
@@ -157,7 +159,7 @@ class VcfSnpEffAnnotationParser:
             # fails in cases where a column has a mixture of '' and NA values.
             vcf_df_with_keys = vcf_df_with_keys.fillna('').replace('', pd.NA)
         else:
-            logger.debug('vcf_df has no snpeff annotations, will set all annotations as NA')
+            logger.log(TRACE_LEVEL, 'vcf_df has no snpeff annotations, will set all annotations as NA')
             vcf_df_with_keys = vcf_df_with_keys.reset_index().reindex(
                 columns=self.ANNOTATION_COLUMNS + ['original_index', 'VARIANT_ID']).set_index('original_index')
 
