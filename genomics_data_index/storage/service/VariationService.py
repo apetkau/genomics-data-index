@@ -256,7 +256,10 @@ class VariationService(FeatureService):
             logger.debug(f'index_unknown_missing={index_unknown_missing}')
         return VcfVariantsReader(sample_data_dict, include_masked_regions=index_unknown_missing)
 
-    def read_index(self, feature_ids: List[str]) -> Dict[str, FeatureSamples]:
+    def read_index(self, feature_ids: Union[List[str], Set[str]]) -> Dict[str, FeatureSamples]:
+        if isinstance(feature_ids, list):
+            feature_ids = set(feature_ids)
+
         feature_samples = self._connection.get_session().query(NucleotideVariantsSamples) \
             .filter(NucleotideVariantsSamples._spdi.in_(feature_ids)) \
             .all()
