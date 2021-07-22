@@ -14,7 +14,7 @@ from Bio.SeqRecord import SeqRecord
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from genomics_data_index.storage.io.mutation.SnpEffDatabase import SnpEffDatabase
-from genomics_data_index.storage.util import execute_commands
+from genomics_data_index.storage.util import execute_commands, TRACE_LEVEL
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +62,7 @@ class SequenceFile:
         else:
             ref_extension = splitext(basename(self._file))[1]
 
-        logger.debug(f'Sequence file [{self._file}] has extension (minus compression) [{ref_extension}]')
+        logger.log(TRACE_LEVEL, f'Sequence file [{self._file}] has extension (minus compression) [{ref_extension}]')
 
         return ref_extension
 

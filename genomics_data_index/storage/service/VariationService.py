@@ -249,6 +249,11 @@ class VariationService(FeatureService):
                                           data_package: SampleDataPackage) -> FeaturesReader:
         sample_data_dict = cast(Dict[str, NucleotideSampleData], sample_data_dict)
         index_unknown_missing = self._index_unknown_missing and data_package.index_unknown_missing()
+        if not index_unknown_missing:
+            logger.debug(f'index_unknown_missing={index_unknown_missing} so will not '
+                         'index missing/unknown positions')
+        else:
+            logger.debug(f'index_unknown_missing={index_unknown_missing}')
         return VcfVariantsReader(sample_data_dict, include_masked_regions=index_unknown_missing)
 
     def read_index(self, feature_ids: List[str]) -> Dict[str, FeatureSamples]:

@@ -140,12 +140,17 @@ def load_variants_common(data_index_connection: DataIndexConnection, ncores: int
 @click.pass_context
 @click.argument('snippy_dir', type=click.Path(exists=True))
 @click.option('--reference-file', help='Reference genome', required=True, type=click.Path(exists=True))
+@click.option('--index-unknown/--no-index-unknown',
+              help='Enable/disable indexing unknown/missing positions. Indexing missing positions can significantly '
+                   'slow down the indexing process.',
+              required=False, default=True)
 @click.option('--build-tree/--no-build-tree', default=False, help='Builds tree of all samples after loading')
 @click.option('--align-type', help=f'The type of alignment to generate', default='core',
               type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
 @click.option('--extra-tree-params', help='Extra parameters to tree-building software',
               default=None)
-def load_snippy(ctx, snippy_dir: Path, reference_file: Path, build_tree: bool, align_type: str, extra_tree_params: str):
+def load_snippy(ctx, snippy_dir: Path, reference_file: Path, index_unknown: bool, build_tree: bool,
+                align_type: str, extra_tree_params: str):
     ncores = ctx.obj['ncores']
     project = get_project_exit_on_error(ctx)
     data_index_connection = project.create_connection()
@@ -163,7 +168,8 @@ def load_snippy(ctx, snippy_dir: Path, reference_file: Path, build_tree: bool, a
             file_processor = NullSampleFilesProcessor.instance()
 
         data_package = NucleotideSampleDataPackage.create_from_snippy(sample_dirs,
-                                                                      sample_files_processor=file_processor)
+                                                                      sample_files_processor=file_processor,
+                                                                      index_unknown_missing=index_unknown)
 
         load_variants_common(data_index_connection=data_index_connection, ncores=ncores, data_package=data_package,
                              reference_file=reference_file,
@@ -175,12 +181,17 @@ def load_snippy(ctx, snippy_dir: Path, reference_file: Path, build_tree: bool, a
 @click.pass_context
 @click.argument('vcf_fofns', type=click.Path(exists=True))
 @click.option('--reference-file', help='Reference genome', required=True, type=click.Path(exists=True))
+@click.option('--index-unknown/--no-index-unknown',
+              help='Enable/disable indexing unknown/missing positions. Indexing missing positions can significantly '
+                   'slow down the indexing process.',
+              required=False, default=True)
 @click.option('--build-tree/--no-build-tree', default=False, help='Builds tree of all samples after loading')
 @click.option('--align-type', help=f'The type of alignment to generate', default='core',
               type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
 @click.option('--extra-tree-params', help='Extra parameters to tree-building software',
               default=None)
-def load_vcf(ctx, vcf_fofns: str, reference_file: str, build_tree: bool, align_type: str, extra_tree_params: str):
+def load_vcf(ctx, vcf_fofns: str, reference_file: str, index_unknown: bool, build_tree: bool,
+             align_type: str, extra_tree_params: str):
     ncores = ctx.obj['ncores']
     vcf_fofns = Path(vcf_fofns)
     reference_file = Path(reference_file)
@@ -208,7 +219,8 @@ def load_vcf(ctx, vcf_fofns: str, reference_file: str, build_tree: bool, align_t
 
         data_package = NucleotideSampleDataPackage.create_from_sequence_masks(sample_vcf_map=sample_vcf_map,
                                                                               masked_genomic_files_map=mask_files_map,
-                                                                              sample_files_processor=file_processor)
+                                                                              sample_files_processor=file_processor,
+                                                                              index_unknown_missing=index_unknown)
 
         load_variants_common(data_index_connection=data_index_connection, ncores=ncores, data_package=data_package,
                              reference_file=reference_file,
@@ -363,6 +375,10 @@ def input_command(absolute: bool, input_genomes_file: str, genomes: List[str]):
 @click.option('--index/--no-index', help='Whether or not to load the processed files into the index or'
                                          ' just produce the VCFs from assemblies. --no-index implies --no-clean.',
               default=True)
+@click.option('--index-unknown/--no-index-unknown',
+              help='Enable/disable indexing unknown/missing positions. Indexing missing positions can significantly '
+                   'slow down the indexing process.',
+              required=False, default=True)
 @click.option('--clean/--no-clean', help='Clean up intermediate files when finished.', default=True)
 @click.option('--build-tree/--no-build-tree', default=False, help='Builds tree of all samples after loading')
 @click.option('--align-type', help=f'The type of alignment to generate', default='core',
@@ -403,7 +419,7 @@ def input_command(absolute: bool, input_genomes_file: str, genomes: List[str]):
               type=click.Path(exists=True),
               required=False)
 @click.argument('genomes', type=click.Path(exists=True), nargs=-1)
-def analysis(ctx, reference_file: str, index: bool, clean: bool, build_tree: bool, align_type: str,
+def analysis(ctx, reference_file: str, index: bool, index_unknown: bool, clean: bool, build_tree: bool, align_type: str,
              extra_tree_params: str, use_conda: bool,
              include_mlst: bool, include_kmer: bool, ignore_snpeff: bool,
              reads_mincov: int, reads_minqual: int,
@@ -416,6 +432,9 @@ def analysis(ctx, reference_file: str, index: bool, clean: bool, build_tree: boo
     if not index:
         logger.debug('--no-index is enabled so setting --no-clean')
         clean = False
+
+    if not index_unknown:
+        logger.info('--no-index-unknown is enabled so will not load unknown/missing mutation positions in index')
 
     sample_files = None
     genome_paths = []
@@ -466,8 +485,9 @@ def analysis(ctx, reference_file: str, index: bool, clean: bool, build_tree: boo
     if index:
         try:
             logger.info(f'Indexing processed VCF files defined in [{processed_files_fofn}]')
-            ctx.invoke(load_vcf, vcf_fofns=str(processed_files_fofn), reference_file=reference_file,
-                       build_tree=build_tree, align_type=align_type, extra_tree_params=extra_tree_params)
+            ctx.invoke(load_vcf, index_unknown=index_unknown, vcf_fofns=str(processed_files_fofn),
+                       reference_file=reference_file, build_tree=build_tree, align_type=align_type,
+                       extra_tree_params=extra_tree_params)
         except Exception as e:
             logger.exception(e)
             logger.error(f"Error while indexing. Please verify files in [{snakemake_directory}] are correct.")
