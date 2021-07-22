@@ -21,7 +21,8 @@ def test_insert_variants_saved_files(database, snippy_nucleotide_data_package, r
                                          reference_service=reference_service_with_data,
                                          sample_service=sample_service,
                                          variation_dir=filesystem_storage.variation_dir,
-                                         index_unknown_missing=False)
+                                         index_unknown_missing=False,
+                                         sql_select_limit=50)
 
     session = database.get_session()
 
@@ -45,7 +46,8 @@ def test_insert_variants_saved_files_set_no_index_package(database, snippy_nucle
                                          reference_service=reference_service_with_data,
                                          sample_service=sample_service,
                                          variation_dir=filesystem_storage.variation_dir,
-                                         index_unknown_missing=True)
+                                         index_unknown_missing=True,
+                                         sql_select_limit=500)
 
     session = database.get_session()
 
@@ -68,7 +70,8 @@ def test_read_index(database, snippy_nucleotide_data_package, reference_service_
                                          reference_service=reference_service_with_data,
                                          sample_service=sample_service,
                                          variation_dir=filesystem_storage.variation_dir,
-                                         index_unknown_missing=False)
+                                         index_unknown_missing=False,
+                                         sql_select_limit=500)
 
     variation_service.insert(feature_scope_name='genome', data_package=snippy_nucleotide_data_package)
 
@@ -101,7 +104,8 @@ def test_count_on_reference_no_index_unknowns(database, snippy_nucleotide_data_p
                                          reference_service=reference_service_with_data,
                                          sample_service=sample_service,
                                          variation_dir=filesystem_storage.variation_dir,
-                                         index_unknown_missing=False)
+                                         index_unknown_missing=False,
+                                         sql_select_limit=500)
 
     variation_service.insert(feature_scope_name='genome', data_package=snippy_nucleotide_data_package)
 
@@ -113,13 +117,33 @@ def test_count_on_reference_no_index_unknowns(database, snippy_nucleotide_data_p
     assert 'No row was found' in str(execinfo.value)
 
 
-def test_count_on_reference_with_index_unknowns(database, snippy_nucleotide_data_package, reference_service_with_data,
+def test_count_on_reference_with_index_unknowns_low_slice_limit(database, snippy_nucleotide_data_package, reference_service_with_data,
                                                 sample_service, filesystem_storage):
     variation_service = VariationService(database_connection=database,
                                          reference_service=reference_service_with_data,
                                          sample_service=sample_service,
                                          variation_dir=filesystem_storage.variation_dir,
-                                         index_unknown_missing=True)
+                                         index_unknown_missing=True,
+                                         sql_select_limit=5)
+
+    variation_service.insert(feature_scope_name='genome', data_package=snippy_nucleotide_data_package)
+
+    assert 111 == variation_service.count_on_reference(reference_name='genome', include_unknown=False)
+    assert 632 == variation_service.count_on_reference(reference_name='genome', include_unknown=True)
+
+    with pytest.raises(NoResultFound) as execinfo:
+        variation_service.count_on_reference('no_exists')
+    assert 'No row was found' in str(execinfo.value)
+
+
+def test_count_on_reference_with_index_unknowns_high_slice_limit(database, snippy_nucleotide_data_package, reference_service_with_data,
+                                                sample_service, filesystem_storage):
+    variation_service = VariationService(database_connection=database,
+                                         reference_service=reference_service_with_data,
+                                         sample_service=sample_service,
+                                         variation_dir=filesystem_storage.variation_dir,
+                                         index_unknown_missing=True,
+                                         sql_select_limit=1000)
 
     variation_service.insert(feature_scope_name='genome', data_package=snippy_nucleotide_data_package)
 
@@ -137,7 +161,8 @@ def test_insert_variants_masked_regions(database, snippy_nucleotide_data_package
                                          reference_service=reference_service_with_data,
                                          sample_service=sample_service,
                                          variation_dir=filesystem_storage.variation_dir,
-                                         index_unknown_missing=True)
+                                         index_unknown_missing=True,
+                                         sql_select_limit=500)
 
     session = database.get_session()
 
@@ -165,7 +190,8 @@ def test_mutation_counts_on_reference(database, snippy_nucleotide_data_package, 
                                          reference_service=reference_service_with_data,
                                          sample_service=sample_service,
                                          variation_dir=filesystem_storage.variation_dir,
-                                         index_unknown_missing=True)
+                                         index_unknown_missing=True,
+                                         sql_select_limit=500)
     variation_service.insert(feature_scope_name='genome', data_package=snippy_nucleotide_data_package)
 
     mutation_counts = variation_service.mutation_counts_on_reference('genome')
@@ -195,7 +221,8 @@ def test_get_variants_on_reference_no_index_unknowns(database, snippy_nucleotide
                                          reference_service=reference_service_with_data,
                                          sample_service=sample_service,
                                          variation_dir=filesystem_storage.variation_dir,
-                                         index_unknown_missing=False)
+                                         index_unknown_missing=False,
+                                         sql_select_limit=500)
     variation_service.insert(feature_scope_name='genome', data_package=snippy_nucleotide_data_package)
 
     mutations = variation_service.get_variants_on_reference('genome', include_unknown=False)
@@ -219,7 +246,8 @@ def test_get_variants_on_reference_index_unknowns(database, snippy_nucleotide_da
                                          reference_service=reference_service_with_data,
                                          sample_service=sample_service,
                                          variation_dir=filesystem_storage.variation_dir,
-                                         index_unknown_missing=True)
+                                         index_unknown_missing=True,
+                                         sql_select_limit=500)
     variation_service.insert(feature_scope_name='genome', data_package=snippy_nucleotide_data_package)
 
     mutations = variation_service.get_variants_on_reference('genome', include_unknown=True)
@@ -263,7 +291,8 @@ def test_insert_variants_examine_variation_with_unknown(database, snippy_nucleot
                                          reference_service=reference_service_with_data,
                                          sample_service=sample_service,
                                          variation_dir=filesystem_storage.variation_dir,
-                                         index_unknown_missing=True)
+                                         index_unknown_missing=True,
+                                         sql_select_limit=500)
     session = database.get_session()
 
     variation_service.insert(feature_scope_name='genome', data_package=snippy_nucleotide_data_package)
@@ -365,7 +394,8 @@ def test_insert_variants_examine_variation_annotations(database, snpeff_nucleoti
                                          reference_service=reference_service_with_snpeff_data,
                                          sample_service=sample_service,
                                          variation_dir=filesystem_storage.variation_dir,
-                                         index_unknown_missing=True)
+                                         index_unknown_missing=True,
+                                         sql_select_limit=500)
     session = database.get_session()
 
     variation_service.insert(feature_scope_name='NC_011083', data_package=snpeff_nucleotide_data_package)
@@ -477,7 +507,8 @@ def test_insert_variants_regular_vcf_reader_examine_variation(database, regular_
                                          reference_service=reference_service_with_data,
                                          sample_service=sample_service,
                                          variation_dir=filesystem_storage.variation_dir,
-                                         index_unknown_missing=True)
+                                         index_unknown_missing=True,
+                                         sql_select_limit=500)
     session = database.get_session()
 
     variation_service.insert(feature_scope_name='genome', data_package=regular_nucleotide_data_package)
@@ -585,7 +616,8 @@ def test_insert_variants_regular_vcf_reader_examine_variation_no_unknown(databas
                                          reference_service=reference_service_with_data,
                                          sample_service=sample_service,
                                          variation_dir=filesystem_storage.variation_dir,
-                                         index_unknown_missing=False)
+                                         index_unknown_missing=False,
+                                         sql_select_limit=500)
     session = database.get_session()
 
     variation_service.insert(feature_scope_name='genome', data_package=regular_nucleotide_data_package)
@@ -600,7 +632,8 @@ def test_insert_variants_duplicates(database, snippy_nucleotide_data_package, re
                                          reference_service=reference_service_with_data,
                                          sample_service=sample_service,
                                          variation_dir=filesystem_storage.variation_dir,
-                                         index_unknown_missing=False)
+                                         index_unknown_missing=False,
+                                         sql_select_limit=500)
     session = database.get_session()
 
     assert 0 == session.query(NucleotideVariantsSamples).count(), 'Incorrect number of storage entries'
@@ -628,7 +661,8 @@ def test_insert_variants_duplicates_subset(database, snippy_nucleotide_data_pack
                                          reference_service=reference_service_with_data,
                                          sample_service=sample_service,
                                          variation_dir=filesystem_storage.variation_dir,
-                                         index_unknown_missing=False)
+                                         index_unknown_missing=False,
+                                         sql_select_limit=500)
     session = database.get_session()
 
     assert 0 == session.query(NucleotideVariantsSamples).count(), 'Incorrect number of storage entries'
@@ -667,7 +701,8 @@ def test_multiple_insert_variants_different_samples(database, snippy_nucleotide_
                                          reference_service=reference_service_with_data,
                                          sample_service=sample_service,
                                          variation_dir=filesystem_storage.variation_dir,
-                                         index_unknown_missing=True)
+                                         index_unknown_missing=True,
+                                         sql_select_limit=50)
     session = database.get_session()
 
     assert 0 == session.query(NucleotideVariantsSamples).count(), 'Incorrect number of storage entries'
@@ -884,7 +919,8 @@ def test_multiple_insert_variants_different_reference_genomes(database, snippy_n
                                          reference_service=reference_service_with_data,
                                          sample_service=sample_service,
                                          variation_dir=filesystem_storage.variation_dir,
-                                         index_unknown_missing=True)
+                                         index_unknown_missing=True,
+                                         sql_select_limit=500)
     session = database.get_session()
 
     # Add snpeff reference genome
@@ -953,7 +989,8 @@ def test_get_variants_ordered(database, snippy_nucleotide_data_package, referenc
                                          reference_service=reference_service_with_data,
                                          sample_service=sample_service,
                                          variation_dir=filesystem_storage.variation_dir,
-                                         index_unknown_missing=False)
+                                         index_unknown_missing=False,
+                                         sql_select_limit=500)
 
     variation_service.insert(feature_scope_name='genome', data_package=snippy_nucleotide_data_package)
 

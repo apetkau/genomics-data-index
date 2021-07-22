@@ -134,13 +134,16 @@ class DataIndexConnection:
         database = DatabaseConnection(connection_string=database_connection,
                                       database_path_translator=dpt)
 
+        sql_select_limit = 500
+
         reference_service = ReferenceService(database, filesystem_storage.reference_dir)
         sample_service = SampleService(database)
         variation_service = VariationService(database_connection=database,
                                              variation_dir=filesystem_storage.variation_dir,
                                              reference_service=reference_service,
                                              sample_service=sample_service,
-                                             index_unknown_missing=index_unknown_missing)
+                                             index_unknown_missing=index_unknown_missing,
+                                             sql_select_limit=sql_select_limit)
 
         alignment_service = CoreAlignmentService(database=database,
                                                  reference_service=reference_service,

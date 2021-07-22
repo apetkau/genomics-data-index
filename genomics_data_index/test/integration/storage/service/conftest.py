@@ -129,7 +129,8 @@ def sample_service_snpeff_annotations(database, reference_service_with_snpeff_da
                                    reference_service=reference_service_with_snpeff_data,
                                    sample_service=sample_service,
                                    variation_dir=filesystem_storage.variation_dir,
-                                   index_unknown_missing=False)
+                                   index_unknown_missing=False,
+                                   sql_select_limit=500)
     var_service.insert(feature_scope_name='NC_011083',
                        data_package=snpeff_nucleotide_data_package)
     return sample_service
@@ -142,7 +143,8 @@ def variation_service(database, reference_service_with_data,
                                    reference_service=reference_service_with_data,
                                    sample_service=sample_service,
                                    variation_dir=filesystem_storage.variation_dir,
-                                   index_unknown_missing=False)
+                                   index_unknown_missing=False,
+                                   sql_select_limit=500)
     var_service.insert(feature_scope_name='genome',
                        data_package=snippy_nucleotide_data_package)
     return var_service
@@ -156,7 +158,8 @@ def variation_service_index_unknowns(database, reference_service_with_data,
                                    reference_service=reference_service_with_data,
                                    sample_service=sample_service,
                                    variation_dir=filesystem_storage.variation_dir,
-                                   index_unknown_missing=True)
+                                   index_unknown_missing=True,
+                                   sql_select_limit=500)
     var_service.insert(feature_scope_name='genome',
                        data_package=snippy_nucleotide_data_package)
     return var_service
@@ -170,7 +173,8 @@ def variation_service_non_snippy_vcfs(database, reference_service_with_data,
                                    reference_service=reference_service_with_data,
                                    sample_service=sample_service,
                                    variation_dir=filesystem_storage.variation_dir,
-                                   index_unknown_missing=False)
+                                   index_unknown_missing=False,
+                                   sql_select_limit=500)
     var_service.insert(feature_scope_name='genome',
                        data_package=regular_nucleotide_data_package)
     return var_service
