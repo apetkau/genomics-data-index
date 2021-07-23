@@ -149,7 +149,7 @@ class TreeStyler:
                          'fontsize': self._annotate_label_fontsize}
 
         if box_label_unknown is None and box_label is not None:
-            box_label_unknown = 'Un.'
+            box_label_unknown = 'U'
 
         if isinstance(box_label_unknown, str):
             # Pick default color since ete3 by default colors the same as what I'm using for the fill color

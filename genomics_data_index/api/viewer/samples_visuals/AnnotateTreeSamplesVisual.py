@@ -147,9 +147,10 @@ class AnnotateTreeSamplesVisual(TreeSamplesVisual):
 
             leaf.add_face(annotate_face, column=self._annotate_column, position='aligned')
 
-        include_unknown = self._include_unknown and (unknown_samples_count > 0)
+        has_unknowns = unknown_samples_count > 0
         self._add_legend_entry(self._legend_label, legend_color=self._color_present,
-                               unknown_color=self._color_unknown, include_unknown=include_unknown,
+                               unknown_color=self._color_unknown, include_unknown=self._include_unknown,
+                               has_unknowns=has_unknowns,
                                kind=self._annotate_kind, tree_style=tree_style)
 
     def _build_annotate_face(self, width: int, height: int, border_color: str, bgcolor: str,

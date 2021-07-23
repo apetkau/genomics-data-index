@@ -155,8 +155,8 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
                     include_unknown: bool = True,
                     show_leaf_names: bool = True,
                     show_legend_type_labels: bool = True,
-                    legend_type_label_present: str = 'Pr.',
-                    legend_type_label_unknown: str = 'Un.',
+                    legend_type_label_present: str = 'P',
+                    legend_type_label_unknown: str = 'U',
                     tree_scale: float = None) -> TreeStyler:
         """
         Constructs a new :py:class:`genomics_data_index.api.viewer.TreeStyler` object used to style and visualize trees.

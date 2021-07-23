@@ -73,18 +73,13 @@ class TreeSamplesVisual(abc.ABC):
         """
         pass
 
-    def _get_unknown_label(self, label: str) -> Optional[str]:
-        if label is not None:
-            return label + ' [U]'
-        else:
-            return None
-
     def _add_legend_entry(self, legend_label: str, legend_color: str, unknown_color: str,
-                          include_unknown: bool, kind: str, tree_style: TreeStyle) -> None:
+                          include_unknown: bool, has_unknowns: bool, kind: str, tree_style: TreeStyle) -> None:
         if legend_label is not None:
             color_face, unknown_face, text_face = self._build_legend_item(color=legend_color,
                                                                           unknown_color=unknown_color,
                                                                           include_unknown=include_unknown,
+                                                                          has_unknowns=has_unknowns,
                                                                           legend_label=legend_label,
                                                                           kind=kind)
 
@@ -93,20 +88,27 @@ class TreeSamplesVisual(abc.ABC):
                 tree_style.legend.add_face(unknown_face, column=self._legend_columns['unknown'])
             tree_style.legend.add_face(text_face, column=self._legend_columns['text'])
 
-    def _build_legend_item(self, color: str, unknown_color: str, include_unknown: bool,
+    def _build_legend_item(self, color: str, unknown_color: str, include_unknown: bool, has_unknowns: bool,
                            legend_label: str, kind: str) -> Tuple[Face, Face, Face]:
         if kind == 'rect' or kind == 'rectangle' or kind == 'r':
             cf = RectFace(width=self._legend_nodesize, height=self._legend_nodesize, bgcolor=color,
                           fgcolor='black')
             if include_unknown:
-                ucf = RectFace(width=self._legend_nodesize, height=self._legend_nodesize, bgcolor=unknown_color,
-                               fgcolor='black')
+                if has_unknowns:
+                    ucf = RectFace(width=self._legend_nodesize, height=self._legend_nodesize, bgcolor=unknown_color,
+                                   fgcolor='black')
+                else:
+                    ucf = RectFace(width=self._legend_nodesize, height=self._legend_nodesize, bgcolor=None,
+                                   fgcolor=None)
             else:
                 ucf = None
         elif kind == 'circle' or kind == 'circ' or kind == 'c':
             cf = CircleFace(radius=self._legend_nodesize / 2, color=color)
             if include_unknown:
-                ucf = CircleFace(radius=self._legend_nodesize / 2, color=unknown_color)
+                if has_unknowns:
+                    ucf = CircleFace(radius=self._legend_nodesize / 2, color=unknown_color)
+                else:
+                    ucf = CircleFace(radius=self._legend_nodesize / 2, color=None)
             else:
                 ucf = None
         else:
