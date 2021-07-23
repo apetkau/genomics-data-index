@@ -127,12 +127,14 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
     def tree_styler(self,
                     initial_style: TreeStyle = None,
                     mode='r',
-                    highlight_style: Union[str, HighlightStyle] = 'light',
+                    highlight_style: Union[str, HighlightStyle] = 'pastel',
                     legend_nsize: int = 20, legend_fsize: int = 11,
                     annotate_color_present: str = 'black',
                     annotate_color_absent: str = 'white',
+                    annotate_color_unknown: str = 'lightgray',
                     annotate_opacity_present: float = 1.0,
                     annotate_opacity_absent: float = 0.0,
+                    annotate_opacity_unknown: float = 1.0,
                     annotate_border_color: str = 'black',
                     annotate_kind: str = 'rect',
                     annotate_box_width: int = 30,
@@ -150,7 +152,11 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
                     annotate_box_label_color: str = 'white',
                     annotate_arc_span: int = 350,
                     annotate_label_fontsize: int = 12,
+                    include_unknown: bool = True,
                     show_leaf_names: bool = True,
+                    show_legend_type_labels: bool = True,
+                    legend_type_label_present: str = 'P',
+                    legend_type_label_unknown: str = 'U',
                     tree_scale: float = None) -> TreeStyler:
         """
         Constructs a new :py:class:`genomics_data_index.api.viewer.TreeStyler` object used to style and visualize trees.
@@ -164,8 +170,10 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
         :param legend_fsize: The legend font size.
         :param annotate_color_present: The default color of samples which are present in the set for the annotate() method.
         :param annotate_color_absent: The default color of samples which are absent in the set for the annotate() method.
+        :param annotate_color_unknown: The default color of samples which are unknown if present/absent in the set for the annotate() method.
         :param annotate_opacity_present: The default opacity of samples which are present in the set for the annotate() method.
         :param annotate_opacity_absent: The default opacity of samples which are absent in the set for the annotate() method.
+        :param annotate_opacity_unknown: The default opacity of samples which are unknown if present/absent in the set for the annotate() method.
         :param annotate_border_color: The default border color of the drawn annotations.
         :param annotate_kind: The default kind color of the drawn annotations (either 'circle' or 'rectangle').
         :param annotate_box_width: The width of the boxes for the drawn annotations.
@@ -184,7 +192,11 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
         :param annotate_box_label_color: The color of the labels in the annotation boxes.
         :param annotate_arc_span: For mode='c' (circular) the degrees the circular tree should span.
         :param annotate_label_fontsize: The font size of the annotation labels.
+        :param include_unknown: Whether or not to include unknowns in annotations/highlights.
         :param show_leaf_names: True if leaf names should be shown on the tree, False otherwise.
+        :param show_legend_type_labels: Whether or not to show labels for legend types/categories (present or unknown).
+        :param legend_type_label_present: Text to show above legend color for present items.
+        :param legend_type_label_unknown: Text to show above legend color for unknown items.
         :param tree_scale: A scale factor for the tree.
         :return: A new :py:class:`genomics_data_index.api.viewer.TreeStyler` object used to style and visualize trees.
         """
@@ -196,8 +208,10 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
                                  legend_fsize=legend_fsize,
                                  annotate_color_present=annotate_color_present,
                                  annotate_color_absent=annotate_color_absent,
+                                 annotate_color_unknown=annotate_color_unknown,
                                  annotate_opacity_present=annotate_opacity_present,
                                  annotate_opacity_absent=annotate_opacity_absent,
+                                 annotate_opacity_unknown=annotate_opacity_unknown,
                                  annotate_border_color=annotate_border_color,
                                  annotate_kind=annotate_kind,
                                  annotate_box_width=annotate_box_width,
@@ -215,7 +229,11 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
                                  annotate_box_label_color=annotate_box_label_color,
                                  annotate_arc_span=annotate_arc_span,
                                  annotate_label_fontsize=annotate_label_fontsize,
+                                 include_unknown=include_unknown,
                                  show_leaf_names=show_leaf_names,
+                                 show_legend_type_labels=show_legend_type_labels,
+                                 legend_type_label_present=legend_type_label_present,
+                                 legend_type_label_unknown=legend_type_label_unknown,
                                  tree_scale=tree_scale)
 
     @property

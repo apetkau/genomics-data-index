@@ -117,8 +117,9 @@ def test_count_on_reference_no_index_unknowns(database, snippy_nucleotide_data_p
     assert 'No row was found' in str(execinfo.value)
 
 
-def test_count_on_reference_with_index_unknowns_low_slice_limit(database, snippy_nucleotide_data_package, reference_service_with_data,
-                                                sample_service, filesystem_storage):
+def test_count_on_reference_with_index_unknowns_low_slice_limit(database, snippy_nucleotide_data_package,
+                                                                reference_service_with_data,
+                                                                sample_service, filesystem_storage):
     variation_service = VariationService(database_connection=database,
                                          reference_service=reference_service_with_data,
                                          sample_service=sample_service,
@@ -136,8 +137,9 @@ def test_count_on_reference_with_index_unknowns_low_slice_limit(database, snippy
     assert 'No row was found' in str(execinfo.value)
 
 
-def test_count_on_reference_with_index_unknowns_high_slice_limit(database, snippy_nucleotide_data_package, reference_service_with_data,
-                                                sample_service, filesystem_storage):
+def test_count_on_reference_with_index_unknowns_high_slice_limit(database, snippy_nucleotide_data_package,
+                                                                 reference_service_with_data,
+                                                                 sample_service, filesystem_storage):
     variation_service = VariationService(database_connection=database,
                                          reference_service=reference_service_with_data,
                                          sample_service=sample_service,

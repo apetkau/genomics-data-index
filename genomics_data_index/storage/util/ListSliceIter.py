@@ -1,5 +1,5 @@
-from typing import List, Any, Generator
 import math
+from typing import List, Any, Generator
 
 
 class ListSliceIter:

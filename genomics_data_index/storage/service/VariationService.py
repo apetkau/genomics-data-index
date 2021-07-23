@@ -20,8 +20,8 @@ from genomics_data_index.storage.service import DatabaseConnection
 from genomics_data_index.storage.service.FeatureService import FeatureService
 from genomics_data_index.storage.service.ReferenceService import ReferenceService
 from genomics_data_index.storage.service.SampleService import SampleService
-from genomics_data_index.storage.util.ListSliceIter import ListSliceIter
 from genomics_data_index.storage.util import TRACE_LEVEL
+from genomics_data_index.storage.util.ListSliceIter import ListSliceIter
 
 logger = logging.getLogger(__name__)
 

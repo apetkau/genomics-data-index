@@ -133,6 +133,14 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
+    def select_present(self) -> SamplesQuery:
+        """
+        Creates a new query with only the present samples selected (minus unknowns).
+        :return: A new query with only the present samples selected (minus unknowns).
+        """
+        pass
+
+    @abc.abstractmethod
     def select_unknown(self) -> SamplesQuery:
         """
         Creates a new query with only the unknown samples selected.

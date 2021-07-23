@@ -1,5 +1,5 @@
-from typing import Generator, Set
 import logging
+from typing import Generator, Set
 
 from genomics_data_index.storage.io.SampleData import SampleData
 from genomics_data_index.storage.io.SampleDataPackage import SampleDataPackage
