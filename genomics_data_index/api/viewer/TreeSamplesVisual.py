@@ -29,6 +29,10 @@ class TreeSamplesVisual(abc.ABC):
         self._legend_fontsize = legend_fontsize
         self._present_sample_names = None
         self._unknown_sample_names = None
+        self._unknown_legend_color_label = {'text': 'U', 'color': 'black',
+                                            'font': 'Verdana', 'fontsize': self._legend_fontsize}
+        self._present_legend_color_label = {'text': 'P', 'color': 'white',
+                                            'font': 'Verdana', 'fontsize': self._legend_fontsize}
 
     @property
     def present_sample_names(self) -> Set[str]:
@@ -76,20 +80,40 @@ class TreeSamplesVisual(abc.ABC):
         else:
             return None
 
-    def _add_legend_entry(self, legend_label: str, legend_color: str, kind: str, tree_style: TreeStyle) -> None:
+    def _add_legend_entry(self, legend_label: str, legend_color: str, unknown_color: str,
+                          include_unknown: bool, kind: str, tree_style: TreeStyle) -> None:
         if legend_label is not None:
-            color_face, text_face = self._build_legend_item(color=legend_color,
+            color_face, unknown_face, text_face = self._build_legend_item(color=legend_color,
+                                                            unknown_color=unknown_color,
+                                                            include_unknown=include_unknown,
                                                             legend_label=legend_label,
                                                             kind=kind)
-            tree_style.legend.add_face(color_face, column=0)
-            tree_style.legend.add_face(text_face, column=1)
+            if include_unknown:
+                tree_style.legend.add_face(color_face, column=0)
+                tree_style.legend.add_face(unknown_face, column=1)
+                tree_style.legend.add_face(text_face, column=2)
+            else:
+                tree_style.legend.add_face(color_face, column=0)
+                tree_style.legend.add_face(text_face, column=1)
 
-    def _build_legend_item(self, color: str, legend_label: str, kind: str) -> Tuple[Face, Face]:
+    def _build_legend_item(self, color: str, unknown_color: str, include_unknown: bool,
+                           legend_label: str, kind: str) -> Tuple[Face, Face, Face]:
         if kind == 'rect' or kind == 'rectangle' or kind == 'r':
             cf = RectFace(width=self._legend_nodesize, height=self._legend_nodesize, bgcolor=color,
-                          fgcolor='black')
+                          fgcolor='black', label=self._present_legend_color_label)
+            if include_unknown:
+                ucf = RectFace(width=self._legend_nodesize, height=self._legend_nodesize, bgcolor=unknown_color,
+                              fgcolor='black', label=self._unknown_legend_color_label)
+            else:
+                ucf = None
         elif kind == 'circle' or kind == 'circ' or kind == 'c':
-            cf = CircleFace(radius=self._legend_nodesize / 2, color=color)
+            cf = CircleFace(radius=self._legend_nodesize / 2, color=color,
+                            label=self._present_legend_color_label)
+            if include_unknown:
+                ucf = CircleFace(radius=self._legend_nodesize / 2, color=unknown_color,
+                                 label=self._unknown_legend_color_label)
+            else:
+                ucf = None
         else:
             raise Exception(f'kind=[{kind}] must be one of {self.LEGEND_FACE_KINDS}')
         cf.hz_align = 2
@@ -97,7 +121,13 @@ class TreeSamplesVisual(abc.ABC):
         cf.margin_right = 3
         cf.margin_top = 3
         cf.margin_bottom = 3
+        if ucf is not None:
+            ucf.hz_align = 2
+            ucf.margin_left = 3
+            ucf.margin_right = 3
+            ucf.margin_top = 3
+            ucf.margin_bottom = 3
         tf = TextFace(legend_label, fsize=self._legend_fontsize)
         tf.margin_left = 10
         tf.margin_right = 10
-        return cf, tf
+        return cf, ucf, tf

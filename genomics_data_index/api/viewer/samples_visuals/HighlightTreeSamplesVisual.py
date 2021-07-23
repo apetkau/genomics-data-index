@@ -54,7 +54,10 @@ class HighlightTreeSamplesVisual(TreeSamplesVisual):
             node.set_style(node_style)
 
     def apply_visual(self, tree: Tree, tree_style: TreeStyle) -> None:
+        include_unknown = self._include_unknown and (len(self.unknown_sample_names) > 0)
         self._add_legend_entry(self._legend_label, legend_color=self._legend_color,
+                               unknown_color=self._unknown_legend_color,
+                               include_unknown=include_unknown,
                                kind='rect', tree_style=tree_style)
 
         for name in self.present_sample_names:
@@ -63,7 +66,3 @@ class HighlightTreeSamplesVisual(TreeSamplesVisual):
         if self._include_unknown:
             for name in self.unknown_sample_names:
                 self._get_and_set_style(name, node_style=self._unknown_node_style, tree=tree)
-
-            if len(self.unknown_sample_names) > 0:
-                self._add_legend_entry(self._unknown_legend_label, legend_color=self._unknown_legend_color,
-                                       kind='rect', tree_style=tree_style)
