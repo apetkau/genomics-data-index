@@ -23,6 +23,7 @@ class TreeStyler:
 
     def __init__(self, tree: Tree, default_highlight_styles: HighlightStyle, annotate_column: int,
                  tree_style: TreeStyle,
+                 legend_columns: Dict[str, int],
                  samples_styles_list: List[TreeSamplesVisual],
                  legend_nsize: int = 20, legend_fsize: int = 11,
                  annotate_color_present: str = '#66c2a4',
@@ -49,6 +50,7 @@ class TreeStyler:
                                 or an instance of a :py:class:`genomics_data_index.api.viewer.TreeStyler.HighlightStyle`.
         :param annotate_column: Which column in the annotate table this annotate visual belongs to (starting from column 0).
         :param tree_style: The ete3.TreeStyle object defining the style of the tree.
+        :param legend_columns: A dictionary mapping legend column names to integers defining the column numbers.
         :param samples_styles_list: A list of :py:class:`genomics_data_index.api.viewer.TreeSamplesVisual` objects
                                    that define the different styles to apply to sets of samples (e.g., highlight or annotate).
         :param legend_nsize: The legend node size.
@@ -74,6 +76,7 @@ class TreeStyler:
         self._tree = tree
         self._default_highlight_styles = default_highlight_styles
         self._tree_style = tree_style
+        self._legend_columns = legend_columns
         self._legend_nsize = legend_nsize
         self._legend_fsize = legend_fsize
         self._annotate_border_color = annotate_border_color
@@ -196,7 +199,8 @@ class TreeStyler:
                                                    annotate_opacity_unknown=self._annotate_opacity_unknown,
                                                    border_width=self._annotate_border_width,
                                                    margin=self._annotate_margin,
-                                                   include_unknown=self._include_unknown)
+                                                   include_unknown=self._include_unknown,
+                                                   legend_columns=self._legend_columns)
         samples_styles_list_new = copy.copy(self._samples_styles_list)
         samples_styles_list_new.append(samples_visual)
 
@@ -220,7 +224,8 @@ class TreeStyler:
                           include_unknown=self._include_unknown,
                           annotate_show_box_label=self._annotate_show_box_label,
                           annotate_box_label_color=self._annotate_box_label_color,
-                          annotate_label_fontsize=self._annotate_label_fontsize)
+                          annotate_label_fontsize=self._annotate_label_fontsize,
+                          legend_columns=self._legend_columns)
 
     def highlight(self, samples: Union[SamplesQuery, Iterable[str]],
                   present_node_style: NodeStyle = None, unknown_node_style: NodeStyle = None,
@@ -258,7 +263,8 @@ class TreeStyler:
                                                     legend_color=legend_color,
                                                     legend_label=legend_label,
                                                     legend_nodesize=self._legend_nsize,
-                                                    legend_fontsize=self._legend_fsize)
+                                                    legend_fontsize=self._legend_fsize,
+                                                    legend_columns=self._legend_columns)
         samples_styles_list_new = copy.copy(self._samples_styles_list)
         samples_styles_list_new.append(samples_visual)
 
@@ -282,7 +288,8 @@ class TreeStyler:
                           include_unknown=self._include_unknown,
                           annotate_show_box_label=self._annotate_show_box_label,
                           annotate_box_label_color=self._annotate_box_label_color,
-                          annotate_label_fontsize=self._annotate_label_fontsize)
+                          annotate_label_fontsize=self._annotate_label_fontsize,
+                          legend_columns=self._legend_columns)
 
     def _apply_samples_styles(self, tree: Tree, tree_style: TreeStyle) -> None:
         for samples_style in self._samples_styles_list:
@@ -452,6 +459,18 @@ class TreeStyler:
             ts.margin_right = figure_margin
             ts.scale = tree_scale
 
+        if include_unknown:
+            legend_columns = {
+                'present': 0,
+                'unknown': 1,
+                'text': 2
+            }
+        else:
+            legend_columns = {
+                'present': 0,
+                'text': 1
+            }
+
         if highlight_style is None:
             highlight_style = HighlightStyle.create('pastel')
         elif isinstance(highlight_style, str):
@@ -465,12 +484,12 @@ class TreeStyler:
             tf.margin_bottom = margin_bottom
 
             if include_unknown:
-                ts.legend.add_face(cf, column=0)
-                ts.legend.add_face(cf, column=1)
-                ts.legend.add_face(tf, column=2)
+                ts.legend.add_face(cf, column=legend_columns['present'])
+                ts.legend.add_face(cf, column=legend_columns['unknown'])
+                ts.legend.add_face(tf, column=legend_columns['text'])
             else:
-                ts.legend.add_face(cf, column=0)
-                ts.legend.add_face(tf, column=1)
+                ts.legend.add_face(cf, column=legend_columns['present'])
+                ts.legend.add_face(tf, column=legend_columns['text'])
 
         if show_legend_type_labels:
             margin = 10
@@ -485,12 +504,12 @@ class TreeStyler:
             item_cf.margin_left = margin
 
             if include_unknown:
-                ts.legend.add_face(item_ptf, column=0)
-                ts.legend.add_face(item_utf, column=1)
-                ts.legend.add_face(item_cf, column=2)
+                ts.legend.add_face(item_ptf, column=legend_columns['present'])
+                ts.legend.add_face(item_utf, column=legend_columns['unknown'])
+                ts.legend.add_face(item_cf, column=legend_columns['text'])
             else:
-                ts.legend.add_face(item_ptf, column=0)
-                ts.legend.add_face(item_cf, column=1)
+                ts.legend.add_face(item_ptf, column=legend_columns['present'])
+                ts.legend.add_face(item_cf, column=legend_columns['text'])
 
         if title is not None:
             tf = TextFace(title, fsize=title_fsize)
@@ -499,6 +518,7 @@ class TreeStyler:
         return TreeStyler(tree=tree,
                           default_highlight_styles=highlight_style,
                           tree_style=ts,
+                          legend_columns=legend_columns,
                           samples_styles_list=[],
                           legend_nsize=legend_nsize,
                           legend_fsize=legend_fsize,

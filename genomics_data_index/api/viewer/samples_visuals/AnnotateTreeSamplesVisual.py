@@ -38,7 +38,8 @@ class AnnotateTreeSamplesVisual(TreeSamplesVisual):
                  annotate_opacity_unknown: float,
                  border_width: int,
                  margin: int,
-                 include_unknown: bool):
+                 include_unknown: bool,
+                 legend_columns: Dict[str, int]):
         """
         Creates a new AnnotateTreeSamplesVisual with the given information. This is not intended to be created directly
         but instead is created via methods in the :py:class:`genomics_data_index.api.viewer.TreeStyler` class.
@@ -66,10 +67,11 @@ class AnnotateTreeSamplesVisual(TreeSamplesVisual):
         :param border_width: The width of the border.
         :param margin: The width of the margin in each annotate box.
         :param include_unknown: Whether or not unknowns should be included/represented.
+        :param legend_columns: A dict mapping legend item types to column numbers.
         :return: A new AnnotateTreeSamplesVisual.
         """
         super().__init__(samples, legend_nodesize=legend_nodesize,
-                         legend_fontsize=legend_fontsize)
+                         legend_fontsize=legend_fontsize, legend_columns=legend_columns)
         self._annotate_show_box_label = annotate_show_box_label
         self._annotate_label_fontsize = annotate_label_fontsize
         self._label = label

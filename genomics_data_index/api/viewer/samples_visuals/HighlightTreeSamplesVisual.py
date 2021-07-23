@@ -1,5 +1,5 @@
 import logging
-from typing import Union, Iterable
+from typing import Union, Iterable, Dict
 
 from ete3 import Tree, TreeStyle, NodeStyle
 
@@ -20,7 +20,8 @@ class HighlightTreeSamplesVisual(TreeSamplesVisual):
                  include_unknown: bool,
                  legend_color: str, legend_label: str,
                  legend_nodesize: int,
-                 legend_fontsize: int):
+                 legend_fontsize: int,
+                 legend_columns: Dict[str, int]):
         """
         Builds a new HighlightTreeSamplesVisual with the given information.
         :param samples: The set of samples to highlight.
@@ -31,10 +32,11 @@ class HighlightTreeSamplesVisual(TreeSamplesVisual):
         :param legend_label: The legend label.
         :param legend_nodesize: The size of the legend node.
         :param legend_fontsize: The size of the legend font.
+        :param legend_columns: A dict mapping legend item types to column numbers.
         :return: A new HighlightTreeSamplesVisual.
         """
         super().__init__(samples=samples, legend_nodesize=legend_nodesize,
-                         legend_fontsize=legend_fontsize)
+                         legend_fontsize=legend_fontsize, legend_columns=legend_columns)
         self._present_node_style = present_node_style
         self._unknown_node_style = unknown_node_style
         self._include_unknown = include_unknown

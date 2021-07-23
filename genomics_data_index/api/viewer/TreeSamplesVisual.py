@@ -1,5 +1,5 @@
 import abc
-from typing import Union, Iterable, Tuple, Set, Optional
+from typing import Union, Iterable, Tuple, Set, Optional, Dict
 
 from ete3 import Tree, TreeStyle, Face, RectFace, CircleFace, TextFace
 
@@ -16,12 +16,14 @@ class TreeSamplesVisual(abc.ABC):
 
     def __init__(self, samples: Union[SamplesQuery, Iterable[str]],
                  legend_nodesize: int,
-                 legend_fontsize: int):
+                 legend_fontsize: int,
+                 legend_columns: Dict[str, int]):
         """
         Creates a new TreeSamplesVisual with the given information.
         :param samples: The set of samples to apply this visual style to.
         :param legend_nodesize: The legend node size for this set of samples.
         :param legend_fontsize: The legend font size for this set of samples.
+        :param legend_columns: A dict mapping legend item types to column numbers.
         :return: A new TreeSamplesVisual.
         """
         self._samples = samples
@@ -29,6 +31,7 @@ class TreeSamplesVisual(abc.ABC):
         self._legend_fontsize = legend_fontsize
         self._present_sample_names = None
         self._unknown_sample_names = None
+        self._legend_columns = legend_columns
 
     @property
     def present_sample_names(self) -> Set[str]:
@@ -84,13 +87,11 @@ class TreeSamplesVisual(abc.ABC):
                                                                           include_unknown=include_unknown,
                                                                           legend_label=legend_label,
                                                                           kind=kind)
+
+            tree_style.legend.add_face(color_face, column=self._legend_columns['present'])
             if include_unknown:
-                tree_style.legend.add_face(color_face, column=0)
-                tree_style.legend.add_face(unknown_face, column=1)
-                tree_style.legend.add_face(text_face, column=2)
-            else:
-                tree_style.legend.add_face(color_face, column=0)
-                tree_style.legend.add_face(text_face, column=1)
+                tree_style.legend.add_face(unknown_face, column=self._legend_columns['unknown'])
+            tree_style.legend.add_face(text_face, column=self._legend_columns['text'])
 
     def _build_legend_item(self, color: str, unknown_color: str, include_unknown: bool,
                            legend_label: str, kind: str) -> Tuple[Face, Face, Face]:
