@@ -803,7 +803,7 @@ def test_query_single_mutation_then_add_new_genomes_and_query(loaded_database_co
     assert 12 == len(query_result.universe_set)
 
 
-def test_select_unknown_select_absent(loaded_database_connection: DataIndexConnection):
+def test_select_unknown_absent_present(loaded_database_connection: DataIndexConnection):
     db = loaded_database_connection.database
     sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
@@ -834,6 +834,15 @@ def test_select_unknown_select_absent(loaded_database_connection: DataIndexConne
     assert 0 == len(selected_result.unknown_set)
     assert 2 == len(selected_result.absent_set)
     assert {sampleA.id, sampleB.id} == set(selected_result.absent_set)
+    assert 9 == len(selected_result.universe_set)
+
+    # Select present
+    selected_result = query_result.select_present()
+    assert 1 == len(selected_result)
+    assert {sampleB.id} == set(selected_result.sample_set)
+    assert 0 == len(selected_result.unknown_set)
+    assert 8 == len(selected_result.absent_set)
+    assert all_sample_ids - {sampleB.id} == set(selected_result.absent_set)
     assert 9 == len(selected_result.universe_set)
 
 

@@ -54,6 +54,9 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
     def select_unknown(self) -> SamplesQuery:
         return self._wrap_create(self._wrapped_query.select_unknown())
 
+    def select_present(self) -> SamplesQuery:
+        return self._wrap_create(self._wrapped_query.select_present())
+
     def reset_universe(self, include_unknown: bool = True) -> SamplesQuery:
         return self._wrap_create(self._wrapped_query.reset_universe())
 

@@ -74,6 +74,12 @@ class SamplesQueryIndex(SamplesQuery):
                                  unknown_set=SampleSet.create_empty(),
                                  queries_collection=queries_collection)
 
+    def select_present(self) -> SamplesQuery:
+        queries_collection = self._queries_collection.append('select_present')
+        return self._create_from(sample_set=self.sample_set, universe_set=self.universe_set,
+                                 unknown_set=SampleSet.create_empty(),
+                                 queries_collection=queries_collection)
+
     def select_unknown(self) -> SamplesQuery:
         queries_collection = self._queries_collection.append('select_unknown')
         return self._create_from(sample_set=self.unknown_set, universe_set=self.universe_set,
