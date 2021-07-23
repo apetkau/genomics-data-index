@@ -27,8 +27,10 @@ class TreeStyler:
                  legend_nsize: int = 20, legend_fsize: int = 11,
                  annotate_color_present: str = '#66c2a4',
                  annotate_color_absent: str = 'white',
+                 annotate_color_unknown: str = 'gray',
                  annotate_opacity_present: float = 1.0,
                  annotate_opacity_absent: float = 0.0,
+                 annotate_opacity_unknown: float = 0.0,
                  annotate_border_color: str = 'black',
                  annotate_kind: str = 'rect',
                  annotate_box_width: int = 30,
@@ -52,8 +54,10 @@ class TreeStyler:
         :param legend_fsize: The legend font size.
         :param annotate_color_present: The default color of samples which are present in the set for the annotate() method.
         :param annotate_color_absent: The default color of samples which are absent in the set for the annotate() method.
+        :param annotate_color_unknown: The default color of samples which are unknown if present/absent in the set for the annotate() method.
         :param annotate_opacity_present: The default opacity of samples which are present in the set for the annotate() method.
         :param annotate_opacity_absent: The default opacity of samples which are absent in the set for the annotate() method.
+        :param annotate_opacity_unknown: The default opacity of samples which are unknown if present/absent in the set for the annotate() method.
         :param annotate_border_color: The default border color of the drawn annotations.
         :param annotate_kind: The default kind color of the drawn annotations (either 'circle' or 'rectangle').
         :param annotate_box_width: The width of the boxes for the drawn annotations.
@@ -76,8 +80,10 @@ class TreeStyler:
         self._annotate_border_color = annotate_border_color
         self._annotate_color_present = annotate_color_present
         self._annotate_color_absent = annotate_color_absent
+        self._annotate_color_unknown = annotate_color_unknown
         self._annotate_opacity_present = annotate_opacity_present
         self._annotate_opacity_absent = annotate_opacity_absent
+        self._annotate_opacity_unknown = annotate_opacity_unknown
         self._annotate_column = annotate_column
         self._annotate_box_width = annotate_box_width
         self._annotate_box_height = annotate_box_height
@@ -99,7 +105,7 @@ class TreeStyler:
                  annotate_show_box_label: bool = None, annotate_box_label_color: str = None,
                  legend_label: str = None,
                  box_width: int = None, box_height: int = None,
-                 color_present: str = None, color_absent: str = None) -> TreeStyler:
+                 color_present: str = None, color_absent: str = None, color_unknown: str = None) -> TreeStyler:
         """
         Adds an annotation column beside the tree showing the which samples are in the passed set.
         :param samples: The samples to show as being present.
@@ -112,6 +118,7 @@ class TreeStyler:
         :param box_height: The height of the bounding box (defaults to class variable annotate_box_height).
         :param color_present: The color to use when a sample is present in this set (defaults class-defined color).
         :param color_absent: The color to use when a sample is absent (defaults to class-defined color).
+        :param color_unknown: The color to use when a sample is unknown if present/absent (defaults to class-defined color).
         :return: A new TreeStyler object which contains the completed annotation column.
         """
         if box_width is None:
@@ -126,6 +133,8 @@ class TreeStyler:
             color_present = self._annotate_color_present
         if color_absent is None:
             color_absent = self._annotate_color_absent
+        if color_unknown is None:
+            color_unknown = self._annotate_color_unknown
 
         if isinstance(label, str):
             # Pick default color since ete3 by default colors the same as what I'm using for the fill color
@@ -149,6 +158,7 @@ class TreeStyler:
                                                    box_height=box_height,
                                                    color_present=color_present,
                                                    color_absent=color_absent,
+                                                   color_unknown=color_unknown,
                                                    legend_nodesize=self._legend_nsize,
                                                    legend_fontsize=self._legend_fsize,
                                                    annotate_column=self._annotate_column,
@@ -156,6 +166,7 @@ class TreeStyler:
                                                    annotate_border_color=self._annotate_border_color,
                                                    annotate_opacity_present=self._annotate_opacity_present,
                                                    annotate_opacity_absent=self._annotate_opacity_absent,
+                                                   annotate_opacity_unknown=self._annotate_opacity_unknown,
                                                    border_width=self._annotate_border_width,
                                                    margin=self._annotate_margin)
         samples_styles_list_new = copy.copy(self._samples_styles_list)
@@ -168,8 +179,10 @@ class TreeStyler:
                           annotate_column=self._annotate_column + 1,
                           annotate_color_present=self._annotate_color_present,
                           annotate_color_absent=self._annotate_color_absent,
+                          annotate_color_unknown=self._annotate_color_unknown,
                           annotate_opacity_present=self._annotate_opacity_present,
                           annotate_opacity_absent=self._annotate_opacity_absent,
+                          annotate_opacity_unknown=self._annotate_opacity_unknown,
                           annotate_border_color=self._annotate_border_color,
                           annotate_kind=self._annotate_kind,
                           annotate_box_width=self._annotate_box_width,
@@ -216,8 +229,10 @@ class TreeStyler:
                           annotate_column=self._annotate_column,
                           annotate_color_present=self._annotate_color_present,
                           annotate_color_absent=self._annotate_color_absent,
+                          annotate_color_unknown=self._annotate_color_unknown,
                           annotate_opacity_present=self._annotate_opacity_present,
                           annotate_opacity_absent=self._annotate_opacity_absent,
+                          annotate_opacity_unknown=self._annotate_opacity_unknown,
                           annotate_border_color=self._annotate_border_color,
                           annotate_kind=self._annotate_kind,
                           annotate_box_height=self._annotate_box_height,
@@ -290,8 +305,10 @@ class TreeStyler:
                legend_nsize: int = 20, legend_fsize: int = 11,
                annotate_color_present: str = 'black',
                annotate_color_absent: str = 'white',
+               annotate_color_unknown: str = 'gray',
                annotate_opacity_present: float = 1.0,
                annotate_opacity_absent: float = 0.0,
+               annotate_opacity_unknown: float = 1.0,
                annotate_border_color: str = 'black',
                annotate_kind: str = 'rect',
                annotate_box_width: int = 30,
@@ -324,8 +341,10 @@ class TreeStyler:
         :param legend_fsize: The legend font size.
         :param annotate_color_present: The default color of samples which are present in the set for the annotate() method.
         :param annotate_color_absent: The default color of samples which are absent in the set for the annotate() method.
+        :param annotate_color_unknown: The default color of samples which are unknown if present/absent in the set for the annotate() method.
         :param annotate_opacity_present: The default opacity of samples which are present in the set for the annotate() method.
         :param annotate_opacity_absent: The default opacity of samples which are absent in the set for the annotate() method.
+        :param annotate_opacity_unknown: The default opacity of samples which are unknown if present/absent in the set for the annotate() method.
         :param annotate_border_color: The default border color of the drawn annotations.
         :param annotate_kind: The default kind color of the drawn annotations (either 'circle' or 'rectangle').
         :param annotate_box_width: The width of the boxes for the drawn annotations.
@@ -411,8 +430,10 @@ class TreeStyler:
                           annotate_column=1,
                           annotate_color_present=annotate_color_present,
                           annotate_color_absent=annotate_color_absent,
+                          annotate_color_unknown=annotate_color_unknown,
                           annotate_opacity_present=annotate_opacity_present,
                           annotate_opacity_absent=annotate_opacity_absent,
+                          annotate_opacity_unknown=annotate_opacity_unknown,
                           annotate_border_color=annotate_border_color,
                           annotate_kind=annotate_kind,
                           annotate_box_width=annotate_box_width,

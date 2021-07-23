@@ -131,8 +131,10 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
                     legend_nsize: int = 20, legend_fsize: int = 11,
                     annotate_color_present: str = 'black',
                     annotate_color_absent: str = 'white',
+                    annotate_color_unknown: str = 'gray',
                     annotate_opacity_present: float = 1.0,
                     annotate_opacity_absent: float = 0.0,
+                    annotate_opacity_unknown: float = 1.0,
                     annotate_border_color: str = 'black',
                     annotate_kind: str = 'rect',
                     annotate_box_width: int = 30,
@@ -164,8 +166,10 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
         :param legend_fsize: The legend font size.
         :param annotate_color_present: The default color of samples which are present in the set for the annotate() method.
         :param annotate_color_absent: The default color of samples which are absent in the set for the annotate() method.
+        :param annotate_color_unknown: The default color of samples which are unknown if present/absent in the set for the annotate() method.
         :param annotate_opacity_present: The default opacity of samples which are present in the set for the annotate() method.
         :param annotate_opacity_absent: The default opacity of samples which are absent in the set for the annotate() method.
+        :param annotate_opacity_unknown: The default opacity of samples which are unknown if present/absent in the set for the annotate() method.
         :param annotate_border_color: The default border color of the drawn annotations.
         :param annotate_kind: The default kind color of the drawn annotations (either 'circle' or 'rectangle').
         :param annotate_box_width: The width of the boxes for the drawn annotations.
@@ -196,8 +200,10 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
                                  legend_fsize=legend_fsize,
                                  annotate_color_present=annotate_color_present,
                                  annotate_color_absent=annotate_color_absent,
+                                 annotate_color_unknown=annotate_color_unknown,
                                  annotate_opacity_present=annotate_opacity_present,
                                  annotate_opacity_absent=annotate_opacity_absent,
+                                 annotate_opacity_unknown=annotate_opacity_unknown,
                                  annotate_border_color=annotate_border_color,
                                  annotate_kind=annotate_kind,
                                  annotate_box_width=annotate_box_width,

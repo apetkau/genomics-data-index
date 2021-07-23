@@ -25,7 +25,7 @@ class AnnotateTreeSamplesVisual(TreeSamplesVisual):
                  annotate_label_fontsize: int,
                  legend_label: str,
                  box_width: int, box_height: int,
-                 color_present: str, color_absent: str,
+                 color_present: str, color_absent: str, color_unknown: str,
                  legend_nodesize: int,
                  legend_fontsize: int,
                  annotate_column: int,
@@ -33,6 +33,7 @@ class AnnotateTreeSamplesVisual(TreeSamplesVisual):
                  annotate_border_color: str,
                  annotate_opacity_present: float,
                  annotate_opacity_absent: float,
+                 annotate_opacity_unknown: float,
                  border_width: int,
                  margin: int):
         """
@@ -48,6 +49,7 @@ class AnnotateTreeSamplesVisual(TreeSamplesVisual):
         :param box_height: The height of the annotate box.
         :param color_present: The color of the samples present in this set.
         :param color_absent: The color of the samples absent in this set.
+        :param color_unknown: The color of the samples which are unknown if present/absent in this set.
         :param legend_nodesize: The node size for the legend.
         :param legend_fontsize: The legend font size.
         :param annotate_column: Which column in the annotate table this annotate visual belongs to (starting from column 0).
@@ -55,6 +57,7 @@ class AnnotateTreeSamplesVisual(TreeSamplesVisual):
         :param annotate_border_color: The border color of teh annotate box.
         :param annotate_opacity_present: The opacity of the present samples.
         :param annotate_opacity_absent: The opacity of the absent samples.
+        :param annotate_opacity_unknown: The opacity of the unknown samples.
         :param border_width: The width of the border.
         :param margin: The width of the margin in each annotate box.
         :return: A new AnnotateTreeSamplesVisual.
@@ -70,6 +73,7 @@ class AnnotateTreeSamplesVisual(TreeSamplesVisual):
         self._box_height = box_height
         self._color_present = color_present
         self._color_absent = color_absent
+        self._color_unknown = color_unknown
         self._annotate_column = annotate_column
 
         if annotate_kind not in self.ANNOTATE_KINDS:
@@ -80,6 +84,7 @@ class AnnotateTreeSamplesVisual(TreeSamplesVisual):
         self._annotate_border_color = annotate_border_color
         self._annotate_opacity_present = annotate_opacity_present
         self._annotate_opacity_absent = annotate_opacity_absent
+        self._annotate_opacity_unknown = annotate_opacity_unknown
         self._annotate_border_width = border_width
         self._annotate_margin = margin
 
