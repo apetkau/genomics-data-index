@@ -52,6 +52,7 @@ def snippy_nucleotide_data_package() -> NucleotideSampleDataPackage:
     return NucleotideSampleDataPackage.create_from_snippy(sample_dirs,
                                                           sample_files_processor=SerialSampleFilesProcessor(tmp_dir))
 
+
 @pytest.fixture
 def snippy_nucleotide_data_package_no_index_missing() -> NucleotideSampleDataPackage:
     tmp_dir = Path(tempfile.mkdtemp())

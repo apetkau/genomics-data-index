@@ -1214,13 +1214,15 @@ def test_query_mlst_allele(loaded_database_connection: DataIndexConnection):
     # No unknowns
     query_result = query(loaded_database_connection).hasa(QueryFeatureMLST('lmonocytogenes:abcZ:1'))
     assert 5 == len(query_result)
-    assert {sample_CFSAN002349.id, sample_CFSAN023463.id, sampleA.id, sampleB.id, sampleC.id} == set(query_result.sample_set)
+    assert {sample_CFSAN002349.id, sample_CFSAN023463.id, sampleA.id, sampleB.id, sampleC.id} == set(
+        query_result.sample_set)
     assert 0 == len(query_result.unknown_set)
     assert 4 == len(query_result.absent_set)
     assert 9 == len(query_result.universe_set)
 
     assert {'CFSAN002349', 'CFSAN023463', 'SampleA', 'SampleB', 'SampleC'} == set(query_result.tolist())
-    assert {sample_CFSAN002349.id, sample_CFSAN023463.id, sampleA.id, sampleB.id, sampleC.id} == set(query_result.tolist(names=False))
+    assert {sample_CFSAN002349.id, sample_CFSAN023463.id, sampleA.id, sampleB.id, sampleC.id} == set(
+        query_result.tolist(names=False))
 
     # With unknown and present
     query_result = query(loaded_database_connection).hasa(QueryFeatureMLST('campylobacter:uncA:6'))

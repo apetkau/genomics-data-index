@@ -80,10 +80,10 @@ class TreeSamplesVisual(abc.ABC):
                           include_unknown: bool, kind: str, tree_style: TreeStyle) -> None:
         if legend_label is not None:
             color_face, unknown_face, text_face = self._build_legend_item(color=legend_color,
-                                                            unknown_color=unknown_color,
-                                                            include_unknown=include_unknown,
-                                                            legend_label=legend_label,
-                                                            kind=kind)
+                                                                          unknown_color=unknown_color,
+                                                                          include_unknown=include_unknown,
+                                                                          legend_label=legend_label,
+                                                                          kind=kind)
             if include_unknown:
                 tree_style.legend.add_face(color_face, column=0)
                 tree_style.legend.add_face(unknown_face, column=1)
@@ -99,7 +99,7 @@ class TreeSamplesVisual(abc.ABC):
                           fgcolor='black')
             if include_unknown:
                 ucf = RectFace(width=self._legend_nodesize, height=self._legend_nodesize, bgcolor=unknown_color,
-                              fgcolor='black')
+                               fgcolor='black')
             else:
                 ucf = None
         elif kind == 'circle' or kind == 'circ' or kind == 'c':

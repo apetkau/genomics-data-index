@@ -142,14 +142,16 @@ class TreeStyler:
 
         if isinstance(box_label, str):
             # Pick default color since ete3 by default colors the same as what I'm using for the fill color
-            box_label = {'text': box_label, 'color': 'black', 'font': 'Verdana', 'fontsize': self._annotate_label_fontsize}
+            box_label = {'text': box_label, 'color': 'black', 'font': 'Verdana',
+                         'fontsize': self._annotate_label_fontsize}
 
         if box_label_unknown is None and box_label is not None:
             box_label_unknown = 'Un.'
 
         if isinstance(box_label_unknown, str):
             # Pick default color since ete3 by default colors the same as what I'm using for the fill color
-            box_label_unknown = {'text': box_label_unknown, 'color': 'black', 'font': 'Verdana', 'fontsize': self._annotate_label_fontsize}
+            box_label_unknown = {'text': box_label_unknown, 'color': 'black', 'font': 'Verdana',
+                                 'fontsize': self._annotate_label_fontsize}
 
         if box_label is not None:
             label_present = copy.deepcopy(box_label)
