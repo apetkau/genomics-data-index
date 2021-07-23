@@ -196,27 +196,38 @@ class TreeStyler:
                           annotate_label_fontsize=self._annotate_label_fontsize)
 
     def highlight(self, samples: Union[SamplesQuery, Iterable[str]],
-                  nstyle: NodeStyle = None, legend_color: str = None,
-                  legend_label: str = None) -> TreeStyler:
+                  present_node_style: NodeStyle = None, unknown_node_style: NodeStyle = None,
+                  legend_color: str = None, legend_label: str = None) -> TreeStyler:
         """
         Highlights the selected samples in the tree with a particular style defined by the passed default_highlight_styles
         on creation of this TreeStyler.
         :param samples: The set of samples to highlight.
-        :param nstyle: Overrides the node style for the leaf node in the tree defined by the highlight styles.
+        :param present_node_style: Overrides the node style for present samples
+                                  corresponding to leaf nodes in the tree defined by the highlight styles.
+        :param unknown_node_style: Overrides the node style for unknown samples
+                                  corresponding to leaf nodes in the tree defined by the highlight styles.
         :param legend_color: Overrides the color of the legend item.
         :param legend_label: Defines the label of the legend item.
         :return: A new TreeStyler with the given samples highlighted.
         """
 
-        if nstyle is None and legend_color is None:
-            nstyle = self._default_highlight_styles.node_style
+        if present_node_style is None and legend_color is None:
+            present_node_style = self._default_highlight_styles.present_node_style
             legend_color = self._default_highlight_styles.legend_color
+
+            if unknown_node_style is None:
+                unknown_node_style = self._default_highlight_styles.unknown_node_style
+
             new_default_styles = self._default_highlight_styles.next()
         else:
             new_default_styles = self._default_highlight_styles
+            if unknown_node_style is None:
+                unknown_node_style = self._default_highlight_styles.unknown_node_style
 
         samples_visual = HighlightTreeSamplesVisual(samples=samples,
-                                                    node_style=nstyle,
+                                                    present_node_style=present_node_style,
+                                                    unknown_node_style=unknown_node_style,
+                                                    include_unknown=self._include_unknown,
                                                     legend_color=legend_color,
                                                     legend_label=legend_label,
                                                     legend_nodesize=self._legend_nsize,
@@ -409,7 +420,7 @@ class TreeStyler:
             ts.scale = tree_scale
 
         if highlight_style is None:
-            highlight_style = HighlightStyle.create('light')
+            highlight_style = HighlightStyle.create('pastel')
         elif isinstance(highlight_style, str):
             highlight_style = HighlightStyle.create(highlight_style)
 
@@ -471,12 +482,20 @@ class HighlightStyle:
         self._index = index
 
     @property
-    def node_style(self) -> NodeStyle:
+    def present_node_style(self) -> NodeStyle:
         """
-        Gets the current node style from the HighlightStyle.
-        :return: The node style.
+        Gets the current node style from the HighlightStyle for present samples.
+        :return: The node style for present samples
         """
-        return self._node_styles[self._index]['nstyle']
+        return self._node_styles[self._index]['present_nstyle']
+
+    @property
+    def unknown_node_style(self) -> NodeStyle:
+        """
+        Gets the current node style from the HighlightStyle for unknown samples.
+        :return: The node style for unknown samples
+        """
+        return self._node_styles[self._index]['unknown_nstyle']
 
     @property
     def legend_color(self) -> NodeStyle:
@@ -503,31 +522,41 @@ class HighlightStyle:
         :param kind: The kind (name) of the pre-defined HighlightStyle to create.
         :return: A new HighlightStyle.
         """
+        unknown_fg_color = 'lightgray'
+        unknown_bg_color = 'lightgray'
+
         if kind == 'light':
             fg_colors = ['#e5f5f9', '#fee8c8', '#e0ecf4', '#deebf7']
             bg_colors = fg_colors
-            return cls._create_highlights(fg_colors=fg_colors, bg_colors=bg_colors)
+            return cls._create_highlights(fg_colors=fg_colors, bg_colors=bg_colors,
+                                          unknown_bg_color=unknown_bg_color, unknown_fg_color=unknown_fg_color)
         elif kind == 'light_hn':
             fg_colors = ['#41ae76', '#ef6548', '#8c6bb1', '#4292c6']
             bg_colors = ['#e5f5f9', '#fee8c8', '#e0ecf4', '#deebf7']
-            return cls._create_highlights(fg_colors=fg_colors, bg_colors=bg_colors, nsize=20)
+            return cls._create_highlights(fg_colors=fg_colors, bg_colors=bg_colors, nsize=20,
+                                          unknown_bg_color=unknown_bg_color, unknown_fg_color=unknown_fg_color)
         elif kind == 'pastel':
             fg_colors = ['#fbb4ae', '#b3cde3', '#ccebc5', '#decbe4', '#fed9a6']
             bg_colors = fg_colors
-            return cls._create_highlights(fg_colors=fg_colors, bg_colors=bg_colors)
+            return cls._create_highlights(fg_colors=fg_colors, bg_colors=bg_colors,
+                                          unknown_bg_color=unknown_bg_color, unknown_fg_color=unknown_fg_color)
         elif kind == 'medium':
             fg_colors = ['#66c2a5', '#fc8d62', '#8da0cb', '#e78ac3', '#a6d854']
             bg_colors = fg_colors
-            return cls._create_highlights(fg_colors=fg_colors, bg_colors=bg_colors)
+            return cls._create_highlights(fg_colors=fg_colors, bg_colors=bg_colors,
+                                          unknown_bg_color=unknown_bg_color, unknown_fg_color=unknown_fg_color)
         elif kind == 'dark':
             fg_colors = ['#1b9e77', '#d95f02', '#7570b3', '#e7298a', '#66a61e']
             bg_colors = fg_colors
-            return cls._create_highlights(fg_colors=fg_colors, bg_colors=bg_colors)
+            return cls._create_highlights(fg_colors=fg_colors, bg_colors=bg_colors,
+                                          unknown_bg_color=unknown_bg_color, unknown_fg_color=unknown_fg_color)
         else:
             raise Exception(f'kind=[{kind}] must be one of {cls.THEMES}')
 
     @classmethod
-    def _create_highlights(cls, fg_colors: List[str], bg_colors: List[str], nsize: int = None) -> HighlightStyle:
+    def _create_highlights(cls, fg_colors: List[str], bg_colors: List[str],
+                           unknown_fg_color: str, unknown_bg_color: str,
+                           nsize: int = None) -> HighlightStyle:
         if len(fg_colors) != len(bg_colors):
             raise Exception(f'fg_colors={fg_colors} and bg_colors={bg_colors} do not have the same length')
 
@@ -539,8 +568,15 @@ class HighlightStyle:
             if nsize is not None:
                 nstyle['size'] = nsize
 
+            unknown_nstyle = NodeStyle()
+            unknown_nstyle['fgcolor'] = unknown_fg_color
+            unknown_nstyle['bgcolor'] = unknown_bg_color
+            if nsize is not None:
+                unknown_nstyle['size'] = nsize
+
             styles.append({
-                'nstyle': nstyle,
+                'present_nstyle': nstyle,
+                'unknown_nstyle': unknown_nstyle,
                 'legend_color': fg_colors[i]
             })
 

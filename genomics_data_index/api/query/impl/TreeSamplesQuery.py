@@ -127,7 +127,7 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
     def tree_styler(self,
                     initial_style: TreeStyle = None,
                     mode='r',
-                    highlight_style: Union[str, HighlightStyle] = 'light',
+                    highlight_style: Union[str, HighlightStyle] = 'pastel',
                     legend_nsize: int = 20, legend_fsize: int = 11,
                     annotate_color_present: str = 'black',
                     annotate_color_absent: str = 'white',
