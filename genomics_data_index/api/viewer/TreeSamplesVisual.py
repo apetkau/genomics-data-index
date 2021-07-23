@@ -1,5 +1,5 @@
 import abc
-from typing import Union, Iterable, Tuple, List
+from typing import Union, Iterable, Tuple, Set
 
 from ete3 import Tree, TreeStyle, Face, RectFace, CircleFace, TextFace
 
@@ -27,20 +27,35 @@ class TreeSamplesVisual(abc.ABC):
         self._samples = samples
         self._legend_nodesize = legend_nodesize
         self._legend_fontsize = legend_fontsize
-        self._samples_names = None
+        self._present_sample_names = None
+        self._unknown_sample_names = None
 
     @property
-    def sample_names(self) -> List[str]:
+    def present_sample_names(self) -> Set[str]:
         """
-        Gets the names of the samples this visual style applies to.
-        :return: A list of the names of samples this visual style applies to.
+        Gets the names of the samples present in the selected set this visual style applies to.
+        :return: A set of the names of present samples this visual style applies to.
         """
-        if self._samples_names is None:
+        if self._present_sample_names is None:
             if isinstance(self._samples, SamplesQuery):
-                self._sample_names = self._samples.tolist(names=True)
+                self._present_sample_names = set(self._samples.tolist(names=True))
             else:
-                self._sample_names = set(self._samples)
-        return self._sample_names
+                self._present_sample_names = set(self._samples)
+        return self._present_sample_names
+
+    @property
+    def unknown_sample_names(self) -> Set[str]:
+        """
+        Gets the names of the samples unknown in the selected set this visual style applies to.
+        :return: A set of the names of unknown samples this visual style applies to.
+        """
+        if self._unknown_sample_names is None:
+            if isinstance(self._samples, SamplesQuery):
+                self._unknown_sample_names = set(self._samples.select_unknown().tolist(names=True))
+            else:
+                # If we don't have a SamplesQuery, there are no unknown samples
+                self._unknown_sample_names = set()
+        return self._unknown_sample_names
 
     @abc.abstractmethod
     def apply_visual(self, tree: Tree, tree_style: TreeStyle) -> None:

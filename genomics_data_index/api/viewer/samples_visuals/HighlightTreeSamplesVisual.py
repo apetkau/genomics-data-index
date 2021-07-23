@@ -39,7 +39,7 @@ class HighlightTreeSamplesVisual(TreeSamplesVisual):
         self._add_legend_entry(self._legend_label, legend_color=self._legend_color,
                                kind='rect', tree_style=tree_style)
 
-        for name in self.sample_names:
+        for name in self.present_sample_names:
             nodes = tree.get_leaves_by_name(name)
             if len(nodes) == 0:
                 logger.warning(f'Could not find sample=[{name}] in tree. Not highlighting.')

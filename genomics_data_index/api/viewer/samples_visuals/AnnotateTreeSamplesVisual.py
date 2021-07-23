@@ -90,10 +90,13 @@ class AnnotateTreeSamplesVisual(TreeSamplesVisual):
 
         if self._annotate_show_box_label:
             self._box_label = copy.deepcopy(self._label)
+            self._unknown_box_label = copy.deepcopy(self._label)
             if self._box_label is not None and annotate_box_label_color is not None:
                 self._box_label['color'] = annotate_box_label_color
+                self._unknown_box_label['text'] = self._unknown_box_label['text'] + ' [U]'
         else:
             self._box_label = None
+            self._unknown_box_label = None
 
     def apply_visual(self, tree: Tree, tree_style: TreeStyle) -> None:
         if self._label is not None:
@@ -112,12 +115,18 @@ class AnnotateTreeSamplesVisual(TreeSamplesVisual):
 
         # Annotate nodes
         for leaf in tree.iter_leaves():
-            if leaf.name in self.sample_names:
+            if leaf.name in self.present_sample_names:
                 annotate_face = self._build_annotate_face(width=self._box_width, height=self._box_height,
                                                           border_color=self._annotate_border_color,
                                                           bgcolor=self._color_present,
                                                           opacity=self._annotate_opacity_present,
                                                           label=self._box_label)
+            elif leaf.name in self.unknown_sample_names:
+                annotate_face = self._build_annotate_face(width=self._box_width, height=self._box_height,
+                                                          border_color=self._annotate_border_color,
+                                                          bgcolor=self._color_unknown,
+                                                          opacity=self._annotate_opacity_unknown,
+                                                          label=self._unknown_box_label)
             else:
                 annotate_face = self._build_annotate_face(width=self._box_width, height=self._box_height,
                                                           border_color=self._annotate_border_color,

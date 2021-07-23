@@ -131,7 +131,7 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
                     legend_nsize: int = 20, legend_fsize: int = 11,
                     annotate_color_present: str = 'black',
                     annotate_color_absent: str = 'white',
-                    annotate_color_unknown: str = 'gray',
+                    annotate_color_unknown: str = 'lightgray',
                     annotate_opacity_present: float = 1.0,
                     annotate_opacity_absent: float = 0.0,
                     annotate_opacity_unknown: float = 1.0,
