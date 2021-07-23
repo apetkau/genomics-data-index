@@ -37,6 +37,7 @@ class TreeStyler:
                  annotate_box_height: int = 30,
                  annotate_border_width: int = 1,
                  annotate_margin: int = 0,
+                 include_unknown: bool = True,
                  annotate_show_box_label: bool = False,
                  annotate_box_label_color: str = 'white',
                  annotate_label_fontsize: int = 12):
@@ -64,9 +65,7 @@ class TreeStyler:
         :param annotate_box_height: The height of the boxes for the drawn annotations.
         :param annotate_border_width: The width of the border for the boxes for the drawn annotations.
         :param annotate_margin: The margin width of the boxes for the drawn annotations.
-        :param annotate_show_box_label:
-        :param annotate_box_label_color:
-        :param annotate_label_fontsize:
+        :param include_unknown: Whether or not to include unknowns in highlight/annotations.
         :param annotate_show_box_label: True if labels should be shown in the annotation boxes, False otherwise.
         :param annotate_box_label_color: The color of the labels in the annotation boxes.
         :param annotate_label_fontsize: The font size of the annotation labels.
@@ -89,6 +88,7 @@ class TreeStyler:
         self._annotate_box_height = annotate_box_height
         self._annotate_border_width = annotate_border_width
         self._annotate_margin = annotate_margin
+        self._include_unknown = include_unknown
         self._annotate_show_box_label = annotate_show_box_label
         self._annotate_box_label_color = annotate_box_label_color
         self._annotate_label_fontsize = annotate_label_fontsize
@@ -168,7 +168,8 @@ class TreeStyler:
                                                    annotate_opacity_absent=self._annotate_opacity_absent,
                                                    annotate_opacity_unknown=self._annotate_opacity_unknown,
                                                    border_width=self._annotate_border_width,
-                                                   margin=self._annotate_margin)
+                                                   margin=self._annotate_margin,
+                                                   include_unknown=self._include_unknown)
         samples_styles_list_new = copy.copy(self._samples_styles_list)
         samples_styles_list_new.append(samples_visual)
 
@@ -189,6 +190,7 @@ class TreeStyler:
                           annotate_box_height=self._annotate_box_height,
                           annotate_border_width=self._annotate_border_width,
                           annotate_margin=self._annotate_margin,
+                          include_unknown=self._include_unknown,
                           annotate_show_box_label=self._annotate_show_box_label,
                           annotate_box_label_color=self._annotate_box_label_color,
                           annotate_label_fontsize=self._annotate_label_fontsize)
@@ -239,6 +241,7 @@ class TreeStyler:
                           annotate_box_width=self._annotate_box_width,
                           annotate_border_width=self._annotate_border_width,
                           annotate_margin=self._annotate_margin,
+                          include_unknown=self._include_unknown,
                           annotate_show_box_label=self._annotate_show_box_label,
                           annotate_box_label_color=self._annotate_box_label_color,
                           annotate_label_fontsize=self._annotate_label_fontsize)
@@ -327,6 +330,7 @@ class TreeStyler:
                annotate_arc_span: int = 350,
                annotate_label_fontsize: int = 12,
                show_leaf_names: bool = True,
+               include_unknown: bool = True,
                tree_scale: float = None) -> TreeStyler:
         """
         Constructs a new TreeStyler object used to style and visualize trees.
@@ -363,6 +367,7 @@ class TreeStyler:
         :param annotate_box_label_color: The color of the labels in the annotation boxes.
         :param annotate_arc_span: For mode='c' (circular) the degrees the circular tree should span.
         :param annotate_label_fontsize: The font size of the annotation labels.
+        :param include_unknown: Whether or not to include unknown samples in highlight/annotation boxes.
         :param show_leaf_names: True if leaf names should be shown on the tree, False otherwise.
         :param tree_scale: A scale factor for the tree.
         :return: A new TreeStyler object used to style and visualize trees.
@@ -440,6 +445,7 @@ class TreeStyler:
                           annotate_box_height=annotate_box_height,
                           annotate_border_width=annotate_border_width,
                           annotate_margin=annotate_margin,
+                          include_unknown=include_unknown,
                           annotate_show_box_label=annotate_show_box_label,
                           annotate_box_label_color=annotate_box_label_color,
                           annotate_label_fontsize=annotate_label_fontsize)

@@ -152,6 +152,7 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
                     annotate_box_label_color: str = 'white',
                     annotate_arc_span: int = 350,
                     annotate_label_fontsize: int = 12,
+                    include_unknown: bool = True,
                     show_leaf_names: bool = True,
                     tree_scale: float = None) -> TreeStyler:
         """
@@ -188,6 +189,7 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
         :param annotate_box_label_color: The color of the labels in the annotation boxes.
         :param annotate_arc_span: For mode='c' (circular) the degrees the circular tree should span.
         :param annotate_label_fontsize: The font size of the annotation labels.
+        :param include_unknown: Whether or not to include unknowns in annotations/highlights.
         :param show_leaf_names: True if leaf names should be shown on the tree, False otherwise.
         :param tree_scale: A scale factor for the tree.
         :return: A new :py:class:`genomics_data_index.api.viewer.TreeStyler` object used to style and visualize trees.
@@ -221,6 +223,7 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
                                  annotate_box_label_color=annotate_box_label_color,
                                  annotate_arc_span=annotate_arc_span,
                                  annotate_label_fontsize=annotate_label_fontsize,
+                                 include_unknown=include_unknown,
                                  show_leaf_names=show_leaf_names,
                                  tree_scale=tree_scale)
 

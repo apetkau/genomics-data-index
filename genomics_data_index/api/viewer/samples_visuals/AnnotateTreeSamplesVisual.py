@@ -35,7 +35,8 @@ class AnnotateTreeSamplesVisual(TreeSamplesVisual):
                  annotate_opacity_absent: float,
                  annotate_opacity_unknown: float,
                  border_width: int,
-                 margin: int):
+                 margin: int,
+                 include_unknown: bool):
         """
         Creates a new AnnotateTreeSamplesVisual with the given information. This is not intended to be created directly
         but instead is created via methods in the :py:class:`genomics_data_index.api.viewer.TreeStyler` class.
@@ -60,6 +61,7 @@ class AnnotateTreeSamplesVisual(TreeSamplesVisual):
         :param annotate_opacity_unknown: The opacity of the unknown samples.
         :param border_width: The width of the border.
         :param margin: The width of the margin in each annotate box.
+        :param include_unknown: Whether or not unknowns should be included/represented.
         :return: A new AnnotateTreeSamplesVisual.
         """
         super().__init__(samples, legend_nodesize=legend_nodesize,
@@ -69,6 +71,7 @@ class AnnotateTreeSamplesVisual(TreeSamplesVisual):
         self._annotate_box_label_color = annotate_box_label_color
         self._annotate_label_fontsize = annotate_label_fontsize
         self._legend_label = legend_label
+        self._unknown_legend_label = self._get_unknown_label(legend_label)
         self._box_width = box_width
         self._box_height = box_height
         self._color_present = color_present
@@ -87,13 +90,14 @@ class AnnotateTreeSamplesVisual(TreeSamplesVisual):
         self._annotate_opacity_unknown = annotate_opacity_unknown
         self._annotate_border_width = border_width
         self._annotate_margin = margin
+        self._include_unknown = include_unknown
 
         if self._annotate_show_box_label:
             self._box_label = copy.deepcopy(self._label)
             self._unknown_box_label = copy.deepcopy(self._label)
             if self._box_label is not None and annotate_box_label_color is not None:
                 self._box_label['color'] = annotate_box_label_color
-                self._unknown_box_label['text'] = self._unknown_box_label['text'] + ' [U]'
+                self._unknown_box_label['text'] = self._get_unknown_label(self._unknown_box_label['text'])
         else:
             self._box_label = None
             self._unknown_box_label = None
@@ -114,6 +118,7 @@ class AnnotateTreeSamplesVisual(TreeSamplesVisual):
             tree_style.aligned_foot.add_face(tf, self._annotate_column)
 
         # Annotate nodes
+        unknown_samples_count = 0
         for leaf in tree.iter_leaves():
             if leaf.name in self.present_sample_names:
                 annotate_face = self._build_annotate_face(width=self._box_width, height=self._box_height,
@@ -121,12 +126,13 @@ class AnnotateTreeSamplesVisual(TreeSamplesVisual):
                                                           bgcolor=self._color_present,
                                                           opacity=self._annotate_opacity_present,
                                                           label=self._box_label)
-            elif leaf.name in self.unknown_sample_names:
+            elif self._include_unknown and (leaf.name in self.unknown_sample_names):
                 annotate_face = self._build_annotate_face(width=self._box_width, height=self._box_height,
                                                           border_color=self._annotate_border_color,
                                                           bgcolor=self._color_unknown,
                                                           opacity=self._annotate_opacity_unknown,
                                                           label=self._unknown_box_label)
+                unknown_samples_count = unknown_samples_count + 1
             else:
                 annotate_face = self._build_annotate_face(width=self._box_width, height=self._box_height,
                                                           border_color=self._annotate_border_color,
@@ -138,6 +144,10 @@ class AnnotateTreeSamplesVisual(TreeSamplesVisual):
 
         self._add_legend_entry(self._legend_label, legend_color=self._color_present,
                                kind=self._annotate_kind, tree_style=tree_style)
+
+        if self._include_unknown and unknown_samples_count > 0:
+            self._add_legend_entry(self._unknown_legend_label, legend_color=self._color_unknown,
+                                   kind=self._annotate_kind, tree_style=tree_style)
 
     def _build_annotate_face(self, width: int, height: int, border_color: str, bgcolor: str,
                              opacity: float, label: Union[str, Dict[str, Any]] = None) -> Face:

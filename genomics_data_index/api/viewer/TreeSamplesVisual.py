@@ -1,5 +1,5 @@
 import abc
-from typing import Union, Iterable, Tuple, Set
+from typing import Union, Iterable, Tuple, Set, Optional
 
 from ete3 import Tree, TreeStyle, Face, RectFace, CircleFace, TextFace
 
@@ -69,6 +69,12 @@ class TreeSamplesVisual(abc.ABC):
         :returns: None. Modifies tree and tree_style in-place.
         """
         pass
+
+    def _get_unknown_label(self, label: str) -> Optional[str]:
+        if label is not None:
+            return label + ' [U]'
+        else:
+            return None
 
     def _add_legend_entry(self, legend_label: str, legend_color: str, kind: str, tree_style: TreeStyle) -> None:
         if legend_label is not None:
