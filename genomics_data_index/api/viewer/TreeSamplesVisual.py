@@ -29,10 +29,6 @@ class TreeSamplesVisual(abc.ABC):
         self._legend_fontsize = legend_fontsize
         self._present_sample_names = None
         self._unknown_sample_names = None
-        self._unknown_legend_color_label = {'text': 'U', 'color': 'black',
-                                            'font': 'Verdana', 'fontsize': self._legend_fontsize}
-        self._present_legend_color_label = {'text': 'P', 'color': 'white',
-                                            'font': 'Verdana', 'fontsize': self._legend_fontsize}
 
     @property
     def present_sample_names(self) -> Set[str]:
@@ -100,18 +96,16 @@ class TreeSamplesVisual(abc.ABC):
                            legend_label: str, kind: str) -> Tuple[Face, Face, Face]:
         if kind == 'rect' or kind == 'rectangle' or kind == 'r':
             cf = RectFace(width=self._legend_nodesize, height=self._legend_nodesize, bgcolor=color,
-                          fgcolor='black', label=self._present_legend_color_label)
+                          fgcolor='black')
             if include_unknown:
                 ucf = RectFace(width=self._legend_nodesize, height=self._legend_nodesize, bgcolor=unknown_color,
-                              fgcolor='black', label=self._unknown_legend_color_label)
+                              fgcolor='black')
             else:
                 ucf = None
         elif kind == 'circle' or kind == 'circ' or kind == 'c':
-            cf = CircleFace(radius=self._legend_nodesize / 2, color=color,
-                            label=self._present_legend_color_label)
+            cf = CircleFace(radius=self._legend_nodesize / 2, color=color)
             if include_unknown:
-                ucf = CircleFace(radius=self._legend_nodesize / 2, color=unknown_color,
-                                 label=self._unknown_legend_color_label)
+                ucf = CircleFace(radius=self._legend_nodesize / 2, color=unknown_color)
             else:
                 ucf = None
         else:

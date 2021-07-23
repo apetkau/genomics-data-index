@@ -154,6 +154,9 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
                     annotate_label_fontsize: int = 12,
                     include_unknown: bool = True,
                     show_leaf_names: bool = True,
+                    show_legend_type_labels: bool = True,
+                    legend_type_label_present: str = 'Pr.',
+                    legend_type_label_unknown: str = 'Un.',
                     tree_scale: float = None) -> TreeStyler:
         """
         Constructs a new :py:class:`genomics_data_index.api.viewer.TreeStyler` object used to style and visualize trees.
@@ -191,6 +194,9 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
         :param annotate_label_fontsize: The font size of the annotation labels.
         :param include_unknown: Whether or not to include unknowns in annotations/highlights.
         :param show_leaf_names: True if leaf names should be shown on the tree, False otherwise.
+        :param show_legend_type_labels: Whether or not to show labels for legend types/categories (present or unknown).
+        :param legend_type_label_present: Text to show above legend color for present items.
+        :param legend_type_label_unknown: Text to show above legend color for unknown items.
         :param tree_scale: A scale factor for the tree.
         :return: A new :py:class:`genomics_data_index.api.viewer.TreeStyler` object used to style and visualize trees.
         """
@@ -225,6 +231,9 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
                                  annotate_label_fontsize=annotate_label_fontsize,
                                  include_unknown=include_unknown,
                                  show_leaf_names=show_leaf_names,
+                                 show_legend_type_labels=show_legend_type_labels,
+                                 legend_type_label_present=legend_type_label_present,
+                                 legend_type_label_unknown=legend_type_label_unknown,
                                  tree_scale=tree_scale)
 
     @property

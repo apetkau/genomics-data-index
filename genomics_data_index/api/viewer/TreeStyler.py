@@ -284,7 +284,7 @@ class TreeStyler:
             w = 400
 
         tree = self._tree.copy('newick')
-        tree_style = copy.deepcopy(self._tree_style)
+        tree_style = copy.deepcopy(tree_style)
         self._apply_samples_styles(tree=tree, tree_style=tree_style)
 
         return tree.render(file_name=file_name, w=w, h=h, tree_style=tree_style,
@@ -342,6 +342,9 @@ class TreeStyler:
                annotate_label_fontsize: int = 12,
                show_leaf_names: bool = True,
                include_unknown: bool = True,
+               show_legend_type_labels: bool = True,
+               legend_type_label_present: str = 'Pr.',
+               legend_type_label_unknown: str = 'Un.',
                tree_scale: float = None) -> TreeStyler:
         """
         Constructs a new TreeStyler object used to style and visualize trees.
@@ -380,6 +383,9 @@ class TreeStyler:
         :param annotate_label_fontsize: The font size of the annotation labels.
         :param include_unknown: Whether or not to include unknown samples in highlight/annotation boxes.
         :param show_leaf_names: True if leaf names should be shown on the tree, False otherwise.
+        :param show_legend_type_labels: Whether or not to show labels for legend types/categories (present or unknown).
+        :param legend_type_label_present: Text to show above legend color for present items.
+        :param legend_type_label_unknown: Text to show above legend color for unknown items.
         :param tree_scale: A scale factor for the tree.
         :return: A new TreeStyler object used to style and visualize trees.
         """
@@ -428,10 +434,36 @@ class TreeStyler:
             margin_bottom = 10
             cf = RectFace(width=10, height=10, fgcolor=None, bgcolor=None)
             cf.margin_bottom = margin_bottom
-            ts.legend.add_face(cf, column=0)
             tf = TextFace(legend_title, fsize=legend_fsize + 3)
             tf.margin_bottom = margin_bottom
-            ts.legend.add_face(tf, column=1)
+
+            if include_unknown:
+                ts.legend.add_face(cf, column=0)
+                ts.legend.add_face(cf, column=1)
+                ts.legend.add_face(tf, column=2)
+            else:
+                ts.legend.add_face(cf, column=0)
+                ts.legend.add_face(tf, column=1)
+
+        if show_legend_type_labels:
+            margin = 10
+            item_ptf = TextFace(legend_type_label_present, fsize=legend_fsize)
+            item_ptf.margin_bottom = margin
+            item_ptf.margin_left = margin
+            item_utf = TextFace(legend_type_label_unknown, fsize=legend_fsize)
+            item_utf.margin_bottom = margin
+            item_utf.margin_left = margin
+            item_cf = RectFace(width=10, height=10, fgcolor=None, bgcolor=None)
+            item_cf.margin_bottom = margin
+            item_cf.margin_left = margin
+
+            if include_unknown:
+                ts.legend.add_face(item_ptf, column=0)
+                ts.legend.add_face(item_utf, column=1)
+                ts.legend.add_face(item_cf, column=2)
+            else:
+                ts.legend.add_face(item_ptf, column=0)
+                ts.legend.add_face(item_cf, column=1)
 
         if title is not None:
             tf = TextFace(title, fsize=title_fsize)
