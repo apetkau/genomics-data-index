@@ -20,8 +20,10 @@ class AnnotateTreeSamplesVisual(TreeSamplesVisual):
     def __init__(self,
                  samples: Union[SamplesQuery, Iterable[str]],
                  label: Union[str, Dict[str, Any]],
+                 label_unknown: Union[str, Dict[str, Any]],
                  annotate_show_box_label: bool,
                  annotate_box_label_color: str,
+                 annotate_box_label_unknown_color: str,
                  annotate_label_fontsize: int,
                  legend_label: str,
                  box_width: int, box_height: int,
@@ -41,9 +43,11 @@ class AnnotateTreeSamplesVisual(TreeSamplesVisual):
         Creates a new AnnotateTreeSamplesVisual with the given information. This is not intended to be created directly
         but instead is created via methods in the :py:class:`genomics_data_index.api.viewer.TreeStyler` class.
         :param samples: The set of samples this visual style applies to.
-        :param label: A label for this set of samples.
+        :param label: A label for the this set of samples.
+        :param label_unknown: A label for the unknown set of samples.
         :param annotate_show_box_label: Whether or not the label should be printed in each annotate box.
         :param annotate_box_label_color: The color of the annotate box label if it is to be displayed.
+        :param annotate_box_label_unknown_color: The color of the annotate box label (for unknowns) if it is to be displayed.
         :param annotate_label_fontsize: The font size of the annotate box label if it is to be displayed.
         :param legend_label: The legend label.
         :param box_width: The width of the annotate box.
@@ -66,12 +70,10 @@ class AnnotateTreeSamplesVisual(TreeSamplesVisual):
         """
         super().__init__(samples, legend_nodesize=legend_nodesize,
                          legend_fontsize=legend_fontsize)
-        self._label = label
         self._annotate_show_box_label = annotate_show_box_label
-        self._annotate_box_label_color = annotate_box_label_color
         self._annotate_label_fontsize = annotate_label_fontsize
+        self._label = label
         self._legend_label = legend_label
-        self._unknown_legend_label = self._get_unknown_label(legend_label)
         self._box_width = box_width
         self._box_height = box_height
         self._color_present = color_present
@@ -93,14 +95,15 @@ class AnnotateTreeSamplesVisual(TreeSamplesVisual):
         self._include_unknown = include_unknown
 
         if self._annotate_show_box_label:
-            self._box_label = copy.deepcopy(self._label)
-            self._unknown_box_label = copy.deepcopy(self._label)
-            if self._box_label is not None and annotate_box_label_color is not None:
-                self._box_label['color'] = annotate_box_label_color
-                self._unknown_box_label['text'] = self._get_unknown_label(self._unknown_box_label['text'])
+            self._box_label_present = copy.deepcopy(label)
+            self._box_label_unknown = copy.deepcopy(label_unknown)
+            if self._box_label_present is not None and annotate_box_label_color is not None:
+                self._box_label_present['color'] = annotate_box_label_color
+            if self._box_label_unknown is not None and annotate_box_label_unknown_color is not None:
+                self._box_label_unknown['color'] = annotate_box_label_unknown_color
         else:
-            self._box_label = None
-            self._unknown_box_label = None
+            self._box_label_present = None
+            self._box_label_unknown = None
 
     def apply_visual(self, tree: Tree, tree_style: TreeStyle) -> None:
         if self._label is not None:
@@ -125,13 +128,13 @@ class AnnotateTreeSamplesVisual(TreeSamplesVisual):
                                                           border_color=self._annotate_border_color,
                                                           bgcolor=self._color_present,
                                                           opacity=self._annotate_opacity_present,
-                                                          label=self._box_label)
+                                                          label=self._box_label_present)
             elif self._include_unknown and (leaf.name in self.unknown_sample_names):
                 annotate_face = self._build_annotate_face(width=self._box_width, height=self._box_height,
                                                           border_color=self._annotate_border_color,
                                                           bgcolor=self._color_unknown,
                                                           opacity=self._annotate_opacity_unknown,
-                                                          label=self._unknown_box_label)
+                                                          label=self._box_label_unknown)
                 unknown_samples_count = unknown_samples_count + 1
             else:
                 annotate_face = self._build_annotate_face(width=self._box_width, height=self._box_height,

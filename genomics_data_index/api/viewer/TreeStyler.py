@@ -91,6 +91,7 @@ class TreeStyler:
         self._include_unknown = include_unknown
         self._annotate_show_box_label = annotate_show_box_label
         self._annotate_box_label_color = annotate_box_label_color
+        self._annotate_box_label_unknown_color = 'black'
         self._annotate_label_fontsize = annotate_label_fontsize
 
         if annotate_kind not in AnnotateTreeSamplesVisual.ANNOTATE_KINDS:
@@ -101,7 +102,8 @@ class TreeStyler:
         self._samples_styles_list = samples_styles_list
 
     def annotate(self, samples: Union[SamplesQuery, Iterable[str]],
-                 label: Union[str, Dict[str, Any]] = None,
+                 box_label: Union[str, Dict[str, Any]] = None,
+                 box_label_unknown: Union[str, Dict[str, Any]] = None,
                  annotate_show_box_label: bool = None, annotate_box_label_color: str = None,
                  legend_label: str = None,
                  box_width: int = None, box_height: int = None,
@@ -109,8 +111,10 @@ class TreeStyler:
         """
         Adds an annotation column beside the tree showing the which samples are in the passed set.
         :param samples: The samples to show as being present.
-        :param label: A label for the column. Can be text or dict with attributes text, font, color, and fontsize
+        :param box_label: A label for the column. Can be text or dict with attributes text, font, color, and fontsize
                       (this is passed to the underlying ete3 Face).
+        :param box_label_unknown: A label for any samples with unknown status. Can be text or dict with attributes text,
+                                  font, color, and fontsize (this is passed to the underlying ete3 Face).
         :param annotate_show_box_label: Whether or not the label should be added to every present item in the figure.
         :param annotate_box_label_color: If 'annotate_show_box_label' is set, this defines the color (overrides class setting).
         :param legend_label: A label to use for a legend item. The color should match the color for this annotated set.
@@ -136,22 +140,43 @@ class TreeStyler:
         if color_unknown is None:
             color_unknown = self._annotate_color_unknown
 
-        if isinstance(label, str):
+        if isinstance(box_label, str):
             # Pick default color since ete3 by default colors the same as what I'm using for the fill color
-            label = {'text': label, 'color': 'black', 'font': 'Verdana', 'fontsize': self._annotate_label_fontsize}
+            box_label = {'text': box_label, 'color': 'black', 'font': 'Verdana', 'fontsize': self._annotate_label_fontsize}
 
-        if label is not None:
-            label_present = copy.deepcopy(label)
+        if box_label_unknown is None and box_label is not None:
+            box_label_unknown = 'Un.'
+
+        if isinstance(box_label_unknown, str):
+            # Pick default color since ete3 by default colors the same as what I'm using for the fill color
+            box_label_unknown = {'text': box_label_unknown, 'color': 'black', 'font': 'Verdana', 'fontsize': self._annotate_label_fontsize}
+
+        if box_label is not None:
+            label_present = copy.deepcopy(box_label)
             if 'fontsize' not in label_present:
                 label_present['fontsize'] = self._annotate_label_fontsize
                 label_present['color'] = self._annotate_box_label_color
         else:
             label_present = None
 
+        box_label_color_unknown = self._annotate_box_label_unknown_color
+        if box_label_unknown is not None:
+            label_unknown = copy.deepcopy(box_label_unknown)
+            if 'fontsize' not in label_unknown:
+                label_unknown['fontsize'] = self._annotate_label_fontsize
+            if 'color' not in label_unknown:
+                label_unknown['color'] = self._annotate_box_label_unknown_color
+            else:
+                box_label_color_unknown = label_unknown['color']
+        else:
+            label_unknown = None
+
         samples_visual = AnnotateTreeSamplesVisual(samples=samples,
                                                    label=label_present,
+                                                   label_unknown=label_unknown,
                                                    annotate_show_box_label=annotate_show_box_label,
                                                    annotate_box_label_color=annotate_box_label_color,
+                                                   annotate_box_label_unknown_color=box_label_color_unknown,
                                                    annotate_label_fontsize=self._annotate_label_fontsize,
                                                    legend_label=legend_label,
                                                    box_width=box_width,
