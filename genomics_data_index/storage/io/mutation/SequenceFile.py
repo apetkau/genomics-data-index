@@ -43,10 +43,10 @@ class SequenceFile:
 
         with _open(self._file) as f:
             if self.is_genbank():
-                logger.debug(f'Parsing sequence file [{self._file}] as a genbank file')
+                logger.log(TRACE_LEVEL, f'Parsing sequence file [{self._file}] as a genbank file')
                 sequences = list(SeqIO.parse(f, 'genbank'))
             else:
-                logger.debug(f'Parsing sequence file [{self._file}] as a fasta file')
+                logger.log(TRACE_LEVEL, f'Parsing sequence file [{self._file}] as a fasta file')
                 sequences = list(SeqIO.parse(f, 'fasta'))
 
             return ref_name, sequences

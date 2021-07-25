@@ -12,6 +12,7 @@ from genomics_data_index.storage.model.db import Sample, FeatureSamples
 from genomics_data_index.storage.service import DatabaseConnection
 from genomics_data_index.storage.service import EntityExistsError
 from genomics_data_index.storage.service.SampleService import SampleService
+from genomics_data_index.storage.util import TRACE_LEVEL
 
 logger = logging.getLogger(__name__)
 
@@ -177,7 +178,7 @@ class FeatureService(abc.ABC):
         samples_dict = self._get_or_create_samples(list(sample_data_batch.keys()))
         persisted_sample_data_dict = {}
         for sample_name in samples_dict:
-            logger.debug(f'Persisting sample {sample_name}')
+            logger.log(TRACE_LEVEL, f'Persisting sample {sample_name}')
 
             sample = samples_dict[sample_name]
             persisted_sample_data = self._persist_sample_data(sample_data_batch[sample.name])

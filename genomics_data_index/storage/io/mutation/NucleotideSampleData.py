@@ -6,6 +6,7 @@ from typing import Tuple, Optional
 from genomics_data_index.storage.MaskedGenomicRegions import MaskedGenomicRegions
 from genomics_data_index.storage.io.SampleData import SampleData
 from genomics_data_index.storage.io.mutation.VariationFile import VariationFile
+from genomics_data_index.storage.util import TRACE_LEVEL
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +58,7 @@ class NucleotideSampleData(SampleData):
         self._assert_file_not_exists(new_vcf_index, 'Cannot persist data')
         self._assert_file_not_exists(new_mask_bed_file, 'Cannot persist data')
 
-        logger.debug(f'Copying VCF and BED files to [{output_dir}] for sample [{self.sample_name}]')
+        logger.log(TRACE_LEVEL, f'Copying VCF and BED files to [{output_dir}] for sample [{self.sample_name}]')
 
         shutil.copy(self._vcf_file, new_vcf_file)
         shutil.copy(self._vcf_file_index, new_vcf_index)
