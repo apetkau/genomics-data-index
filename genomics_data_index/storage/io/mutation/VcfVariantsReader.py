@@ -65,24 +65,28 @@ class VcfVariantsReader(NucleotideFeaturesReader):
     def _get_type(self, vcf_df: pd.DataFrame) -> pd.Series:
         return vcf_df['INFO'].map(lambda x: x['TYPE'][0])
 
+    def _read_sample_table(self, sample_name: str) -> pd.DataFrame:
+        vcf_file, index_file = self._sample_files_map[sample_name].get_vcf_file()
+        frame = self.read_vcf(vcf_file, sample_name)
+        frame = self._snpeff_parser.select_variant_annotations(frame)
+
+        if self._include_masked_regions:
+            logger.log(TRACE_LEVEL, f'Creating unknown/missing features for sample=[{sample_name}]')
+            frame_mask = self.mask_to_features(self._sample_files_map[sample_name].get_mask())
+            frame_mask['SAMPLE'] = sample_name
+            frame_mask['FILE'] = vcf_file.name
+            logger.log(TRACE_LEVEL, f'Combining VCF and unknown/missing (mask) dataframes for sample=[{sample_name}]')
+            frame_vcf_mask = self.combine_vcf_mask(frame, frame_mask)
+        else:
+            frame_vcf_mask = frame
+
+        return frame_vcf_mask
+
     def _read_features_table(self) -> pd.DataFrame:
         frames = []
         logger.debug(f'Starting to read features table from {len(self._sample_files_map)} VCF files')
         for sample in self._sample_files_map:
-            vcf_file, index_file = self._sample_files_map[sample].get_vcf_file()
-            frame = self.read_vcf(vcf_file, sample)
-            frame = self._snpeff_parser.select_variant_annotations(frame)
-
-            if self._include_masked_regions:
-                logger.log(TRACE_LEVEL, f'Creating unknown/missing features for sample=[{sample}]')
-                frame_mask = self.mask_to_features(self._sample_files_map[sample].get_mask())
-                frame_mask['SAMPLE'] = sample
-                frame_mask['FILE'] = vcf_file.name
-                logger.log(TRACE_LEVEL, f'Combining VCF and unknown/missing (mask) dataframes for sample=[{sample}]')
-                frame_vcf_mask = self.combine_vcf_mask(frame, frame_mask)
-            else:
-                frame_vcf_mask = frame
-
+            frame_vcf_mask = self._read_sample_table(sample)
             frames.append(frame_vcf_mask)
 
         logger.debug(f'Finished reading features table from {len(self._sample_files_map)} VCF files')
