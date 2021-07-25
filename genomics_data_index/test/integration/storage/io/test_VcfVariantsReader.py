@@ -112,23 +112,30 @@ def variants_reader_default_no_data() -> VcfVariantsReader:
     return VcfVariantsReader(sample_files_map={})
 
 
-def variants_reader_from_snippy_internal(sample_dirs, include_masked_regions: bool) -> VcfVariantsReader:
+def variants_reader_from_snippy_internal(sample_dirs, include_masked_regions: bool,
+                                         ncores: int) -> VcfVariantsReader:
     tmp_dir = Path(tempfile.mkdtemp())
     file_processor = SerialSampleFilesProcessor(tmp_dir)
     data_package = NucleotideSampleDataPackage.create_from_snippy(sample_dirs=sample_dirs,
                                                                   sample_files_processor=file_processor)
     processed_files = cast(Dict[str, NucleotideSampleData], data_package.process_all_data())
-    return VcfVariantsReader.create(processed_files, include_masked_regions=include_masked_regions)
+    return VcfVariantsReader.create(processed_files, include_masked_regions=include_masked_regions,
+                                    ncores=ncores)
 
 
 @pytest.fixture
 def variants_reader_from_snippy(sample_dirs) -> VcfVariantsReader:
-    return variants_reader_from_snippy_internal(sample_dirs, include_masked_regions=False)
+    return variants_reader_from_snippy_internal(sample_dirs, include_masked_regions=False, ncores=1)
 
 
 @pytest.fixture
 def variants_reader_from_snippy_masked(sample_dirs) -> VcfVariantsReader:
-    return variants_reader_from_snippy_internal(sample_dirs, include_masked_regions=True)
+    return variants_reader_from_snippy_internal(sample_dirs, include_masked_regions=True, ncores=1)
+
+
+@pytest.fixture
+def variants_reader_from_snippy_masked_multicore(sample_dirs) -> VcfVariantsReader:
+    return variants_reader_from_snippy_internal(sample_dirs, include_masked_regions=True, ncores=2)
 
 
 @pytest.fixture
@@ -282,6 +289,23 @@ def test_snippy_get_variants_table_masked(variants_reader_from_snippy_masked):
     assert 33 == len(df[(df['SAMPLE'] == 'SampleC') & (df['TYPE'] != 'UNKNOWN_MISSING')])
 
 
+def test_snippy_get_variants_table_masked_multicore(variants_reader_from_snippy_masked_multicore):
+    df = variants_reader_from_snippy_masked_multicore.get_features_table()
+
+    assert 1170 == len(df), 'Data has incorrect length'
+    assert {'SampleA', 'SampleB', 'SampleC'} == set(df['SAMPLE'].tolist()), 'Incorrect sample names'
+
+    # Missing/unknown
+    assert 437 == len(df[(df['SAMPLE'] == 'SampleA') & (df['TYPE'] == 'UNKNOWN_MISSING')])
+    assert 276 == len(df[(df['SAMPLE'] == 'SampleB') & (df['TYPE'] == 'UNKNOWN_MISSING')])
+    assert 329 == len(df[(df['SAMPLE'] == 'SampleC') & (df['TYPE'] == 'UNKNOWN_MISSING')])
+
+    # Variants
+    assert 45 == len(df[(df['SAMPLE'] == 'SampleA') & (df['TYPE'] != 'UNKNOWN_MISSING')])
+    assert 50 == len(df[(df['SAMPLE'] == 'SampleB') & (df['TYPE'] != 'UNKNOWN_MISSING')])
+    assert 33 == len(df[(df['SAMPLE'] == 'SampleC') & (df['TYPE'] != 'UNKNOWN_MISSING')])
+
+
 def test_snippy_get_genomic_masks(variants_reader_from_snippy):
     mask = variants_reader_from_snippy.get_genomic_masked_region('SampleA')
     assert 437 == len(mask)
@@ -302,20 +326,33 @@ def test_snippy_get_samples_list(variants_reader_from_snippy):
 
 def test_snippy_get_samples_list_two_files():
     sample_dirs = [data_dir / 'SampleA', data_dir / 'SampleB']
-    reader = variants_reader_from_snippy_internal(sample_dirs, include_masked_regions=False)
+    reader = variants_reader_from_snippy_internal(sample_dirs, include_masked_regions=False,
+                                                  ncores=1)
 
     assert {'SampleA', 'SampleB'} == set(reader.samples_list())
 
 
 def test_snippy_read_empty_vcf(sample_dirs_empty):
-    reader = variants_reader_from_snippy_internal(sample_dirs_empty, include_masked_regions=False)
+    reader = variants_reader_from_snippy_internal(sample_dirs_empty, include_masked_regions=False,
+                                                  ncores=1)
     df = reader.get_features_table()
 
     assert 0 == len(df), 'Data has incorrect length'
 
 
 def test_snippy_read_empty_vcf_include_masked_regions(sample_dirs_empty):
-    reader = variants_reader_from_snippy_internal(sample_dirs_empty, include_masked_regions=True)
+    reader = variants_reader_from_snippy_internal(sample_dirs_empty, include_masked_regions=True,
+                                                  ncores=1)
+    df = reader.get_features_table()
+
+    assert 437 == len(df), 'Data has incorrect length'
+    assert {'UNKNOWN_MISSING'} == set(df['TYPE'])
+    assert {'?'} == set(df['ALT'])
+
+
+def test_snippy_read_empty_vcf_multicore_include_masked_regions(sample_dirs_empty):
+    reader = variants_reader_from_snippy_internal(sample_dirs_empty, include_masked_regions=True,
+                                                  ncores=2)
     df = reader.get_features_table()
 
     assert 437 == len(df), 'Data has incorrect length'

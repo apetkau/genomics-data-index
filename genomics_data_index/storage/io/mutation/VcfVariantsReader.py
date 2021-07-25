@@ -2,6 +2,7 @@ import logging
 import os
 from pathlib import Path
 from typing import List, Dict, Optional
+import multiprocessing as mp
 
 import pandas as pd
 import vcf
@@ -20,12 +21,13 @@ logger = logging.getLogger(__name__)
 class VcfVariantsReader(NucleotideFeaturesReader):
     VCF_FRAME_COLUMNS = ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE', 'VARIANT_ID']
 
-    def __init__(self, sample_files_map: Dict[str, NucleotideSampleData],
+    def __init__(self, sample_files_map: Dict[str, NucleotideSampleData], ncores: int = 1,
                  include_masked_regions: bool = True):
         super().__init__()
         self._sample_files_map = sample_files_map
         self._snpeff_parser = VcfSnpEffAnnotationParser()
         self._include_masked_regions = include_masked_regions
+        self._processing_cores = ncores
 
     def _fix_df_columns(self, vcf_df: pd.DataFrame) -> pd.DataFrame:
         # If no data, I still want certain column names so that rest of code still works
@@ -65,8 +67,9 @@ class VcfVariantsReader(NucleotideFeaturesReader):
     def _get_type(self, vcf_df: pd.DataFrame) -> pd.Series:
         return vcf_df['INFO'].map(lambda x: x['TYPE'][0])
 
-    def _read_sample_table(self, sample_name: str) -> pd.DataFrame:
-        vcf_file, index_file = self._sample_files_map[sample_name].get_vcf_file()
+    def _read_sample_table(self, sample_data: NucleotideSampleData) -> pd.DataFrame:
+        vcf_file, index_file = sample_data.get_vcf_file()
+        sample_name = sample_data.sample_name
         frame = self.read_vcf(vcf_file, sample_name)
         frame = self._snpeff_parser.select_variant_annotations(frame)
 
@@ -82,12 +85,25 @@ class VcfVariantsReader(NucleotideFeaturesReader):
 
         return frame_vcf_mask
 
+    def _get_chunk_size(self, number_samples: int):
+        max_chunk_size = 25
+        chunk_size = max(1, int(number_samples / self._processing_cores))
+        return min(max_chunk_size, chunk_size)
+
     def _read_features_table(self) -> pd.DataFrame:
         frames = []
+        number_samples = len(self._sample_files_map)
+        sample_data_list = list(self._sample_files_map.values())
+        chunk_size = self._get_chunk_size(number_samples)
         logger.debug(f'Starting to read features table from {len(self._sample_files_map)} VCF files')
-        for sample in self._sample_files_map:
-            frame_vcf_mask = self._read_sample_table(sample)
-            frames.append(frame_vcf_mask)
+        logger.debug(f'Starting preprocessing {number_samples} samples '
+                     f'with {self._processing_cores} cores and chunk size {chunk_size}')
+        with mp.Pool(self._processing_cores) as pool:
+            frame_vcf_masks = pool.imap_unordered(self._read_sample_table,
+                                                  sample_data_list,
+                                                  chunk_size)
+            for frame_vcf_mask in frame_vcf_masks:
+                frames.append(frame_vcf_mask)
 
         logger.debug(f'Finished reading features table from {len(self._sample_files_map)} VCF files')
         return pd.concat(frames)
@@ -154,5 +170,6 @@ class VcfVariantsReader(NucleotideFeaturesReader):
 
     @classmethod
     def create(cls, sample_files_map: Dict[str, NucleotideSampleData],
-               include_masked_regions: bool = True):
-        return cls(sample_files_map=sample_files_map, include_masked_regions=include_masked_regions)
+               include_masked_regions: bool = True, ncores: int = 1):
+        return cls(sample_files_map=sample_files_map, include_masked_regions=include_masked_regions,
+                   ncores=ncores)
