@@ -1,5 +1,5 @@
 import abc
-from typing import Union, Iterable, Tuple, Set, Optional, Dict
+from typing import Union, Iterable, Tuple, Set, Dict
 
 from ete3 import Tree, TreeStyle, Face, RectFace, CircleFace, TextFace
 

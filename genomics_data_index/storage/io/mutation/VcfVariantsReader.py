@@ -1,19 +1,14 @@
 import logging
-import os
-from pathlib import Path
-from typing import List, Dict, Optional
 import multiprocessing as mp
+from typing import List, Dict, Optional
 
 import pandas as pd
-import vcf
 
 from genomics_data_index.storage.MaskedGenomicRegions import MaskedGenomicRegions
 from genomics_data_index.storage.io.SampleData import SampleData
 from genomics_data_index.storage.io.mutation.NucleotideFeaturesReader import NucleotideFeaturesReader
 from genomics_data_index.storage.io.mutation.NucleotideSampleData import NucleotideSampleData
 from genomics_data_index.storage.io.mutation.VcfSnpEffAnnotationParser import VcfSnpEffAnnotationParser
-from genomics_data_index.storage.model import NUCLEOTIDE_UNKNOWN, NUCLEOTIDE_UNKNOWN_TYPE
-from genomics_data_index.storage.util import TRACE_LEVEL
 
 logger = logging.getLogger(__name__)
 

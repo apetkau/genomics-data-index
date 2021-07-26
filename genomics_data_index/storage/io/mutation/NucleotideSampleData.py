@@ -2,14 +2,15 @@ import logging
 import shutil
 from pathlib import Path
 from typing import Tuple, Optional
+
 import pandas as pd
 
 from genomics_data_index.storage.MaskedGenomicRegions import MaskedGenomicRegions
 from genomics_data_index.storage.io.SampleData import SampleData
 from genomics_data_index.storage.io.mutation.VariationFile import VariationFile
-from genomics_data_index.storage.util import TRACE_LEVEL
-from genomics_data_index.storage.model import NUCLEOTIDE_UNKNOWN, NUCLEOTIDE_UNKNOWN_TYPE
 from genomics_data_index.storage.io.mutation.VcfSnpEffAnnotationParser import VcfSnpEffAnnotationParser
+from genomics_data_index.storage.model import NUCLEOTIDE_UNKNOWN_TYPE
+from genomics_data_index.storage.util import TRACE_LEVEL
 
 logger = logging.getLogger(__name__)
 
@@ -95,7 +96,8 @@ class NucleotideSampleData(SampleData):
             frame_mask = self.get_mask().mask_to_features()
             frame_mask['SAMPLE'] = self.sample_name
             frame_mask['FILE'] = vcf_file.name
-            logger.log(TRACE_LEVEL, f'Combining VCF and unknown/missing (mask) dataframes for sample=[{self.sample_name}]')
+            logger.log(TRACE_LEVEL,
+                       f'Combining VCF and unknown/missing (mask) dataframes for sample=[{self.sample_name}]')
             frame_vcf_mask = self.combine_vcf_mask(vcf_features, frame_mask)
         else:
             frame_vcf_mask = vcf_features

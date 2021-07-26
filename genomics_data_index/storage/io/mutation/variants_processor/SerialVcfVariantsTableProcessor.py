@@ -1,8 +1,10 @@
 from typing import List, Generator
+
 import pandas as pd
 
 from genomics_data_index.storage.io.mutation.NucleotideSampleData import NucleotideSampleData
-from genomics_data_index.storage.io.mutation.variants_processor.VcfVariantsTableProcessor import VcfVariantsTableProcessor
+from genomics_data_index.storage.io.mutation.variants_processor.VcfVariantsTableProcessor import \
+    VcfVariantsTableProcessor
 
 
 class ServialVcfVariantsTableProcessor(VcfVariantsTableProcessor):

@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import logging
 import multiprocessing as mp
+import os
 import tempfile
 import uuid
 from pathlib import Path
 from typing import List, Tuple, Optional
-import vcf
-import os
 
 import pandas as pd
+import vcf
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 

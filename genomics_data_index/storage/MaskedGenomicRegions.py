@@ -3,11 +3,12 @@ from __future__ import annotations
 import tempfile
 from pathlib import Path
 from typing import List, Set, Dict, Generator, Tuple
-import pandas as pd
 
+import pandas as pd
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 from pybedtools import BedTool
+
 from genomics_data_index.storage.model import NUCLEOTIDE_UNKNOWN, NUCLEOTIDE_UNKNOWN_TYPE
 
 
