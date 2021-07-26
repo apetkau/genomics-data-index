@@ -1,10 +1,10 @@
 import logging
 from typing import Generator, Set
 
+from genomics_data_index.storage.io.FeaturesReader import FeaturesReader
 from genomics_data_index.storage.io.SampleData import SampleData
 from genomics_data_index.storage.io.SampleDataPackage import SampleDataPackage
 from genomics_data_index.storage.io.mlst.MLSTFeaturesReader import MLSTFeaturesReader
-from genomics_data_index.storage.io.FeaturesReader import FeaturesReader
 from genomics_data_index.storage.io.mlst.MLSTSampleData import MLSTSampleData
 
 logger = logging.getLogger(__name__)

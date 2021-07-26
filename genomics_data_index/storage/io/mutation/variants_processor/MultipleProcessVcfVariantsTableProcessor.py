@@ -3,7 +3,8 @@ from typing import List, Generator
 import pandas as pd
 
 from genomics_data_index.storage.io.mutation.NucleotideSampleData import NucleotideSampleData
-from genomics_data_index.storage.io.mutation.variants_processor.VcfVariantsTableProcessor import VcfVariantsTableProcessor
+from genomics_data_index.storage.io.mutation.variants_processor.VcfVariantsTableProcessor import \
+    VcfVariantsTableProcessor
 
 
 class MultipleProcessVcfVariantsTableProcessor(VcfVariantsTableProcessor):
@@ -20,7 +21,6 @@ class MultipleProcessVcfVariantsTableProcessor(VcfVariantsTableProcessor):
     def process(self, sample_data: List[NucleotideSampleData], include_masked_regions: bool) -> Generator[
         pd.DataFrame, None, None]:
         raise NotImplementedError()
-
 
     # def _read_features_table(self) -> pd.DataFrame:
     #     frames = []
@@ -39,4 +39,3 @@ class MultipleProcessVcfVariantsTableProcessor(VcfVariantsTableProcessor):
     #
     #     logger.debug(f'Finished reading features table from {len(self._sample_files_map)} VCF files')
     #     return pd.concat(frames)
-

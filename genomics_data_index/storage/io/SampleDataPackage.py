@@ -1,9 +1,10 @@
 from __future__ import annotations
-import abc
-from typing import Generator, Set, Dict
 
-from genomics_data_index.storage.io.SampleData import SampleData
+import abc
+from typing import Generator, Set
+
 from genomics_data_index.storage.io.FeaturesReader import FeaturesReader
+from genomics_data_index.storage.io.SampleData import SampleData
 
 
 class SampleDataPackage(abc.ABC):

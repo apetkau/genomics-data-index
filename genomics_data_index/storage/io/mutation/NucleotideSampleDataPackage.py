@@ -3,18 +3,18 @@ from __future__ import annotations
 from pathlib import Path
 from typing import List, Generator, Dict, Set, cast
 
+from genomics_data_index.storage.io.FeaturesReader import FeaturesReader
 from genomics_data_index.storage.io.SampleData import SampleData
-from genomics_data_index.storage.io.mutation.NucleotideSampleData import NucleotideSampleData
 from genomics_data_index.storage.io.SampleDataPackage import SampleDataPackage
 from genomics_data_index.storage.io.SampleFilesProcessor import SampleFilesProcessor
+from genomics_data_index.storage.io.mutation.NucleotideSampleData import NucleotideSampleData
 from genomics_data_index.storage.io.mutation.NucleotideSampleDataSequenceMask import NucleotideSampleDataSequenceMask
-from genomics_data_index.storage.io.processor.NullSampleFilesProcessor import NullSampleFilesProcessor
-from genomics_data_index.storage.io.FeaturesReader import FeaturesReader
 from genomics_data_index.storage.io.mutation.VcfVariantsReader import VcfVariantsReader
-from genomics_data_index.storage.io.mutation.variants_processor.VcfVariantsTableProcessor import \
-    VcfVariantsTableProcessor
 from genomics_data_index.storage.io.mutation.variants_processor.SerialVcfVariantsTableProcessor import \
     SerialVcfVariantsTableProcessor
+from genomics_data_index.storage.io.mutation.variants_processor.VcfVariantsTableProcessor import \
+    VcfVariantsTableProcessor
+from genomics_data_index.storage.io.processor.NullSampleFilesProcessor import NullSampleFilesProcessor
 
 
 class NucleotideSampleDataPackage(SampleDataPackage):

@@ -8,7 +8,8 @@ from genomics_data_index.storage.io.SampleData import SampleData
 from genomics_data_index.storage.io.mutation.NucleotideFeaturesReader import NucleotideFeaturesReader
 from genomics_data_index.storage.io.mutation.NucleotideSampleData import NucleotideSampleData
 from genomics_data_index.storage.io.mutation.VcfSnpEffAnnotationParser import VcfSnpEffAnnotationParser
-from genomics_data_index.storage.io.mutation.variants_processor.VcfVariantsTableProcessor import VcfVariantsTableProcessor
+from genomics_data_index.storage.io.mutation.variants_processor.VcfVariantsTableProcessor import \
+    VcfVariantsTableProcessor
 
 logger = logging.getLogger(__name__)
 

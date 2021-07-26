@@ -8,13 +8,14 @@ import pytest
 from genomics_data_index.storage.io.mutation.NucleotideSampleData import NucleotideSampleData
 from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
 from genomics_data_index.storage.io.mutation.VcfVariantsReader import VcfVariantsReader
+from genomics_data_index.storage.io.mutation.variants_processor.SerialVcfVariantsTableProcessor import \
+    SerialVcfVariantsTableProcessor
+from genomics_data_index.storage.io.mutation.variants_processor.VcfVariantsTableProcessor import \
+    VcfVariantsTableProcessor
 from genomics_data_index.storage.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor
-from genomics_data_index.storage.io.mutation.variants_processor.VcfVariantsTableProcessor import VcfVariantsTableProcessor
-from genomics_data_index.storage.io.mutation.variants_processor.SerialVcfVariantsTableProcessor import SerialVcfVariantsTableProcessor
 from genomics_data_index.test.integration import data_dir
 from genomics_data_index.test.integration import data_dir_empty
 from genomics_data_index.test.integration import snpeff_sample_vcfs
-
 
 serial_variants_processor = SerialVcfVariantsTableProcessor()
 
@@ -46,7 +47,8 @@ def vcf_and_mask_files(sample_dirs) -> Dict[str, Dict[str, Path]]:
     }
 
 
-def variants_reader_internal(sample_dirs, variants_processor: VcfVariantsTableProcessor, include_masked_regions: bool) -> VcfVariantsReader:
+def variants_reader_internal(sample_dirs, variants_processor: VcfVariantsTableProcessor,
+                             include_masked_regions: bool) -> VcfVariantsReader:
     tmp_dir = Path(tempfile.mkdtemp())
     vcf_masks = vcf_and_mask_files(sample_dirs)
     file_processor = SerialSampleFilesProcessor(tmp_dir)

@@ -1,6 +1,5 @@
 import pandas as pd
 
-
 from genomics_data_index.storage.io.mutation.NucleotideSampleData import NucleotideSampleData
 
 
