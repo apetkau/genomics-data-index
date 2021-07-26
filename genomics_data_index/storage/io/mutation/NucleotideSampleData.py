@@ -85,6 +85,7 @@ class NucleotideSampleData(SampleData):
 
     def read_vcf_features(self) -> pd.DataFrame:
         vcf_file, vcf_file_index = self.get_vcf_file()
+        logger.log(TRACE_LEVEL, f'Reading data for sample [{self.sample_name}] from VCF file [{vcf_file}]')
         return VariationFile(vcf_file).read_features(self.sample_name, snpeff_parser=self._snpeff_parser)
 
     def read_sample_data_features(self, include_masked_regions: bool = True) -> pd.DataFrame:

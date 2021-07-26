@@ -13,6 +13,7 @@ from genomics_data_index.storage.io.mutation.variants_processor.SerialVcfVariant
 from genomics_data_index.storage.io.processor.MultipleProcessSampleFilesProcessor import \
     MultipleProcessSampleFilesProcessor
 from genomics_data_index.storage.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor
+from genomics_data_index.storage.io.mutation.variants_processor.MultipleProcessVcfVariantsTableProcessor import MultipleProcessVcfVariantsTableProcessor
 from genomics_data_index.test.integration import data_dir
 from genomics_data_index.test.integration import data_dir_empty
 
@@ -75,6 +76,24 @@ def test_iter_sample_data(sample_dirs):
         assert vcf_index.parent == tmp_file
 
 
+def do_test_get_features_reader_and_features_table(data_package: NucleotideSampleDataPackage):
+    # If data is not preprocessed, make sure exception is raised
+    features_reader = data_package.get_features_reader()
+    assert features_reader is not None
+    with pytest.raises(Exception) as execinfo:
+        features_reader.get_features_table()
+    assert 'VCF file for sample' in str(execinfo.value)
+    assert 'is not preprocessed' in str(execinfo.value)
+
+    # Process data
+    data_package_processed = data_package.process_all_data()
+
+    # Now get features reader from new data package and verify I can read feature tables
+    features_reader = data_package_processed.get_features_reader()
+    features_df = features_reader.get_features_table()
+    assert 1170 == len(features_df)
+    assert {'SampleA', 'SampleB', 'SampleC'} == set(features_df['SAMPLE'].tolist())
+
 def test_get_features_reader_and_features_table_serial_variants_processor(sample_dirs):
     with TemporaryDirectory() as tmp_file_str:
         tmp_file = Path(tmp_file_str)
@@ -86,23 +105,21 @@ def test_get_features_reader_and_features_table_serial_variants_processor(sample
                                                                                   'masks'],
                                                                               variants_processor=variants_processor,
                                                                               sample_files_processor=file_processor)
+        do_test_get_features_reader_and_features_table(data_package)
 
-        # If data is not preprocessed, make sure exception is raised
-        features_reader = data_package.get_features_reader()
-        assert features_reader is not None
-        with pytest.raises(Exception) as execinfo:
-            features_reader.get_features_table()
-        assert 'VCF file for sample' in str(execinfo.value)
-        assert 'is not preprocessed' in str(execinfo.value)
 
-        # Process data
-        data_package_processed = data_package.process_all_data()
-
-        # Now get features reader from new data package and verify I can read feature tables
-        features_reader = data_package_processed.get_features_reader()
-        features_df = features_reader.get_features_table()
-        assert 1170 == len(features_df)
-        assert {'SampleA', 'SampleB', 'SampleC'} == set(features_df['SAMPLE'].tolist())
+def test_get_features_reader_and_features_table_parallel_variants_processor(sample_dirs):
+    with TemporaryDirectory() as tmp_file_str:
+        tmp_file = Path(tmp_file_str)
+        vcf_masks = vcf_and_mask_files(sample_dirs)
+        file_processor = SerialSampleFilesProcessor(tmp_file)
+        variants_processor = MultipleProcessVcfVariantsTableProcessor(ncores=2)
+        data_package = NucleotideSampleDataPackage.create_from_sequence_masks(sample_vcf_map=vcf_masks['vcfs'],
+                                                                              masked_genomic_files_map=vcf_masks[
+                                                                                  'masks'],
+                                                                              variants_processor=variants_processor,
+                                                                              sample_files_processor=file_processor)
+        do_test_get_features_reader_and_features_table(data_package)
 
 
 def test_persisted_sample_data_file_names(sample_dirs):

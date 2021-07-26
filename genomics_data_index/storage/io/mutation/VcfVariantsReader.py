@@ -29,9 +29,6 @@ class VcfVariantsReader(NucleotideFeaturesReader):
         vcf_file, index_file = self._sample_files_map[sample_name].get_vcf_file()
         return vcf_file
 
-    def read_sample_data_features(self, sample_data: NucleotideSampleData) -> pd.DataFrame:
-        return sample_data.read_sample_data_features(self._include_masked_regions)
-
     def _read_features_table(self) -> pd.DataFrame:
         frames = []
         sample_data_list = list(self._sample_files_map.values())
