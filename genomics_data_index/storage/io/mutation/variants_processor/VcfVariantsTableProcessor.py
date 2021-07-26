@@ -12,5 +12,5 @@ class VcfVariantsTableProcessor(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def process(self, sample_data: List[NucleotideSampleData]) -> Generator[pd.DataFrame, None, None]:
+    def process(self, sample_data: List[NucleotideSampleData], include_masked_regions: bool) -> Generator[pd.DataFrame, None, None]:
         pass
