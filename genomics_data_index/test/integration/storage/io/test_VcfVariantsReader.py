@@ -163,66 +163,6 @@ def test_get_variants_table(variants_reader):
     assert ['OTHER'] == df.loc[(df['SAMPLE'] == 'SampleC') & (df['POS'] == 1984), 'TYPE'].tolist()
 
 
-def test_get_genomic_masks_and_mask_to_features(variants_reader):
-    mask = variants_reader.get_genomic_masked_region('SampleA')
-    assert 437 == len(mask)
-    assert {'reference'} == mask.sequence_names()
-    assert 437 == len(variants_reader.mask_to_features(mask))
-
-    mask = variants_reader.get_genomic_masked_region('SampleB')
-    assert 276 == len(mask)
-    assert {'reference'} == mask.sequence_names()
-    assert 276 == len(variants_reader.mask_to_features(mask))
-
-    mask = variants_reader.get_genomic_masked_region('SampleC')
-    assert 329 == len(mask)
-    assert {'reference'} == mask.sequence_names()
-    assert 329 == len(variants_reader.mask_to_features(mask))
-
-
-def test_get_genomic_masks_empty(variants_reader_empty_masks):
-    mask = variants_reader_empty_masks.get_genomic_masked_region('SampleA')
-    assert mask.is_empty()
-    assert 0 == len(variants_reader_empty_masks.mask_to_features(mask))
-
-    mask = variants_reader_empty_masks.get_genomic_masked_region('SampleB')
-    assert mask.is_empty()
-    assert 0 == len(variants_reader_empty_masks.mask_to_features(mask))
-
-    mask = variants_reader_empty_masks.get_genomic_masked_region('SampleC')
-    assert mask.is_empty()
-    assert 0 == len(variants_reader_empty_masks.mask_to_features(mask))
-
-
-@pytest.mark.skip()
-def test_combine_vcf_mask(variants_reader, sample_dirs):
-    expected_columns = ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE', 'VARIANT_ID',
-                        'ANN.Allele', 'ANN.Annotation', 'ANN.Annotation_Impact', 'ANN.Gene_Name', 'ANN.Gene_ID',
-                        'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p']
-
-    vcf_mask_files_dict = vcf_and_mask_files(sample_dirs)
-
-    sampleA_vcf = vcf_mask_files_dict['vcfs']['SampleA']
-    sampleA_vcf_df = variants_reader.read_vcf(sampleA_vcf, 'SampleA')
-    assert 46 == len(sampleA_vcf_df)
-    assert 461 in sampleA_vcf_df['POS'].tolist()
-
-    mask = variants_reader.get_genomic_masked_region('SampleA')
-    sampleA_mask_df = variants_reader.mask_to_features(mask)
-    assert 437 == len(sampleA_mask_df)
-    assert 461 in sampleA_mask_df['POS'].tolist()
-
-    combined_df = variants_reader.combine_vcf_mask(vcf_frame=sampleA_vcf_df, mask_frame=sampleA_mask_df)
-
-    assert expected_columns == combined_df.columns.tolist()
-    assert 482 == len(combined_df)
-    assert 436 == len(combined_df[combined_df['TYPE'] == 'UNKNOWN_MISSING'])
-    assert 46 == len(combined_df[combined_df['TYPE'] != 'UNKNOWN_MISSING'])
-
-    # Make sure it's the SNV/SNP from the VCF file that I keep and not the missing position in this file
-    assert combined_df[combined_df['POS'] == 461]['TYPE'] == 'INDEL'
-
-
 def test_get_samples_list(variants_reader):
     assert {'SampleA', 'SampleB', 'SampleC'} == set(variants_reader.samples_list())
 

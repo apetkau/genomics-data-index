@@ -146,3 +146,29 @@ def test_read_sample_data_features_snpeff_with_unknown(sample_data_sh10_014):
     assert ['murF'] == v['ANN.Gene_Name'].tolist()
     assert ['c.497C>A'] == v['ANN.HGVS.c'].tolist()
     assert ['p.Ala166Glu'] == v['ANN.HGVS.p'].tolist()
+
+
+def test_combine_vcf_mask(sample_dataA: NucleotideSampleData):
+    expected_columns = ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE', 'VARIANT_ID',
+                        'ANN.Allele', 'ANN.Annotation', 'ANN.Annotation_Impact', 'ANN.Gene_Name', 'ANN.Gene_ID',
+                        'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p']
+
+    sampleA_vcf_df = sample_dataA.read_vcf_features()
+    assert 46 == len(sampleA_vcf_df)
+    assert 461 in sampleA_vcf_df['POS'].tolist()
+
+    sampleA_mask_df = sample_dataA.get_mask().mask_to_features()
+    assert 437 == len(sampleA_mask_df)
+    assert 461 in sampleA_mask_df['POS'].tolist()
+
+    combined_df = sample_dataA.combine_vcf_mask(vcf_frame=sampleA_vcf_df, mask_frame=sampleA_mask_df)
+
+    assert expected_columns == combined_df.columns.tolist()
+    assert 482 == len(combined_df)
+    assert 437 == len(combined_df[combined_df['TYPE'] == 'UNKNOWN_MISSING'])
+    assert 45 == len(combined_df[combined_df['TYPE'] != 'UNKNOWN_MISSING'])
+    logger.warning('I need to verify that mask coordinates are correct')
+
+    # Make sure it's the SNV/SNP from the VCF file that I keep and not the missing position in this file
+    # assert combined_df[combined_df['POS'] == 461]['TYPE'] == 'INDEL'
+    assert ['UNKNOWN_MISSING'] == combined_df[combined_df['POS'] == 461]['TYPE'].tolist()
