@@ -34,27 +34,13 @@ class VcfVariantsReader(NucleotideFeaturesReader):
         vcf_file, index_file = self._sample_files_map[sample_name].get_vcf_file()
         return vcf_file
 
-    def read_sample_data_features(self, sample_data: NucleotideSampleData) -> pd.DataFrame:
-        vcf_file, index_file = sample_data.get_vcf_file()
-        sample_name = sample_data.sample_name
-        frame = sample_data.read_features()
-
-        if self._include_masked_regions:
-            logger.log(TRACE_LEVEL, f'Creating unknown/missing features for sample=[{sample_name}]')
-            frame_mask = self._sample_files_map[sample_name].get_mask().mask_to_features()
-            frame_mask['SAMPLE'] = sample_name
-            frame_mask['FILE'] = vcf_file.name
-            logger.log(TRACE_LEVEL, f'Combining VCF and unknown/missing (mask) dataframes for sample=[{sample_name}]')
-            frame_vcf_mask = self.combine_vcf_mask(frame, frame_mask)
-        else:
-            frame_vcf_mask = frame
-
-        return frame_vcf_mask
-
     def _get_chunk_size(self, number_samples: int):
         max_chunk_size = 25
         chunk_size = max(1, int(number_samples / self._processing_cores))
         return min(max_chunk_size, chunk_size)
+
+    def read_sample_data_features(self, sample_data: NucleotideSampleData) -> pd.DataFrame:
+        return sample_data.read_sample_data_features(self._include_masked_regions)
 
     def _read_features_table(self) -> pd.DataFrame:
         frames = []
@@ -73,30 +59,6 @@ class VcfVariantsReader(NucleotideFeaturesReader):
 
         logger.debug(f'Finished reading features table from {len(self._sample_files_map)} VCF files')
         return pd.concat(frames)
-
-    def combine_vcf_mask(self, vcf_frame: pd.DataFrame, mask_frame: pd.DataFrame) -> pd.DataFrame:
-        """
-        Combine features together for VCF variants dataframe with mask dataframe, checking for any overlaps.
-        If there is an overlap (e.g., a variant call also is in a masked out region) the masked position (unknown/missing)
-        will be preferred as the true feature.
-        :param vcf_frame: The dataframe containing only mutations/variant calls.
-        :param mask_frame: The dataframe containing features from the genome mask (missing/unknown positions.
-        :return: The combined data frame of both types of features.
-        """
-        combined_df = pd.concat([vcf_frame, mask_frame])
-
-        # Define an order column for TYPE so I can select NUCLEOTIDE_UNKNOWN_TYPE ahead of any other type
-        combined_df['TYPE_ORDER'] = 1
-        combined_df.loc[combined_df['TYPE'] == NUCLEOTIDE_UNKNOWN_TYPE, 'TYPE_ORDER'] = 0
-
-        # For any overlapping positions, prefer the NUCLEOTIDE_UNKNOWN_TYPE type
-        # This may not handle every potential case where a variant overlaps with a masked region
-        # (e.g., indel veriants which impact more than one nucleotide) but those should not show up
-        # in a VCF file AND also in the mask file if everything was called properly.
-        combined_df = combined_df.sort_values(
-            ['CHROM', 'POS', 'TYPE_ORDER']).groupby(['CHROM', 'POS'], sort=False).nth(0).reset_index()
-
-        return combined_df.loc[:, self.VCF_FRAME_COLUMNS + self._snpeff_parser.ANNOTATION_COLUMNS]
 
     def get_sample_files(self, sample_name: str) -> Optional[SampleData]:
         return self._sample_files_map[sample_name]

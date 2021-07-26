@@ -34,7 +34,6 @@ class VariationFile:
 
     def __init__(self, file: Path):
         self._file = file
-        self._snpeff_parser = VcfSnpEffAnnotationParser()
 
     def write(self, output: Path) -> Tuple[Path, Path]:
         if output.suffix == '.bcf':
@@ -83,7 +82,7 @@ class VariationFile:
     def _drop_extra_columns(self, vcf_df: pd.DataFrame) -> pd.DataFrame:
         return vcf_df.drop('INFO', axis='columns')
 
-    def read_features(self, sample_name: str) -> pd.DataFrame:
+    def read_features(self, sample_name: str, snpeff_parser: VcfSnpEffAnnotationParser) -> pd.DataFrame:
         reader = vcf.Reader(filename=str(self.file))
         df = pd.DataFrame([vars(r) for r in reader])
         out = self._fix_df_columns(df)
@@ -92,8 +91,8 @@ class VariationFile:
         out['REF'] = out['REF'].map(self._fix_ref)
         out['TYPE'] = self._get_type(out)
 
-        snpeff_headers = self._snpeff_parser.parse_annotation_headers(vcf_info=reader.infos)
-        ann_df = self._snpeff_parser.parse_annotation_entries(vcf_ann_headers=snpeff_headers, vcf_df=out)
+        snpeff_headers = snpeff_parser.parse_annotation_headers(vcf_info=reader.infos)
+        ann_df = snpeff_parser.parse_annotation_entries(vcf_ann_headers=snpeff_headers, vcf_df=out)
         out = out.merge(ann_df, how='left', left_index=True, right_index=True)
 
         out = self._drop_extra_columns(out)
@@ -102,8 +101,8 @@ class VariationFile:
         cols = out.columns.tolist()
         out['SAMPLE'] = sample_name
         out = out.reindex(columns=['SAMPLE'] + cols)
-        out = self._snpeff_parser.select_variant_annotations(out)
-        return out.loc[:, self.VCF_FRAME_COLUMNS + self._snpeff_parser.ANNOTATION_COLUMNS]
+        out = snpeff_parser.select_variant_annotations(out)
+        return out.loc[:, self.VCF_FRAME_COLUMNS + snpeff_parser.ANNOTATION_COLUMNS]
 
     @property
     def file(self) -> Path:

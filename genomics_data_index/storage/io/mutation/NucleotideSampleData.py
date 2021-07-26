@@ -8,11 +8,14 @@ from genomics_data_index.storage.MaskedGenomicRegions import MaskedGenomicRegion
 from genomics_data_index.storage.io.SampleData import SampleData
 from genomics_data_index.storage.io.mutation.VariationFile import VariationFile
 from genomics_data_index.storage.util import TRACE_LEVEL
+from genomics_data_index.storage.model import NUCLEOTIDE_UNKNOWN, NUCLEOTIDE_UNKNOWN_TYPE
+from genomics_data_index.storage.io.mutation.VcfSnpEffAnnotationParser import VcfSnpEffAnnotationParser
 
 logger = logging.getLogger(__name__)
 
 
 class NucleotideSampleData(SampleData):
+    VCF_FRAME_COLUMNS = ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE', 'VARIANT_ID']
 
     def __init__(self, sample_name: str, vcf_file: Path, vcf_file_index: Path,
                  mask_bed_file: Optional[Path],
@@ -22,6 +25,7 @@ class NucleotideSampleData(SampleData):
         self._vcf_file_index = vcf_file_index
         self._preprocessed = preprocessed
         self._mask_bed_file = mask_bed_file
+        self._snpeff_parser = VcfSnpEffAnnotationParser()
 
     def _preprocess_mask(self, output_dir: Path) -> Path:
         if self._mask_bed_file is None:
@@ -78,9 +82,49 @@ class NucleotideSampleData(SampleData):
         if file.exists():
             raise Exception(f'{error_prefix} for sample [{self.sample_name}]: file [{file}] exists')
 
-    def read_features(self) -> pd.DataFrame:
+    def read_vcf_features(self) -> pd.DataFrame:
         vcf_file, vcf_file_index = self.get_vcf_file()
-        return VariationFile(vcf_file).read_features(self.sample_name)
+        return VariationFile(vcf_file).read_features(self.sample_name, snpeff_parser=self._snpeff_parser)
+
+    def read_sample_data_features(self, include_masked_regions: bool = True) -> pd.DataFrame:
+        vcf_features = self.read_vcf_features()
+        vcf_file, vcf_file_index = self.get_vcf_file()
+
+        if include_masked_regions:
+            logger.log(TRACE_LEVEL, f'Creating unknown/missing features for sample=[{self.sample_name}]')
+            frame_mask = self.get_mask().mask_to_features()
+            frame_mask['SAMPLE'] = self.sample_name
+            frame_mask['FILE'] = vcf_file.name
+            logger.log(TRACE_LEVEL, f'Combining VCF and unknown/missing (mask) dataframes for sample=[{self.sample_name}]')
+            frame_vcf_mask = self.combine_vcf_mask(vcf_features, frame_mask)
+        else:
+            frame_vcf_mask = vcf_features
+
+        return frame_vcf_mask
+
+    def combine_vcf_mask(self, vcf_frame: pd.DataFrame, mask_frame: pd.DataFrame) -> pd.DataFrame:
+        """
+        Combine features together for VCF variants dataframe with mask dataframe, checking for any overlaps.
+        If there is an overlap (e.g., a variant call also is in a masked out region) the masked position (unknown/missing)
+        will be preferred as the true feature.
+        :param vcf_frame: The dataframe containing only mutations/variant calls.
+        :param mask_frame: The dataframe containing features from the genome mask (missing/unknown positions.
+        :return: The combined data frame of both types of features.
+        """
+        combined_df = pd.concat([vcf_frame, mask_frame])
+
+        # Define an order column for TYPE so I can select NUCLEOTIDE_UNKNOWN_TYPE ahead of any other type
+        combined_df['TYPE_ORDER'] = 1
+        combined_df.loc[combined_df['TYPE'] == NUCLEOTIDE_UNKNOWN_TYPE, 'TYPE_ORDER'] = 0
+
+        # For any overlapping positions, prefer the NUCLEOTIDE_UNKNOWN_TYPE type
+        # This may not handle every potential case where a variant overlaps with a masked region
+        # (e.g., indel veriants which impact more than one nucleotide) but those should not show up
+        # in a VCF file AND also in the mask file if everything was called properly.
+        combined_df = combined_df.sort_values(
+            ['CHROM', 'POS', 'TYPE_ORDER']).groupby(['CHROM', 'POS'], sort=False).nth(0).reset_index()
+
+        return combined_df.loc[:, self.VCF_FRAME_COLUMNS + self._snpeff_parser.ANNOTATION_COLUMNS]
 
     def get_vcf_file(self, ignore_preprocessed=False) -> Tuple[Path, Path]:
         if ignore_preprocessed or self._preprocessed:
