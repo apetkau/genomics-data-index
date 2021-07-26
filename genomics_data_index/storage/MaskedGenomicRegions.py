@@ -3,10 +3,12 @@ from __future__ import annotations
 import tempfile
 from pathlib import Path
 from typing import List, Set, Dict, Generator, Tuple
+import pandas as pd
 
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 from pybedtools import BedTool
+from genomics_data_index.storage.model import NUCLEOTIDE_UNKNOWN, NUCLEOTIDE_UNKNOWN_TYPE
 
 
 class MaskedGenomicRegions:
@@ -20,6 +22,17 @@ class MaskedGenomicRegions:
     def union(self, other: MaskedGenomicRegions) -> MaskedGenomicRegions:
         union = self._mask.cat(other._mask, postmerge=True, force_truncate=True)
         return MaskedGenomicRegions(union)
+
+    def mask_to_features(self) -> pd.DataFrame:
+        mask_features = []
+        ref = 1
+        alt = NUCLEOTIDE_UNKNOWN
+        nuc_type = NUCLEOTIDE_UNKNOWN_TYPE
+        for sequence_name, position in self.positions_iter(start_position_index='1'):
+            variant_id = f'{sequence_name}:{position}:{ref}:{alt}'
+            mask_features.append([sequence_name, position, ref, alt, nuc_type, variant_id])
+
+        return pd.DataFrame(mask_features, columns=['CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'VARIANT_ID'])
 
     def mask_genome(self, genome_file: Path, mask_char: str = '?', remove: bool = True) -> Dict[str, SeqRecord]:
         """

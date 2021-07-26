@@ -41,7 +41,7 @@ class VcfVariantsReader(NucleotideFeaturesReader):
 
         if self._include_masked_regions:
             logger.log(TRACE_LEVEL, f'Creating unknown/missing features for sample=[{sample_name}]')
-            frame_mask = self.mask_to_features(self._sample_files_map[sample_name].get_mask())
+            frame_mask = self._sample_files_map[sample_name].get_mask().mask_to_features()
             frame_mask['SAMPLE'] = sample_name
             frame_mask['FILE'] = vcf_file.name
             logger.log(TRACE_LEVEL, f'Combining VCF and unknown/missing (mask) dataframes for sample=[{sample_name}]')
@@ -73,17 +73,6 @@ class VcfVariantsReader(NucleotideFeaturesReader):
 
         logger.debug(f'Finished reading features table from {len(self._sample_files_map)} VCF files')
         return pd.concat(frames)
-
-    def mask_to_features(self, genomic_mask: MaskedGenomicRegions) -> pd.DataFrame:
-        mask_features = []
-        ref = 1
-        alt = NUCLEOTIDE_UNKNOWN
-        type = NUCLEOTIDE_UNKNOWN_TYPE
-        for sequence_name, position in genomic_mask.positions_iter(start_position_index='1'):
-            variant_id = f'{sequence_name}:{position}:{ref}:{alt}'
-            mask_features.append([sequence_name, position, ref, alt, type, variant_id])
-
-        return pd.DataFrame(mask_features, columns=['CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'VARIANT_ID'])
 
     def combine_vcf_mask(self, vcf_frame: pd.DataFrame, mask_frame: pd.DataFrame) -> pd.DataFrame:
         """
