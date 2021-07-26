@@ -2,6 +2,7 @@ import logging
 import shutil
 from pathlib import Path
 from typing import Tuple, Optional
+import pandas as pd
 
 from genomics_data_index.storage.MaskedGenomicRegions import MaskedGenomicRegions
 from genomics_data_index.storage.io.SampleData import SampleData
@@ -76,6 +77,10 @@ class NucleotideSampleData(SampleData):
     def _assert_file_not_exists(self, file: Path, error_prefix: str):
         if file.exists():
             raise Exception(f'{error_prefix} for sample [{self.sample_name}]: file [{file}] exists')
+
+    def read_features(self) -> pd.DataFrame:
+        vcf_file, vcf_file_index = self.get_vcf_file()
+        return VariationFile(vcf_file).read_features(self.sample_name)
 
     def get_vcf_file(self, ignore_preprocessed=False) -> Tuple[Path, Path]:
         if ignore_preprocessed or self._preprocessed:

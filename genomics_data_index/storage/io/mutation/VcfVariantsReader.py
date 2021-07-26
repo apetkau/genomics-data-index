@@ -28,49 +28,16 @@ class VcfVariantsReader(NucleotideFeaturesReader):
         self._snpeff_parser = VcfSnpEffAnnotationParser()
         self._include_masked_regions = include_masked_regions
         self._processing_cores = ncores
-
-    def _fix_df_columns(self, vcf_df: pd.DataFrame) -> pd.DataFrame:
-        # If no data, I still want certain column names so that rest of code still works
-        if len(vcf_df) == 0:
-            vcf_df = pd.DataFrame(columns=['CHROM', 'POS', 'REF', 'ALT', 'INFO'])
-
-        return vcf_df.loc[:, ['CHROM', 'POS', 'REF', 'ALT', 'INFO']]
-
-    def _drop_extra_columns(self, vcf_df: pd.DataFrame) -> pd.DataFrame:
-        return vcf_df.drop('INFO', axis='columns')
+        # self._variants_processor =
 
     def get_or_create_feature_file(self, sample_name: str):
         vcf_file, index_file = self._sample_files_map[sample_name].get_vcf_file()
         return vcf_file
 
-    def read_vcf(self, file: Path, sample_name: str) -> pd.DataFrame:
-        reader = vcf.Reader(filename=str(file))
-        df = pd.DataFrame([vars(r) for r in reader])
-        out = self._fix_df_columns(df)
-
-        out['ALT'] = out['ALT'].map(self._fix_alt)
-        out['REF'] = out['REF'].map(self._fix_ref)
-        out['TYPE'] = self._get_type(out)
-
-        snpeff_headers = self._snpeff_parser.parse_annotation_headers(vcf_info=reader.infos)
-        ann_df = self._snpeff_parser.parse_annotation_entries(vcf_ann_headers=snpeff_headers, vcf_df=out)
-        out = out.merge(ann_df, how='left', left_index=True, right_index=True)
-
-        out = self._drop_extra_columns(out)
-
-        out['FILE'] = os.path.basename(file)
-        cols = out.columns.tolist()
-        out['SAMPLE'] = sample_name
-        out = out.reindex(columns=['SAMPLE'] + cols)
-        return out.loc[:, self.VCF_FRAME_COLUMNS + self._snpeff_parser.ANNOTATION_COLUMNS]
-
-    def _get_type(self, vcf_df: pd.DataFrame) -> pd.Series:
-        return vcf_df['INFO'].map(lambda x: x['TYPE'][0])
-
-    def _read_sample_table(self, sample_data: NucleotideSampleData) -> pd.DataFrame:
+    def read_sample_data_features(self, sample_data: NucleotideSampleData) -> pd.DataFrame:
         vcf_file, index_file = sample_data.get_vcf_file()
         sample_name = sample_data.sample_name
-        frame = self.read_vcf(vcf_file, sample_name)
+        frame = sample_data.read_features()
         frame = self._snpeff_parser.select_variant_annotations(frame)
 
         if self._include_masked_regions:
@@ -99,7 +66,7 @@ class VcfVariantsReader(NucleotideFeaturesReader):
         logger.debug(f'Starting preprocessing {number_samples} samples '
                      f'with {self._processing_cores} cores and chunk size {chunk_size}')
         with mp.Pool(self._processing_cores) as pool:
-            frame_vcf_masks = pool.imap_unordered(self._read_sample_table,
+            frame_vcf_masks = pool.imap_unordered(self.read_sample_data_features,
                                                   sample_data_list,
                                                   chunk_size)
             for frame_vcf_mask in frame_vcf_masks:
@@ -142,22 +109,6 @@ class VcfVariantsReader(NucleotideFeaturesReader):
             ['CHROM', 'POS', 'TYPE_ORDER']).groupby(['CHROM', 'POS'], sort=False).nth(0).reset_index()
 
         return combined_df.loc[:, self.VCF_FRAME_COLUMNS + self._snpeff_parser.ANNOTATION_COLUMNS]
-
-    def _fix_alt(self, element: List[str]) -> str:
-        """
-        Fix up the alternative string as the pyVCF package does not return them as a string.
-        :param element: The element to fix.
-        :return: The fixed element.
-        """
-        return str(element[0])
-
-    def _fix_ref(self, element: List[str]) -> str:
-        """
-        Fix up the reference string as the pyVCF package does not return them as a string.
-        :param element: The element to fix.
-        :return: The fixed element.
-        """
-        return str(element)
 
     def get_sample_files(self, sample_name: str) -> Optional[SampleData]:
         return self._sample_files_map[sample_name]

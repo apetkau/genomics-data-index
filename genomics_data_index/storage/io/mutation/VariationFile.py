@@ -6,12 +6,15 @@ import tempfile
 import uuid
 from pathlib import Path
 from typing import List, Tuple, Optional
+import vcf
+import os
 
 import pandas as pd
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 
 from genomics_data_index.storage.io.mutation.SnpEffDatabase import SnpEffDatabase
+from genomics_data_index.storage.io.mutation.VcfSnpEffAnnotationParser import VcfSnpEffAnnotationParser
 from genomics_data_index.storage.model.NucleotideMutationTranslater import NucleotideMutationTranslater
 from genomics_data_index.storage.util import execute_commands
 
@@ -27,9 +30,11 @@ def translate_to_mutation_id(x: pd.Series) -> str:
 
 
 class VariationFile:
+    VCF_FRAME_COLUMNS = ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE', 'VARIANT_ID']
 
     def __init__(self, file: Path):
         self._file = file
+        self._snpeff_parser = VcfSnpEffAnnotationParser()
 
     def write(self, output: Path) -> Tuple[Path, Path]:
         if output.suffix == '.bcf':
@@ -48,6 +53,56 @@ class VariationFile:
             ['bcftools', 'index', str(output)]
         ])
         return output, output_index
+
+    def _fix_df_columns(self, vcf_df: pd.DataFrame) -> pd.DataFrame:
+        # If no data, I still want certain column names so that rest of code still works
+        if len(vcf_df) == 0:
+            vcf_df = pd.DataFrame(columns=['CHROM', 'POS', 'REF', 'ALT', 'INFO'])
+
+        return vcf_df.loc[:, ['CHROM', 'POS', 'REF', 'ALT', 'INFO']]
+
+    def _fix_alt(self, element: List[str]) -> str:
+        """
+        Fix up the alternative string as the pyVCF package does not return them as a string.
+        :param element: The element to fix.
+        :return: The fixed element.
+        """
+        return str(element[0])
+
+    def _fix_ref(self, element: List[str]) -> str:
+        """
+        Fix up the reference string as the pyVCF package does not return them as a string.
+        :param element: The element to fix.
+        :return: The fixed element.
+        """
+        return str(element)
+
+    def _get_type(self, vcf_df: pd.DataFrame) -> pd.Series:
+        return vcf_df['INFO'].map(lambda x: x['TYPE'][0])
+
+    def _drop_extra_columns(self, vcf_df: pd.DataFrame) -> pd.DataFrame:
+        return vcf_df.drop('INFO', axis='columns')
+
+    def read_features(self, sample_name: str) -> pd.DataFrame:
+        reader = vcf.Reader(filename=str(self.file))
+        df = pd.DataFrame([vars(r) for r in reader])
+        out = self._fix_df_columns(df)
+
+        out['ALT'] = out['ALT'].map(self._fix_alt)
+        out['REF'] = out['REF'].map(self._fix_ref)
+        out['TYPE'] = self._get_type(out)
+
+        snpeff_headers = self._snpeff_parser.parse_annotation_headers(vcf_info=reader.infos)
+        ann_df = self._snpeff_parser.parse_annotation_entries(vcf_ann_headers=snpeff_headers, vcf_df=out)
+        out = out.merge(ann_df, how='left', left_index=True, right_index=True)
+
+        out = self._drop_extra_columns(out)
+
+        out['FILE'] = os.path.basename(self.file)
+        cols = out.columns.tolist()
+        out['SAMPLE'] = sample_name
+        out = out.reindex(columns=['SAMPLE'] + cols)
+        return out.loc[:, self.VCF_FRAME_COLUMNS + self._snpeff_parser.ANNOTATION_COLUMNS]
 
     @property
     def file(self) -> Path:
