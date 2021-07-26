@@ -98,12 +98,9 @@ class VcfVariantsReader(NucleotideFeaturesReader):
         logger.debug(f'Starting to read features table from {len(self._sample_files_map)} VCF files')
         logger.debug(f'Starting preprocessing {number_samples} samples '
                      f'with {self._processing_cores} cores and chunk size {chunk_size}')
-        with mp.Pool(self._processing_cores) as pool:
-            frame_vcf_masks = pool.imap_unordered(self._read_sample_table,
-                                                  sample_data_list,
-                                                  chunk_size)
-            for frame_vcf_mask in frame_vcf_masks:
-                frames.append(frame_vcf_mask)
+        for sample_data in sample_data_list:
+            frame_vcf_mask = self._read_sample_table(sample_data)
+            frames.append(frame_vcf_mask)
 
         logger.debug(f'Finished reading features table from {len(self._sample_files_map)} VCF files')
         return pd.concat(frames)

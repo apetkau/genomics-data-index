@@ -111,11 +111,11 @@ class MLSTService(FeatureService):
 
         return sample_mlst_alleles
 
-    def _create_persisted_features_reader(self, sample_data_dict: Dict[str, SampleData],
-                                          data_package: SampleDataPackage) -> FeaturesReader:
-        self._verify_correct_data_package(data_package=data_package)
-        mlst_data_package = cast(MLSTSampleDataPackage, data_package)
-        return mlst_data_package.get_features_reader()
+    # def _create_persisted_features_reader(self, sample_data_dict: Dict[str, SampleData],
+    #                                       data_package: SampleDataPackage) -> FeaturesReader:
+    #     self._verify_correct_data_package(data_package=data_package)
+    #     mlst_data_package = cast(MLSTSampleDataPackage, data_package)
+    #     return mlst_data_package.get_features_reader()
 
     def read_index(self, feature_ids: List[str]) -> Dict[str, FeatureSamples]:
         feature_samples = self._connection.get_session().query(MLSTAllelesSamples) \

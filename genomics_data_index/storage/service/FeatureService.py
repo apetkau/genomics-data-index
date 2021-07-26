@@ -258,7 +258,7 @@ class FeatureService(abc.ABC):
         else:
             return None
 
-    @abc.abstractmethod
+    # @abc.abstractmethod
     def _create_persisted_features_reader(self, sample_data_dict: Dict[str, SampleData],
                                           data_package: SampleDataPackage) -> FeaturesReader:
-        pass
+        return data_package.get_features_reader()
