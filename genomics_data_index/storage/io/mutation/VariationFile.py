@@ -102,6 +102,7 @@ class VariationFile:
         cols = out.columns.tolist()
         out['SAMPLE'] = sample_name
         out = out.reindex(columns=['SAMPLE'] + cols)
+        out = self._snpeff_parser.select_variant_annotations(out)
         return out.loc[:, self.VCF_FRAME_COLUMNS + self._snpeff_parser.ANNOTATION_COLUMNS]
 
     @property

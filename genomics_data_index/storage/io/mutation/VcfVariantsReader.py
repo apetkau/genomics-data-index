@@ -38,7 +38,6 @@ class VcfVariantsReader(NucleotideFeaturesReader):
         vcf_file, index_file = sample_data.get_vcf_file()
         sample_name = sample_data.sample_name
         frame = sample_data.read_features()
-        frame = self._snpeff_parser.select_variant_annotations(frame)
 
         if self._include_masked_regions:
             logger.log(TRACE_LEVEL, f'Creating unknown/missing features for sample=[{sample_name}]')
