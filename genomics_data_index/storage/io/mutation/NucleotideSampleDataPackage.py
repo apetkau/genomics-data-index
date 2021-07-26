@@ -43,6 +43,12 @@ class NucleotideSampleDataPackage(SampleDataPackage):
     def get_sample_data(self) -> Dict[str, NucleotideSampleData]:
         return self._sample_data_dict
 
+    def get_variants_processor(self) -> VcfVariantsTableProcessor:
+        return self._variants_processor
+
+    def get_sample_files_processor(self) -> SampleFilesProcessor:
+        return self._sample_files_processor
+
     def process_all_data(self) -> SampleDataPackage:
         processed_data = {}
         for sample_data in self.iter_sample_data():
