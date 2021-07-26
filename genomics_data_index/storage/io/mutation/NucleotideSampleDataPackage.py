@@ -2,14 +2,12 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import List, Generator, Dict, Set
-import pandas as pd
 
 from genomics_data_index.storage.io.SampleData import SampleData
 from genomics_data_index.storage.io.SampleDataPackage import SampleDataPackage
 from genomics_data_index.storage.io.SampleFilesProcessor import SampleFilesProcessor
 from genomics_data_index.storage.io.mutation.NucleotideSampleDataSequenceMask import NucleotideSampleDataSequenceMask
 from genomics_data_index.storage.io.processor.NullSampleFilesProcessor import NullSampleFilesProcessor
-from genomics_data_index.storage.io.mutation.VcfVariantsReader import VcfVariantsReader
 
 
 class NucleotideSampleDataPackage(SampleDataPackage):
@@ -17,22 +15,14 @@ class NucleotideSampleDataPackage(SampleDataPackage):
     def __init__(self, sample_data: List[SampleData],
                  sample_names: Set[str],
                  sample_files_processor: SampleFilesProcessor,
-                 variants_reader: VcfVariantsReader,
                  index_unknown_missing: bool = True):
-        super().__init__(index_unknown_missing=index_unknown_missing,
-                         features_reader=variants_reader)
+        super().__init__(index_unknown_missing=index_unknown_missing)
         self._sample_data = sample_data
         self._sample_files_processor = sample_files_processor
         self._sample_names = sample_names
 
     def sample_names(self) -> Set[str]:
         return self._sample_names
-
-    def _minimal_expected_columns(self) -> Set[str]:
-        return {'SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE'}
-
-    def _read_features_table(self) -> pd.DataFrame:
-        return self._features_reader.get_features_table()
 
     def iter_sample_data(self) -> Generator[SampleData, None, None]:
         return self._sample_files_processor.process(self._sample_data)
@@ -47,7 +37,6 @@ class NucleotideSampleDataPackage(SampleDataPackage):
 
         sample_names_set = set()
         sample_data_list = []
-        sample_data_dict = {}
         for sample_name in sample_vcf_map:
             vcf_file = sample_vcf_map[sample_name]
             if sample_name in masked_genomic_files_map:
@@ -63,13 +52,12 @@ class NucleotideSampleDataPackage(SampleDataPackage):
 
             sample_data_list.append(sample_data)
             sample_names_set.add(sample_name)
-            sample_data_dict[sample_name] = sample_data
 
         return NucleotideSampleDataPackage(sample_data=sample_data_list,
                                            sample_names=sample_names_set,
                                            sample_files_processor=sample_files_processor,
-                                           index_unknown_missing=index_unknown_missing,
-                                           variants_reader=VcfVariantsReader(sample_files_map=sample_data_dict))
+                                           index_unknown_missing=index_unknown_missing
+                                           )
 
     @classmethod
     def create_from_snippy(cls, sample_dirs: List[Path],
@@ -78,7 +66,6 @@ class NucleotideSampleDataPackage(SampleDataPackage):
 
         sample_names_set = set()
         sample_data_list = []
-        sample_data_dict = {}
         for d in sample_dirs:
             sample_name = d.name
             sample_data = NucleotideSampleDataSequenceMask.create(
@@ -88,10 +75,9 @@ class NucleotideSampleDataPackage(SampleDataPackage):
             )
             sample_data_list.append(sample_data)
             sample_names_set.add(sample_name)
-            sample_data_dict[sample_name] = sample_data
 
         return NucleotideSampleDataPackage(sample_data=sample_data_list,
                                            sample_names=sample_names_set,
                                            sample_files_processor=sample_files_processor,
-                                           index_unknown_missing=index_unknown_missing,
-                                           variants_reader=VcfVariantsReader(sample_files_map=sample_data_dict))
+                                           index_unknown_missing=index_unknown_missing
+                                           )
