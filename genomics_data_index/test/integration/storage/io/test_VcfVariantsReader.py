@@ -279,7 +279,7 @@ def test_get_variants_table_snpeff_annotations_single_sample(
     vcf_df = vr.get_features_table()
 
     assert 139 == len(vcf_df)
-    assert ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE',  'VARIANT_ID',
+    assert ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE', 'VARIANT_ID',
             'ANN.Allele', 'ANN.Annotation', 'ANN.Annotation_Impact', 'ANN.Gene_Name', 'ANN.Gene_ID',
             'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p'] == list(
         vcf_df.columns)
@@ -379,9 +379,11 @@ def test_get_variants_table_snpeff_annotations_multiple_samples(
             'NC_011083:3167187:AACCACGACCACGACCACGACCACGACCACGACCACG:A',
             'A', 'disruptive_inframe_deletion', 'MODERATE', 'SEHA_RS15905', 'SEHA_RS15905', 'transcript',
             'protein_coding',
-            'c.429_464delCGACCACGACCACGACCACGACCACGACCACGACCA', 'p.Asp144_His155del'] == vcf_df_varA.loc['SH14-001'].tolist()
+            'c.429_464delCGACCACGACCACGACCACGACCACGACCACGACCA', 'p.Asp144_His155del'] == vcf_df_varA.loc[
+               'SH14-001'].tolist()
     assert ['NC_011083', 3167187, 'AACCACGACCACGACCACGACCACGACCACGACCACG', 'A', 'INDEL',
             'NC_011083:3167187:AACCACGACCACGACCACGACCACGACCACGACCACG:A',
             'A', 'disruptive_inframe_deletion', 'MODERATE', 'SEHA_RS15905', 'SEHA_RS15905', 'transcript',
             'protein_coding',
-            'c.429_464delCGACCACGACCACGACCACGACCACGACCACGACCA', 'p.Asp144_His155del'] == vcf_df_varA.loc['SH14-014'].tolist()
+            'c.429_464delCGACCACGACCACGACCACGACCACGACCACGACCA', 'p.Asp144_His155del'] == vcf_df_varA.loc[
+               'SH14-014'].tolist()

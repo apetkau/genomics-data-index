@@ -1,17 +1,17 @@
-import pytest
-
 import tempfile
 from pathlib import Path
+
+import pytest
 
 from genomics_data_index.storage.MaskedGenomicRegions import MaskedGenomicRegions
 from genomics_data_index.storage.io.mutation.SequenceFile import SequenceFile
 from genomics_data_index.storage.io.mutation.VariationFile import VariationFile
+from genomics_data_index.storage.io.mutation.VcfSnpEffAnnotationParser import VcfSnpEffAnnotationParser
 from genomics_data_index.test.integration import data_dir, regular_vcf_dir, variation_dir, reference_file, consensus_dir
 from genomics_data_index.test.integration import extra_snippy_dir
 from genomics_data_index.test.integration import reference_file_5000_snpeff, snpeff_vcf_file
-from genomics_data_index.test.integration.storage.io import read_vcf_df
-from genomics_data_index.storage.io.mutation.VcfSnpEffAnnotationParser import VcfSnpEffAnnotationParser
 from genomics_data_index.test.integration import snpeff_sample_vcfs
+from genomics_data_index.test.integration.storage.io import read_vcf_df
 
 
 @pytest.fixture
@@ -505,11 +505,13 @@ def test_annotate(snpeff_parser):
         assert output_vcf_file == annotated_variation_file.file
 
         # Verify VCF annotation contents
-        vcf_annotation_df = annotated_variation_file.read_features('SampleA', snpeff_parser=snpeff_parser).sort_values('POS')
+        vcf_annotation_df = annotated_variation_file.read_features('SampleA', snpeff_parser=snpeff_parser).sort_values(
+            'POS')
         assert 2 == len(vcf_annotation_df)
         assert ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE', 'VARIANT_ID',
                 'ANN.Allele', 'ANN.Annotation', 'ANN.Annotation_Impact', 'ANN.Gene_Name', 'ANN.Gene_ID',
-                'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p'] == list(vcf_annotation_df.columns)
+                'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p'] == list(
+            vcf_annotation_df.columns)
         assert ['NC_011083.1:195:C:G', 'NC_011083.1:207:C:G'] == vcf_annotation_df['VARIANT_ID'].tolist()
         assert ['SNP', 'SNP'] == vcf_annotation_df['TYPE'].tolist()
         assert ['missense_variant', 'synonymous_variant'] == vcf_annotation_df['ANN.Annotation'].tolist()
@@ -522,7 +524,8 @@ def test_annotate(snpeff_parser):
         assert 2 == len(vcf_no_annotation_df)
         assert ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE', 'VARIANT_ID',
                 'ANN.Allele', 'ANN.Annotation', 'ANN.Annotation_Impact', 'ANN.Gene_Name', 'ANN.Gene_ID',
-                'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p'] == list(vcf_no_annotation_df.columns)
+                'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p'] == list(
+            vcf_no_annotation_df.columns)
         assert ['NC_011083.1:195:C:G', 'NC_011083.1:207:C:G'] == vcf_no_annotation_df['VARIANT_ID'].tolist()
         assert ['SNP', 'SNP'] == vcf_no_annotation_df['TYPE'].tolist()
         assert all(vcf_no_annotation_df['ANN.Annotation'].isna())

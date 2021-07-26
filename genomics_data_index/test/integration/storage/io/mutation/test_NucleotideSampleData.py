@@ -1,17 +1,15 @@
+import logging
 import tempfile
+from pathlib import Path
 
 import pytest
-from pathlib import Path
-import logging
-
 from pybedtools import BedTool
 
-from genomics_data_index.storage.io.mutation.SequenceFile import SequenceFile
 from genomics_data_index.storage.MaskedGenomicRegions import MaskedGenomicRegions
 from genomics_data_index.storage.io.mutation.NucleotideSampleData import NucleotideSampleData
+from genomics_data_index.storage.io.mutation.SequenceFile import SequenceFile
 from genomics_data_index.test.integration import snippy_sample_vcfs_dict, snippy_sample_mask_sequences_dict
 from genomics_data_index.test.integration import snpeff_sample_vcfs
-
 
 logger = logging.getLogger(__name__)
 
@@ -91,7 +89,7 @@ def test_read_sample_data_features_with_unknown(sample_dataA):
     # 461... is missing
     assert ['reference:460:1:?', 'reference:461:1:?',
             'reference:462:1:?'] == df[
-        (df['POS'] >= 460) & (df['POS'] <= 465)]['VARIANT_ID'].tolist()
+               (df['POS'] >= 460) & (df['POS'] <= 465)]['VARIANT_ID'].tolist()
     logger.warning('I need to verify that mask coordinates are correct')
 
     # Variant position
