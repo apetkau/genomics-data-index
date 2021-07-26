@@ -248,7 +248,7 @@ def test_with_null_sample_files_processor(sample_dirs):
                                                                               'masks'])
 
     processed_data_package = cast(NucleotideSampleDataPackage, data_package.process_all_data())
-    processed_files_dict = data_package.get_sample_data()
+    processed_files_dict = processed_data_package.get_sample_data()
 
     assert 3 == len(processed_files_dict)
     sample_data = processed_files_dict['SampleA']
