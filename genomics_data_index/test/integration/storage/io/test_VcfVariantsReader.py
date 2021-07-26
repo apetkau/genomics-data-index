@@ -279,9 +279,9 @@ def test_get_variants_table_snpeff_annotations_single_sample(
     vcf_df = vr.get_features_table()
 
     assert 139 == len(vcf_df)
-    assert ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE',
+    assert ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE',  'VARIANT_ID',
             'ANN.Allele', 'ANN.Annotation', 'ANN.Annotation_Impact', 'ANN.Gene_Name', 'ANN.Gene_ID',
-            'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p', 'VARIANT_ID'] == list(
+            'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p'] == list(
         vcf_df.columns)
 
     # Get rid of 'FILE' since these are processed files
@@ -290,64 +290,64 @@ def test_get_variants_table_snpeff_annotations_single_sample(
     # # missense variant
     vcf_df_varA = vcf_df[vcf_df['POS'] == 140658]
     assert 1 == len(vcf_df_varA)
-    assert ['SH10-014', 'NC_011083', 140658, 'C', 'A', 'SNP',
+    assert ['SH10-014', 'NC_011083', 140658, 'C', 'A', 'SNP', 'NC_011083:140658:C:A',
             'A', 'missense_variant', 'MODERATE', 'murF', 'SEHA_RS01180', 'transcript', 'protein_coding',
-            'c.497C>A', 'p.Ala166Glu', 'NC_011083:140658:C:A'] == vcf_df_varA.iloc[0].tolist()
+            'c.497C>A', 'p.Ala166Glu'] == vcf_df_varA.iloc[0].tolist()
 
     # Synonymous variant
     vcf_df_varA = vcf_df[vcf_df['POS'] == 723772]
     assert 1 == len(vcf_df_varA)
-    assert ['SH10-014', 'NC_011083', 723772, 'T', 'C', 'SNP',
+    assert ['SH10-014', 'NC_011083', 723772, 'T', 'C', 'SNP', 'NC_011083:723772:T:C',
             'C', 'synonymous_variant', 'LOW', 'SEHA_RS03990', 'SEHA_RS03990', 'transcript', 'protein_coding',
-            'c.1638T>C', 'p.Cys546Cys', 'NC_011083:723772:T:C'] == vcf_df_varA.iloc[0].tolist()
+            'c.1638T>C', 'p.Cys546Cys'] == vcf_df_varA.iloc[0].tolist()
 
     # Intergenic variant (snp)
     vcf_df_varA = vcf_df[vcf_df['POS'] == 1031571]
     assert 1 == len(vcf_df_varA)
-    assert ['SH10-014', 'NC_011083', 1031571, 'T', 'C', 'SNP',
+    assert ['SH10-014', 'NC_011083', 1031571, 'T', 'C', 'SNP', 'NC_011083:1031571:T:C',
             'C', 'intergenic_region', 'MODIFIER', 'SEHA_RS05505-SEHA_RS05515', 'SEHA_RS05505-SEHA_RS05515',
             'intergenic_region', 'NA',
-            'n.1031571T>C', 'NA', 'NC_011083:1031571:T:C'] == vcf_df_varA.iloc[0].fillna('NA').tolist()
+            'n.1031571T>C', 'NA'] == vcf_df_varA.iloc[0].fillna('NA').tolist()
 
     # Intergenic variant (del)
     vcf_df_varA = vcf_df[vcf_df['POS'] == 4555461]
     assert 1 == len(vcf_df_varA)
-    assert ['SH10-014', 'NC_011083', 4555461, 'T', 'TC', 'INDEL',
+    assert ['SH10-014', 'NC_011083', 4555461, 'T', 'TC', 'INDEL', 'NC_011083:4555461:T:TC',
             'TC', 'intergenic_region', 'MODIFIER', 'SEHA_RS22510-SEHA_RS26685', 'SEHA_RS22510-SEHA_RS26685',
             'intergenic_region', 'NA',
-            'n.4555461_4555462insC', 'NA', 'NC_011083:4555461:T:TC'] == vcf_df_varA.iloc[0].fillna('NA').tolist()
+            'n.4555461_4555462insC', 'NA'] == vcf_df_varA.iloc[0].fillna('NA').tolist()
 
     # frameshift variant
     vcf_df_varA = vcf_df[vcf_df['POS'] == 1770751]
     assert 1 == len(vcf_df_varA)
-    assert ['SH10-014', 'NC_011083', 1770751, 'CA', 'C', 'INDEL',
+    assert ['SH10-014', 'NC_011083', 1770751, 'CA', 'C', 'INDEL', 'NC_011083:1770751:CA:C',
             'C', 'frameshift_variant', 'HIGH', 'SEHA_RS09270', 'SEHA_RS09270',
             'transcript', 'protein_coding',
-            'c.335delT', 'p.Leu112fs', 'NC_011083:1770751:CA:C'] == vcf_df_varA.iloc[0].fillna('NA').tolist()
+            'c.335delT', 'p.Leu112fs'] == vcf_df_varA.iloc[0].fillna('NA').tolist()
 
     # stop gained variant
     vcf_df_varA = vcf_df[vcf_df['POS'] == 4882099]
     assert 1 == len(vcf_df_varA)
-    assert ['SH10-014', 'NC_011083', 4882099, 'C', 'T', 'SNP',
+    assert ['SH10-014', 'NC_011083', 4882099, 'C', 'T', 'SNP', 'NC_011083:4882099:C:T',
             'T', 'stop_gained', 'HIGH', 'SEHA_RS24155', 'SEHA_RS24155',
             'transcript', 'protein_coding',
-            'c.1287G>A', 'p.Trp429*', 'NC_011083:4882099:C:T'] == vcf_df_varA.iloc[0].fillna('NA').tolist()
+            'c.1287G>A', 'p.Trp429*'] == vcf_df_varA.iloc[0].fillna('NA').tolist()
 
     # stop lost variant
     vcf_df_varA = vcf_df[vcf_df['POS'] == 4824790]
     assert 1 == len(vcf_df_varA)
-    assert ['SH10-014', 'NC_011083', 4824790, 'T', 'C', 'SNP',
+    assert ['SH10-014', 'NC_011083', 4824790, 'T', 'C', 'SNP', 'NC_011083:4824790:T:C',
             'C', 'stop_lost', 'HIGH', 'SEHA_RS23860', 'SEHA_RS23860',
             'transcript', 'protein_coding',
-            'c.1378T>C', 'p.Ter460Glnext*?', 'NC_011083:4824790:T:C'] == vcf_df_varA.iloc[0].fillna('NA').tolist()
+            'c.1378T>C', 'p.Ter460Glnext*?'] == vcf_df_varA.iloc[0].fillna('NA').tolist()
 
     # inframe deletion
     vcf_df_varA = vcf_df[vcf_df['POS'] == 4465400]
     assert 1 == len(vcf_df_varA)
-    assert ['SH10-014', 'NC_011083', 4465400, 'GGCCGAA', 'G', 'INDEL',
+    assert ['SH10-014', 'NC_011083', 4465400, 'GGCCGAA', 'G', 'INDEL', 'NC_011083:4465400:GGCCGAA:G',
             'G', 'conservative_inframe_deletion', 'MODERATE', 'tyrB', 'SEHA_RS22180',
             'transcript', 'protein_coding',
-            'c.157_162delGAAGCC', 'p.Glu53_Ala54del', 'NC_011083:4465400:GGCCGAA:G'] == vcf_df_varA.iloc[0].fillna(
+            'c.157_162delGAAGCC', 'p.Glu53_Ala54del'] == vcf_df_varA.iloc[0].fillna(
         'NA').tolist()
 
 
@@ -357,9 +357,9 @@ def test_get_variants_table_snpeff_annotations_multiple_samples(
     vcf_df = vr.get_features_table()
 
     assert 361 == len(vcf_df)
-    assert ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE',
+    assert ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE', 'VARIANT_ID',
             'ANN.Allele', 'ANN.Annotation', 'ANN.Annotation_Impact', 'ANN.Gene_Name', 'ANN.Gene_ID',
-            'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p', 'VARIANT_ID'] == list(
+            'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p'] == list(
         vcf_df.columns)
 
     # Get rid of 'FILE' since these are processed files
@@ -370,18 +370,18 @@ def test_get_variants_table_snpeff_annotations_multiple_samples(
     assert 3 == len(vcf_df_varA)
     vcf_df_varA = vcf_df_varA.set_index('SAMPLE')
     assert ['NC_011083', 3167187, 'AACCACGACCACGACCACGACCACGACCACGACCACGACCACGACCACG', 'A', 'INDEL',
+            'NC_011083:3167187:AACCACGACCACGACCACGACCACGACCACGACCACGACCACGACCACG:A',
             'A', 'disruptive_inframe_deletion', 'MODERATE', 'SEHA_RS15905', 'SEHA_RS15905', 'transcript',
             'protein_coding',
-            'c.417_464delCGACCACGACCACGACCACGACCACGACCACGACCACGACCACGACCA', 'p.Asp140_His155del',
-            'NC_011083:3167187:AACCACGACCACGACCACGACCACGACCACGACCACGACCACGACCACG:A'] == vcf_df_varA.loc[
+            'c.417_464delCGACCACGACCACGACCACGACCACGACCACGACCACGACCACGACCA', 'p.Asp140_His155del'] == vcf_df_varA.loc[
                'SH10-014'].tolist()
     assert ['NC_011083', 3167187, 'AACCACGACCACGACCACGACCACGACCACGACCACG', 'A', 'INDEL',
+            'NC_011083:3167187:AACCACGACCACGACCACGACCACGACCACGACCACG:A',
             'A', 'disruptive_inframe_deletion', 'MODERATE', 'SEHA_RS15905', 'SEHA_RS15905', 'transcript',
             'protein_coding',
-            'c.429_464delCGACCACGACCACGACCACGACCACGACCACGACCA', 'p.Asp144_His155del',
-            'NC_011083:3167187:AACCACGACCACGACCACGACCACGACCACGACCACG:A'] == vcf_df_varA.loc['SH14-001'].tolist()
+            'c.429_464delCGACCACGACCACGACCACGACCACGACCACGACCA', 'p.Asp144_His155del'] == vcf_df_varA.loc['SH14-001'].tolist()
     assert ['NC_011083', 3167187, 'AACCACGACCACGACCACGACCACGACCACGACCACG', 'A', 'INDEL',
+            'NC_011083:3167187:AACCACGACCACGACCACGACCACGACCACGACCACG:A',
             'A', 'disruptive_inframe_deletion', 'MODERATE', 'SEHA_RS15905', 'SEHA_RS15905', 'transcript',
             'protein_coding',
-            'c.429_464delCGACCACGACCACGACCACGACCACGACCACGACCA', 'p.Asp144_His155del',
-            'NC_011083:3167187:AACCACGACCACGACCACGACCACGACCACGACCACG:A'] == vcf_df_varA.loc['SH14-014'].tolist()
+            'c.429_464delCGACCACGACCACGACCACGACCACGACCACGACCA', 'p.Asp144_His155del'] == vcf_df_varA.loc['SH14-014'].tolist()

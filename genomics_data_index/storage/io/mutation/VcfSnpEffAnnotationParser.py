@@ -171,8 +171,8 @@ class VcfSnpEffAnnotationParser:
         :param vcf_df: The dataframe of variants from a VCF file.
         :return: A new dataframe containing only rows with the selected annotations.
         """
-        non_annotation_columns = ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE']
-        expected_columns_set = set(non_annotation_columns + self.ANNOTATION_COLUMNS + ['VARIANT_ID'])
+        non_annotation_columns = ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE', 'VARIANT_ID']
+        expected_columns_set = set(non_annotation_columns + self.ANNOTATION_COLUMNS)
         actual_columns_set = set(vcf_df.columns.tolist())
         if expected_columns_set != actual_columns_set:
             raise Exception(f'Invalid columns for passed vcf_df.'
@@ -199,12 +199,12 @@ class VcfSnpEffAnnotationParser:
             ['ANN.Annotation_Impact', 'ANN.Annotation', 'ANN.HGVS.c']).groupby('VARIANT_ID').nth(0).reset_index()
 
         # Merge back with original dataframe of variants to make sure I include those without annotations
-        all_vcf_entries_grouped = vcf_df[non_annotation_columns + ['VARIANT_ID']].groupby('VARIANT_ID').first()
+        all_vcf_entries_grouped = vcf_df[non_annotation_columns].groupby('VARIANT_ID').first()
         return_vcf_df = all_vcf_entries_grouped.merge(vcf_df_with_annotations, how='left', left_on='VARIANT_ID',
                                                       right_on='VARIANT_ID',
                                                       suffixes=(None, '_with_annotations'))
 
-        return_vcf_df = return_vcf_df[non_annotation_columns + self.ANNOTATION_COLUMNS + ['VARIANT_ID']].sort_values(
+        return_vcf_df = return_vcf_df[non_annotation_columns + self.ANNOTATION_COLUMNS].sort_values(
             'POS')
 
         return return_vcf_df
