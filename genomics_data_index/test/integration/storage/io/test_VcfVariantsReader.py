@@ -9,9 +9,14 @@ from genomics_data_index.storage.io.mutation.NucleotideSampleData import Nucleot
 from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
 from genomics_data_index.storage.io.mutation.VcfVariantsReader import VcfVariantsReader
 from genomics_data_index.storage.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor
+from genomics_data_index.storage.io.mutation.variants_processor.VcfVariantsTableProcessor import VcfVariantsTableProcessor
+from genomics_data_index.storage.io.mutation.variants_processor.SerialVcfVariantsTableProcessor import SerialVcfVariantsTableProcessor
 from genomics_data_index.test.integration import data_dir
 from genomics_data_index.test.integration import data_dir_empty
 from genomics_data_index.test.integration import snpeff_sample_vcfs
+
+
+serial_variants_processor = SerialVcfVariantsTableProcessor()
 
 
 @pytest.fixture
@@ -41,7 +46,7 @@ def vcf_and_mask_files(sample_dirs) -> Dict[str, Dict[str, Path]]:
     }
 
 
-def variants_reader_internal(sample_dirs, include_masked_regions: bool) -> VcfVariantsReader:
+def variants_reader_internal(sample_dirs, variants_processor: VcfVariantsTableProcessor, include_masked_regions: bool) -> VcfVariantsReader:
     tmp_dir = Path(tempfile.mkdtemp())
     vcf_masks = vcf_and_mask_files(sample_dirs)
     file_processor = SerialSampleFilesProcessor(tmp_dir)
@@ -50,17 +55,20 @@ def variants_reader_internal(sample_dirs, include_masked_regions: bool) -> VcfVa
                                                                               'masks'],
                                                                           sample_files_processor=file_processor)
     processed_files = cast(Dict[str, NucleotideSampleData], data_package.process_all_data())
-    return VcfVariantsReader.create(processed_files, include_masked_regions=include_masked_regions)
+    return VcfVariantsReader.create(processed_files, variants_processor=variants_processor,
+                                    include_masked_regions=include_masked_regions)
 
 
 @pytest.fixture
 def variants_reader(sample_dirs) -> VcfVariantsReader:
-    return variants_reader_internal(sample_dirs, include_masked_regions=False)
+    return variants_reader_internal(sample_dirs, variants_processor=serial_variants_processor,
+                                    include_masked_regions=False)
 
 
 @pytest.fixture
 def variants_reader_empty(sample_dirs_empty) -> VcfVariantsReader:
-    return variants_reader_internal(sample_dirs_empty, include_masked_regions=False)
+    return variants_reader_internal(sample_dirs_empty, variants_processor=serial_variants_processor,
+                                    include_masked_regions=False)
 
 
 @pytest.fixture
@@ -76,7 +84,8 @@ def variants_reader_snpeff_annotations_single_sample() -> VcfVariantsReader:
                                                                           masked_genomic_files_map=None,
                                                                           sample_files_processor=file_processor)
     processed_files = cast(Dict[str, NucleotideSampleData], data_package.process_all_data())
-    return VcfVariantsReader.create(processed_files, include_masked_regions=False)
+    return VcfVariantsReader.create(processed_files, variants_processor=serial_variants_processor,
+                                    include_masked_regions=False)
 
 
 @pytest.fixture
@@ -87,7 +96,8 @@ def variants_reader_snpeff_annotations_multiple_samples() -> VcfVariantsReader:
                                                                           masked_genomic_files_map=None,
                                                                           sample_files_processor=file_processor)
     processed_files = cast(Dict[str, NucleotideSampleData], data_package.process_all_data())
-    return VcfVariantsReader.create(processed_files, include_masked_regions=False)
+    return VcfVariantsReader.create(processed_files, variants_processor=serial_variants_processor,
+                                    include_masked_regions=False)
 
 
 @pytest.fixture
@@ -104,38 +114,42 @@ def variants_reader_empty_masks(sample_dirs) -> VcfVariantsReader:
     data_package = NucleotideSampleDataPackage.create_from_sequence_masks(sample_vcf_map=sample_vcf_map,
                                                                           sample_files_processor=file_processor)
     processed_files = cast(Dict[str, NucleotideSampleData], data_package.process_all_data())
-    return VcfVariantsReader.create(processed_files, include_masked_regions=False)
+    return VcfVariantsReader.create(processed_files, variants_processor=serial_variants_processor,
+                                    include_masked_regions=False)
 
 
 @pytest.fixture
 def variants_reader_default_no_data() -> VcfVariantsReader:
-    return VcfVariantsReader(sample_files_map={})
+    return VcfVariantsReader(sample_files_map={}, variants_processor=serial_variants_processor)
 
 
-def variants_reader_from_snippy_internal(sample_dirs, include_masked_regions: bool,
-                                         ncores: int) -> VcfVariantsReader:
+def variants_reader_from_snippy_internal(sample_dirs, variants_processor: VcfVariantsTableProcessor,
+                                         include_masked_regions: bool) -> VcfVariantsReader:
     tmp_dir = Path(tempfile.mkdtemp())
     file_processor = SerialSampleFilesProcessor(tmp_dir)
     data_package = NucleotideSampleDataPackage.create_from_snippy(sample_dirs=sample_dirs,
                                                                   sample_files_processor=file_processor)
     processed_files = cast(Dict[str, NucleotideSampleData], data_package.process_all_data())
-    return VcfVariantsReader.create(processed_files, include_masked_regions=include_masked_regions,
-                                    ncores=ncores)
+    return VcfVariantsReader.create(processed_files, variants_processor=variants_processor,
+                                    include_masked_regions=include_masked_regions)
 
 
 @pytest.fixture
 def variants_reader_from_snippy(sample_dirs) -> VcfVariantsReader:
-    return variants_reader_from_snippy_internal(sample_dirs, include_masked_regions=False, ncores=1)
+    return variants_reader_from_snippy_internal(sample_dirs, variants_processor=serial_variants_processor,
+                                                include_masked_regions=False)
 
 
 @pytest.fixture
 def variants_reader_from_snippy_masked(sample_dirs) -> VcfVariantsReader:
-    return variants_reader_from_snippy_internal(sample_dirs, include_masked_regions=True, ncores=1)
+    return variants_reader_from_snippy_internal(sample_dirs, variants_processor=serial_variants_processor,
+                                                include_masked_regions=True)
 
 
 @pytest.fixture
 def variants_reader_from_snippy_masked_multicore(sample_dirs) -> VcfVariantsReader:
-    return variants_reader_from_snippy_internal(sample_dirs, include_masked_regions=True, ncores=2)
+    return variants_reader_from_snippy_internal(sample_dirs, variants_processor=serial_variants_processor,
+                                                include_masked_regions=True)
 
 
 @pytest.fixture
@@ -145,7 +159,8 @@ def variants_reader_snpeff() -> VcfVariantsReader:
     data_package = NucleotideSampleDataPackage.create_from_sequence_masks(sample_vcf_map=snpeff_sample_vcfs,
                                                                           sample_files_processor=file_processor)
     processed_files = cast(Dict[str, NucleotideSampleData], data_package.process_all_data())
-    return VcfVariantsReader.create(processed_files, include_masked_regions=False)
+    return VcfVariantsReader.create(processed_files, variants_processor=serial_variants_processor,
+                                    include_masked_regions=False)
 
 
 def test_get_variants_table(variants_reader):
@@ -239,23 +254,23 @@ def test_snippy_get_samples_list(variants_reader_from_snippy):
 
 def test_snippy_get_samples_list_two_files():
     sample_dirs = [data_dir / 'SampleA', data_dir / 'SampleB']
-    reader = variants_reader_from_snippy_internal(sample_dirs, include_masked_regions=False,
-                                                  ncores=1)
+    reader = variants_reader_from_snippy_internal(sample_dirs, variants_processor=serial_variants_processor,
+                                                  include_masked_regions=False)
 
     assert {'SampleA', 'SampleB'} == set(reader.samples_list())
 
 
 def test_snippy_read_empty_vcf(sample_dirs_empty):
-    reader = variants_reader_from_snippy_internal(sample_dirs_empty, include_masked_regions=False,
-                                                  ncores=1)
+    reader = variants_reader_from_snippy_internal(sample_dirs_empty, variants_processor=serial_variants_processor,
+                                                  include_masked_regions=False)
     df = reader.get_features_table()
 
     assert 0 == len(df), 'Data has incorrect length'
 
 
 def test_snippy_read_empty_vcf_include_masked_regions(sample_dirs_empty):
-    reader = variants_reader_from_snippy_internal(sample_dirs_empty, include_masked_regions=True,
-                                                  ncores=1)
+    reader = variants_reader_from_snippy_internal(sample_dirs_empty, variants_processor=serial_variants_processor,
+                                                  include_masked_regions=True)
     df = reader.get_features_table()
 
     assert 437 == len(df), 'Data has incorrect length'
@@ -264,8 +279,8 @@ def test_snippy_read_empty_vcf_include_masked_regions(sample_dirs_empty):
 
 
 def test_snippy_read_empty_vcf_multicore_include_masked_regions(sample_dirs_empty):
-    reader = variants_reader_from_snippy_internal(sample_dirs_empty, include_masked_regions=True,
-                                                  ncores=2)
+    reader = variants_reader_from_snippy_internal(sample_dirs_empty, variants_processor=serial_variants_processor,
+                                                  include_masked_regions=True)
     df = reader.get_features_table()
 
     assert 437 == len(df), 'Data has incorrect length'

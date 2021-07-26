@@ -22,6 +22,7 @@ from genomics_data_index.storage.service.ReferenceService import ReferenceServic
 from genomics_data_index.storage.service.SampleService import SampleService
 from genomics_data_index.storage.util import TRACE_LEVEL
 from genomics_data_index.storage.util.ListSliceIter import ListSliceIter
+from genomics_data_index.storage.io.mutation.variants_processor.SerialVcfVariantsTableProcessor import SerialVcfVariantsTableProcessor
 
 logger = logging.getLogger(__name__)
 
@@ -257,7 +258,8 @@ class VariationService(FeatureService):
                          'index missing/unknown positions')
         else:
             logger.debug(f'index_unknown_missing={index_unknown_missing}')
-        return VcfVariantsReader(sample_data_dict, include_masked_regions=index_unknown_missing)
+        return VcfVariantsReader(sample_data_dict, include_masked_regions=index_unknown_missing,
+                                 variants_processor=SerialVcfVariantsTableProcessor())
 
     def read_index(self, feature_ids: Union[List[str], Set[str]]) -> Dict[str, FeatureSamples]:
         if isinstance(feature_ids, set):
