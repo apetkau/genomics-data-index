@@ -1,3 +1,4 @@
+from __future__ import annotations
 import abc
 from typing import Generator, Set, Dict
 
@@ -17,12 +18,9 @@ class SampleDataPackage(abc.ABC):
     def index_unknown_missing(self) -> bool:
         return self._index_unknown_missing
 
-    def process_all_data(self) -> Dict[str, SampleData]:
-        processed_data = {}
-        for sample_data in self.iter_sample_data():
-            processed_data[sample_data.sample_name] = sample_data
-
-        return processed_data
+    @abc.abstractmethod
+    def process_all_data(self) -> SampleDataPackage:
+        pass
 
     @abc.abstractmethod
     def get_features_reader(self) -> FeaturesReader:

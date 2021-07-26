@@ -25,6 +25,12 @@ class MLSTSampleDataPackage(SampleDataPackage):
     def sample_names(self) -> Set[str]:
         return set(self._mlst_reader.samples_list())
 
+    def process_all_data(self) -> SampleDataPackage:
+        processed_data = {}
+        for sample_data in self.iter_sample_data():
+            processed_data[sample_data.sample_name] = sample_data
+        return self
+
     def iter_sample_data(self) -> Generator[SampleData, None, None]:
         for sample_name, scheme, data in self._mlst_reader.iter_sample_data():
             yield MLSTSampleData(sample_name=sample_name, scheme=scheme, mlst_allele_data=data)

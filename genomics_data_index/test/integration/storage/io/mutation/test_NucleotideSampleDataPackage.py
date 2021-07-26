@@ -95,13 +95,9 @@ def test_get_features_reader_and_features_table_serial_variants_processor(sample
         assert 'is not preprocessed' in str(execinfo.value)
 
         # Process data
-        sample_data_dict = data_package.process_all_data()
+        data_package_processed = data_package.process_all_data()
 
         # Now get features reader from new data package and verify I can read feature tables
-        sample_data_dict = cast(Dict[str, NucleotideSampleData], sample_data_dict)
-        data_package_processed = NucleotideSampleDataPackage.create_from_sample_data(sample_data_dict=sample_data_dict,
-                                                                                     variants_processor=variants_processor)
-
         features_reader = data_package_processed.get_features_reader()
         features_df = features_reader.get_features_table()
         assert 1170 == len(features_df)
@@ -121,7 +117,8 @@ def test_persisted_sample_data_file_names(sample_dirs):
                                                                                   'masks'],
                                                                               sample_files_processor=file_processor)
 
-        processed_files_dict = data_package.process_all_data()
+        processed_data_package = cast(NucleotideSampleDataPackage, data_package.process_all_data())
+        processed_files_dict = processed_data_package.get_sample_data()
         sample_data = cast(NucleotideSampleData, processed_files_dict['SampleA'])
         mask_file = sample_data.get_mask_file()
         vcf_file, vcf_index = sample_data.get_vcf_file()
@@ -143,7 +140,8 @@ def test_with_serial_sample_files_processor(sample_dirs):
                                                                                   'masks'],
                                                                               sample_files_processor=file_processor)
 
-        processed_files_dict = data_package.process_all_data()
+        processed_data_package = cast(NucleotideSampleDataPackage, data_package.process_all_data())
+        processed_files_dict = processed_data_package.get_sample_data()
 
         assert 3 == len(processed_files_dict)
 
@@ -197,7 +195,8 @@ def test_with_multiprocess_sample_files_processor(sample_dirs):
                                                                                   'masks'],
                                                                               sample_files_processor=file_processor)
 
-        processed_files_dict = data_package.process_all_data()
+        processed_data_package = cast(NucleotideSampleDataPackage, data_package.process_all_data())
+        processed_files_dict = processed_data_package.get_sample_data()
 
         assert 3 == len(processed_files_dict)
 
@@ -247,7 +246,8 @@ def test_with_null_sample_files_processor(sample_dirs):
                                                                           masked_genomic_files_map=vcf_masks[
                                                                               'masks'])
 
-    processed_files_dict = data_package.process_all_data()
+    processed_data_package = cast(NucleotideSampleDataPackage, data_package.process_all_data())
+    processed_files_dict = data_package.get_sample_data()
 
     assert 3 == len(processed_files_dict)
     sample_data = processed_files_dict['SampleA']

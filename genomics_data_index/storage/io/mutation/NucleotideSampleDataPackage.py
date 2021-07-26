@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import List, Generator, Dict, Set
+from typing import List, Generator, Dict, Set, cast
 
 from genomics_data_index.storage.io.SampleData import SampleData
 from genomics_data_index.storage.io.mutation.NucleotideSampleData import NucleotideSampleData
@@ -39,6 +39,20 @@ class NucleotideSampleDataPackage(SampleDataPackage):
 
     def iter_sample_data(self) -> Generator[SampleData, None, None]:
         return self._sample_files_processor.process(list(self._sample_data_dict.values()))
+
+    def get_sample_data(self) -> Dict[str, NucleotideSampleData]:
+        return self._sample_data_dict
+
+    def process_all_data(self) -> SampleDataPackage:
+        processed_data = {}
+        for sample_data in self.iter_sample_data():
+            processed_data[sample_data.sample_name] = sample_data
+
+        processed_data = cast(Dict[str, NucleotideSampleData], processed_data)
+        return NucleotideSampleDataPackage.create_from_sample_data(sample_data_dict=processed_data,
+                                                                   sample_files_processor=self._sample_files_processor,
+                                                                   variants_processor=self._variants_processor,
+                                                                   index_unknown_missing=self.index_unknown_missing())
 
     @classmethod
     def create_from_sequence_masks(cls, sample_vcf_map: Dict[str, Path],
