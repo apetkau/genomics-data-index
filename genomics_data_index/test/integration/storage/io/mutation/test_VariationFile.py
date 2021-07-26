@@ -516,6 +516,7 @@ def test_annotate(snpeff_parser):
         assert ['SNP', 'SNP'] == vcf_annotation_df['TYPE'].tolist()
         assert ['missense_variant', 'synonymous_variant'] == vcf_annotation_df['ANN.Annotation'].tolist()
         assert ['SEHA_RS00560', 'SEHA_RS00560'] == vcf_annotation_df['ANN.Gene_ID'].tolist()
+        assert ['thrL', 'thrL'] == vcf_annotation_df['ANN.Gene_Name'].tolist()
         assert ['c.6C>G', 'c.18C>G'] == vcf_annotation_df['ANN.HGVS.c'].tolist()
         assert ['p.N2K', 'p.T6T'] == vcf_annotation_df['ANN.HGVS.p'].tolist()
 
