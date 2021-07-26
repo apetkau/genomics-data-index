@@ -12,20 +12,19 @@ from genomics_data_index.storage.io.processor.NullSampleFilesProcessor import Nu
 
 class NucleotideSampleDataPackage(SampleDataPackage):
 
-    def __init__(self, sample_data: List[SampleData],
-                 sample_names: Set[str],
+    def __init__(self, sample_data_dict: Dict[str, SampleData],
                  sample_files_processor: SampleFilesProcessor,
                  index_unknown_missing: bool = True):
         super().__init__(index_unknown_missing=index_unknown_missing)
-        self._sample_data = sample_data
+        self._sample_data_dict = sample_data_dict
         self._sample_files_processor = sample_files_processor
-        self._sample_names = sample_names
+        self._sample_names = set(self._sample_data_dict.keys())
 
     def sample_names(self) -> Set[str]:
         return self._sample_names
 
     def iter_sample_data(self) -> Generator[SampleData, None, None]:
-        return self._sample_files_processor.process(self._sample_data)
+        return self._sample_files_processor.process(list(self._sample_data_dict.values()))
 
     @classmethod
     def create_from_sequence_masks(cls, sample_vcf_map: Dict[str, Path],
@@ -35,8 +34,7 @@ class NucleotideSampleDataPackage(SampleDataPackage):
         if masked_genomic_files_map is None:
             masked_genomic_files_map = {}
 
-        sample_names_set = set()
-        sample_data_list = []
+        sample_data_dict = {}
         for sample_name in sample_vcf_map:
             vcf_file = sample_vcf_map[sample_name]
             if sample_name in masked_genomic_files_map:
@@ -50,11 +48,9 @@ class NucleotideSampleDataPackage(SampleDataPackage):
                 sample_mask_sequence=mask_file
             )
 
-            sample_data_list.append(sample_data)
-            sample_names_set.add(sample_name)
+            sample_data_dict[sample_name] = sample_data
 
-        return NucleotideSampleDataPackage(sample_data=sample_data_list,
-                                           sample_names=sample_names_set,
+        return NucleotideSampleDataPackage(sample_data_dict=sample_data_dict,
                                            sample_files_processor=sample_files_processor,
                                            index_unknown_missing=index_unknown_missing
                                            )
@@ -64,8 +60,7 @@ class NucleotideSampleDataPackage(SampleDataPackage):
                            sample_files_processor: SampleFilesProcessor = NullSampleFilesProcessor.instance(),
                            index_unknown_missing: bool = True) -> NucleotideSampleDataPackage:
 
-        sample_names_set = set()
-        sample_data_list = []
+        sample_data_dict = {}
         for d in sample_dirs:
             sample_name = d.name
             sample_data = NucleotideSampleDataSequenceMask.create(
@@ -73,11 +68,9 @@ class NucleotideSampleDataPackage(SampleDataPackage):
                 vcf_file=Path(d, 'snps.vcf.gz'),
                 sample_mask_sequence=Path(d, 'snps.aligned.fa')
             )
-            sample_data_list.append(sample_data)
-            sample_names_set.add(sample_name)
+            sample_data_dict[sample_name] = sample_data
 
-        return NucleotideSampleDataPackage(sample_data=sample_data_list,
-                                           sample_names=sample_names_set,
+        return NucleotideSampleDataPackage(sample_data_dict=sample_data_dict,
                                            sample_files_processor=sample_files_processor,
                                            index_unknown_missing=index_unknown_missing
                                            )
