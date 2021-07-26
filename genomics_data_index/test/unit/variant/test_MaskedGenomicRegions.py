@@ -24,6 +24,35 @@ def test_create_from_sequence():
     assert not mask.contains('record1', 7)
 
 
+def test_mask_to_features_from_sequence():
+    sequences = [SeqRecord(seq=Seq('ATCG-NN'), id='record1')]
+    mask = MaskedGenomicRegions.from_sequences(sequences=sequences)
+    features_df = mask.mask_to_features().sort_values('POS')
+
+    assert ['CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'VARIANT_ID'] == features_df.columns.tolist()
+    assert 3 == len(features_df)
+    assert ['record1:5:1:?', 'record1:6:1:?', 'record1:7:1:?'] == features_df['VARIANT_ID'].tolist()
+
+
+def test_mask_to_features_from_sequence_no_mask():
+    sequences = [SeqRecord(seq=Seq('ATCGAAA'), id='record1')]
+    mask = MaskedGenomicRegions.from_sequences(sequences=sequences)
+    features_df = mask.mask_to_features().sort_values('POS')
+
+    assert ['CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'VARIANT_ID'] == features_df.columns.tolist()
+    assert 0 == len(features_df)
+
+
+def test_mask_to_features_from_bed():
+    mask = MaskedGenomicRegions(BedTool('reference 0 4', from_string=True))
+    features_df = mask.mask_to_features().sort_values('POS')
+
+    assert ['CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'VARIANT_ID'] == features_df.columns.tolist()
+    assert 4 == len(features_df)
+    assert ['reference:1:1:?', 'reference:2:1:?', 'reference:3:1:?',
+            'reference:4:1:?'] == features_df['VARIANT_ID'].tolist()
+
+
 def test_create_from_two_sequences():
     sequences = [
         SeqRecord(seq=Seq('ATCG-NN'), id='record1'),
@@ -43,6 +72,20 @@ def test_create_from_two_sequences():
     assert mask.contains('record2', 2)
     assert not mask.contains('record2', 3)
     assert not mask.contains('record2', 5)
+
+
+def test_mask_to_features_from_two_sequences():
+    sequences = [
+        SeqRecord(seq=Seq('ATCG-NN'), id='record1'),
+        SeqRecord(seq=Seq('NN-GAT'), id='record2')
+    ]
+    mask = MaskedGenomicRegions.from_sequences(sequences=sequences)
+    features_df = mask.mask_to_features().sort_values(['CHROM', 'POS'])
+
+    assert ['CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'VARIANT_ID'] == features_df.columns.tolist()
+    assert 6 == len(features_df)
+    assert ['record1:5:1:?', 'record1:6:1:?', 'record1:7:1:?',
+            'record2:1:1:?', 'record2:2:1:?', 'record2:3:1:?'] == features_df['VARIANT_ID'].tolist()
 
 
 def test_sequence_names():
