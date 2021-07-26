@@ -1,65 +1,7 @@
 import pandas as pd
-from pybedtools import BedTool
-
-from genomics_data_index.storage.MaskedGenomicRegions import MaskedGenomicRegions
-from genomics_data_index.storage.io.mutation.VcfVariantsReader import VcfVariantsReader
 
 
-def test_mask_to_features():
-    reader = VcfVariantsReader({})
-    mask = MaskedGenomicRegions(BedTool([('ref', 10, 15)]))
-    expected_number_features = 5
-
-    features_df = reader.mask_to_features(genomic_mask=mask)
-    features_df = features_df.sort_values('POS')
-
-    assert ['CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'VARIANT_ID'] == features_df.columns.tolist()
-    assert expected_number_features == len(features_df)
-    assert ['ref'] * expected_number_features == features_df['CHROM'].tolist()
-    assert list(range(10 + 1, 15 + 1)) == features_df['POS'].tolist()
-    assert [1] * expected_number_features == features_df['REF'].tolist()
-    assert ['?'] * expected_number_features == features_df['ALT'].tolist()
-    assert ['UNKNOWN_MISSING'] * expected_number_features == features_df['TYPE'].tolist()
-    assert [f'ref:{p}:1:?' for p in range(10 + 1, 15 + 1)] == features_df['VARIANT_ID'].tolist()
-
-
-def test_mask_to_features_multi_range():
-    reader = VcfVariantsReader({})
-    mask = MaskedGenomicRegions(BedTool([('ref', 10, 15), ('ref', 20, 22)]))
-    expected_number_features = 7
-
-    features_df = reader.mask_to_features(genomic_mask=mask)
-    features_df = features_df.sort_values('POS')
-
-    assert ['CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'VARIANT_ID'] == features_df.columns.tolist()
-    assert expected_number_features == len(features_df)
-    assert ['ref'] * expected_number_features == features_df['CHROM'].tolist()
-    assert [11, 12, 13, 14, 15, 21, 22] == features_df['POS'].tolist()
-    assert [1] * expected_number_features == features_df['REF'].tolist()
-    assert ['?'] * expected_number_features == features_df['ALT'].tolist()
-    assert ['UNKNOWN_MISSING'] * expected_number_features == features_df['TYPE'].tolist()
-    assert [f'ref:{p}:1:?' for p in [11, 12, 13, 14, 15, 21, 22]] == features_df['VARIANT_ID'].tolist()
-
-
-def test_mask_to_features_multi_sequence():
-    reader = VcfVariantsReader({})
-    mask = MaskedGenomicRegions(BedTool([('ref', 10, 15), ('ref2', 12, 17)]))
-    expected_nf = 5
-    expected_nf2 = 5
-    expected_t = 10
-
-    features_df = reader.mask_to_features(genomic_mask=mask)
-    features_df = features_df.sort_values(['CHROM', 'POS'])
-
-    assert ['CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'VARIANT_ID'] == features_df.columns.tolist()
-    assert expected_t == len(features_df)
-    assert ['ref'] * expected_nf + ['ref2'] * expected_nf2 == features_df['CHROM'].tolist()
-    assert [11, 12, 13, 14, 15, 13, 14, 15, 16, 17] == features_df['POS'].tolist()
-    assert [1] * expected_t == features_df['REF'].tolist()
-    assert ['?'] * expected_t == features_df['ALT'].tolist()
-    assert ['UNKNOWN_MISSING'] * expected_t == features_df['TYPE'].tolist()
-    assert [f'ref:{p}:1:?' for p in [11, 12, 13, 14, 15]] + [
-        f'ref2:{p}:1:?' for p in [13, 14, 15, 16, 17]] == features_df['VARIANT_ID'].tolist()
+from genomics_data_index.storage.io.mutation.NucleotideSampleData import NucleotideSampleData
 
 
 def test_combine_vcf_mask():
@@ -75,12 +17,13 @@ def test_combine_vcf_mask():
                'ANN.Allele', 'ANN.Annotation', 'ANN.Annotation_Impact', 'ANN.Gene_Name', 'ANN.Gene_ID',
                'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p']
 
-    reader = VcfVariantsReader({})
+    sample_data = NucleotideSampleData('SampleA', vcf_file=None, vcf_file_index=None,
+                                       mask_bed_file=None, preprocessed=True)
 
     vcf_df = pd.DataFrame(data_vcf, columns=columns)
     mask_df = pd.DataFrame(data_mask, columns=['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE', 'VARIANT_ID'])
 
-    combined_df = reader.combine_vcf_mask(vcf_frame=vcf_df, mask_frame=mask_df)
+    combined_df = sample_data.combine_vcf_mask(vcf_frame=vcf_df, mask_frame=mask_df)
     combined_df = combined_df.sort_values('POS').fillna('NA')
 
     assert combined_df.columns.tolist() == columns
@@ -107,12 +50,13 @@ def test_combine_vcf_mask_overlap_feature():
                'ANN.Allele', 'ANN.Annotation', 'ANN.Annotation_Impact', 'ANN.Gene_Name', 'ANN.Gene_ID',
                'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p']
 
-    reader = VcfVariantsReader({})
+    sample_data = NucleotideSampleData('SampleA', vcf_file=None, vcf_file_index=None,
+                                       mask_bed_file=None, preprocessed=True)
 
     vcf_df = pd.DataFrame(data_vcf, columns=columns)
     mask_df = pd.DataFrame(data_mask, columns=['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE', 'VARIANT_ID'])
 
-    combined_df = reader.combine_vcf_mask(vcf_frame=vcf_df, mask_frame=mask_df)
+    combined_df = sample_data.combine_vcf_mask(vcf_frame=vcf_df, mask_frame=mask_df)
     combined_df = combined_df.sort_values('POS').fillna('NA')
 
     assert combined_df.columns.tolist() == columns
@@ -138,12 +82,13 @@ def test_combine_vcf_mask_no_mask_features():
                'ANN.Allele', 'ANN.Annotation', 'ANN.Annotation_Impact', 'ANN.Gene_Name', 'ANN.Gene_ID',
                'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p']
 
-    reader = VcfVariantsReader({})
+    sample_data = NucleotideSampleData('SampleA', vcf_file=None, vcf_file_index=None,
+                                       mask_bed_file=None, preprocessed=True)
 
     vcf_df = pd.DataFrame(data_vcf, columns=columns)
     mask_df = pd.DataFrame(data_mask, columns=['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE', 'VARIANT_ID'])
 
-    combined_df = reader.combine_vcf_mask(vcf_frame=vcf_df, mask_frame=mask_df)
+    combined_df = sample_data.combine_vcf_mask(vcf_frame=vcf_df, mask_frame=mask_df)
     combined_df = combined_df.sort_values('POS').fillna('NA')
 
     assert combined_df.columns.tolist() == columns
@@ -167,12 +112,13 @@ def test_combine_vcf_mask_no_vcf_feature():
                'ANN.Allele', 'ANN.Annotation', 'ANN.Annotation_Impact', 'ANN.Gene_Name', 'ANN.Gene_ID',
                'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p']
 
-    reader = VcfVariantsReader({})
+    sample_data = NucleotideSampleData('SampleA', vcf_file=None, vcf_file_index=None,
+                                       mask_bed_file=None, preprocessed=True)
 
     vcf_df = pd.DataFrame(data_vcf, columns=columns)
     mask_df = pd.DataFrame(data_mask, columns=['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE', 'VARIANT_ID'])
 
-    combined_df = reader.combine_vcf_mask(vcf_frame=vcf_df, mask_frame=mask_df)
+    combined_df = sample_data.combine_vcf_mask(vcf_frame=vcf_df, mask_frame=mask_df)
     combined_df = combined_df.sort_values('POS').fillna('NA')
 
     assert combined_df.columns.tolist() == columns
@@ -199,12 +145,13 @@ def test_combine_vcf_mask_same_position_different_sequence():
                'ANN.Allele', 'ANN.Annotation', 'ANN.Annotation_Impact', 'ANN.Gene_Name', 'ANN.Gene_ID',
                'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p']
 
-    reader = VcfVariantsReader({})
+    sample_data = NucleotideSampleData('SampleA', vcf_file=None, vcf_file_index=None,
+                                       mask_bed_file=None, preprocessed=True)
 
     vcf_df = pd.DataFrame(data_vcf, columns=columns)
     mask_df = pd.DataFrame(data_mask, columns=['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE', 'VARIANT_ID'])
 
-    combined_df = reader.combine_vcf_mask(vcf_frame=vcf_df, mask_frame=mask_df)
+    combined_df = sample_data.combine_vcf_mask(vcf_frame=vcf_df, mask_frame=mask_df)
     combined_df = combined_df.sort_values(['CHROM', 'POS']).fillna('NA')
 
     assert combined_df.columns.tolist() == columns
@@ -233,12 +180,13 @@ def test_combine_vcf_mask_multiple_features():
                'ANN.Allele', 'ANN.Annotation', 'ANN.Annotation_Impact', 'ANN.Gene_Name', 'ANN.Gene_ID',
                'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p']
 
-    reader = VcfVariantsReader({})
+    sample_data = NucleotideSampleData('SampleA', vcf_file=None, vcf_file_index=None,
+                                       mask_bed_file=None, preprocessed=True)
 
     vcf_df = pd.DataFrame(data_vcf, columns=columns)
     mask_df = pd.DataFrame(data_mask, columns=['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE', 'VARIANT_ID'])
 
-    combined_df = reader.combine_vcf_mask(vcf_frame=vcf_df, mask_frame=mask_df)
+    combined_df = sample_data.combine_vcf_mask(vcf_frame=vcf_df, mask_frame=mask_df)
     combined_df = combined_df.sort_values('POS').fillna('NA')
 
     assert combined_df.columns.tolist() == columns

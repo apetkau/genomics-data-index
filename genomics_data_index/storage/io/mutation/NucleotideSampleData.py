@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 class NucleotideSampleData(SampleData):
     VCF_FRAME_COLUMNS = ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE', 'VARIANT_ID']
 
-    def __init__(self, sample_name: str, vcf_file: Path, vcf_file_index: Optional[Path],
+    def __init__(self, sample_name: str, vcf_file: Optional[Path], vcf_file_index: Optional[Path],
                  mask_bed_file: Optional[Path],
                  preprocessed: bool):
         super().__init__(sample_name=sample_name)
