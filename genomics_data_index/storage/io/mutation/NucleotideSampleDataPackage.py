@@ -4,21 +4,35 @@ from pathlib import Path
 from typing import List, Generator, Dict, Set
 
 from genomics_data_index.storage.io.SampleData import SampleData
+from genomics_data_index.storage.io.mutation.NucleotideSampleData import NucleotideSampleData
 from genomics_data_index.storage.io.SampleDataPackage import SampleDataPackage
 from genomics_data_index.storage.io.SampleFilesProcessor import SampleFilesProcessor
 from genomics_data_index.storage.io.mutation.NucleotideSampleDataSequenceMask import NucleotideSampleDataSequenceMask
 from genomics_data_index.storage.io.processor.NullSampleFilesProcessor import NullSampleFilesProcessor
+from genomics_data_index.storage.io.FeaturesReader import FeaturesReader
+from genomics_data_index.storage.io.mutation.VcfVariantsReader import VcfVariantsReader
+from genomics_data_index.storage.io.mutation.variants_processor.VcfVariantsTableProcessor import \
+    VcfVariantsTableProcessor
+from genomics_data_index.storage.io.mutation.variants_processor.SerialVcfVariantsTableProcessor import \
+    SerialVcfVariantsTableProcessor
 
 
 class NucleotideSampleDataPackage(SampleDataPackage):
 
-    def __init__(self, sample_data_dict: Dict[str, SampleData],
+    def __init__(self, sample_data_dict: Dict[str, NucleotideSampleData],
                  sample_files_processor: SampleFilesProcessor,
+                 variants_processor: VcfVariantsTableProcessor,
                  index_unknown_missing: bool = True):
         super().__init__(index_unknown_missing=index_unknown_missing)
         self._sample_data_dict = sample_data_dict
         self._sample_files_processor = sample_files_processor
+        self._variants_processor = variants_processor
         self._sample_names = set(self._sample_data_dict.keys())
+
+    def get_features_reader(self) -> FeaturesReader:
+        return VcfVariantsReader.create(sample_files_map=self._sample_data_dict,
+                                        variants_processor=self._variants_processor,
+                                        include_masked_regions=self.index_unknown_missing())
 
     def sample_names(self) -> Set[str]:
         return self._sample_names
@@ -30,6 +44,7 @@ class NucleotideSampleDataPackage(SampleDataPackage):
     def create_from_sequence_masks(cls, sample_vcf_map: Dict[str, Path],
                                    masked_genomic_files_map: Dict[str, Path] = None,
                                    sample_files_processor: SampleFilesProcessor = NullSampleFilesProcessor.instance(),
+                                   variants_processor: VcfVariantsTableProcessor = SerialVcfVariantsTableProcessor.instance(),
                                    index_unknown_missing: bool = True) -> NucleotideSampleDataPackage:
         if masked_genomic_files_map is None:
             masked_genomic_files_map = {}
@@ -52,12 +67,14 @@ class NucleotideSampleDataPackage(SampleDataPackage):
 
         return NucleotideSampleDataPackage(sample_data_dict=sample_data_dict,
                                            sample_files_processor=sample_files_processor,
+                                           variants_processor=variants_processor,
                                            index_unknown_missing=index_unknown_missing
                                            )
 
     @classmethod
     def create_from_snippy(cls, sample_dirs: List[Path],
                            sample_files_processor: SampleFilesProcessor = NullSampleFilesProcessor.instance(),
+                           variants_processor: VcfVariantsTableProcessor = SerialVcfVariantsTableProcessor.instance(),
                            index_unknown_missing: bool = True) -> NucleotideSampleDataPackage:
 
         sample_data_dict = {}
@@ -72,5 +89,16 @@ class NucleotideSampleDataPackage(SampleDataPackage):
 
         return NucleotideSampleDataPackage(sample_data_dict=sample_data_dict,
                                            sample_files_processor=sample_files_processor,
+                                           variants_processor=variants_processor,
                                            index_unknown_missing=index_unknown_missing
                                            )
+
+    @classmethod
+    def create_from_sample_data(cls, sample_data_dict: Dict[str, NucleotideSampleData],
+                                sample_files_processor: SampleFilesProcessor = NullSampleFilesProcessor.instance(),
+                                variants_processor: VcfVariantsTableProcessor = SerialVcfVariantsTableProcessor.instance(),
+                                index_unknown_missing: bool = True) -> NucleotideSampleDataPackage:
+        return NucleotideSampleDataPackage(sample_data_dict=sample_data_dict,
+                                           sample_files_processor=sample_files_processor,
+                                           variants_processor=variants_processor,
+                                           index_unknown_missing=index_unknown_missing)

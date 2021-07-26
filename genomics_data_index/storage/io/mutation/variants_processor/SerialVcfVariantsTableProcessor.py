@@ -1,3 +1,4 @@
+from __future__ import annotations
 import logging
 from typing import List, Generator
 
@@ -12,6 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class SerialVcfVariantsTableProcessor(VcfVariantsTableProcessor):
+    processor_instance = None
 
     def __init__(self):
         super().__init__()
@@ -21,3 +23,9 @@ class SerialVcfVariantsTableProcessor(VcfVariantsTableProcessor):
         for sample_files in sample_data:
             logger.log(TRACE_LEVEL, f'Constructing features table for sample [{sample_files.sample_name}]')
             yield sample_files.read_sample_data_features(include_masked_regions=include_masked_regions)
+
+    @classmethod
+    def instance(cls) -> SerialVcfVariantsTableProcessor:
+        if cls.processor_instance is None:
+            cls.processor_instance = SerialVcfVariantsTableProcessor()
+        return cls.processor_instance

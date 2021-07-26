@@ -2,6 +2,7 @@ import abc
 from typing import Generator, Set, Dict
 
 from genomics_data_index.storage.io.SampleData import SampleData
+from genomics_data_index.storage.io.FeaturesReader import FeaturesReader
 
 
 class SampleDataPackage(abc.ABC):
@@ -22,6 +23,10 @@ class SampleDataPackage(abc.ABC):
             processed_data[sample_data.sample_name] = sample_data
 
         return processed_data
+
+    @abc.abstractmethod
+    def get_features_reader(self) -> FeaturesReader:
+        pass
 
     @abc.abstractmethod
     def iter_sample_data(self) -> Generator[SampleData, None, None]:
