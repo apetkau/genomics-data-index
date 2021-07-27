@@ -760,6 +760,6 @@ UNITS = ['B', 'KB', 'MB', 'GB']
 @click.pass_context
 @click.option('--unit', default='B', help='The unit to display data sizes as.', type=click.Choice(UNITS))
 def db_size(ctx, unit):
-    data_index_connection = get_project_exit_on_error(ctx).create_connection()
-    size_df = data_index_connection.db_size(unit)
+    genomics_index = get_genomics_index(ctx)
+    size_df = genomics_index.db_size(unit)
     size_df.to_csv(sys.stdout, sep='\t', index=False, float_format='%0.2f', na_rep='-')
