@@ -82,7 +82,7 @@ class QueryFeatureHGVS(QueryFeatureMutation):
         return QueryFeatureHGVS(sequence_name=sequence_name, gene=gene, variant=variant)
 
     @classmethod
-    def create_from_id(cls, hgvs_id: str) -> QueryFeatureHGVS:
+    def create_from_id(cls, hgvs_id: str, prefix: str = None) -> QueryFeatureHGVS:
         """
         Creates a new HGVS feature. The identifier is in the format hgvs:[sequence]:[gene]:[variant] or
         hgvs:[sequence]:[variant]. This roughly corresponds to the HGVS format <http://varnomen.hgvs.org/>.
@@ -90,11 +90,16 @@ class QueryFeatureHGVS(QueryFeatureMutation):
         I prefix the identifier with the string 'hgvs:' to indicate it is an HGVS identifier. I also include
         the reference genome name in addition to the gene name in cases where the variant is given in gene coordinates.
         :param hgvs_id: The (modified) HGVS identifier.
+        :param prefix: The prefix to use for this identifier. Used to override prefix for HGVSGN
+        :return: A new HGVS query feature.
         """
-        if hgvs_id.startswith(f'{cls.PREFIX}'):
-            hgvs_id_strip = hgvs_id[len(f'{cls.PREFIX}'):]
+        if prefix is None:
+            prefix = cls.PREFIX
+
+        if hgvs_id.startswith(f'{prefix}'):
+            hgvs_id_strip = hgvs_id[len(f'{prefix}'):]
         else:
-            hgvs_id_strip = hgvs_id
+            raise Exception(f'hgvs_id=[{hgvs_id}] must start with [{prefix}]')
 
         tokens = hgvs_id_strip.split(cls.SPLIT_CHAR)
         if len(tokens) == 2:
@@ -107,6 +112,6 @@ class QueryFeatureHGVS(QueryFeatureMutation):
             variant = tokens[2]
         else:
             raise Exception(f'Invalid number of items in hgvs_id=[{hgvs_id}].'
-                            f' Should be in the form [{cls.PREFIX}reference:gene:variant] or [{cls.PREFIX}reference:variant].')
+                            f' Should be in the form [{prefix}reference:gene:variant] or [{prefix}reference:variant].')
 
         return QueryFeatureHGVS(sequence_name=sequence_name, gene=gene, variant=variant)

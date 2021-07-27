@@ -3,25 +3,26 @@ from __future__ import annotations
 from genomics_data_index.storage.model.QueryFeature import QueryFeature
 from genomics_data_index.storage.model.QueryFeatureHGVS import QueryFeatureHGVS
 from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
+from genomics_data_index.storage.model.QueryFeatureHGVSGN import QueryFeatureHGVSGN
 
 
 class QueryFeatureFactory:
     factory_instance = None
 
-    registered_feature_creators = {
-        QueryFeatureHGVS.PREFIX: lambda i: QueryFeatureHGVS.create_from_id(i),
-    }
-
     def __init__(self):
-        pass
+        # Maps the prefix string (e.g. 'hgvs:') to a function used to create the specific QueryFeature from the ID
+        self._registered_feature_creators = {
+            QueryFeatureHGVS.PREFIX: lambda i: QueryFeatureHGVS.create_from_id(i),
+            QueryFeatureHGVSGN.PREFIX: lambda i: QueryFeatureHGVSGN.create_from_id(i)
+        }
 
     def create_feature(self, id: str) -> QueryFeature:
         if id is None:
             raise Exception('id is None')
 
-        for prefix in self.registered_feature_creators:
+        for prefix in self._registered_feature_creators:
             if id.startswith(prefix):
-                return self.registered_feature_creators[prefix](id)
+                return self._registered_feature_creators[prefix](id)
 
         # By default assume feature is an SPDI feature
         try:

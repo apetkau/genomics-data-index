@@ -34,6 +34,32 @@ def test_create_hgvs():
     assert f.is_protein()
 
 
+def test_create_hgvs_gn():
+    f = query_feature_factory.create_feature('hgvs_gn:NC_011083:murF:c.497C>A')
+    assert isinstance(f, QueryFeatureHGVS)
+    assert 'hgvs:NC_011083:murF:c.497C>A' == f.id
+    assert 'NC_011083' == f.sequence
+    assert 'NC_011083' == f.scope
+    assert 'murF' == f.gene
+    assert 'c.497C>A' == f.variant
+    assert f.has_id()
+    assert f.has_gene()
+    assert f.is_nucleotide()
+    assert not f.is_protein()
+
+    f = query_feature_factory.create_feature('hgvs:NC_011083:murF:p.Ala166Glu')
+    assert isinstance(f, QueryFeatureHGVS)
+    assert 'hgvs:NC_011083:murF:p.Ala166Glu' == f.id
+    assert 'NC_011083' == f.sequence
+    assert 'NC_011083' == f.scope
+    assert 'murF' == f.gene
+    assert 'p.Ala166Glu' == f.variant
+    assert f.has_id()
+    assert f.has_gene()
+    assert not f.is_nucleotide()
+    assert f.is_protein()
+
+
 def test_create_spdi():
     # Test SNV
     f = query_feature_factory.create_feature('reference:10:A:C')

@@ -8,6 +8,8 @@ from genomics_data_index.storage.model.QueryFeature import QueryFeature
 
 class QueryFeatureMLST(QueryFeature):
 
+    PREFIX = 'mlst:'
+
     def __init__(self, sla: str):
         super().__init__()
         self._sla = sla
@@ -45,6 +47,9 @@ class QueryFeatureMLST(QueryFeature):
     @property
     def id(self) -> str:
         return self._sla
+
+    def prefix(self) -> str:
+        return self.PREFIX
 
     @property
     def scope(self) -> str:
