@@ -9,11 +9,11 @@ import pytest
 from genomics_data_index.storage.io.mutation.NucleotideSampleData import NucleotideSampleData
 from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
 from genomics_data_index.storage.io.mutation.variants_processor.SerialVcfVariantsTableProcessor import \
-    SerialVcfVariantsTableProcessor
+    SerialVcfVariantsTableProcessorFactory
 from genomics_data_index.storage.io.processor.MultipleProcessSampleFilesProcessor import \
     MultipleProcessSampleFilesProcessor
 from genomics_data_index.storage.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor
-from genomics_data_index.storage.io.mutation.variants_processor.MultipleProcessVcfVariantsTableProcessor import MultipleProcessVcfVariantsTableProcessor
+from genomics_data_index.storage.io.mutation.variants_processor.MultipleProcessVcfVariantsTableProcessor import MultipleProcessVcfVariantsTableProcessorFactory
 from genomics_data_index.test.integration import data_dir
 from genomics_data_index.test.integration import data_dir_empty
 
@@ -94,16 +94,17 @@ def do_test_get_features_reader_and_features_table(data_package: NucleotideSampl
     assert 1170 == len(features_df)
     assert {'SampleA', 'SampleB', 'SampleC'} == set(features_df['SAMPLE'].tolist())
 
+
 def test_get_features_reader_and_features_table_serial_variants_processor(sample_dirs):
     with TemporaryDirectory() as tmp_file_str:
         tmp_file = Path(tmp_file_str)
         vcf_masks = vcf_and_mask_files(sample_dirs)
         file_processor = SerialSampleFilesProcessor(tmp_file)
-        variants_processor = SerialVcfVariantsTableProcessor.instance()
+        variants_processor_factory = SerialVcfVariantsTableProcessorFactory.instance()
         data_package = NucleotideSampleDataPackage.create_from_sequence_masks(sample_vcf_map=vcf_masks['vcfs'],
                                                                               masked_genomic_files_map=vcf_masks[
                                                                                   'masks'],
-                                                                              variants_processor=variants_processor,
+                                                                              variants_processor_factory=variants_processor_factory,
                                                                               sample_files_processor=file_processor)
         do_test_get_features_reader_and_features_table(data_package)
 
@@ -113,11 +114,11 @@ def test_get_features_reader_and_features_table_parallel_variants_processor(samp
         tmp_file = Path(tmp_file_str)
         vcf_masks = vcf_and_mask_files(sample_dirs)
         file_processor = SerialSampleFilesProcessor(tmp_file)
-        variants_processor = MultipleProcessVcfVariantsTableProcessor(ncores=2)
+        variants_processor_factory = MultipleProcessVcfVariantsTableProcessorFactory(ncores=2)
         data_package = NucleotideSampleDataPackage.create_from_sequence_masks(sample_vcf_map=vcf_masks['vcfs'],
                                                                               masked_genomic_files_map=vcf_masks[
                                                                                   'masks'],
-                                                                              variants_processor=variants_processor,
+                                                                              variants_processor_factory=variants_processor_factory,
                                                                               sample_files_processor=file_processor)
         do_test_get_features_reader_and_features_table(data_package)
 

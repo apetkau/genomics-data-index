@@ -9,7 +9,7 @@ from genomics_data_index.storage.io.mutation.NucleotideFeaturesReader import Nuc
 from genomics_data_index.storage.io.mutation.NucleotideSampleData import NucleotideSampleData
 from genomics_data_index.storage.io.mutation.VcfSnpEffAnnotationParser import VcfSnpEffAnnotationParser
 from genomics_data_index.storage.io.mutation.variants_processor.VcfVariantsTableProcessor import \
-    VcfVariantsTableProcessor
+    VcfVariantsTableProcessorFactory
 
 logger = logging.getLogger(__name__)
 
@@ -17,13 +17,14 @@ logger = logging.getLogger(__name__)
 class VcfVariantsReader(NucleotideFeaturesReader):
     VCF_FRAME_COLUMNS = ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE', 'VARIANT_ID']
 
-    def __init__(self, sample_files_map: Dict[str, NucleotideSampleData], variants_processor: VcfVariantsTableProcessor,
+    def __init__(self, sample_files_map: Dict[str, NucleotideSampleData],
+                 variants_processor_factory: VcfVariantsTableProcessorFactory,
                  include_masked_regions: bool = True):
         super().__init__()
         self._sample_files_map = sample_files_map
         self._snpeff_parser = VcfSnpEffAnnotationParser()
         self._include_masked_regions = include_masked_regions
-        self._variants_processor = variants_processor
+        self._variants_processor_factory = variants_processor_factory
 
     def get_or_create_feature_file(self, sample_name: str):
         vcf_file, index_file = self._sample_files_map[sample_name].get_vcf_file()
@@ -33,7 +34,8 @@ class VcfVariantsReader(NucleotideFeaturesReader):
         frames = []
         sample_data_list = list(self._sample_files_map.values())
         logger.debug(f'Starting to read features table from {len(self._sample_files_map)} VCF files')
-        for frame_vcf_mask in self._variants_processor.process(sample_data_list, self._include_masked_regions):
+        variants_processor = self._variants_processor_factory.create_variants_processor(self._include_masked_regions)
+        for frame_vcf_mask in variants_processor.process(sample_data_list):
             frames.append(frame_vcf_mask)
 
         logger.debug(f'Finished reading features table from {len(self._sample_files_map)} VCF files')
@@ -49,7 +51,9 @@ class VcfVariantsReader(NucleotideFeaturesReader):
         return list(self._sample_files_map.keys())
 
     @classmethod
-    def create(cls, sample_files_map: Dict[str, NucleotideSampleData], variants_processor: VcfVariantsTableProcessor,
+    def create(cls, sample_files_map: Dict[str, NucleotideSampleData],
+               variants_processor_factory: VcfVariantsTableProcessorFactory,
                include_masked_regions: bool = True):
-        return cls(sample_files_map=sample_files_map, variants_processor=variants_processor,
+        return cls(sample_files_map=sample_files_map,
+                   variants_processor_factory=variants_processor_factory,
                    include_masked_regions=include_masked_regions)

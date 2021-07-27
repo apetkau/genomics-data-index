@@ -12,8 +12,6 @@ from genomics_data_index.storage.io.mutation.NucleotideSampleData import Nucleot
 from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
 from genomics_data_index.storage.io.mutation.VariationFile import VariationFile
 from genomics_data_index.storage.io.mutation.VcfVariantsReader import VcfVariantsReader
-from genomics_data_index.storage.io.mutation.variants_processor.SerialVcfVariantsTableProcessor import \
-    SerialVcfVariantsTableProcessor
 from genomics_data_index.storage.model import NUCLEOTIDE_UNKNOWN_TYPE
 from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
 from genomics_data_index.storage.model.db import NucleotideVariantsSamples, SampleNucleotideVariation, Sample, \
@@ -261,7 +259,7 @@ class VariationService(FeatureService):
         else:
             logger.debug(f'index_unknown_missing={index_unknown_missing}')
         return VcfVariantsReader(sample_data_dict, include_masked_regions=index_unknown_missing,
-                                 variants_processor=data_package.get_variants_processor())
+                                 variants_processor_factory=data_package.get_variants_processor_factory())
 
     def read_index(self, feature_ids: Union[List[str], Set[str]]) -> Dict[str, FeatureSamples]:
         if isinstance(feature_ids, set):
