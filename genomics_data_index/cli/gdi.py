@@ -36,6 +36,7 @@ from genomics_data_index.storage.io.mutation.variants_processor.MultipleProcessV
 from genomics_data_index.storage.io.mutation.variants_processor.SerialVcfVariantsTableProcessor import SerialVcfVariantsTableProcessorFactory
 from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
 from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
+from genomics_data_index.storage.model.QueryFeature import QueryFeature
 from genomics_data_index.storage.service import EntityExistsError
 from genomics_data_index.storage.service.CoreAlignmentService import CoreAlignmentService
 from genomics_data_index.storage.service.MLSTService import MLSTService
@@ -713,14 +714,7 @@ def query_sample_kmer(ctx, name: List[str]):
     match_df.to_csv(sys.stdout, sep='\t', index=False, float_format='%0.4g', na_rep='-')
 
 
-@query.command(name='mutation')
-@click.pass_context
-@click.argument('name', nargs=-1)
-@click.option('--summarize/--no-summarize', help='Print summary information on query')
-def query_mutation(ctx, name: List[str], summarize: bool):
-    genomics_index = get_genomics_index(ctx)
-
-    features = [QueryFeatureMutationSPDI(n) for n in name]
+def query_feature(genomics_index: GenomicsDataIndex, features: List[QueryFeature], summarize: bool) -> None:
     query = genomics_index.samples_query()
     for feature in features:
         query = query.hasa(feature)
@@ -733,24 +727,24 @@ def query_mutation(ctx, name: List[str], summarize: bool):
     results_df.to_csv(sys.stdout, sep='\t', index=False, float_format='%0.4g', na_rep='-')
 
 
+@query.command(name='mutation')
+@click.pass_context
+@click.argument('name', nargs=-1)
+@click.option('--summarize/--no-summarize', help='Print summary information on query')
+def query_mutation(ctx, name: List[str], summarize: bool):
+    genomics_index = get_genomics_index(ctx)
+    features = [QueryFeatureMutationSPDI(n) for n in name]
+    query_feature(genomics_index=genomics_index, features=features, summarize=summarize)
+
+
 @query.command(name='mlst')
 @click.pass_context
 @click.argument('name', nargs=-1)
-@click.option('--include-unknown/--no-include-unknown',
-              help='Including results where it is unknown if the search term is present or not.',
-              required=False)
 @click.option('--summarize/--no-summarize', help='Print summary information on query')
-def query_mlst(ctx, name: List[str], include_unknown: bool, summarize: bool):
-    data_index_connection = get_project_exit_on_error(ctx).create_connection()
-    mlst_query_service = data_index_connection.mlst_query_service
-
+def query_mlst(ctx, name: List[str], summarize: bool):
+    genomics_index = get_genomics_index(ctx)
     features = [QueryFeatureMLST(n) for n in name]
-    if not summarize:
-        match_df = mlst_query_service.find_by_features(features, include_unknown=include_unknown)
-    else:
-        match_df = mlst_query_service.count_by_features(features, include_unknown=include_unknown)
-
-    match_df.to_csv(sys.stdout, sep='\t', index=False, float_format='%0.4g', na_rep='-')
+    query_feature(genomics_index=genomics_index, features=features, summarize=summarize)
 
 
 @main.group(name='db')
