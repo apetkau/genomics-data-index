@@ -8,6 +8,8 @@ from genomics_data_index.storage.model.QueryFeatureMutation import QueryFeatureM
 
 class QueryFeatureHGVS(QueryFeatureMutation):
 
+    PREFIX = 'hgvs'
+
     def __init__(self, sequence_name: str, gene: Optional[str], variant: str):
         super().__init__()
 
@@ -36,6 +38,10 @@ class QueryFeatureHGVS(QueryFeatureMutation):
         return self.has_id() and self._variant.startswith('p.')
 
     @property
+    def prefix(self) -> str:
+        return self.PREFIX
+
+    @property
     def sequence(self) -> str:
         return self._sequence_name
 
@@ -50,7 +56,7 @@ class QueryFeatureHGVS(QueryFeatureMutation):
     @property
     def id(self) -> Optional[str]:
         if self.has_id():
-            return f'hgvs:{self._hgvs_id}'
+            return f'{self.prefix}:{self._hgvs_id}'
         else:
             return None
 
@@ -85,8 +91,8 @@ class QueryFeatureHGVS(QueryFeatureMutation):
         the reference genome name in addition to the gene name in cases where the variant is given in gene coordinates.
         :param hgvs_id: The (modified) HGVS identifier.
         """
-        if hgvs_id.startswith(f'hgvs{cls.SPLIT_CHAR}'):
-            hgvs_id_strip = hgvs_id[len(f'hgvs{cls.SPLIT_CHAR}'):]
+        if hgvs_id.startswith(f'{cls.PREFIX}{cls.SPLIT_CHAR}'):
+            hgvs_id_strip = hgvs_id[len(f'{cls.PREFIX}{cls.SPLIT_CHAR}'):]
         else:
             hgvs_id_strip = hgvs_id
 
@@ -101,6 +107,6 @@ class QueryFeatureHGVS(QueryFeatureMutation):
             variant = tokens[2]
         else:
             raise Exception(f'Invalid number of items in hgvs_id=[{hgvs_id}].'
-                            f' Should be in the form [hgvs:reference:gene:variant] or [hgvs:reference:variant].')
+                            f' Should be in the form [{cls.PREFIX}:reference:gene:variant] or [{cls.PREFIX}:reference:variant].')
 
         return QueryFeatureHGVS(sequence_name=sequence_name, gene=gene, variant=variant)

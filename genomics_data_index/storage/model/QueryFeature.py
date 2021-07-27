@@ -45,5 +45,9 @@ class QueryFeature(abc.ABC):
         """
         pass
 
+    @property
+    def prefix(self) -> str:
+        return ''
+
     def __str__(self) -> str:
         return self.id
