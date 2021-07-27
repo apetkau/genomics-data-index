@@ -389,15 +389,8 @@ def test_insert_variants_examine_variation_with_unknown(database, snippy_nucleot
     assert {sample_name_ids['SampleC']} == set(v.sample_ids)
 
 
-def test_insert_variants_examine_variation_annotations(database, snpeff_nucleotide_data_package,
-                                                       reference_service_with_snpeff_data,
-                                                       sample_service, filesystem_storage):
-    variation_service = VariationService(database_connection=database,
-                                         reference_service=reference_service_with_snpeff_data,
-                                         sample_service=sample_service,
-                                         variation_dir=filesystem_storage.variation_dir,
-                                         index_unknown_missing=True,
-                                         sql_select_limit=500)
+def do_test_insert_variants_examine_variation_annotations(variation_service, sample_service,
+                                                          database, snpeff_nucleotide_data_package):
     session = database.get_session()
 
     variation_service.insert(feature_scope_name='NC_011083', data_package=snpeff_nucleotide_data_package)
@@ -500,6 +493,37 @@ def test_insert_variants_examine_variation_annotations(database, snpeff_nucleoti
     assert 'p.PheGlu195TyrAsp' == v.annotation_hgvs_p
     assert 'hgvs:NC_011083:SEHA_RS17780:c.582_588delTTTTGAGinsCTATGAC' == v.id_hgvs_c
     assert 'hgvs:NC_011083:SEHA_RS17780:p.PheGlu195TyrAsp' == v.id_hgvs_p
+
+
+def test_insert_variants_examine_variation_annotations(database, snpeff_nucleotide_data_package,
+                                                       reference_service_with_snpeff_data,
+                                                       sample_service, filesystem_storage):
+    variation_service = VariationService(database_connection=database,
+                                         reference_service=reference_service_with_snpeff_data,
+                                         sample_service=sample_service,
+                                         variation_dir=filesystem_storage.variation_dir,
+                                         index_unknown_missing=True,
+                                         sql_select_limit=500)
+    do_test_insert_variants_examine_variation_annotations(variation_service=variation_service,
+                                                          sample_service=sample_service,
+                                                          database=database,
+                                                          snpeff_nucleotide_data_package=snpeff_nucleotide_data_package)
+
+
+def test_insert_variants_examine_variation_annotations_parallel_variants(database,
+                                                                         snpeff_nucleotide_data_package_parallel_variants,
+                                                                         reference_service_with_snpeff_data,
+                                                                         sample_service, filesystem_storage):
+    variation_service = VariationService(database_connection=database,
+                                         reference_service=reference_service_with_snpeff_data,
+                                         sample_service=sample_service,
+                                         variation_dir=filesystem_storage.variation_dir,
+                                         index_unknown_missing=True,
+                                         sql_select_limit=500)
+    do_test_insert_variants_examine_variation_annotations(variation_service=variation_service,
+                                                          sample_service=sample_service,
+                                                          database=database,
+                                                          snpeff_nucleotide_data_package=snpeff_nucleotide_data_package_parallel_variants)
 
 
 def test_insert_variants_regular_vcf_reader_examine_variation(database, regular_nucleotide_data_package,

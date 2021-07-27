@@ -27,6 +27,7 @@ from genomics_data_index.storage.io.processor.SerialSampleFilesProcessor import 
 from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
 from genomics_data_index.storage.io.mlst.MLSTSampleDataPackage import MLSTSampleDataPackage
 from genomics_data_index.storage.model.db.DatabasePathTranslator import DatabasePathTranslator
+from genomics_data_index.storage.io.mutation.variants_processor.MultipleProcessVcfVariantsTableProcessor import MultipleProcessVcfVariantsTableProcessorFactory
 
 
 @pytest.fixture
@@ -106,6 +107,17 @@ def snpeff_nucleotide_data_package() -> NucleotideSampleDataPackage:
 
 
 @pytest.fixture
+def snpeff_nucleotide_data_package_parallel_variants() -> NucleotideSampleDataPackage:
+    tmp_dir = Path(tempfile.mkdtemp())
+    variants_processor_factory = MultipleProcessVcfVariantsTableProcessorFactory(ncores=2)
+    return NucleotideSampleDataPackage.create_from_sequence_masks(sample_vcf_map=snpeff_sample_vcfs,
+                                                                  masked_genomic_files_map=None,
+                                                                  sample_files_processor=SerialSampleFilesProcessor(
+                                                                      tmp_dir),
+                                                                  variants_processor_factory=variants_processor_factory)
+
+
+@pytest.fixture
 def reference_service_with_data(reference_service) -> ReferenceService:
     reference_service.add_reference_genome(reference_file)
     return reference_service
@@ -134,6 +146,21 @@ def sample_service_snpeff_annotations(database, reference_service_with_snpeff_da
                                    sql_select_limit=500)
     var_service.insert(feature_scope_name='NC_011083',
                        data_package=snpeff_nucleotide_data_package)
+    return sample_service
+
+
+@pytest.fixture
+def sample_service_snpeff_annotations_parallel_variants(database, reference_service_with_snpeff_data,
+                                      snpeff_nucleotide_data_package_parallel_variants, sample_service,
+                                      filesystem_storage) -> SampleService:
+    var_service = VariationService(database_connection=database,
+                                   reference_service=reference_service_with_snpeff_data,
+                                   sample_service=sample_service,
+                                   variation_dir=filesystem_storage.variation_dir,
+                                   index_unknown_missing=False,
+                                   sql_select_limit=500)
+    var_service.insert(feature_scope_name='NC_011083',
+                       data_package=snpeff_nucleotide_data_package_parallel_variants)
     return sample_service
 
 

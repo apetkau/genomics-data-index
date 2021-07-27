@@ -756,7 +756,15 @@ def test_query_isin_kmer_1_match(loaded_database_connection: DataIndexConnection
     assert "isin_kmer_jaccard('SampleA', dist=0.49, k=31)" == query_result.query_expression()
 
 
-def test_query_single_mutation(loaded_database_connection: DataIndexConnection):
+def test_query_single_mutation_serial_processing(loaded_database_connection: DataIndexConnection):
+    do_test_query_single_mutation(loaded_database_connection)
+
+
+def test_query_single_mutation_parallel_processing(loaded_database_connection_parallel_variants: DataIndexConnection):
+    do_test_query_single_mutation(loaded_database_connection_parallel_variants)
+
+
+def do_test_query_single_mutation(loaded_database_connection: DataIndexConnection):
     db = loaded_database_connection.database
     sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
