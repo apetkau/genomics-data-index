@@ -19,6 +19,7 @@ import genomics_data_index.storage.service.FeatureService as FeatureService
 from genomics_data_index import __version__
 from genomics_data_index.cli import yaml_config_provider
 from genomics_data_index.configuration.Project import Project, ProjectConfigurationError
+from genomics_data_index.api.query.GenomicsDataIndex import GenomicsDataIndex
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
 from genomics_data_index.pipelines.SnakemakePipelineExecutor import SnakemakePipelineExecutor
 from genomics_data_index.storage.index.KmerIndexer import KmerIndexerSourmash, KmerIndexManager
@@ -74,6 +75,11 @@ def get_project_exit_on_error(ctx) -> Project:
                      f'with --project-dir')
         logger.debug(e, exc_info=True)
         sys.exit(1)
+
+
+def get_genomics_index(ctx) -> GenomicsDataIndex:
+    project = get_project_exit_on_error(ctx)
+    return GenomicsDataIndex.connect(project=project)
 
 
 @click.group()
@@ -335,17 +341,17 @@ def list_data(ctx):
 @list_data.command(name='genomes')
 @click.pass_context
 def list_genomes(ctx):
-    data_index_connection = get_project_exit_on_error(ctx).create_connection()
-    items = [genome.name for genome in data_index_connection.reference_service.get_reference_genomes()]
-    click.echo('\n'.join(items))
+    genomics_index = get_genomics_index(ctx)
+    reference_genomes = genomics_index.reference_names()
+    click.echo('\n'.join(reference_genomes))
 
 
 @list_data.command(name='samples')
 @click.pass_context
 def list_samples(ctx):
-    data_index_connection = get_project_exit_on_error(ctx).create_connection()
-    items = [sample.name for sample in data_index_connection.sample_service.get_samples()]
-    click.echo('\n'.join(items))
+    genomics_index = get_genomics_index(ctx)
+    samples = genomics_index.sample_names()
+    click.echo('\n'.join(samples))
 
 
 def read_genomes_from_file(input_file: Path) -> List[Path]:
