@@ -694,26 +694,6 @@ def query(ctx):
     pass
 
 
-@query.command(name='sample-mutation')
-@click.pass_context
-@click.argument('name', nargs=-1)
-def query_sample_mutation(ctx, name: List[str]):
-    data_index_connection = get_project_exit_on_error(ctx).create_connection()
-    mutation_query_service = data_index_connection.mutation_query_service
-    match_df = mutation_query_service.find_matches(samples=name)
-    match_df.to_csv(sys.stdout, sep='\t', index=False, float_format='%0.4g', na_rep='-')
-
-
-@query.command(name='sample-kmer')
-@click.pass_context
-@click.argument('name', nargs=-1)
-def query_sample_kmer(ctx, name: List[str]):
-    data_index_connection = get_project_exit_on_error(ctx).create_connection()
-    kmer_query_service = data_index_connection.kmer_query_service
-    match_df = kmer_query_service.find_matches(samples=name)
-    match_df.to_csv(sys.stdout, sep='\t', index=False, float_format='%0.4g', na_rep='-')
-
-
 def query_feature(genomics_index: GenomicsDataIndex, features: List[QueryFeature], summarize: bool) -> None:
     query = genomics_index.samples_query()
     for feature in features:
