@@ -112,9 +112,9 @@ def test_count_on_reference_no_index_unknowns(database, snippy_nucleotide_data_p
     assert 112 == variation_service.count_on_reference(reference_name='genome', include_unknown=False)
     assert 112 == variation_service.count_on_reference(reference_name='genome', include_unknown=True)
 
-    with pytest.raises(NoResultFound) as execinfo:
+    with pytest.raises(EntityExistsError) as execinfo:
         variation_service.count_on_reference('no_exists')
-    assert 'No row was found' in str(execinfo.value)
+    assert 'No reference genome with name=[no_exists]' in str(execinfo.value)
 
 
 def test_count_on_reference_with_index_unknowns_low_slice_limit(database, snippy_nucleotide_data_package,
@@ -132,9 +132,9 @@ def test_count_on_reference_with_index_unknowns_low_slice_limit(database, snippy
     assert 111 == variation_service.count_on_reference(reference_name='genome', include_unknown=False)
     assert 632 == variation_service.count_on_reference(reference_name='genome', include_unknown=True)
 
-    with pytest.raises(NoResultFound) as execinfo:
+    with pytest.raises(EntityExistsError) as execinfo:
         variation_service.count_on_reference('no_exists')
-    assert 'No row was found' in str(execinfo.value)
+    assert 'No reference genome with name=[no_exists]' in str(execinfo.value)
 
 
 def test_count_on_reference_with_index_unknowns_high_slice_limit(database, snippy_nucleotide_data_package,
@@ -152,9 +152,9 @@ def test_count_on_reference_with_index_unknowns_high_slice_limit(database, snipp
     assert 111 == variation_service.count_on_reference(reference_name='genome', include_unknown=False)
     assert 632 == variation_service.count_on_reference(reference_name='genome', include_unknown=True)
 
-    with pytest.raises(NoResultFound) as execinfo:
+    with pytest.raises(EntityExistsError) as execinfo:
         variation_service.count_on_reference('no_exists')
-    assert 'No row was found' in str(execinfo.value)
+    assert 'No reference genome with name=[no_exists]' in str(execinfo.value)
 
 
 def test_insert_variants_masked_regions(database, snippy_nucleotide_data_package, reference_service_with_data,
