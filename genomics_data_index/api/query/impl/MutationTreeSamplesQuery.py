@@ -2,7 +2,6 @@ import logging
 from typing import Union, List
 
 from ete3 import Tree
-import pandas as pd
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.api.query.impl.TreeSamplesQuery import TreeSamplesQuery
@@ -98,41 +97,6 @@ class MutationTreeSamplesQuery(TreeSamplesQuery):
                         found_samples_set.add(sample_name_ids_self[leaf.name])
         found_samples = SampleSet(found_samples_set)
         return self.intersect(found_samples, f'within({distance} {units} of {query_infix})')
-
-    def _distances_to_sample_internal(self, sample_name: str, kind: str = None, unit: str = None,
-                                      include_unknown: bool = False) -> pd.DataFrame:
-        sample_distances = []
-        tree = self.tree
-        sample_nodes = tree.get_leaves_by_name(sample_name)
-        if len(sample_nodes) == 0:
-            raise Exception(f'sample=[{sample_name}] is not found in attached tree')
-        elif len(sample_nodes) > 1:
-            raise Exception(f'sample=[{sample_name}] has more than one match in tree')
-        else:
-            sample_node = sample_nodes[0]
-            sample_name_ids_self = self._get_sample_name_ids(include_unknowns=include_unknown)
-            for sample_name in sample_name_ids_self:
-                sample_leaves = tree.get_leaves_by_name(sample_name)
-                if len(sample_leaves) != 1:
-                    raise Exception(
-                        f'Invalid number of matching leaves for sample [{sample_name}], leaves {sample_leaves}')
-                leaf = sample_leaves[0]
-                if leaf.name == sample_node.name:
-                    continue
-                distance = sample_node.get_distance(leaf)
-                align_length = self._alignment_length
-                sample_distances.append([sample_name, leaf.name,
-                                         distance * align_length, distance, align_length])
-
-        matches_df = pd.DataFrame(data=sample_distances, columns=[
-            'Query',
-            'Match',
-            'Distance',
-            'Distance (subs/site)',
-            'Alignment Length',
-        ])
-
-        return matches_df
 
     def _can_handle_distance_units(self, units: str) -> bool:
         return units in self.DISTANCE_UNITS

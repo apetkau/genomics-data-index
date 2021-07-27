@@ -2957,22 +2957,6 @@ def test_within_joined_mutations_tree(prebuilt_tree: Tree, loaded_database_conne
             } == set(df['Query'].tolist())
 
 
-def test_distances_to_sample_mutations(prebuilt_tree: Tree, loaded_database_connection: DataIndexConnection):
-    db = loaded_database_connection.database
-    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
-    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
-    sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
-
-    query_result = query(loaded_database_connection).join_tree(tree=prebuilt_tree, kind='mutation',
-                                                               reference_name='genome',
-                                                               alignment_length=5180)
-    
-    distances_df = query_result.distances_to_sample('SampleA', unit='substitutions/site').sort_values('')
-    assert
-
-
-
-
 def test_join_kmer_tree(prebuilt_tree: Tree, loaded_database_connection: DataIndexConnection):
     query_result = query(loaded_database_connection).join_tree(tree=prebuilt_tree, kind='kmer')
     assert 3 == len(query_result)

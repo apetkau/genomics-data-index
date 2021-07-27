@@ -5,7 +5,6 @@ import logging
 from typing import Union, List, cast
 
 from ete3 import Tree, TreeStyle
-import pandas as pd
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.api.query.impl.WrappedSamplesQuery import WrappedSamplesQuery
@@ -98,21 +97,6 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
             return samples_query._wrap_create(self)
         else:
             raise Exception(f'Build tree is not of type {TreeSamplesQuery.__class__}')
-
-    def distances_to_sample(self, sample_name: str, kind: str = None, unit: str = None,
-                            include_unknown: bool = False) -> pd.DataFrame:
-        if self._can_handle_distance_units(units=unit):
-            return self._distances_to_sample_internal(sample_name=sample_name,
-                                                      kind=kind,
-                                                      unit=unit,
-                                                      include_unknown=include_unknown)
-        else:
-            raise Exception(f'Cannot handle unit=[{unit}]. Must be one of {self._distance_units()}')
-
-    @abc.abstractmethod
-    def _distances_to_sample_internal(self, sample_name: str, kind: str = None, unit: str = None,
-                                      include_unknown: bool = False) -> pd.DataFrame:
-        pass
 
     def _within_distance(self, data: Union[str, List[str], SamplesQuery, SampleSet], distance: float,
                          units: str, **kwargs) -> SamplesQuery:
