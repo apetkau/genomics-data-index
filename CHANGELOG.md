@@ -3,8 +3,8 @@
 * [doc]: Updates to readme and other documentation.
 * [doc]: Moving tutorials to separate repository <https://github.com/apetkau/genomics-data-index-examples>.
     * Added method to launch tutorials using Binder.
-* [api]: Adding ability to summarize only features unique to a selected set (for `q.summary_features()`).
-* [api]: Adding `Total` and `Percent` columns to `q.summary_features()` dataframe.
+* [api]: Adding ability to summarize only features unique to a selected set (for `q.features_summary()`).
+* [api]: Adding `Total` and `Percent` columns to `q.features_summary()` dataframe.
 * [analysis]: Added ability to load VCF files with [SnpEff](http://pcingola.github.io/SnpEff/) annotations and associte these with the nucleotide identifiers.
     * `summary_features()` and `hasa()` works with the SnpEff variant identifiers (HGVS).
     * SnpEff results will be included when loading assemblies.
@@ -14,6 +14,7 @@
     * The resulting samples for each query can be divided up into 3 categories (**True/Present**, **False/Absent**, **Unknown/Unknown**). Different sample sets track these different categories (`q.sample_set`, `q.unknown_set`, `q.absent_set`).
 * [developer]: Added custom TRACE log level.
 * [analysis]: Added parallel processing for construction of features table.
+* [analysis]: Switched command-line interface to use my Python API for queries.
 
 # 0.1.0
 
