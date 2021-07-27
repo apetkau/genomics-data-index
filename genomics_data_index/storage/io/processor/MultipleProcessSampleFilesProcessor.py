@@ -5,6 +5,7 @@ from typing import Generator, List
 
 from genomics_data_index.storage.io.SampleData import SampleData
 from genomics_data_index.storage.io.SampleFilesProcessor import SampleFilesProcessor
+from genomics_data_index.storage.util import TRACE_LEVEL
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +35,7 @@ class MultipleProcessSampleFilesProcessor(SampleFilesProcessor):
                                                          sample_data,
                                                          chunk_size)
             for processed_file in processed_sample_filed:
-                logger.debug(f'Finished {processed_file.sample_name}')
+                logger.log(TRACE_LEVEL, f'Finished {processed_file.sample_name}')
                 yield processed_file
 
         logger.debug(f'Finished preprocessing {number_samples} samples')

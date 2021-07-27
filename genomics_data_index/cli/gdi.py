@@ -31,6 +31,8 @@ from genomics_data_index.storage.io.mutation.SequenceFile import SequenceFile
 from genomics_data_index.storage.io.processor.MultipleProcessSampleFilesProcessor import \
     MultipleProcessSampleFilesProcessor
 from genomics_data_index.storage.io.processor.NullSampleFilesProcessor import NullSampleFilesProcessor
+from genomics_data_index.storage.io.mutation.variants_processor.MultipleProcessVcfVariantsTableProcessor import MultipleProcessVcfVariantsTableProcessorFactory
+from genomics_data_index.storage.io.mutation.variants_processor.SerialVcfVariantsTableProcessor import SerialVcfVariantsTableProcessorFactory
 from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
 from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
 from genomics_data_index.storage.service import EntityExistsError
@@ -168,11 +170,14 @@ def load_snippy(ctx, snippy_dir: Path, reference_file: Path, index_unknown: bool
         if ncores > 1:
             file_processor = MultipleProcessSampleFilesProcessor(preprocess_dir=Path(preprocess_dir),
                                                                  processing_cores=ncores)
+            variants_processor_factory = MultipleProcessVcfVariantsTableProcessorFactory(ncores=ncores)
         else:
             file_processor = NullSampleFilesProcessor.instance()
+            variants_processor_factory = SerialVcfVariantsTableProcessorFactory.instance()
 
         data_package = NucleotideSampleDataPackage.create_from_snippy(sample_dirs,
                                                                       sample_files_processor=file_processor,
+                                                                      variants_processor_factory=variants_processor_factory,
                                                                       index_unknown_missing=index_unknown)
 
         load_variants_common(data_index_connection=data_index_connection, ncores=ncores, data_package=data_package,
@@ -218,12 +223,15 @@ def load_vcf(ctx, vcf_fofns: str, reference_file: str, index_unknown: bool, buil
         if ncores > 1:
             file_processor = MultipleProcessSampleFilesProcessor(preprocess_dir=Path(preprocess_dir),
                                                                  processing_cores=ncores)
+            variants_processor_factory = MultipleProcessVcfVariantsTableProcessorFactory(ncores=ncores)
         else:
             file_processor = NullSampleFilesProcessor.instance()
+            variants_processor_factory = SerialVcfVariantsTableProcessorFactory.instance()
 
         data_package = NucleotideSampleDataPackage.create_from_sequence_masks(sample_vcf_map=sample_vcf_map,
                                                                               masked_genomic_files_map=mask_files_map,
                                                                               sample_files_processor=file_processor,
+                                                                              variants_processor_factory=variants_processor_factory,
                                                                               index_unknown_missing=index_unknown)
 
         load_variants_common(data_index_connection=data_index_connection, ncores=ncores, data_package=data_package,

@@ -12,6 +12,8 @@ from genomics_data_index.storage.model.db import Sample, FeatureSamples
 from genomics_data_index.storage.service import DatabaseConnection
 from genomics_data_index.storage.service import EntityExistsError
 from genomics_data_index.storage.service.SampleService import SampleService
+from genomics_data_index.storage.util import TRACE_LEVEL
+from genomics_data_index.storage.util.SamplesProgressLogger import SamplesProgressLogger
 
 logger = logging.getLogger(__name__)
 
@@ -123,9 +125,6 @@ class FeatureService(abc.ABC):
         if feature_scope_name is None:
             raise Exception('feature_scope_name cannot be None')
 
-    def log_progress(self, number: int, total: int) -> None:
-        logger.info(f'Proccessed {number / total * 100:0.0f}% ({number}/{total}) samples')
-
     def _set_batch_size(self, num_samples: int) -> int:
         batch_size = max(self._min_insert_batch_size, int(num_samples / 50))
         batch_size = min(self._max_insert_batch_size, batch_size)
@@ -150,6 +149,7 @@ class FeatureService(abc.ABC):
 
         sample_names = data_package.sample_names()
         num_samples = len(sample_names)
+        progress_logger = SamplesProgressLogger(stage_name='Insert', stage_number=1, total_samples=num_samples)
 
         if self.check_samples_have_features(sample_names, feature_scope_name):
             raise EntityExistsError(f'Passed samples already have features for feature scope [{feature_scope_name}], '
@@ -159,12 +159,12 @@ class FeatureService(abc.ABC):
         logger.debug(f'Batch size {batch_size}')
         processed_samples = 0
         persisted_sample_data_dict = {}
-        self.log_progress(processed_samples, total=num_samples)
+        progress_logger.update_progress(processed_samples)
         for sample_data_batch in self._sample_data_iter_batch(data_package, batch_size=batch_size):
             persisted_sample_data = self._handle_batch(sample_data_batch, feature_scope_name)
             persisted_sample_data_dict.update(persisted_sample_data)
             processed_samples += len(sample_data_batch)
-            self.log_progress(processed_samples, total=num_samples)
+            progress_logger.update_progress(processed_samples)
 
         self._connection.get_session().commit()
         logger.info(f'Finished processing {num_samples} samples')
@@ -177,7 +177,7 @@ class FeatureService(abc.ABC):
         samples_dict = self._get_or_create_samples(list(sample_data_batch.keys()))
         persisted_sample_data_dict = {}
         for sample_name in samples_dict:
-            logger.debug(f'Persisting sample {sample_name}')
+            logger.log(TRACE_LEVEL, f'Persisting sample {sample_name}')
 
             sample = samples_dict[sample_name]
             persisted_sample_data = self._persist_sample_data(sample_data_batch[sample.name])

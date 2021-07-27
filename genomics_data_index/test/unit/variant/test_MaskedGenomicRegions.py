@@ -24,6 +24,35 @@ def test_create_from_sequence():
     assert not mask.contains('record1', 7)
 
 
+def test_mask_to_features_from_sequence():
+    sequences = [SeqRecord(seq=Seq('ATCG-NN'), id='record1')]
+    mask = MaskedGenomicRegions.from_sequences(sequences=sequences)
+    features_df = mask.mask_to_features().sort_values('POS')
+
+    assert ['CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'VARIANT_ID'] == features_df.columns.tolist()
+    assert 3 == len(features_df)
+    assert ['record1:5:1:?', 'record1:6:1:?', 'record1:7:1:?'] == features_df['VARIANT_ID'].tolist()
+
+
+def test_mask_to_features_from_sequence_no_mask():
+    sequences = [SeqRecord(seq=Seq('ATCGAAA'), id='record1')]
+    mask = MaskedGenomicRegions.from_sequences(sequences=sequences)
+    features_df = mask.mask_to_features().sort_values('POS')
+
+    assert ['CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'VARIANT_ID'] == features_df.columns.tolist()
+    assert 0 == len(features_df)
+
+
+def test_mask_to_features_from_bed():
+    mask = MaskedGenomicRegions(BedTool('reference 0 4', from_string=True))
+    features_df = mask.mask_to_features().sort_values('POS')
+
+    assert ['CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'VARIANT_ID'] == features_df.columns.tolist()
+    assert 4 == len(features_df)
+    assert ['reference:1:1:?', 'reference:2:1:?', 'reference:3:1:?',
+            'reference:4:1:?'] == features_df['VARIANT_ID'].tolist()
+
+
 def test_create_from_two_sequences():
     sequences = [
         SeqRecord(seq=Seq('ATCG-NN'), id='record1'),
@@ -43,6 +72,57 @@ def test_create_from_two_sequences():
     assert mask.contains('record2', 2)
     assert not mask.contains('record2', 3)
     assert not mask.contains('record2', 5)
+
+
+def test_mask_to_features_from_two_sequences():
+    sequences = [
+        SeqRecord(seq=Seq('ATCG-NN'), id='record1'),
+        SeqRecord(seq=Seq('NN-GAT'), id='record2')
+    ]
+    mask = MaskedGenomicRegions.from_sequences(sequences=sequences)
+    features_df = mask.mask_to_features().sort_values(['CHROM', 'POS'])
+
+    assert ['CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'VARIANT_ID'] == features_df.columns.tolist()
+    assert 6 == len(features_df)
+    assert ['record1:5:1:?', 'record1:6:1:?', 'record1:7:1:?',
+            'record2:1:1:?', 'record2:2:1:?', 'record2:3:1:?'] == features_df['VARIANT_ID'].tolist()
+
+
+def test_mask_to_features_multi_range():
+    mask = MaskedGenomicRegions(BedTool([('ref', 10, 15), ('ref', 20, 22)]))
+    expected_number_features = 7
+
+    features_df = mask.mask_to_features()
+    features_df = features_df.sort_values('POS')
+
+    assert ['CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'VARIANT_ID'] == features_df.columns.tolist()
+    assert expected_number_features == len(features_df)
+    assert ['ref'] * expected_number_features == features_df['CHROM'].tolist()
+    assert [11, 12, 13, 14, 15, 21, 22] == features_df['POS'].tolist()
+    assert [1] * expected_number_features == features_df['REF'].tolist()
+    assert ['?'] * expected_number_features == features_df['ALT'].tolist()
+    assert ['UNKNOWN_MISSING'] * expected_number_features == features_df['TYPE'].tolist()
+    assert [f'ref:{p}:1:?' for p in [11, 12, 13, 14, 15, 21, 22]] == features_df['VARIANT_ID'].tolist()
+
+
+def test_mask_to_features_multi_sequence():
+    mask = MaskedGenomicRegions(BedTool([('ref', 10, 15), ('ref2', 12, 17)]))
+    expected_nf = 5
+    expected_nf2 = 5
+    expected_t = 10
+
+    features_df = mask.mask_to_features()
+    features_df = features_df.sort_values(['CHROM', 'POS'])
+
+    assert ['CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'VARIANT_ID'] == features_df.columns.tolist()
+    assert expected_t == len(features_df)
+    assert ['ref'] * expected_nf + ['ref2'] * expected_nf2 == features_df['CHROM'].tolist()
+    assert [11, 12, 13, 14, 15, 13, 14, 15, 16, 17] == features_df['POS'].tolist()
+    assert [1] * expected_t == features_df['REF'].tolist()
+    assert ['?'] * expected_t == features_df['ALT'].tolist()
+    assert ['UNKNOWN_MISSING'] * expected_t == features_df['TYPE'].tolist()
+    assert [f'ref:{p}:1:?' for p in [11, 12, 13, 14, 15]] + [
+        f'ref2:{p}:1:?' for p in [13, 14, 15, 16, 17]] == features_df['VARIANT_ID'].tolist()
 
 
 def test_sequence_names():

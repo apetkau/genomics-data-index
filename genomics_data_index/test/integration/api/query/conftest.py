@@ -19,6 +19,8 @@ from genomics_data_index.test.integration import snippy_sample2_vcfs_dict, snipp
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
 from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
 from genomics_data_index.storage.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor
+from genomics_data_index.storage.io.mutation.variants_processor.MultipleProcessVcfVariantsTableProcessor import \
+    MultipleProcessVcfVariantsTableProcessorFactory
 
 
 @pytest.fixture
@@ -33,15 +35,31 @@ def snippy_data_package_2() -> NucleotideSampleDataPackage:
 
 @pytest.fixture
 def loaded_database_connection() -> DataIndexConnection:
+    snippy_tmp_dir = Path(tempfile.mkdtemp())
+    data_package = NucleotideSampleDataPackage.create_from_snippy(sample_dirs,
+                                                                  sample_files_processor=SerialSampleFilesProcessor(
+                                                                      snippy_tmp_dir))
+    return build_database_connection(data_package=data_package)
+
+
+@pytest.fixture
+def loaded_database_connection_parallel_variants() -> DataIndexConnection:
+    snippy_tmp_dir = Path(tempfile.mkdtemp())
+    variants_processor_factory = MultipleProcessVcfVariantsTableProcessorFactory(ncores=2)
+    data_package = NucleotideSampleDataPackage.create_from_snippy(sample_dirs,
+                                                                  sample_files_processor=SerialSampleFilesProcessor(
+                                                                      snippy_tmp_dir),
+                                                                  variants_processor_factory=variants_processor_factory)
+    return build_database_connection(data_package=data_package)
+
+
+def build_database_connection(data_package: NucleotideSampleDataPackage) -> DataIndexConnection:
     tmp_dir = Path(tempfile.mkdtemp())
     database_connection = DataIndexConnection.connect(database_connection='sqlite:///:memory:',
                                                       database_dir=tmp_dir)
 
     # Load Nucleotide variation
     database_connection.reference_service.add_reference_genome(reference_file)
-    snippy_tmp_dir = Path(tempfile.mkdtemp())
-    data_package = NucleotideSampleDataPackage.create_from_snippy(sample_dirs,
-                                                                  SerialSampleFilesProcessor(snippy_tmp_dir))
     database_connection.variation_service.insert(data_package, feature_scope_name='genome')
 
     # Load MLST
