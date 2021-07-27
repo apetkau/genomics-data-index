@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from genomics_data_index.storage.model.QueryFeature import QueryFeature
 from genomics_data_index.storage.model.QueryFeatureHGVS import QueryFeatureHGVS
+from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
 
 
 class QueryFeatureFactory:
@@ -22,7 +23,11 @@ class QueryFeatureFactory:
             if id.startswith(prefix):
                 return self.registered_feature_creators[prefix](id)
 
-        raise Exception(f'Unknown feature type for feature=[{id}]')
+        # By default assume feature is an SPDI feature
+        try:
+            return QueryFeatureMutationSPDI(id)
+        except Exception as e:
+            raise Exception(f'Unknown feature type for feature=[{id}]', e)
 
     @classmethod
     def instance(cls) -> QueryFeatureFactory:

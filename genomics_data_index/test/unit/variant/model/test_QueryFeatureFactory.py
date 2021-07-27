@@ -2,6 +2,7 @@ import pytest
 
 from genomics_data_index.storage.model.QueryFeatureFactory import QueryFeatureFactory
 from genomics_data_index.storage.model.QueryFeatureHGVS import QueryFeatureHGVS
+from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
 
 
 query_feature_factory = QueryFeatureFactory.instance()
@@ -31,6 +32,68 @@ def test_create_hgvs():
     assert f.has_gene()
     assert not f.is_nucleotide()
     assert f.is_protein()
+
+
+def test_create_spdi():
+    # Test SNV
+    f = query_feature_factory.create_feature('reference:10:A:C')
+    assert isinstance(f, QueryFeatureMutationSPDI)
+    assert 'reference:10:A:C' == f.id
+    assert 'reference' == f.sequence
+    assert 10 == f.position
+    assert 'A' == f.deletion
+    assert 'C' == f.insertion
+    assert 1 == f.deletion_length()
+    assert f.has_deletion_sequence()
+    assert not f.is_unknown()
+
+    # Test complex
+    f = query_feature_factory.create_feature('reference:10:ATT:CCC')
+    assert isinstance(f, QueryFeatureMutationSPDI)
+    assert 'reference:10:ATT:CCC' == f.id
+    assert 'reference' == f.sequence
+    assert 10 == f.position
+    assert 'ATT' == f.deletion
+    assert 'CCC' == f.insertion
+    assert 3 == f.deletion_length()
+    assert f.has_deletion_sequence()
+    assert not f.is_unknown()
+
+    # Test complex with integer deletion
+    f = query_feature_factory.create_feature('reference:10:3:CCC')
+    assert isinstance(f, QueryFeatureMutationSPDI)
+    assert 'reference:10:3:CCC' == f.id
+    assert 'reference' == f.sequence
+    assert 10 == f.position
+    assert 3 == f.deletion
+    assert 'CCC' == f.insertion
+    assert 3 == f.deletion_length()
+    assert not f.has_deletion_sequence()
+    assert not f.is_unknown()
+
+    # Test unknown integer deletion
+    f = query_feature_factory.create_feature('reference:10:1:?')
+    assert isinstance(f, QueryFeatureMutationSPDI)
+    assert 'reference:10:1:?' == f.id
+    assert 'reference' == f.sequence
+    assert 10 == f.position
+    assert 1 == f.deletion
+    assert '?' == f.insertion
+    assert 1 == f.deletion_length()
+    assert not f.has_deletion_sequence()
+    assert f.is_unknown()
+
+    # Test unknown, deletion sequence
+    f = query_feature_factory.create_feature('reference:10:A:?')
+    assert isinstance(f, QueryFeatureMutationSPDI)
+    assert 'reference:10:A:?' == f.id
+    assert 'reference' == f.sequence
+    assert 10 == f.position
+    assert 'A' == f.deletion
+    assert '?' == f.insertion
+    assert 1 == f.deletion_length()
+    assert f.has_deletion_sequence()
+    assert f.is_unknown()
 
 
 def test_create_unknown():
