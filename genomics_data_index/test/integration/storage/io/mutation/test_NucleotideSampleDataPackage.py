@@ -8,12 +8,13 @@ import pytest
 
 from genomics_data_index.storage.io.mutation.NucleotideSampleData import NucleotideSampleData
 from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
+from genomics_data_index.storage.io.mutation.variants_processor.MultipleProcessVcfVariantsTableProcessor import \
+    MultipleProcessVcfVariantsTableProcessorFactory
 from genomics_data_index.storage.io.mutation.variants_processor.SerialVcfVariantsTableProcessor import \
     SerialVcfVariantsTableProcessorFactory
 from genomics_data_index.storage.io.processor.MultipleProcessSampleFilesProcessor import \
     MultipleProcessSampleFilesProcessor
 from genomics_data_index.storage.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor
-from genomics_data_index.storage.io.mutation.variants_processor.MultipleProcessVcfVariantsTableProcessor import MultipleProcessVcfVariantsTableProcessorFactory
 from genomics_data_index.test.integration import data_dir
 from genomics_data_index.test.integration import data_dir_empty
 

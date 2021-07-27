@@ -27,7 +27,8 @@ from genomics_data_index.storage.io.processor.SerialSampleFilesProcessor import 
 from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
 from genomics_data_index.storage.io.mlst.MLSTSampleDataPackage import MLSTSampleDataPackage
 from genomics_data_index.storage.model.db.DatabasePathTranslator import DatabasePathTranslator
-from genomics_data_index.storage.io.mutation.variants_processor.MultipleProcessVcfVariantsTableProcessor import MultipleProcessVcfVariantsTableProcessorFactory
+from genomics_data_index.storage.io.mutation.variants_processor.MultipleProcessVcfVariantsTableProcessor import \
+    MultipleProcessVcfVariantsTableProcessorFactory
 
 
 @pytest.fixture
@@ -151,8 +152,9 @@ def sample_service_snpeff_annotations(database, reference_service_with_snpeff_da
 
 @pytest.fixture
 def sample_service_snpeff_annotations_parallel_variants(database, reference_service_with_snpeff_data,
-                                      snpeff_nucleotide_data_package_parallel_variants, sample_service,
-                                      filesystem_storage) -> SampleService:
+                                                        snpeff_nucleotide_data_package_parallel_variants,
+                                                        sample_service,
+                                                        filesystem_storage) -> SampleService:
     var_service = VariationService(database_connection=database,
                                    reference_service=reference_service_with_snpeff_data,
                                    sample_service=sample_service,

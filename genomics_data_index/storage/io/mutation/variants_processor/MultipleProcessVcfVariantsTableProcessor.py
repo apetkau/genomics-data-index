@@ -1,6 +1,6 @@
-from typing import List, Generator
 import logging
 import multiprocessing as mp
+from typing import List, Generator
 
 import pandas as pd
 

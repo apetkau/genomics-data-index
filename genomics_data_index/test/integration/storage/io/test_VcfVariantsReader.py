@@ -8,10 +8,10 @@ import pytest
 from genomics_data_index.storage.io.mutation.NucleotideSampleData import NucleotideSampleData
 from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
 from genomics_data_index.storage.io.mutation.VcfVariantsReader import VcfVariantsReader
-from genomics_data_index.storage.io.mutation.variants_processor.SerialVcfVariantsTableProcessor import \
-    SerialVcfVariantsTableProcessorFactory
 from genomics_data_index.storage.io.mutation.variants_processor.MultipleProcessVcfVariantsTableProcessor import \
     MultipleProcessVcfVariantsTableProcessorFactory
+from genomics_data_index.storage.io.mutation.variants_processor.SerialVcfVariantsTableProcessor import \
+    SerialVcfVariantsTableProcessorFactory
 from genomics_data_index.storage.io.mutation.variants_processor.VcfVariantsTableProcessor import \
     VcfVariantsTableProcessorFactory
 from genomics_data_index.storage.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor
@@ -147,14 +147,17 @@ def variants_reader_from_snippy_internal(sample_dirs, variants_processor_factory
 
 @pytest.fixture
 def variants_reader_from_snippy(sample_dirs) -> VcfVariantsReader:
-    return variants_reader_from_snippy_internal(sample_dirs, variants_processor_factory=serial_variants_processor_factory,
+    return variants_reader_from_snippy_internal(sample_dirs,
+                                                variants_processor_factory=serial_variants_processor_factory,
                                                 include_masked_regions=False)
 
 
 @pytest.fixture
 def variants_reader_from_snippy_masked(sample_dirs) -> VcfVariantsReader:
-    return variants_reader_from_snippy_internal(sample_dirs, variants_processor_factory=serial_variants_processor_factory,
+    return variants_reader_from_snippy_internal(sample_dirs,
+                                                variants_processor_factory=serial_variants_processor_factory,
                                                 include_masked_regions=True)
+
 
 @pytest.fixture
 def variants_reader_from_snippy_parallel(sample_dirs) -> VcfVariantsReader:
@@ -172,7 +175,8 @@ def variants_reader_from_snippy_masked_parallel(sample_dirs) -> VcfVariantsReade
 
 @pytest.fixture
 def variants_reader_from_snippy_masked_multicore(sample_dirs) -> VcfVariantsReader:
-    return variants_reader_from_snippy_internal(sample_dirs, variants_processor_factory=serial_variants_processor_factory,
+    return variants_reader_from_snippy_internal(sample_dirs,
+                                                variants_processor_factory=serial_variants_processor_factory,
                                                 include_masked_regions=True)
 
 
@@ -302,14 +306,16 @@ def test_snippy_get_samples_list(variants_reader_from_snippy):
 
 def test_snippy_get_samples_list_two_files():
     sample_dirs = [data_dir / 'SampleA', data_dir / 'SampleB']
-    reader = variants_reader_from_snippy_internal(sample_dirs, variants_processor_factory=serial_variants_processor_factory,
+    reader = variants_reader_from_snippy_internal(sample_dirs,
+                                                  variants_processor_factory=serial_variants_processor_factory,
                                                   include_masked_regions=False)
 
     assert {'SampleA', 'SampleB'} == set(reader.samples_list())
 
 
 def test_snippy_read_empty_vcf(sample_dirs_empty):
-    reader = variants_reader_from_snippy_internal(sample_dirs_empty, variants_processor_factory=serial_variants_processor_factory,
+    reader = variants_reader_from_snippy_internal(sample_dirs_empty,
+                                                  variants_processor_factory=serial_variants_processor_factory,
                                                   include_masked_regions=False)
     df = reader.get_features_table()
 
@@ -317,7 +323,8 @@ def test_snippy_read_empty_vcf(sample_dirs_empty):
 
 
 def test_snippy_read_empty_vcf_include_masked_regions(sample_dirs_empty):
-    reader = variants_reader_from_snippy_internal(sample_dirs_empty, variants_processor_factory=serial_variants_processor_factory,
+    reader = variants_reader_from_snippy_internal(sample_dirs_empty,
+                                                  variants_processor_factory=serial_variants_processor_factory,
                                                   include_masked_regions=True)
     df = reader.get_features_table()
 
@@ -327,7 +334,8 @@ def test_snippy_read_empty_vcf_include_masked_regions(sample_dirs_empty):
 
 
 def test_snippy_read_empty_vcf_multicore_include_masked_regions(sample_dirs_empty):
-    reader = variants_reader_from_snippy_internal(sample_dirs_empty, variants_processor_factory=serial_variants_processor_factory,
+    reader = variants_reader_from_snippy_internal(sample_dirs_empty,
+                                                  variants_processor_factory=serial_variants_processor_factory,
                                                   include_masked_regions=True)
     df = reader.get_features_table()
 

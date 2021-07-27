@@ -19,7 +19,8 @@ from genomics_data_index.test.integration import snippy_sample2_vcfs_dict, snipp
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
 from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
 from genomics_data_index.storage.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor
-from genomics_data_index.storage.io.mutation.variants_processor.MultipleProcessVcfVariantsTableProcessor import MultipleProcessVcfVariantsTableProcessorFactory
+from genomics_data_index.storage.io.mutation.variants_processor.MultipleProcessVcfVariantsTableProcessor import \
+    MultipleProcessVcfVariantsTableProcessorFactory
 
 
 @pytest.fixture
@@ -36,7 +37,8 @@ def snippy_data_package_2() -> NucleotideSampleDataPackage:
 def loaded_database_connection() -> DataIndexConnection:
     snippy_tmp_dir = Path(tempfile.mkdtemp())
     data_package = NucleotideSampleDataPackage.create_from_snippy(sample_dirs,
-                                                                  sample_files_processor=SerialSampleFilesProcessor(snippy_tmp_dir))
+                                                                  sample_files_processor=SerialSampleFilesProcessor(
+                                                                      snippy_tmp_dir))
     return build_database_connection(data_package=data_package)
 
 
@@ -45,7 +47,8 @@ def loaded_database_connection_parallel_variants() -> DataIndexConnection:
     snippy_tmp_dir = Path(tempfile.mkdtemp())
     variants_processor_factory = MultipleProcessVcfVariantsTableProcessorFactory(ncores=2)
     data_package = NucleotideSampleDataPackage.create_from_snippy(sample_dirs,
-                                                                  sample_files_processor=SerialSampleFilesProcessor(snippy_tmp_dir),
+                                                                  sample_files_processor=SerialSampleFilesProcessor(
+                                                                      snippy_tmp_dir),
                                                                   variants_processor_factory=variants_processor_factory)
     return build_database_connection(data_package=data_package)
 
