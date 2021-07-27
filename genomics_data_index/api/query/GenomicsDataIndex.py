@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import List, Union
 
 import pandas as pd
+from ete3 import Tree
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.api.query.impl.DataFrameSamplesQuery import DataFrameSamplesQuery
@@ -16,6 +17,7 @@ from genomics_data_index.configuration.connector.DataIndexConnection import Data
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.NucleotideMutationTranslater import NucleotideMutationTranslater
 from genomics_data_index.storage.service.VariationService import VariationService
+from genomics_data_index.storage.service import EntityExistsError
 
 logger = logging.getLogger(__name__)
 
@@ -77,6 +79,19 @@ class GenomicsDataIndex:
         :return: A list of all reference genome names.
         """
         return [r.name for r in self._connection.reference_service.get_reference_genomes()]
+
+    def reference_tree(self, reference_name: str) -> Tree:
+        """
+        Gets a tree associated with a reference genome.
+        :param reference_name: The name of the reference genome to get a tree for.
+        :return: The tree (if any) associated with the reference genome.
+        """
+        reference_genome = self._connection.reference_service.find_reference_genome(reference_name)
+        if reference_genome.has_tree():
+            return reference_genome.tree
+        else:
+            raise EntityExistsError(f'reference_genome=[{reference_genome}] does not have a tree')
+
 
     def count_mutations(self, reference_genome: str, include_unknown: bool = False) -> int:
         """
