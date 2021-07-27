@@ -573,23 +573,23 @@ def build(ctx):
 @click.option('--sample', help='Sample to include in alignment (can list more than one).',
               multiple=True, type=str)
 def alignment(ctx, output_file: Path, reference_name: str, align_type: str, sample: List[str]):
-    data_index_connection = get_project_exit_on_error(ctx).create_connection()
-    alignment_service = data_index_connection.alignment_service
-    reference_service = data_index_connection.reference_service
-    sample_service = data_index_connection.sample_service
+    genomics_index = get_genomics_index(ctx)
+    references = genomics_index.reference_names()
+    alignment_service = genomics_index.connection.alignment_service
 
-    if not reference_service.exists_reference_genome(reference_name):
+    if reference_name not in references:
         logger.error(f'Reference genome [{reference_name}] does not exist')
         sys.exit(1)
 
-    found_samples = set(sample_service.which_exists(sample))
+    query = genomics_index.samples_query().isin(list(sample), kind='samples')
 
-    if len(sample) > 0 and found_samples != set(sample):
+    if len(query) != len(sample):
+        found_samples = query.toset(names=True)
         logger.error(f'Samples {set(sample) - found_samples} do not exist')
         sys.exit(1)
 
     alignment_data = alignment_service.construct_alignment(reference_name=reference_name,
-                                                           samples=sample,
+                                                           samples=query.tolist(names=True),
                                                            align_type=align_type,
                                                            include_reference=True)
 
