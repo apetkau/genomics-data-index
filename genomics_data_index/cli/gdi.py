@@ -716,21 +716,21 @@ def query_sample_kmer(ctx, name: List[str]):
 @query.command(name='mutation')
 @click.pass_context
 @click.argument('name', nargs=-1)
-@click.option('--include-unknown/--no-include-unknown',
-              help='Including results where it is unknown if the search term is present or not.',
-              required=False)
 @click.option('--summarize/--no-summarize', help='Print summary information on query')
-def query_mutation(ctx, name: List[str], include_unknown: bool, summarize: bool):
-    data_index_connection = get_project_exit_on_error(ctx).create_connection()
-    mutation_query_service = data_index_connection.mutation_query_service
+def query_mutation(ctx, name: List[str], summarize: bool):
+    genomics_index = get_genomics_index(ctx)
 
     features = [QueryFeatureMutationSPDI(n) for n in name]
-    if not summarize:
-        match_df = mutation_query_service.find_by_features(features, include_unknown=include_unknown)
-    else:
-        match_df = mutation_query_service.count_by_features(features, include_unknown=include_unknown)
+    query = genomics_index.samples_query()
+    for feature in features:
+        query = query.hasa(feature)
 
-    match_df.to_csv(sys.stdout, sep='\t', index=False, float_format='%0.4g', na_rep='-')
+    if summarize:
+        results_df = query.summary()
+    else:
+        results_df = query.toframe(include_unknown=True)
+
+    results_df.to_csv(sys.stdout, sep='\t', index=False, float_format='%0.4g', na_rep='-')
 
 
 @query.command(name='mlst')
