@@ -386,6 +386,10 @@ class SamplesQueryIndex(SamplesQuery):
         else:
             return SampleSet.create_empty()
 
+    def distances_to_sample(self, sample_name: str, kind: str = None, unit: str = None,
+                            include_unknown: bool = False) -> pd.DataFrame:
+        raise NotImplementedError(f'Not implemented for {self.__class__}')
+
     def hasa(self, property: Union[QueryFeature, str, pd.Series], kind='mutation') -> SamplesQuery:
         if isinstance(property, QueryFeature):
             query_feature = property

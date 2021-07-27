@@ -1,5 +1,6 @@
 from typing import cast, List, Union
 
+import pandas as pd
 from ete3 import ClusterTree
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
@@ -46,7 +47,11 @@ class KmerTreeSamplesQuery(TreeSamplesQuery):
 
     def _within_distance_internal(self, sample_names: Union[str, List[str]], distance: float,
                                   units: str) -> SamplesQuery:
-        raise NotImplementedError(f'Not implemented for {KmerTreeSamplesQuery.__class__}')
+        raise NotImplementedError(f'Not implemented for {self.__class__}')
+
+    def _distances_to_sample_internal(self, sample_name: str, kind: str = None, unit: str = None,
+                                      include_unknown: bool = False) -> pd.DataFrame:
+        raise NotImplementedError(f'Not implemented for {self.__class__}')
 
     def _can_handle_distance_units(self, units: str) -> bool:
         return False

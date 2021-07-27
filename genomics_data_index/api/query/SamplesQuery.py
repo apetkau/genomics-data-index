@@ -179,6 +179,19 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
+    def distances_to_sample(self, sample_name: str, kind: str = None, unit: str = None,
+                            include_unknown: bool = False) -> pd.DataFrame:
+        """
+        Gives distances from the input sample name to other samples in this query.
+        :param sample_name: The name of the sample to get distances to.
+        :param kind: The kind of distances to compute.
+        :param unit: The distance unit.
+        :param include_unknown: Whether or not unknown samples should be included.
+        :return: A DataFrame showing the distances from the given sample to every other sample in this query.
+        """
+        pass
+
+    @abc.abstractmethod
     def tofeaturesset(self, kind: str = 'mutations', selection: str = 'all',
                       ncores: int = 1) -> Set[str]:
         """

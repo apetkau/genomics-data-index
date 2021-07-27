@@ -171,6 +171,10 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
                                                                       units=units,
                                                                       **kwargs))
 
+    def distances_to_sample(self, sample_name: str, kind: str = None, unit: str = None,
+                            include_unknown: bool = False) -> pd.DataFrame:
+        raise NotImplementedError(f'Not implemented for {self.__class__}')
+
     def _can_handle_isa_kind(self, kind: str) -> bool:
         return False
 
