@@ -19,7 +19,6 @@ from genomics_data_index.storage.io.mlst.MLSTFeaturesReader import MLSTFeaturesR
 from genomics_data_index.storage.io.mlst.MLSTTSeemannFeaturesReader import MLSTTSeemannFeaturesReader
 from genomics_data_index.storage.service.SampleService import SampleService
 from genomics_data_index.storage.service.TreeService import TreeService
-from genomics_data_index.storage.service.KmerQueryService import KmerQueryService
 from genomics_data_index.storage.service.KmerService import KmerService
 from genomics_data_index.configuration.connector.FilesystemStorage import FilesystemStorage
 from genomics_data_index.storage.service.MLSTService import MLSTService
@@ -256,11 +255,6 @@ def kmer_service_with_data(database, sample_service, filesystem_storage) -> Kmer
                                        kmer_index_path=sourmash_signatures[sample_name])
 
     return kmer_service
-
-
-@pytest.fixture
-def kmer_query_service_with_data(sample_service, kmer_service_with_data) -> KmerQueryService:
-    return KmerQueryService(sample_service=sample_service)
 
 
 @pytest.fixture

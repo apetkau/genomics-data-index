@@ -9,11 +9,8 @@ from genomics_data_index.configuration.connector.FilesystemStorage import Filesy
 from genomics_data_index.storage.model.db.DatabasePathTranslator import DatabasePathTranslator
 from genomics_data_index.storage.service import DatabaseConnection
 from genomics_data_index.storage.service.CoreAlignmentService import CoreAlignmentService
-from genomics_data_index.storage.service.KmerQueryService import KmerQueryService
 from genomics_data_index.storage.service.KmerService import KmerService
-from genomics_data_index.storage.service.MLSTQueryService import MLSTQueryService
 from genomics_data_index.storage.service.MLSTService import MLSTService
-from genomics_data_index.storage.service.MutationQueryService import MutationQueryService
 from genomics_data_index.storage.service.ReferenceService import ReferenceService
 from genomics_data_index.storage.service.SampleService import SampleService
 from genomics_data_index.storage.service.TreeService import TreeService
@@ -26,20 +23,16 @@ class DataIndexConnection:
 
     def __init__(self, reference_service: ReferenceService, sample_service: SampleService,
                  variation_service: VariationService, alignment_service: CoreAlignmentService,
-                 tree_service: TreeService, mutation_query_service: MutationQueryService,
-                 kmer_service: KmerService, kmer_query_service: KmerQueryService,
-                 mlst_service: MLSTService, mlst_query_service: MLSTQueryService,
-                 filesystem_storage: FilesystemStorage, database_connection: DatabaseConnection):
+                 tree_service: TreeService, kmer_service: KmerService,
+                 mlst_service: MLSTService, filesystem_storage: FilesystemStorage,
+                 database_connection: DatabaseConnection):
         self._reference_service = reference_service
         self._sample_service = sample_service
         self._variation_service = variation_service
         self._alignment_service = alignment_service
         self._tree_service = tree_service
-        self._mutation_query_service = mutation_query_service
         self._kmer_service = kmer_service
-        self._kmer_query_service = kmer_query_service
         self._mlst_service = mlst_service
-        self._mlst_query_service = mlst_query_service
         self._filesystem_storage = filesystem_storage
         self._database_connection = database_connection
 
@@ -68,24 +61,12 @@ class DataIndexConnection:
         return self._tree_service
 
     @property
-    def mutation_query_service(self):
-        return self._mutation_query_service
-
-    @property
     def kmer_service(self):
         return self._kmer_service
 
     @property
-    def kmer_query_service(self):
-        return self._kmer_query_service
-
-    @property
     def mlst_service(self):
         return self._mlst_service
-
-    @property
-    def mlst_query_service(self):
-        return self._mlst_query_service
 
     @property
     def filesystem_storage(self):
@@ -152,24 +133,14 @@ class DataIndexConnection:
 
         tree_service = TreeService(database, reference_service, alignment_service)
 
-        mutation_query_service = MutationQueryService(reference_service=reference_service,
-                                                      sample_service=sample_service,
-                                                      tree_service=tree_service)
-
         kmer_service = KmerService(database_connection=database,
                                    sample_service=sample_service,
                                    features_dir=filesystem_storage.kmer_dir)
 
-        kmer_query_service = KmerQueryService(sample_service=sample_service)
-
         mlst_service = MLSTService(database_connection=database, sample_service=sample_service,
                                    mlst_dir=filesystem_storage.mlst_dir)
-        mlst_query_service = MLSTQueryService(sample_service=sample_service,
-                                              mlst_service=mlst_service)
 
         return DataIndexConnection(reference_service=reference_service, sample_service=sample_service,
                                    variation_service=variation_service, alignment_service=alignment_service,
-                                   tree_service=tree_service, mutation_query_service=mutation_query_service,
-                                   kmer_service=kmer_service, kmer_query_service=kmer_query_service,
-                                   mlst_service=mlst_service, mlst_query_service=mlst_query_service,
+                                   tree_service=tree_service, kmer_service=kmer_service, mlst_service=mlst_service,
                                    filesystem_storage=filesystem_storage, database_connection=database)
