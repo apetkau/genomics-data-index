@@ -378,7 +378,7 @@ class SamplesQueryIndex(SamplesQuery):
             return list(sample_set)
 
     def toset(self, names: bool = True, include_present: bool = True,
-               include_unknown: bool = False, include_absent: bool = False) -> Union[Set[str], Set[int]]:
+              include_unknown: bool = False, include_absent: bool = False) -> Union[Set[str], Set[int]]:
         return set(self.tolist(names=names,
                                include_present=include_present,
                                include_unknown=include_unknown,

@@ -16,8 +16,8 @@ from genomics_data_index.configuration.Project import Project
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.NucleotideMutationTranslater import NucleotideMutationTranslater
-from genomics_data_index.storage.service.VariationService import VariationService
 from genomics_data_index.storage.service import EntityExistsError
+from genomics_data_index.storage.service.VariationService import VariationService
 
 logger = logging.getLogger(__name__)
 
@@ -91,7 +91,6 @@ class GenomicsDataIndex:
             return reference_genome.tree
         else:
             raise EntityExistsError(f'reference_genome=[{reference_genome}] does not have a tree')
-
 
     def count_mutations(self, reference_genome: str, include_unknown: bool = False) -> int:
         """

@@ -471,7 +471,7 @@ class SamplesQuery(abc.ABC):
 
     @abc.abstractmethod
     def toset(self, names: bool = True, include_present: bool = True,
-               include_unknown: bool = False, include_absent: bool = False) -> Union[Set[str], Set[int]]:
+              include_unknown: bool = False, include_absent: bool = False) -> Union[Set[str], Set[int]]:
         """
         Converts the set of selected samples into a set of either sample names or sample IDs.
 

@@ -117,7 +117,7 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
                                           include_unknown=include_unknown, include_absent=include_absent)
 
     def toset(self, names: bool = True, include_present: bool = True,
-               include_unknown: bool = False, include_absent: bool = False) -> Union[Set[str], Set[int]]:
+              include_unknown: bool = False, include_absent: bool = False) -> Union[Set[str], Set[int]]:
         return self._wrapped_query.toset(names=names, include_present=include_present,
                                          include_unknown=include_unknown, include_absent=include_absent)
 

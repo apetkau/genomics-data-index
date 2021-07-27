@@ -4,7 +4,6 @@ from typing import List
 
 import pandas as pd
 import pytest
-from sqlalchemy.orm.exc import NoResultFound
 
 from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
 from genomics_data_index.storage.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor

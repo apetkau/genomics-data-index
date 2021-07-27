@@ -620,7 +620,7 @@ def test_tolist_and_toset(loaded_database_connection: DataIndexConnection):
     assert {'SampleA', 'SampleC', '2014C-3598', '2014C-3599', '2014D-0067', '2014D-0068',
             'CFSAN002349', 'CFSAN023463'
             } == query(conn).hasa('reference:5061:G:A').toset(include_present=False,
-                                                                   include_unknown=True, include_absent=True)
+                                                              include_unknown=True, include_absent=True)
 
     assert {'SampleC', '2014C-3598', '2014C-3599', '2014D-0067', '2014D-0068',
             'CFSAN002349', 'CFSAN023463'
@@ -629,12 +629,12 @@ def test_tolist_and_toset(loaded_database_connection: DataIndexConnection):
     assert {'SampleC', '2014C-3598', '2014C-3599', '2014D-0067', '2014D-0068',
             'CFSAN002349', 'CFSAN023463'
             } == query(conn).hasa('reference:5061:G:A').toset(include_present=False,
-                                                                   include_unknown=False, include_absent=True)
+                                                              include_unknown=False, include_absent=True)
 
     assert {'SampleA'} == set(query(conn).hasa('reference:5061:G:A').tolist(include_present=False,
                                                                             include_unknown=True, include_absent=False))
     assert {'SampleA'} == query(conn).hasa('reference:5061:G:A').toset(include_present=False,
-                                                                            include_unknown=True, include_absent=False)
+                                                                       include_unknown=True, include_absent=False)
 
 
 def test_query_isin_kmer(loaded_database_connection: DataIndexConnection):

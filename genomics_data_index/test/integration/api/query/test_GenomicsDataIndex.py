@@ -1,15 +1,15 @@
-import pytest
-
 import shutil
 import tempfile
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+import pytest
+
 from genomics_data_index.api.query.GenomicsDataIndex import GenomicsDataIndex
-from genomics_data_index.storage.service import EntityExistsError
 from genomics_data_index.configuration.Project import Project
 from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
 from genomics_data_index.storage.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor
+from genomics_data_index.storage.service import EntityExistsError
 from genomics_data_index.test.integration import sample_dirs, reference_file
 
 

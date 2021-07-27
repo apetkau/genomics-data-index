@@ -17,9 +17,9 @@ from Bio import AlignIO
 
 import genomics_data_index.storage.service.FeatureService as FeatureService
 from genomics_data_index import __version__
+from genomics_data_index.api.query.GenomicsDataIndex import GenomicsDataIndex
 from genomics_data_index.cli import yaml_config_provider
 from genomics_data_index.configuration.Project import Project, ProjectConfigurationError
-from genomics_data_index.api.query.GenomicsDataIndex import GenomicsDataIndex
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
 from genomics_data_index.pipelines.SnakemakePipelineExecutor import SnakemakePipelineExecutor
 from genomics_data_index.storage.index.KmerIndexer import KmerIndexerSourmash, KmerIndexManager
@@ -29,14 +29,16 @@ from genomics_data_index.storage.io.mlst.MLSTSistrReader import MLSTSistrReader
 from genomics_data_index.storage.io.mlst.MLSTTSeemannFeaturesReader import MLSTTSeemannFeaturesReader
 from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
 from genomics_data_index.storage.io.mutation.SequenceFile import SequenceFile
+from genomics_data_index.storage.io.mutation.variants_processor.MultipleProcessVcfVariantsTableProcessor import \
+    MultipleProcessVcfVariantsTableProcessorFactory
+from genomics_data_index.storage.io.mutation.variants_processor.SerialVcfVariantsTableProcessor import \
+    SerialVcfVariantsTableProcessorFactory
 from genomics_data_index.storage.io.processor.MultipleProcessSampleFilesProcessor import \
     MultipleProcessSampleFilesProcessor
 from genomics_data_index.storage.io.processor.NullSampleFilesProcessor import NullSampleFilesProcessor
-from genomics_data_index.storage.io.mutation.variants_processor.MultipleProcessVcfVariantsTableProcessor import MultipleProcessVcfVariantsTableProcessorFactory
-from genomics_data_index.storage.io.mutation.variants_processor.SerialVcfVariantsTableProcessor import SerialVcfVariantsTableProcessorFactory
+from genomics_data_index.storage.model.QueryFeature import QueryFeature
 from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
 from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
-from genomics_data_index.storage.model.QueryFeature import QueryFeature
 from genomics_data_index.storage.service import EntityExistsError
 from genomics_data_index.storage.service.CoreAlignmentService import CoreAlignmentService
 from genomics_data_index.storage.service.MLSTService import MLSTService
@@ -599,6 +601,8 @@ def alignment(ctx, output_file: Path, reference_name: str, align_type: str, samp
 
 
 supported_tree_build_types = ['iqtree']
+
+
 @build.command()
 @click.pass_context
 @click.option('--output-file', help='Output file', required=True, type=click.Path())
