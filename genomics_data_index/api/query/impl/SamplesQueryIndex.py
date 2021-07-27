@@ -18,6 +18,8 @@ from genomics_data_index.storage.model.QueryFeatureHGVS import QueryFeatureHGVS
 from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
 from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
 from genomics_data_index.storage.service.KmerService import KmerService
+from genomics_data_index.api.query.kind.IsaKind import IsaKind
+from genomics_data_index.api.query.kind.isa.DelegateIsaKind import DelegateIsaKind
 
 logger = logging.getLogger(__name__)
 
@@ -557,9 +559,12 @@ class SamplesQueryIndex(SamplesQuery):
     def _can_handle_distance_units(self, units: str) -> bool:
         return units in self.DISTANCES_UNITS
 
-    def isa(self, data: Union[str, List[str]], kind: str = 'sample', **kwargs) -> SamplesQuery:
+    def isa(self, data: Union[str, List[str], SamplesQuery, SampleSet], kind: Union[IsaKind, str] = None,
+            **kwargs) -> SamplesQuery:
         if kind == 'sample' or kind == 'samples':
             return self._isin_samples(data=data, query_message_prefix='isa_sample')
+        elif isinstance(kind, DelegateIsaKind):
+            return kind.isa(data, self)
         else:
             raise Exception(f'kind=[{kind}] is not supported. Must be one of {self._isa_kinds()}')
 

@@ -10,6 +10,8 @@ from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.configuration.connector import DataIndexConnection
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.QueryFeature import QueryFeature
+from genomics_data_index.api.query.kind.IsaKind import IsaKind
+from genomics_data_index.api.query.kind.isa.DelegateIsaKind import DelegateIsaKind
 
 
 class WrappedSamplesQuery(SamplesQuery, abc.ABC):
@@ -174,9 +176,12 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
     def _can_handle_isa_kind(self, kind: str) -> bool:
         return False
 
-    def isa(self, data: Union[str, List[str]], kind: str = 'sample', **kwargs) -> SamplesQuery:
+    def isa(self, data: Union[str, List[str], SamplesQuery, SampleSet], kind: Union[IsaKind, str] = None,
+            **kwargs) -> SamplesQuery:
         if self._can_handle_isa_kind(kind):
             return self._isa_internal(data=data, kind=kind, **kwargs)
+        elif isinstance(kind, DelegateIsaKind):
+            return kind.isa(data, self)
         else:
             return self._wrap_create(self._wrapped_query.isa(data=data, kind=kind, **kwargs))
 

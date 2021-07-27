@@ -9,6 +9,7 @@ from ete3 import Tree
 
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.QueryFeature import QueryFeature
+from genomics_data_index.api.query.kind.IsaKind import IsaKind
 
 
 class SamplesQuery(abc.ABC):
@@ -337,7 +338,7 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def isa(self, data: Union[str, List[str], SamplesQuery, SampleSet], kind: str = None,
+    def isa(self, data: Union[str, List[str], SamplesQuery, SampleSet], kind: Union[IsaKind, str] = None,
             **kwargs) -> SamplesQuery:
         """
         Queries for samples which are a particular type/belong to a particular category.
