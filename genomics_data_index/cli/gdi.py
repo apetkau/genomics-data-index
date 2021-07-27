@@ -41,7 +41,6 @@ from genomics_data_index.storage.service import EntityExistsError
 from genomics_data_index.storage.service.CoreAlignmentService import CoreAlignmentService
 from genomics_data_index.storage.service.MLSTService import MLSTService
 from genomics_data_index.storage.service.SampleService import SampleService
-from genomics_data_index.storage.service.TreeService import TreeService
 from genomics_data_index.storage.service.VariationService import VariationService
 from genomics_data_index.storage.util import TRACE_LEVEL
 
@@ -599,6 +598,7 @@ def alignment(ctx, output_file: Path, reference_name: str, align_type: str, samp
         click.echo(f'Wrote alignment to [{output_file}]')
 
 
+supported_tree_build_types = ['iqtree']
 @build.command()
 @click.pass_context
 @click.option('--output-file', help='Output file', required=True, type=click.Path())
@@ -606,48 +606,44 @@ def alignment(ctx, output_file: Path, reference_name: str, align_type: str, samp
 @click.option('--align-type', help=f'The type of alignment to use for generating the tree', default='core',
               type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
 @click.option('--tree-build-type', help=f'The type of tree building software', default='iqtree',
-              type=click.Choice(TreeService.TREE_BUILD_TYPES))
+              type=click.Choice(supported_tree_build_types))
 @click.option('--sample', help='Sample to include in tree (can list more than one).',
               multiple=True, type=str)
 @click.option('--extra-params', help='Extra parameters to tree-building software',
               default=None)
 def tree(ctx, output_file: Path, reference_name: str, align_type: str,
          tree_build_type: str, sample: List[str], extra_params: str):
-    data_index_connection = get_project_exit_on_error(ctx).create_connection()
-    alignment_service = data_index_connection.alignment_service
-    tree_service = data_index_connection.tree_service
-    reference_service = ctx.obj['data_index_connection'].reference_service
-    sample_service = ctx.obj['data_index_connection'].sample_service
+    genomics_index = get_genomics_index(ctx)
+    references = genomics_index.reference_names()
     ncores = ctx.obj['ncores']
 
-    if not reference_service.exists_reference_genome(reference_name):
+    if reference_name not in references:
         logger.error(f'Reference genome [{reference_name}] does not exist')
         sys.exit(1)
 
-    found_samples = set(sample_service.which_exists(sample))
+    query = genomics_index.samples_query().isin(list(sample), kind='samples')
 
-    if len(sample) > 0 and found_samples != set(sample):
+    if len(query) != len(sample):
+        found_samples = query.toset(names=True)
         logger.error(f'Samples {set(sample) - found_samples} do not exist')
         sys.exit(1)
 
+    # Eventually I want to add full support for fasttree/other tree builders, so I'm
+    # leaving this if/else here
     if align_type == 'full' and tree_build_type == 'fasttree':
         logger.error(f'align_type=[{align_type}] is not supported for tree_build_type=[{tree_build_type}]')
         sys.exit(1)
 
-    alignment_data = alignment_service.construct_alignment(reference_name=reference_name,
-                                                           samples=sample,
-                                                           align_type=align_type,
-                                                           include_reference=True)
+    tree_query = query.build_tree(kind='mutation',
+                                  method=tree_build_type,
+                                  align_type=align_type,
+                                  scope=reference_name,
+                                  include_reference=True,
+                                  ncores=ncores,
+                                  extra_params=extra_params)
 
-    log_file = f'{output_file}.log'
-
-    tree_data, out = tree_service.build_tree(alignment_data, tree_build_type=tree_build_type,
-                                             num_cores=ncores, align_type=align_type, extra_params=extra_params)
-    tree_data.write(outfile=output_file)
+    tree_query.tree.write(outfile=output_file)
     click.echo(f'Wrote tree to [{output_file}]')
-    with open(log_file, 'w') as log:
-        log.write(out)
-        click.echo(f'Wrote log file to [{log_file}]')
 
 
 @main.group()
