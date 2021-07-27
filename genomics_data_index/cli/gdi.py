@@ -543,16 +543,19 @@ def export(ctx):
 @click.argument('name', nargs=-1)
 @click.option('--ascii/--no-ascii', help='Export as ASCII figure')
 def export_tree(ctx, name: List[str], ascii: bool):
-    data_index_connection = get_project_exit_on_error(ctx).create_connection()
+    genomics_index = get_genomics_index(ctx)
     if len(name) == 0:
         logger.warning('No reference genome names passed, will not export tree')
 
     for ref_name in name:
-        reference = data_index_connection.reference_service.find_reference_genome(ref_name)
-        if ascii:
-            click.echo(str(reference.tree))
-        else:
-            click.echo(reference.tree.write())
+        try:
+            reference_tree = genomics_index.reference_tree(ref_name)
+            if ascii:
+                click.echo(str(reference_tree))
+            else:
+                click.echo(reference_tree.write())
+        except EntityExistsError as e:
+            logger.error(str(e))
 
 
 @main.group()
