@@ -6,6 +6,7 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from biocommons.seqrepo import SeqRepo
 from ete3 import Tree
+from sqlalchemy.exc import NoResultFound
 
 from genomics_data_index.storage.io.mutation.SequenceFile import SequenceFile
 from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
@@ -66,7 +67,7 @@ class ReferenceService:
         self._connection.get_session().add(reference)
         self._connection.get_session().commit()
 
-    def update_tree(self, reference_name: str, tree: Tree, alignment_length: int):
+    def update_tree(self, reference_name: str, tree: Tree, alignment_length: int) -> None:
         if alignment_length is None or alignment_length <= 0:
             raise Exception(f'Invalid alignment_length=[{alignment_length}]')
 
@@ -75,10 +76,13 @@ class ReferenceService:
         reference.tree_alignment_length = alignment_length
         self._connection.get_session().commit()
 
-    def find_reference_genome(self, name: str):
-        return self._connection.get_session().query(Reference).filter_by(name=name).one()
+    def find_reference_genome(self, name: str) -> Reference:
+        try:
+            return self._connection.get_session().query(Reference).filter_by(name=name).one()
+        except NoResultFound as e:
+            raise EntityExistsError(f'No reference genome with name=[{name}]')
 
-    def exists_reference_genome(self, name: str):
+    def exists_reference_genome(self, name: str) -> bool:
         return self._connection.get_session().query(Reference.id).filter_by(name=name).scalar() is not None
 
     def get_reference_genomes(self) -> List[Reference]:

@@ -594,25 +594,47 @@ def test_query_isa_samples_query(loaded_database_connection: DataIndexConnection
     assert 9 == len(query_result.universe_set)
 
 
-def test_tolist(loaded_database_connection: DataIndexConnection):
+def test_tolist_and_toset(loaded_database_connection: DataIndexConnection):
     conn = loaded_database_connection
 
     assert {'SampleA', 'SampleB'} == set(query(conn).isin(['SampleA', 'SampleB']).tolist())
+    assert {'SampleA', 'SampleB'} == query(conn).isin(['SampleA', 'SampleB']).toset()
+
     assert {'SampleB'} == set(query(conn).hasa('reference:5061:G:A').tolist())
+    assert {'SampleB'} == query(conn).hasa('reference:5061:G:A').toset()
+
     assert {'SampleA', 'SampleB'} == set(query(conn).hasa('reference:5061:G:A').tolist(include_unknown=True))
+    assert {'SampleA', 'SampleB'} == query(conn).hasa('reference:5061:G:A').toset(include_unknown=True)
+
     assert {'SampleA', 'SampleB', 'SampleC', '2014C-3598', '2014C-3599', '2014D-0067', '2014D-0068',
             'CFSAN002349', 'CFSAN023463'
             } == set(query(conn).hasa('reference:5061:G:A').tolist(include_unknown=True, include_absent=True))
+    assert {'SampleA', 'SampleB', 'SampleC', '2014C-3598', '2014C-3599', '2014D-0067', '2014D-0068',
+            'CFSAN002349', 'CFSAN023463'
+            } == query(conn).hasa('reference:5061:G:A').toset(include_unknown=True, include_absent=True)
+
     assert {'SampleA', 'SampleC', '2014C-3598', '2014C-3599', '2014D-0067', '2014D-0068',
             'CFSAN002349', 'CFSAN023463'
             } == set(query(conn).hasa('reference:5061:G:A').tolist(include_present=False,
                                                                    include_unknown=True, include_absent=True))
+    assert {'SampleA', 'SampleC', '2014C-3598', '2014C-3599', '2014D-0067', '2014D-0068',
+            'CFSAN002349', 'CFSAN023463'
+            } == query(conn).hasa('reference:5061:G:A').toset(include_present=False,
+                                                              include_unknown=True, include_absent=True)
+
     assert {'SampleC', '2014C-3598', '2014C-3599', '2014D-0067', '2014D-0068',
             'CFSAN002349', 'CFSAN023463'
             } == set(query(conn).hasa('reference:5061:G:A').tolist(include_present=False,
                                                                    include_unknown=False, include_absent=True))
+    assert {'SampleC', '2014C-3598', '2014C-3599', '2014D-0067', '2014D-0068',
+            'CFSAN002349', 'CFSAN023463'
+            } == query(conn).hasa('reference:5061:G:A').toset(include_present=False,
+                                                              include_unknown=False, include_absent=True)
+
     assert {'SampleA'} == set(query(conn).hasa('reference:5061:G:A').tolist(include_present=False,
                                                                             include_unknown=True, include_absent=False))
+    assert {'SampleA'} == query(conn).hasa('reference:5061:G:A').toset(include_present=False,
+                                                                       include_unknown=True, include_absent=False)
 
 
 def test_query_isin_kmer(loaded_database_connection: DataIndexConnection):

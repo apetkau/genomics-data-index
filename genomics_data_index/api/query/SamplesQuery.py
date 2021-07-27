@@ -469,6 +469,20 @@ class SamplesQuery(abc.ABC):
         """
         pass
 
+    @abc.abstractmethod
+    def toset(self, names: bool = True, include_present: bool = True,
+              include_unknown: bool = False, include_absent: bool = False) -> Union[Set[str], Set[int]]:
+        """
+        Converts the set of selected samples into a set of either sample names or sample IDs.
+
+        :param names: If True (default) return a set of sample names as strings, if False return a set of sample IDs.
+        :param include_present: If True (default) include selected samples.
+        :param include_unknown: If True, include unknown samples.
+        :param include_absent: If True, include absent samples from selection.
+        :return: A set of sample names or IDs.
+        """
+        pass
+
     def __invert__(self):
         """
         Performs an **~** (invert, complement) operation on a SamplesQuery object.

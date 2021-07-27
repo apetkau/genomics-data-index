@@ -78,7 +78,7 @@ class TreeService:
                     logger.debug(f'Running: {" ".join(command)}')
                     completed = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                                check=True, text=True)
-                    out = completed.stdout
+                    out = str(completed.stdout)
                     tree = Tree(str(output_file))
                     return tree, out
                 except subprocess.CalledProcessError as e:

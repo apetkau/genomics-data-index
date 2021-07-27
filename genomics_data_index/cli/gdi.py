@@ -17,6 +17,7 @@ from Bio import AlignIO
 
 import genomics_data_index.storage.service.FeatureService as FeatureService
 from genomics_data_index import __version__
+from genomics_data_index.api.query.GenomicsDataIndex import GenomicsDataIndex
 from genomics_data_index.cli import yaml_config_provider
 from genomics_data_index.configuration.Project import Project, ProjectConfigurationError
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
@@ -28,18 +29,20 @@ from genomics_data_index.storage.io.mlst.MLSTSistrReader import MLSTSistrReader
 from genomics_data_index.storage.io.mlst.MLSTTSeemannFeaturesReader import MLSTTSeemannFeaturesReader
 from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
 from genomics_data_index.storage.io.mutation.SequenceFile import SequenceFile
+from genomics_data_index.storage.io.mutation.variants_processor.MultipleProcessVcfVariantsTableProcessor import \
+    MultipleProcessVcfVariantsTableProcessorFactory
+from genomics_data_index.storage.io.mutation.variants_processor.SerialVcfVariantsTableProcessor import \
+    SerialVcfVariantsTableProcessorFactory
 from genomics_data_index.storage.io.processor.MultipleProcessSampleFilesProcessor import \
     MultipleProcessSampleFilesProcessor
 from genomics_data_index.storage.io.processor.NullSampleFilesProcessor import NullSampleFilesProcessor
-from genomics_data_index.storage.io.mutation.variants_processor.MultipleProcessVcfVariantsTableProcessor import MultipleProcessVcfVariantsTableProcessorFactory
-from genomics_data_index.storage.io.mutation.variants_processor.SerialVcfVariantsTableProcessor import SerialVcfVariantsTableProcessorFactory
+from genomics_data_index.storage.model.QueryFeature import QueryFeature
 from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
 from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
 from genomics_data_index.storage.service import EntityExistsError
 from genomics_data_index.storage.service.CoreAlignmentService import CoreAlignmentService
 from genomics_data_index.storage.service.MLSTService import MLSTService
 from genomics_data_index.storage.service.SampleService import SampleService
-from genomics_data_index.storage.service.TreeService import TreeService
 from genomics_data_index.storage.service.VariationService import VariationService
 from genomics_data_index.storage.util import TRACE_LEVEL
 
@@ -74,6 +77,11 @@ def get_project_exit_on_error(ctx) -> Project:
                      f'with --project-dir')
         logger.debug(e, exc_info=True)
         sys.exit(1)
+
+
+def get_genomics_index(ctx) -> GenomicsDataIndex:
+    project = get_project_exit_on_error(ctx)
+    return GenomicsDataIndex.connect(project=project)
 
 
 @click.group()
@@ -335,17 +343,17 @@ def list_data(ctx):
 @list_data.command(name='genomes')
 @click.pass_context
 def list_genomes(ctx):
-    data_index_connection = get_project_exit_on_error(ctx).create_connection()
-    items = [genome.name for genome in data_index_connection.reference_service.get_reference_genomes()]
-    click.echo('\n'.join(items))
+    genomics_index = get_genomics_index(ctx)
+    reference_genomes = genomics_index.reference_names()
+    click.echo('\n'.join(reference_genomes))
 
 
 @list_data.command(name='samples')
 @click.pass_context
 def list_samples(ctx):
-    data_index_connection = get_project_exit_on_error(ctx).create_connection()
-    items = [sample.name for sample in data_index_connection.sample_service.get_samples()]
-    click.echo('\n'.join(items))
+    genomics_index = get_genomics_index(ctx)
+    samples = genomics_index.sample_names()
+    click.echo('\n'.join(samples))
 
 
 def read_genomes_from_file(input_file: Path) -> List[Path]:
@@ -537,16 +545,19 @@ def export(ctx):
 @click.argument('name', nargs=-1)
 @click.option('--ascii/--no-ascii', help='Export as ASCII figure')
 def export_tree(ctx, name: List[str], ascii: bool):
-    data_index_connection = get_project_exit_on_error(ctx).create_connection()
+    genomics_index = get_genomics_index(ctx)
     if len(name) == 0:
         logger.warning('No reference genome names passed, will not export tree')
 
     for ref_name in name:
-        reference = data_index_connection.reference_service.find_reference_genome(ref_name)
-        if ascii:
-            click.echo(str(reference.tree))
-        else:
-            click.echo(reference.tree.write())
+        try:
+            reference_tree = genomics_index.reference_tree(ref_name)
+            if ascii:
+                click.echo(str(reference_tree))
+            else:
+                click.echo(reference_tree.write())
+        except EntityExistsError as e:
+            logger.error(str(e))
 
 
 @main.group()
@@ -564,29 +575,32 @@ def build(ctx):
 @click.option('--sample', help='Sample to include in alignment (can list more than one).',
               multiple=True, type=str)
 def alignment(ctx, output_file: Path, reference_name: str, align_type: str, sample: List[str]):
-    data_index_connection = get_project_exit_on_error(ctx).create_connection()
-    alignment_service = data_index_connection.alignment_service
-    reference_service = data_index_connection.reference_service
-    sample_service = data_index_connection.sample_service
+    genomics_index = get_genomics_index(ctx)
+    references = genomics_index.reference_names()
+    alignment_service = genomics_index.connection.alignment_service
 
-    if not reference_service.exists_reference_genome(reference_name):
+    if reference_name not in references:
         logger.error(f'Reference genome [{reference_name}] does not exist')
         sys.exit(1)
 
-    found_samples = set(sample_service.which_exists(sample))
+    query = genomics_index.samples_query().isin(list(sample), kind='samples')
 
-    if len(sample) > 0 and found_samples != set(sample):
+    if len(query) != len(sample):
+        found_samples = query.toset(names=True)
         logger.error(f'Samples {set(sample) - found_samples} do not exist')
         sys.exit(1)
 
     alignment_data = alignment_service.construct_alignment(reference_name=reference_name,
-                                                           samples=sample,
+                                                           samples=query.tolist(names=True),
                                                            align_type=align_type,
                                                            include_reference=True)
 
     with open(output_file, 'w') as f:
         AlignIO.write(alignment_data, f, 'fasta')
         click.echo(f'Wrote alignment to [{output_file}]')
+
+
+supported_tree_build_types = ['iqtree']
 
 
 @build.command()
@@ -596,48 +610,44 @@ def alignment(ctx, output_file: Path, reference_name: str, align_type: str, samp
 @click.option('--align-type', help=f'The type of alignment to use for generating the tree', default='core',
               type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
 @click.option('--tree-build-type', help=f'The type of tree building software', default='iqtree',
-              type=click.Choice(TreeService.TREE_BUILD_TYPES))
+              type=click.Choice(supported_tree_build_types))
 @click.option('--sample', help='Sample to include in tree (can list more than one).',
               multiple=True, type=str)
 @click.option('--extra-params', help='Extra parameters to tree-building software',
               default=None)
 def tree(ctx, output_file: Path, reference_name: str, align_type: str,
          tree_build_type: str, sample: List[str], extra_params: str):
-    data_index_connection = get_project_exit_on_error(ctx).create_connection()
-    alignment_service = data_index_connection.alignment_service
-    tree_service = data_index_connection.tree_service
-    reference_service = ctx.obj['data_index_connection'].reference_service
-    sample_service = ctx.obj['data_index_connection'].sample_service
+    genomics_index = get_genomics_index(ctx)
+    references = genomics_index.reference_names()
     ncores = ctx.obj['ncores']
 
-    if not reference_service.exists_reference_genome(reference_name):
+    if reference_name not in references:
         logger.error(f'Reference genome [{reference_name}] does not exist')
         sys.exit(1)
 
-    found_samples = set(sample_service.which_exists(sample))
+    query = genomics_index.samples_query().isin(list(sample), kind='samples')
 
-    if len(sample) > 0 and found_samples != set(sample):
+    if len(query) != len(sample):
+        found_samples = query.toset(names=True)
         logger.error(f'Samples {set(sample) - found_samples} do not exist')
         sys.exit(1)
 
+    # Eventually I want to add full support for fasttree/other tree builders, so I'm
+    # leaving this if/else here
     if align_type == 'full' and tree_build_type == 'fasttree':
         logger.error(f'align_type=[{align_type}] is not supported for tree_build_type=[{tree_build_type}]')
         sys.exit(1)
 
-    alignment_data = alignment_service.construct_alignment(reference_name=reference_name,
-                                                           samples=sample,
-                                                           align_type=align_type,
-                                                           include_reference=True)
+    tree_query = query.build_tree(kind='mutation',
+                                  method=tree_build_type,
+                                  align_type=align_type,
+                                  scope=reference_name,
+                                  include_reference=True,
+                                  ncores=ncores,
+                                  extra_params=extra_params)
 
-    log_file = f'{output_file}.log'
-
-    tree_data, out = tree_service.build_tree(alignment_data, tree_build_type=tree_build_type,
-                                             num_cores=ncores, align_type=align_type, extra_params=extra_params)
-    tree_data.write(outfile=output_file)
+    tree_query.tree.write(outfile=output_file)
     click.echo(f'Wrote tree to [{output_file}]')
-    with open(log_file, 'w') as log:
-        log.write(out)
-        click.echo(f'Wrote log file to [{log_file}]')
 
 
 @main.group()
@@ -684,64 +694,37 @@ def query(ctx):
     pass
 
 
-@query.command(name='sample-mutation')
-@click.pass_context
-@click.argument('name', nargs=-1)
-def query_sample_mutation(ctx, name: List[str]):
-    data_index_connection = get_project_exit_on_error(ctx).create_connection()
-    mutation_query_service = data_index_connection.mutation_query_service
-    match_df = mutation_query_service.find_matches(samples=name)
-    match_df.to_csv(sys.stdout, sep='\t', index=False, float_format='%0.4g', na_rep='-')
+def query_feature(genomics_index: GenomicsDataIndex, features: List[QueryFeature], summarize: bool) -> None:
+    query = genomics_index.samples_query()
+    for feature in features:
+        query = query.hasa(feature)
 
+    if summarize:
+        results_df = query.summary()
+    else:
+        results_df = query.toframe(include_unknown=True)
 
-@query.command(name='sample-kmer')
-@click.pass_context
-@click.argument('name', nargs=-1)
-def query_sample_kmer(ctx, name: List[str]):
-    data_index_connection = get_project_exit_on_error(ctx).create_connection()
-    kmer_query_service = data_index_connection.kmer_query_service
-    match_df = kmer_query_service.find_matches(samples=name)
-    match_df.to_csv(sys.stdout, sep='\t', index=False, float_format='%0.4g', na_rep='-')
+    results_df.to_csv(sys.stdout, sep='\t', index=False, float_format='%0.4g', na_rep='-')
 
 
 @query.command(name='mutation')
 @click.pass_context
 @click.argument('name', nargs=-1)
-@click.option('--include-unknown/--no-include-unknown',
-              help='Including results where it is unknown if the search term is present or not.',
-              required=False)
 @click.option('--summarize/--no-summarize', help='Print summary information on query')
-def query_mutation(ctx, name: List[str], include_unknown: bool, summarize: bool):
-    data_index_connection = get_project_exit_on_error(ctx).create_connection()
-    mutation_query_service = data_index_connection.mutation_query_service
-
+def query_mutation(ctx, name: List[str], summarize: bool):
+    genomics_index = get_genomics_index(ctx)
     features = [QueryFeatureMutationSPDI(n) for n in name]
-    if not summarize:
-        match_df = mutation_query_service.find_by_features(features, include_unknown=include_unknown)
-    else:
-        match_df = mutation_query_service.count_by_features(features, include_unknown=include_unknown)
-
-    match_df.to_csv(sys.stdout, sep='\t', index=False, float_format='%0.4g', na_rep='-')
+    query_feature(genomics_index=genomics_index, features=features, summarize=summarize)
 
 
 @query.command(name='mlst')
 @click.pass_context
 @click.argument('name', nargs=-1)
-@click.option('--include-unknown/--no-include-unknown',
-              help='Including results where it is unknown if the search term is present or not.',
-              required=False)
 @click.option('--summarize/--no-summarize', help='Print summary information on query')
-def query_mlst(ctx, name: List[str], include_unknown: bool, summarize: bool):
-    data_index_connection = get_project_exit_on_error(ctx).create_connection()
-    mlst_query_service = data_index_connection.mlst_query_service
-
+def query_mlst(ctx, name: List[str], summarize: bool):
+    genomics_index = get_genomics_index(ctx)
     features = [QueryFeatureMLST(n) for n in name]
-    if not summarize:
-        match_df = mlst_query_service.find_by_features(features, include_unknown=include_unknown)
-    else:
-        match_df = mlst_query_service.count_by_features(features, include_unknown=include_unknown)
-
-    match_df.to_csv(sys.stdout, sep='\t', index=False, float_format='%0.4g', na_rep='-')
+    query_feature(genomics_index=genomics_index, features=features, summarize=summarize)
 
 
 @main.group(name='db')
@@ -757,6 +740,6 @@ UNITS = ['B', 'KB', 'MB', 'GB']
 @click.pass_context
 @click.option('--unit', default='B', help='The unit to display data sizes as.', type=click.Choice(UNITS))
 def db_size(ctx, unit):
-    data_index_connection = get_project_exit_on_error(ctx).create_connection()
-    size_df = data_index_connection.db_size(unit)
+    genomics_index = get_genomics_index(ctx)
+    size_df = genomics_index.db_size(unit)
     size_df.to_csv(sys.stdout, sep='\t', index=False, float_format='%0.2f', na_rep='-')
