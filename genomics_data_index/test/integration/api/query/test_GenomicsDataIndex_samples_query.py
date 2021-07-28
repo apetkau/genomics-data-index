@@ -1198,7 +1198,7 @@ def test_query_hasa_string_features(loaded_database_connection: DataIndexConnect
     assert 9 == len(query_result.universe_set)
 
 
-def test_query_hasa_string_features_hgvs(loaded_database_connection_annotations: DataIndexConnection):
+def test_query_hasa_string_features_snpeff(loaded_database_connection_annotations: DataIndexConnection):
     db = loaded_database_connection_annotations.database
     sample_sh14_001 = db.get_session().query(Sample).filter(Sample.name == 'SH14-001').one()
     sample_sh14_014 = db.get_session().query(Sample).filter(Sample.name == 'SH14-014').one()
@@ -1308,6 +1308,55 @@ def test_query_hasa_string_features_hgvs(loaded_database_connection_annotations:
     query_result_test = query_result.hasa(f'NC_011083:3167187:{len("AACCACGACCACGACCACGACCACGACCACGACCACG")}:A')
     assert 2 == len(query_result_test)
     assert {sample_sh14_001.id, sample_sh14_014.id} == set(query_result_test.sample_set)
+    assert 0 == len(query_result_test.unknown_set)
+    assert 3 == len(query_result_test.universe_set)
+
+    # Test HGVSGN.c single mutation
+    query_result_test = query_result.hasa('hgvs_gn:NC_011083:murF:c.497C>A')
+    assert 3 == len(query_result_test)
+    assert {sample_sh10_014.id, sample_sh14_001.id, sample_sh14_014.id} == set(query_result_test.sample_set)
+    assert 0 == len(query_result_test.unknown_set)
+    assert 3 == len(query_result_test.universe_set)
+
+    # Test HGVSGN.p single mutation
+    query_result_test = query_result.hasa('hgvs_gn:NC_011083:murF:p.Ala166Glu')
+    assert 3 == len(query_result_test)
+    assert {sample_sh10_014.id, sample_sh14_001.id, sample_sh14_014.id} == set(query_result_test.sample_set)
+    assert 0 == len(query_result_test.unknown_set)
+    assert 3 == len(query_result_test.universe_set)
+
+    # Test HGVSGN.c single mutation 2 results
+    query_result_test = query_result.hasa('hgvs_gn:NC_011083:oadA:c.609T>C')
+    assert 2 == len(query_result_test)
+    assert {sample_sh10_014.id, sample_sh14_001.id} == set(query_result_test.sample_set)
+    assert 0 == len(query_result_test.unknown_set)
+    assert 3 == len(query_result_test.universe_set)
+
+    # Test HGVSGN.p single mutation 2 results
+    query_result_test = query_result.hasa('hgvs_gn:NC_011083:oadA:p.Cys203Cys')
+    assert 2 == len(query_result_test)
+    assert {sample_sh10_014.id, sample_sh14_001.id} == set(query_result_test.sample_set)
+    assert 0 == len(query_result_test.unknown_set)
+    assert 3 == len(query_result_test.universe_set)
+
+    # Test HGVS.c single mutation 2 results
+    query_result_test = query_result.hasa('hgvs:NC_011083:SEHA_RS17780:c.609T>C')
+    assert 2 == len(query_result_test)
+    assert {sample_sh10_014.id, sample_sh14_001.id} == set(query_result_test.sample_set)
+    assert 0 == len(query_result_test.unknown_set)
+    assert 3 == len(query_result_test.universe_set)
+
+    # Test HGVS.c single mutation 2 results
+    query_result_test = query_result.hasa('hgvs:NC_011083:SEHA_RS17780:p.Cys203Cys')
+    assert 2 == len(query_result_test)
+    assert {sample_sh10_014.id, sample_sh14_001.id} == set(query_result_test.sample_set)
+    assert 0 == len(query_result_test.unknown_set)
+    assert 3 == len(query_result_test.universe_set)
+
+    # Test equivalent SPDI identifier for above
+    query_result_test = query_result.hasa('NC_011083:3535635:A:G')
+    assert 2 == len(query_result_test)
+    assert {sample_sh10_014.id, sample_sh14_001.id} == set(query_result_test.sample_set)
     assert 0 == len(query_result_test.unknown_set)
     assert 3 == len(query_result_test.universe_set)
 
