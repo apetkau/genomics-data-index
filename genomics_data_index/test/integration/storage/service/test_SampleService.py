@@ -975,6 +975,22 @@ def test_feature_explode_unknown(sample_service_snpeff_annotations):
            ' but the corresponding SPDI feature does not exist in the database' in str(execinfo.value)
 
 
+def test_feature_explode_unknown_duplicate_gene_name(sample_service_snpeff_annotations_fake_duplicate_gene):
+    sample_service = sample_service_snpeff_annotations_fake_duplicate_gene
+
+    # HGVSGN.c and SNV
+    unknowns = sample_service.feature_explode_unknown(
+        QueryFeatureHGVSGN.create_from_id('hgvs_gn:NC_011083:murF:c.497C>A'))
+    assert 2 == len(unknowns)
+    assert ['NC_011083:140658:1:?', 'NC_011083:150000:1:?'] == [u.id for u in unknowns]
+
+    # HGVSGN.p and SNV
+    unknowns = sample_service.feature_explode_unknown(
+        QueryFeatureHGVSGN.create_from_id('hgvs_gn:NC_011083:murF:p.Ala166Glu'))
+    assert 2 == len(unknowns)
+    assert ['NC_011083:140658:1:?', 'NC_011083:150000:1:?'] == [u.id for u in unknowns]
+
+
 def test_get_sample_set_by_names(database, sample_service: SampleService, variation_service):
     sampleA = database.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
     sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
