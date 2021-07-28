@@ -450,6 +450,55 @@ def test_find_sample_sets_by_features_variations_hgvs(database, sample_service_s
     assert {sample_sh14_001.id, sample_sh14_014.id} == set(sample_sets['NC_011083:835147:C:CA'])
 
 
+def test_find_sample_sets_by_features_variations_hgvs_gn(database, sample_service_snpeff_annotations):
+    sample_sh14_001 = database.get_session().query(Sample).filter(Sample.name == 'SH14-001').one()
+    sample_sh14_014 = database.get_session().query(Sample).filter(Sample.name == 'SH14-014').one()
+    sample_sh10_014 = database.get_session().query(Sample).filter(Sample.name == 'SH10-014').one()
+
+    # hgvs c (nucleotide)
+    features = [QueryFeatureHGVSGN.create_from_id('hgvs_gn:NC_011083:SEHA_RS04550:c.670dupA')]
+    sample_sets = sample_service_snpeff_annotations.find_sample_sets_by_features(features)
+    assert 1 == len(sample_sets)
+    assert 'hgvs_gn:NC_011083:SEHA_RS04550:c.670dupA' in sample_sets
+    assert {sample_sh14_001.id, sample_sh14_014.id} == set(sample_sets['hgvs_gn:NC_011083:SEHA_RS04550:c.670dupA'])
+
+    # hgvs p (protein)
+    features = [QueryFeatureHGVSGN.create_from_id('hgvs_gn:NC_011083:SEHA_RS04550:p.Ile224fs')]
+    sample_sets = sample_service_snpeff_annotations.find_sample_sets_by_features(features)
+    assert 1 == len(sample_sets)
+    assert 'hgvs_gn:NC_011083:SEHA_RS04550:p.Ile224fs' in sample_sets
+    assert {sample_sh14_001.id, sample_sh14_014.id} == set(sample_sets['hgvs_gn:NC_011083:SEHA_RS04550:p.Ile224fs'])
+
+    # hgvs c with gene name different
+    features = [QueryFeatureHGVSGN.create_from_id('hgvs_gn:NC_011083:oadA:c.582_588delTTTTGAGinsCTATGAC')]
+    sample_sets = sample_service_snpeff_annotations.find_sample_sets_by_features(features)
+    assert 1 == len(sample_sets)
+    assert 'hgvs_gn:NC_011083:oadA:c.582_588delTTTTGAGinsCTATGAC' in sample_sets
+    assert {sample_sh10_014.id, sample_sh14_001.id} == set(sample_sets['hgvs_gn:NC_011083:oadA:c.582_588delTTTTGAGinsCTATGAC'])
+
+    # hgvs p with gene name different
+    features = [QueryFeatureHGVSGN.create_from_id('hgvs_gn:NC_011083:oadA:p.PheGlu195TyrAsp')]
+    sample_sets = sample_service_snpeff_annotations.find_sample_sets_by_features(features)
+    assert 1 == len(sample_sets)
+    assert 'hgvs_gn:NC_011083:oadA:p.PheGlu195TyrAsp' in sample_sets
+    assert {sample_sh10_014.id, sample_sh14_001.id} == set(sample_sets['hgvs_gn:NC_011083:oadA:p.PheGlu195TyrAsp'])
+    'hgvs_gn:NC_011083:murF:c.497C>A'
+
+    # hgvs c with gene name different 2
+    features = [QueryFeatureHGVSGN.create_from_id('hgvs_gn:NC_011083:murF:c.497C>A')]
+    sample_sets = sample_service_snpeff_annotations.find_sample_sets_by_features(features)
+    assert 1 == len(sample_sets)
+    assert 'hgvs_gn:NC_011083:murF:c.497C>A' in sample_sets
+    assert {sample_sh10_014.id, sample_sh14_014.id, sample_sh14_001.id} == set(sample_sets['hgvs_gn:NC_011083:murF:c.497C>A'])
+
+    # hgvs p with gene name different 2
+    features = [QueryFeatureHGVSGN.create_from_id('hgvs_gn:NC_011083:murF:p.Ala166Glu')]
+    sample_sets = sample_service_snpeff_annotations.find_sample_sets_by_features(features)
+    assert 1 == len(sample_sets)
+    assert 'hgvs_gn:NC_011083:murF:p.Ala166Glu' in sample_sets
+    assert {sample_sh10_014.id, sample_sh14_014.id, sample_sh14_001.id} == set(sample_sets['hgvs_gn:NC_011083:murF:p.Ala166Glu'])
+
+
 def test_find_sample_sets_by_features_variations_two_samples(database, sample_service, variation_service):
     sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
     sampleC = database.get_session().query(Sample).filter(Sample.name == 'SampleC').one()

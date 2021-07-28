@@ -330,7 +330,25 @@ class SampleService:
     def find_sample_sets_by_features(self, features: List[QueryFeature]) -> Dict[str, SampleSet]:
         feature_type = self._get_feature_type(features)
 
-        if issubclass(feature_type, QueryFeatureMutation):
+        if issubclass(feature_type, QueryFeatureHGVSGN):
+            # In this case where I'm querying by gene name, first convert to SPDI features before lookup
+            # TODO: it's not the most efficient to do this as a loop, but it's easier to implement right now
+            hgvs_gn_id_to_sampleset = dict()
+            for feature in features:
+                feature = cast(QueryFeatureHGVSGN, feature)
+                features_spdi = self.find_features_spdi_for_hgvsgn(feature)
+                variants_dict = self.get_variants_samples_by_variation_features(features_spdi)
+                variants_nuc_variants_samples = list(variants_dict.values())
+                first_nuc_variant_samples = variants_nuc_variants_samples.pop()
+                samples_union = first_nuc_variant_samples.sample_ids
+
+                # Handle remaining, if any
+                for nuc_variant_samples in variants_nuc_variants_samples:
+                    samples_union = samples_union.union(nuc_variant_samples.sample_ids)
+
+                hgvs_gn_id_to_sampleset[feature.id] = samples_union
+            return hgvs_gn_id_to_sampleset
+        elif issubclass(feature_type, QueryFeatureMutation):
             features = cast(List[QueryFeatureMutation], features)
             variants_dict = self.get_variants_samples_by_variation_features(features)
 
