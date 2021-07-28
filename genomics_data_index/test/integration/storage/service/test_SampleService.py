@@ -280,6 +280,21 @@ def test_find_unknown_sample_sets_by_features_variations_with_index_unknowns_mul
     assert {sampleA.id, sampleB.id, sampleC.id} == set(sample_sets[f'reference:87:3:TCG'])
 
 
+def test_find_unknown_sample_sets_by_features_hgvs(database,
+                                                   sample_service_snpeff_annotations: SampleService):
+    sample_service = sample_service_snpeff_annotations
+
+    # Test multiple HGVSGN features, should be no unknowns
+    features = [QueryFeatureHGVSGN.create_from_id('hgvs_gn:NC_011083:murF:p.Ala166Glu'),
+                QueryFeatureHGVSGN.create_from_id('hgvs_gn:NC_011083:oadA:c.582_588delTTTTGAGinsCTATGAC')
+                ]
+    sample_sets = sample_service.find_unknown_sample_sets_by_features(features)
+
+    assert 0 == len(sample_sets)
+
+    # TODO: Expand tests here. I need to add more test data to test cases where I do find unknown sample sets
+
+
 def test_find_unknown_sample_sets_by_features_variations_different_feature_definitions(database,
                                                                                        sample_service,
                                                                                        variation_service_index_unknowns):
