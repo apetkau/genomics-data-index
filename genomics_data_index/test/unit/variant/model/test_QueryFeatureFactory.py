@@ -2,6 +2,7 @@ import pytest
 
 from genomics_data_index.storage.model.QueryFeatureFactory import QueryFeatureFactory
 from genomics_data_index.storage.model.QueryFeatureHGVS import QueryFeatureHGVS
+from genomics_data_index.storage.model.QueryFeatureHGVSGN import QueryFeatureHGVSGN
 from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
 
 
@@ -36,8 +37,8 @@ def test_create_hgvs():
 
 def test_create_hgvs_gn():
     f = query_feature_factory.create_feature('hgvs_gn:NC_011083:murF:c.497C>A')
-    assert isinstance(f, QueryFeatureHGVS)
-    assert 'hgvs:NC_011083:murF:c.497C>A' == f.id
+    assert isinstance(f, QueryFeatureHGVSGN)
+    assert 'hgvs_gn:NC_011083:murF:c.497C>A' == f.id
     assert 'NC_011083' == f.sequence
     assert 'NC_011083' == f.scope
     assert 'murF' == f.gene
@@ -47,9 +48,9 @@ def test_create_hgvs_gn():
     assert f.is_nucleotide()
     assert not f.is_protein()
 
-    f = query_feature_factory.create_feature('hgvs:NC_011083:murF:p.Ala166Glu')
-    assert isinstance(f, QueryFeatureHGVS)
-    assert 'hgvs:NC_011083:murF:p.Ala166Glu' == f.id
+    f = query_feature_factory.create_feature('hgvs_gn:NC_011083:murF:p.Ala166Glu')
+    assert isinstance(f, QueryFeatureHGVSGN)
+    assert 'hgvs_gn:NC_011083:murF:p.Ala166Glu' == f.id
     assert 'NC_011083' == f.sequence
     assert 'NC_011083' == f.scope
     assert 'murF' == f.gene
