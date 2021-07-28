@@ -384,12 +384,44 @@ def test_find_features_spdi_for_hgvsgn(database, sample_service_snpeff_annotatio
     assert isinstance(features_spdi[0], QueryFeatureMutationSPDI)
     assert f'NC_011083:1125996:{len("CG")}:C' == features_spdi[0].id
 
+    # Test case where nothing if found
+    feature = QueryFeatureHGVSGN.create_from_id('hgvs_gn:NC_011083:invalid_gene:c.418delG')
+    features_spdi = sample_service_snpeff_annotations.find_features_spdi_for_hgvsgn(feature)
+    assert 0 == len(features_spdi)
+
     # Make sure only QueryFeatureHGVSGN is handled
     with pytest.raises(Exception) as execinfo:
         feature = QueryFeatureHGVS.create_from_id('hgvs:NC_011083:SEHA_RS05995:c.418delG')
         sample_service_snpeff_annotations.find_features_spdi_for_hgvsgn(feature)
 
     assert 'Cannot handle feature=hgvs:NC_011083:SEHA_RS05995:c.418delG. Not of type QueryFeatureHGVSGN' in str(execinfo.value)
+
+
+def test_find_features_spdi_for_hgvsgn_duplicate_gene(database, sample_service_snpeff_annotations_fake_duplicate_gene: SampleService):
+    # Test cases where there's a duplicate of a gene name and so I get two features from the hgvs_gn identifier
+
+    # Test hgvs_gn p
+    feature = QueryFeatureHGVSGN.create_from_id('hgvs_gn:NC_011083:murF:p.Ala166Glu')
+    features_spdi = sample_service_snpeff_annotations_fake_duplicate_gene.find_features_spdi_for_hgvsgn(feature)
+    assert 2 == len(features_spdi)
+    assert isinstance(features_spdi[0], QueryFeatureMutationSPDI)
+    assert isinstance(features_spdi[1], QueryFeatureMutationSPDI)
+    assert {'NC_011083:140658:1:A', 'NC_011083:150000:1:A'} == {f.id for f in features_spdi}
+
+    # Test hgvs_gn c
+    feature = QueryFeatureHGVSGN.create_from_id('hgvs_gn:NC_011083:murF:c.497C>A')
+    features_spdi = sample_service_snpeff_annotations_fake_duplicate_gene.find_features_spdi_for_hgvsgn(feature)
+    assert 2 == len(features_spdi)
+    assert isinstance(features_spdi[0], QueryFeatureMutationSPDI)
+    assert isinstance(features_spdi[1], QueryFeatureMutationSPDI)
+    assert {'NC_011083:140658:1:A', 'NC_011083:150000:1:A'} == {f.id for f in features_spdi}
+
+    # Test single HGVS p in same dataset
+    feature = QueryFeatureHGVSGN.create_from_id('hgvs_gn:NC_011083:SEHA_RS01460:p.Thr201Met')
+    features_spdi = sample_service_snpeff_annotations_fake_duplicate_gene.find_features_spdi_for_hgvsgn(feature)
+    assert 1 == len(features_spdi)
+    assert isinstance(features_spdi[0], QueryFeatureMutationSPDI)
+    assert 'NC_011083:203200:1:T' == features_spdi[0].id
 
 
 def test_find_sample_sets_by_features_variations_hgvs(database, sample_service_snpeff_annotations):

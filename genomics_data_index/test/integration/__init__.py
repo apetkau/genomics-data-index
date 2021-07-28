@@ -85,6 +85,10 @@ snpeff_sample_vcfs = {
     'SH14-014': snpeff_data_dir / 'SH14-014.vcf.gz',
 }
 
+snpeff_sample_vcfs_fake_dup = {
+    'SH10-014-dup-gene-variant': snpeff_data_dir / 'SH10-014-dup-gene-variant.vcf.gz',
+}
+
 
 def expand_list_by(list_in: List[str], number: int) -> List[str]:
     new_list = []
