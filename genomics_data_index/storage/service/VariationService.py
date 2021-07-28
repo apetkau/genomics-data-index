@@ -11,6 +11,7 @@ from genomics_data_index.storage.io.SampleDataPackage import SampleDataPackage
 from genomics_data_index.storage.io.mutation.NucleotideSampleData import NucleotideSampleData
 from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
 from genomics_data_index.storage.io.mutation.VariationFile import VariationFile
+from genomics_data_index.storage.model.QueryFeatureHGVSGN import QueryFeatureHGVSGN
 from genomics_data_index.storage.io.mutation.VcfVariantsReader import VcfVariantsReader
 from genomics_data_index.storage.model import NUCLEOTIDE_UNKNOWN_TYPE
 from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
@@ -138,6 +139,20 @@ class VariationService(FeatureService):
         for mutation_id in id_to_nucleotide_variants_samples:
             variants_samples = id_to_nucleotide_variants_samples[mutation_id]
 
+            if variants_samples.id_hgvs_c is not None:
+                id_hgvs_gn_c = QueryFeatureHGVSGN(sequence_name=variants_samples.sequence,
+                                                  gene=variants_samples.annotation_gene_name,
+                                                  variant=variants_samples.annotation_hgvs_c).id
+            else:
+                id_hgvs_gn_c = pd.NA
+
+            if variants_samples.id_hgvs_p is not None:
+                id_hgvs_gn_p = QueryFeatureHGVSGN(sequence_name=variants_samples.sequence,
+                                                  gene=variants_samples.annotation_gene_name,
+                                                  variant=variants_samples.annotation_hgvs_p).id
+            else:
+                id_hgvs_gn_p = pd.NA
+
             annotation_data.append([mutation_id,
                                     variants_samples.annotation if variants_samples.annotation is not None else pd.NA,
                                     variants_samples.annotation_impact if variants_samples.annotation_impact is not None else pd.NA,
@@ -149,6 +164,8 @@ class VariationService(FeatureService):
                                     variants_samples.annotation_hgvs_p if variants_samples.annotation_hgvs_p is not None else pd.NA,
                                     variants_samples.id_hgvs_c if variants_samples.id_hgvs_c is not None else pd.NA,
                                     variants_samples.id_hgvs_p if variants_samples.id_hgvs_p is not None else pd.NA,
+                                    id_hgvs_gn_c,
+                                    id_hgvs_gn_p,
                                     ])
 
         annotation_df = pd.DataFrame(data=annotation_data,
@@ -163,6 +180,8 @@ class VariationService(FeatureService):
                                               'HGVS.p',
                                               'ID_HGVS.c',
                                               'ID_HGVS.p',
+                                              'ID_HGVS_GN.c',
+                                              'ID_HGVS_GN.p',
                                               ]).set_index('Mutation')
 
         return features_df.merge(annotation_df, how='left', left_index=True, right_index=True)

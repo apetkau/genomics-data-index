@@ -44,7 +44,19 @@ class SampleService:
         return samples
 
     def feature_explode_unknown(self, feature: QueryFeature) -> List[QueryFeature]:
-        if isinstance(feature, QueryFeatureHGVS):
+        if isinstance(feature, QueryFeatureHGVSGN):
+            features_spdi = self.find_features_spdi_for_hgvsgn(feature)
+
+            if len(features_spdi) == 0:
+                raise FeatureExplodeUnknownError(f'feature={feature} is of type HGVSGN but the corresponding SPDI '
+                                                 f'feature does not exist in the database. Cannot convert to unknown '
+                                                 f'SPDI representation.')
+            else:
+                unknown_features = []
+                for feature in features_spdi:
+                    unknown_features.extend(feature.to_unknown_explode())
+                return unknown_features
+        elif isinstance(feature, QueryFeatureHGVS):
             if feature.is_nucleotide():
                 variants_hgvs = self._connection.get_session().query(NucleotideVariantsSamples) \
                     .filter(NucleotideVariantsSamples._id_hgvs_c == feature.id) \
@@ -339,12 +351,16 @@ class SampleService:
                 features_spdi = self.find_features_spdi_for_hgvsgn(feature)
                 variants_dict = self.get_variants_samples_by_variation_features(features_spdi)
                 variants_nuc_variants_samples = list(variants_dict.values())
-                first_nuc_variant_samples = variants_nuc_variants_samples.pop()
-                samples_union = first_nuc_variant_samples.sample_ids
 
-                # Handle remaining, if any
-                for nuc_variant_samples in variants_nuc_variants_samples:
-                    samples_union = samples_union.union(nuc_variant_samples.sample_ids)
+                if len(variants_nuc_variants_samples) == 0:
+                    samples_union = SampleSet.create_empty()
+                else:
+                    first_nuc_variant_samples = variants_nuc_variants_samples.pop()
+                    samples_union = first_nuc_variant_samples.sample_ids
+
+                    # Handle remaining, if any
+                    for nuc_variant_samples in variants_nuc_variants_samples:
+                        samples_union = samples_union.union(nuc_variant_samples.sample_ids)
 
                 hgvs_gn_id_to_sampleset[feature.id] = samples_union
             return hgvs_gn_id_to_sampleset

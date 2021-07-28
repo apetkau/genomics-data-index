@@ -482,7 +482,6 @@ def test_find_sample_sets_by_features_variations_hgvs_gn(database, sample_servic
     assert 1 == len(sample_sets)
     assert 'hgvs_gn:NC_011083:oadA:p.PheGlu195TyrAsp' in sample_sets
     assert {sample_sh10_014.id, sample_sh14_001.id} == set(sample_sets['hgvs_gn:NC_011083:oadA:p.PheGlu195TyrAsp'])
-    'hgvs_gn:NC_011083:murF:c.497C>A'
 
     # hgvs c with gene name different 2
     features = [QueryFeatureHGVSGN.create_from_id('hgvs_gn:NC_011083:murF:c.497C>A')]
@@ -938,7 +937,42 @@ def test_feature_explode_unknown(sample_service_snpeff_annotations):
         sample_service.feature_explode_unknown(
             QueryFeatureHGVS.create_from_id('hgvs:NC_011083:SEHA_RS21795:p.Lys266Ala'))
 
-    assert 'is of type HGVS but the corresponding SPDI feature' in str(execinfo.value)
+    assert 'feature=hgvs:NC_011083:SEHA_RS21795:p.Lys266Ala is of type HGVS' \
+           ' but the corresponding SPDI feature does not exist in the database' in str(execinfo.value)
+
+    # HGVSGN.c and SNV
+    unknowns = sample_service.feature_explode_unknown(
+        QueryFeatureHGVSGN.create_from_id('hgvs_gn:NC_011083:murF:c.497C>A'))
+    assert 1 == len(unknowns)
+    assert ['NC_011083:140658:1:?'] == [u.id for u in unknowns]
+
+    # HGVSGN.p and SNV
+    unknowns = sample_service.feature_explode_unknown(
+        QueryFeatureHGVSGN.create_from_id('hgvs_gn:NC_011083:murF:p.Ala166Glu'))
+    assert 1 == len(unknowns)
+    assert ['NC_011083:140658:1:?'] == [u.id for u in unknowns]
+
+    # HGVSGN.c and complex
+    unknowns = sample_service.feature_explode_unknown(
+        QueryFeatureHGVSGN.create_from_id('hgvs_gn:NC_011083:oadA:c.582_588delTTTTGAGinsCTATGAC'))
+    assert 7 == len('TTTTGAG')
+    assert 7 == len(unknowns)
+    assert [f'NC_011083:{3535656 + offset}:1:?' for offset in range(7)] == [u.id for u in unknowns]
+
+    # HGVSGN.p and complex
+    unknowns = sample_service.feature_explode_unknown(
+        QueryFeatureHGVSGN.create_from_id('hgvs_gn:NC_011083:oadA:p.PheGlu195TyrAsp'))
+    assert 7 == len('TTTTGAG')
+    assert 7 == len(unknowns)
+    assert [f'NC_011083:{3535656 + offset}:1:?' for offset in range(7)] == [u.id for u in unknowns]
+
+    # Make sure exception is thrown when it cannot find HGVSGN identifier
+    with pytest.raises(FeatureExplodeUnknownError) as execinfo:
+        sample_service.feature_explode_unknown(
+            QueryFeatureHGVSGN.create_from_id('hgvs_gn:NC_011083:invalid_gene:p.PheGlu195TyrAsp'))
+
+    assert 'feature=hgvs_gn:NC_011083:invalid_gene:p.PheGlu195TyrAsp is of type HGVSGN' \
+           ' but the corresponding SPDI feature does not exist in the database' in str(execinfo.value)
 
 
 def test_get_sample_set_by_names(database, sample_service: SampleService, variation_service):
