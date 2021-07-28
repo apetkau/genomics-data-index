@@ -14,9 +14,8 @@ from genomics_data_index.api.query.impl.TreeSamplesQueryFactory import TreeSampl
 from genomics_data_index.configuration.connector import DataIndexConnection
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.QueryFeature import QueryFeature
-from genomics_data_index.storage.model.QueryFeatureHGVS import QueryFeatureHGVS
+from genomics_data_index.storage.model.QueryFeatureFactory import QueryFeatureFactory
 from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
-from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
 from genomics_data_index.storage.service.KmerService import KmerService
 
 logger = logging.getLogger(__name__)
@@ -59,6 +58,7 @@ class SamplesQueryIndex(SamplesQuery):
         self._sample_set = sample_set
         self._unknown_set = unknown_set
         self._queries_collection = queries_collection
+        self._query_feature_factory = QueryFeatureFactory.instance()
 
     @property
     def universe_set(self) -> SampleSet:
@@ -402,10 +402,7 @@ class SamplesQueryIndex(SamplesQuery):
         elif kind is None:
             raise Exception(f'property=[{property}] is not of type QueryFeature so must set "kind" parameter')
         elif kind == 'mutation' or kind == 'mutations':
-            if property.startswith('hgvs:'):
-                query_feature = QueryFeatureHGVS.create_from_id(property)
-            else:
-                query_feature = QueryFeatureMutationSPDI(property)
+            query_feature = self._query_feature_factory.create_feature(property)
         elif kind == 'mlst':
             query_feature = QueryFeatureMLST(property)
         else:

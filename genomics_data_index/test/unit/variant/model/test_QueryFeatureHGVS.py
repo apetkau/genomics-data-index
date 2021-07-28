@@ -1,3 +1,5 @@
+import pytest
+
 from genomics_data_index.storage.model.QueryFeatureHGVS import QueryFeatureHGVS
 
 
@@ -23,6 +25,12 @@ def test_create_from_id():
     assert f.has_gene()
     assert not f.is_nucleotide()
     assert f.is_protein()
+
+    # Test to make sure error if prefix is incorrect
+    with pytest.raises(Exception) as execinfo:
+        QueryFeatureHGVS.create_from_id('hgvs_gn:NC_011083:SEHA_RS01180:c.497C>A')
+
+    assert 'hgvs_id=[hgvs_gn:NC_011083:SEHA_RS01180:c.497C>A] must start with [hgvs:]' in str(execinfo)
 
 
 def test_create():

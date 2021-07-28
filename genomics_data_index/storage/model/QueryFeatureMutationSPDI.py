@@ -98,7 +98,7 @@ class QueryFeatureMutationSPDI(QueryFeatureMutation):
         return self.alt
 
     def is_unknown(self) -> bool:
-        return False
+        return self.insertion == NUCLEOTIDE_UNKNOWN
 
     def to_unknown(self) -> QueryFeature:
         return QueryFeatureMutationSPDI(':'.join([

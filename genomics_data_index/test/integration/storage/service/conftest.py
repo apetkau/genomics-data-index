@@ -11,6 +11,7 @@ from genomics_data_index.test.integration import sample_dirs_AB, sample_dirs_C
 from genomics_data_index.test.integration import mlst_file_single_scheme, basic_mlst_file, mlst_file_unknown
 from genomics_data_index.test.integration import mlst_file_single_scheme2, mlst_file_single_scheme3
 from genomics_data_index.test.integration import sourmash_signatures, snpeff_sample_vcfs, reference_file_snpeff
+from genomics_data_index.test.integration import snpeff_sample_vcfs_fake_dup
 from genomics_data_index.storage.service import DatabaseConnection
 from genomics_data_index.storage.service.ReferenceService import ReferenceService
 from genomics_data_index.storage.service.VariationService import VariationService
@@ -107,6 +108,15 @@ def snpeff_nucleotide_data_package() -> NucleotideSampleDataPackage:
 
 
 @pytest.fixture
+def snpeff_nucleotide_data_package_fake_duplicate_gene() -> NucleotideSampleDataPackage:
+    tmp_dir = Path(tempfile.mkdtemp())
+    return NucleotideSampleDataPackage.create_from_sequence_masks(sample_vcf_map=snpeff_sample_vcfs_fake_dup,
+                                                                  masked_genomic_files_map=None,
+                                                                  sample_files_processor=SerialSampleFilesProcessor(
+                                                                      tmp_dir))
+
+
+@pytest.fixture
 def snpeff_nucleotide_data_package_parallel_variants() -> NucleotideSampleDataPackage:
     tmp_dir = Path(tempfile.mkdtemp())
     variants_processor_factory = MultipleProcessVcfVariantsTableProcessorFactory(ncores=2)
@@ -146,6 +156,22 @@ def sample_service_snpeff_annotations(database, reference_service_with_snpeff_da
                                    sql_select_limit=500)
     var_service.insert(feature_scope_name='NC_011083',
                        data_package=snpeff_nucleotide_data_package)
+    return sample_service
+
+
+@pytest.fixture
+def sample_service_snpeff_annotations_fake_duplicate_gene(database, reference_service_with_snpeff_data,
+                                                          snpeff_nucleotide_data_package_fake_duplicate_gene,
+                                                          sample_service,
+                                                          filesystem_storage) -> SampleService:
+    var_service = VariationService(database_connection=database,
+                                   reference_service=reference_service_with_snpeff_data,
+                                   sample_service=sample_service,
+                                   variation_dir=filesystem_storage.variation_dir,
+                                   index_unknown_missing=False,
+                                   sql_select_limit=500)
+    var_service.insert(feature_scope_name='NC_011083',
+                       data_package=snpeff_nucleotide_data_package_fake_duplicate_gene)
     return sample_service
 
 

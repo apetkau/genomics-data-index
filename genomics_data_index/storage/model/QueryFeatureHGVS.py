@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from typing import Optional, List
+from typing import Optional, List, Tuple
 
 from genomics_data_index.storage.model.QueryFeature import QueryFeature
 from genomics_data_index.storage.model.QueryFeatureMutation import QueryFeatureMutation
 
 
 class QueryFeatureHGVS(QueryFeatureMutation):
+    PREFIX = 'hgvs:'
 
     def __init__(self, sequence_name: str, gene: Optional[str], variant: str):
         super().__init__()
@@ -36,6 +37,10 @@ class QueryFeatureHGVS(QueryFeatureMutation):
         return self.has_id() and self._variant.startswith('p.')
 
     @property
+    def prefix(self) -> str:
+        return self.PREFIX
+
+    @property
     def sequence(self) -> str:
         return self._sequence_name
 
@@ -50,7 +55,7 @@ class QueryFeatureHGVS(QueryFeatureMutation):
     @property
     def id(self) -> Optional[str]:
         if self.has_id():
-            return f'hgvs:{self._hgvs_id}'
+            return f'{self.prefix}{self._hgvs_id}'
         else:
             return None
 
@@ -76,19 +81,14 @@ class QueryFeatureHGVS(QueryFeatureMutation):
         return QueryFeatureHGVS(sequence_name=sequence_name, gene=gene, variant=variant)
 
     @classmethod
-    def create_from_id(cls, hgvs_id: str) -> QueryFeatureHGVS:
-        """
-        Creates a new HGVS feature. The identifier is in the format hgvs:[sequence]:[gene]:[variant] or
-        hgvs:[sequence]:[variant]. This roughly corresponds to the HGVS format <http://varnomen.hgvs.org/>.
-        Specifically, the [gene]:[variant] (or [reference]:[variant]) part corresponds to the HGVS identifier.
-        I prefix the identifier with the string 'hgvs:' to indicate it is an HGVS identifier. I also include
-        the reference genome name in addition to the gene name in cases where the variant is given in gene coordinates.
-        :param hgvs_id: The (modified) HGVS identifier.
-        """
-        if hgvs_id.startswith(f'hgvs{cls.SPLIT_CHAR}'):
-            hgvs_id_strip = hgvs_id[len(f'hgvs{cls.SPLIT_CHAR}'):]
+    def split_id(cls, hgvs_id: str, prefix: str = None) -> Tuple[str, str, str]:
+        if prefix is None:
+            prefix = cls.PREFIX
+
+        if hgvs_id.startswith(f'{prefix}'):
+            hgvs_id_strip = hgvs_id[len(f'{prefix}'):]
         else:
-            hgvs_id_strip = hgvs_id
+            raise Exception(f'hgvs_id=[{hgvs_id}] must start with [{prefix}]')
 
         tokens = hgvs_id_strip.split(cls.SPLIT_CHAR)
         if len(tokens) == 2:
@@ -101,6 +101,21 @@ class QueryFeatureHGVS(QueryFeatureMutation):
             variant = tokens[2]
         else:
             raise Exception(f'Invalid number of items in hgvs_id=[{hgvs_id}].'
-                            f' Should be in the form [hgvs:reference:gene:variant] or [hgvs:reference:variant].')
+                            f' Should be in the form [{prefix}reference:gene:variant] or [{prefix}reference:variant].')
 
+        return sequence_name, gene, variant
+
+    @classmethod
+    def create_from_id(cls, hgvs_id: str, prefix: str = None) -> QueryFeatureHGVS:
+        """
+        Creates a new HGVS feature. The identifier is in the format hgvs:[sequence]:[gene]:[variant] or
+        hgvs:[sequence]:[variant]. This roughly corresponds to the HGVS format <http://varnomen.hgvs.org/>.
+        Specifically, the [gene]:[variant] (or [reference]:[variant]) part corresponds to the HGVS identifier.
+        I prefix the identifier with the string 'hgvs:' to indicate it is an HGVS identifier. I also include
+        the reference genome name in addition to the gene name in cases where the variant is given in gene coordinates.
+        :param hgvs_id: The (modified) HGVS identifier.
+        :param prefix: The prefix to use for this identifier. Used to override prefix for HGVSGN
+        :return: A new HGVS query feature.
+        """
+        sequence_name, gene, variant = cls.split_id(hgvs_id, prefix=prefix)
         return QueryFeatureHGVS(sequence_name=sequence_name, gene=gene, variant=variant)

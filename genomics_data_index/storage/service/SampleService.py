@@ -7,6 +7,7 @@ from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.NucleotideMutationTranslater import NucleotideMutationTranslater
 from genomics_data_index.storage.model.QueryFeature import QueryFeature
 from genomics_data_index.storage.model.QueryFeatureHGVS import QueryFeatureHGVS
+from genomics_data_index.storage.model.QueryFeatureHGVSGN import QueryFeatureHGVSGN
 from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
 from genomics_data_index.storage.model.QueryFeatureMutation import QueryFeatureMutation
 from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
@@ -43,7 +44,19 @@ class SampleService:
         return samples
 
     def feature_explode_unknown(self, feature: QueryFeature) -> List[QueryFeature]:
-        if isinstance(feature, QueryFeatureHGVS):
+        if isinstance(feature, QueryFeatureHGVSGN):
+            features_spdi = self.find_features_spdi_for_hgvsgn(feature)
+
+            if len(features_spdi) == 0:
+                raise FeatureExplodeUnknownError(f'feature={feature} is of type HGVSGN but the corresponding SPDI '
+                                                 f'feature does not exist in the database. Cannot convert to unknown '
+                                                 f'SPDI representation.')
+            else:
+                unknown_features = []
+                for feature in features_spdi:
+                    unknown_features.extend(feature.to_unknown_explode())
+                return unknown_features
+        elif isinstance(feature, QueryFeatureHGVS):
             if feature.is_nucleotide():
                 variants_hgvs = self._connection.get_session().query(NucleotideVariantsSamples) \
                     .filter(NucleotideVariantsSamples._id_hgvs_c == feature.id) \
@@ -67,6 +80,25 @@ class SampleService:
                 return unknown_features
         else:
             return feature.to_unknown_explode()
+
+    def find_features_spdi_for_hgvsgn(self, feature: QueryFeatureHGVSGN) -> List[QueryFeatureMutationSPDI]:
+        if not isinstance(feature, QueryFeatureHGVSGN):
+            raise Exception(f'Cannot handle feature={feature}. Not of type {QueryFeatureHGVSGN.__name__}')
+
+        query = self._connection.get_session().query(NucleotideVariantsSamples).filter(
+            NucleotideVariantsSamples.sequence == feature.sequence)
+
+        if feature.has_gene():
+            query = query.filter(NucleotideVariantsSamples.annotation_gene_name == feature.gene)
+
+        if feature.is_nucleotide():
+            query = query.filter(NucleotideVariantsSamples.annotation_hgvs_c == feature.variant)
+        elif feature.is_protein():
+            query = query.filter(NucleotideVariantsSamples.annotation_hgvs_p == feature.variant)
+        else:
+            raise Exception(f'feature={feature} is neither protein nor nucleotide')
+
+        return [QueryFeatureMutationSPDI(s.spdi) for s in query.all()]
 
     def get_samples_with_mlst_alleles(self, scheme_name: str) -> List[Sample]:
         """
@@ -206,6 +238,8 @@ class SampleService:
                 else:
                     standardized_features_to_input_feature[dbf.id] = [feature.id]
                 standardized_features_ids.add(dbf.id)
+            elif isinstance(feature, QueryFeatureHGVSGN):
+                pass
             elif isinstance(feature, QueryFeatureHGVS):
                 if feature.is_nucleotide():
                     standardized_feature_hgvs_c_ids.add(feature.id)
@@ -308,7 +342,29 @@ class SampleService:
     def find_sample_sets_by_features(self, features: List[QueryFeature]) -> Dict[str, SampleSet]:
         feature_type = self._get_feature_type(features)
 
-        if issubclass(feature_type, QueryFeatureMutation):
+        if issubclass(feature_type, QueryFeatureHGVSGN):
+            # In this case where I'm querying by gene name, first convert to SPDI features before lookup
+            # TODO: it's not the most efficient to do this as a loop, but it's easier to implement right now
+            hgvs_gn_id_to_sampleset = dict()
+            for feature in features:
+                feature = cast(QueryFeatureHGVSGN, feature)
+                features_spdi = self.find_features_spdi_for_hgvsgn(feature)
+                variants_dict = self.get_variants_samples_by_variation_features(features_spdi)
+                variants_nuc_variants_samples = list(variants_dict.values())
+
+                if len(variants_nuc_variants_samples) == 0:
+                    samples_union = SampleSet.create_empty()
+                else:
+                    first_nuc_variant_samples = variants_nuc_variants_samples.pop()
+                    samples_union = first_nuc_variant_samples.sample_ids
+
+                    # Handle remaining, if any
+                    for nuc_variant_samples in variants_nuc_variants_samples:
+                        samples_union = samples_union.union(nuc_variant_samples.sample_ids)
+
+                hgvs_gn_id_to_sampleset[feature.id] = samples_union
+            return hgvs_gn_id_to_sampleset
+        elif issubclass(feature_type, QueryFeatureMutation):
             features = cast(List[QueryFeatureMutation], features)
             variants_dict = self.get_variants_samples_by_variation_features(features)
 

@@ -1179,16 +1179,226 @@ def test_query_single_mutation_two_samples_kmer_one_sample(loaded_database_conne
     assert 9 == len(query_result.universe_set)
 
 
-def test_query_single_mutation_default_kind(loaded_database_connection: DataIndexConnection):
+def test_query_hasa_string_features(loaded_database_connection: DataIndexConnection):
     db = loaded_database_connection.database
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
     sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
 
-    # Should default to kind='mutation'
+    # Test default hasa SPDI
     query_result = query(loaded_database_connection).hasa('reference:839:C:G')
     assert 2 == len(query_result)
     assert {sampleB.id, sampleC.id} == set(query_result.sample_set)
+    assert 0 == len(query_result.unknown_set)
     assert 9 == len(query_result.universe_set)
+
+    # Test HGVS (should return no results since snpeff annotations don't exist)
+    query_result = query(loaded_database_connection).hasa('hgvs:reference:n.839C>G')
+    assert 0 == len(query_result)
+    assert 0 == len(query_result.unknown_set)
+    assert 9 == len(query_result.universe_set)
+
+
+def test_query_hasa_string_features_snpeff(loaded_database_connection_annotations: DataIndexConnection):
+    db = loaded_database_connection_annotations.database
+    sample_sh14_001 = db.get_session().query(Sample).filter(Sample.name == 'SH14-001').one()
+    sample_sh14_014 = db.get_session().query(Sample).filter(Sample.name == 'SH14-014').one()
+    sample_sh10_014 = db.get_session().query(Sample).filter(Sample.name == 'SH10-014').one()
+
+    query_result = query(loaded_database_connection_annotations)
+
+    # Test HGVS with amino acid notation
+    query_result_test = query_result.hasa('hgvs:NC_011083:SEHA_RS04550:p.Ile224fs')
+    assert 2 == len(query_result_test)
+    assert {sample_sh14_001.id, sample_sh14_014.id} == set(query_result_test.sample_set)
+    assert 0 == len(query_result_test.unknown_set)
+    assert 3 == len(query_result_test.universe_set)
+
+    # Test HGVS nucleotide coding notation
+    query_result_test = query_result.hasa('hgvs:NC_011083:SEHA_RS04550:c.670dupA')
+    assert 2 == len(query_result_test)
+    assert {sample_sh14_001.id, sample_sh14_014.id} == set(query_result_test.sample_set)
+    assert 0 == len(query_result_test.unknown_set)
+    assert 3 == len(query_result_test.universe_set)
+
+    # Test SPDI deletion sequence
+    query_result_test = query_result.hasa('NC_011083:835147:C:CA')
+    assert 2 == len(query_result_test)
+    assert {sample_sh14_001.id, sample_sh14_014.id} == set(query_result_test.sample_set)
+    assert 0 == len(query_result_test.unknown_set)
+    assert 3 == len(query_result_test.universe_set)
+
+    # Test SPDI deletion integer
+    query_result_test = query_result.hasa('NC_011083:835147:1:CA')
+    assert 2 == len(query_result_test)
+    assert {sample_sh14_001.id, sample_sh14_014.id} == set(query_result_test.sample_set)
+    assert 0 == len(query_result_test.unknown_set)
+    assert 3 == len(query_result_test.universe_set)
+
+    # Test HGVS, intergenic region
+    query_result_test = query_result.hasa('hgvs:NC_011083:n.298943A>T')
+    assert 3 == len(query_result_test)
+    assert {sample_sh14_001.id, sample_sh14_014.id, sample_sh10_014.id} == set(query_result_test.sample_set)
+    assert 0 == len(query_result_test.unknown_set)
+    assert 3 == len(query_result_test.universe_set)
+
+    # Test SPDI, sequence and intergenic region
+    query_result_test = query_result.hasa('NC_011083:298943:A:T')
+    assert 3 == len(query_result_test)
+    assert {sample_sh14_001.id, sample_sh14_014.id, sample_sh10_014.id} == set(query_result_test.sample_set)
+    assert 0 == len(query_result_test.unknown_set)
+    assert 3 == len(query_result_test.universe_set)
+
+    # Test SPDI, deletion integer and intergenic region
+    query_result_test = query_result.hasa('NC_011083:298943:1:T')
+    assert 3 == len(query_result_test)
+    assert {sample_sh14_001.id, sample_sh14_014.id, sample_sh10_014.id} == set(query_result_test.sample_set)
+    assert 0 == len(query_result_test.unknown_set)
+    assert 3 == len(query_result_test.universe_set)
+
+    # Test HGVS large deletion with amino acid notation
+    query_result_test = query_result.hasa('hgvs:NC_011083:SEHA_RS15905:p.Asp140_His155del')
+    assert 1 == len(query_result_test)
+    assert {sample_sh10_014.id} == set(query_result_test.sample_set)
+    assert 0 == len(query_result_test.unknown_set)
+    assert 3 == len(query_result_test.universe_set)
+
+    # Test HGVS large deletion with nucleotide coding notation
+    query_result_test = query_result.hasa(
+        'hgvs:NC_011083:SEHA_RS15905:c.417_464delCGACCACGACCACGACCACGACCACGACCACGACCACGACCACGACCA')
+    assert 1 == len(query_result_test)
+    assert {sample_sh10_014.id} == set(query_result_test.sample_set)
+    assert 0 == len(query_result_test.unknown_set)
+    assert 3 == len(query_result_test.universe_set)
+
+    # Test SPDI, large deletion sequence
+    query_result_test = query_result.hasa('NC_011083:3167187:AACCACGACCACGACCACGACCACGACCACGACCACGACCACGACCACG:A')
+    assert 1 == len(query_result_test)
+    assert {sample_sh10_014.id} == set(query_result_test.sample_set)
+    assert 0 == len(query_result_test.unknown_set)
+    assert 3 == len(query_result_test.universe_set)
+
+    # Test SPDI, large deletion integer
+    query_result_test = query_result.hasa(
+        f'NC_011083:3167187:{len("AACCACGACCACGACCACGACCACGACCACGACCACGACCACGACCACG")}:A')
+    assert 1 == len(query_result_test)
+    assert {sample_sh10_014.id} == set(query_result_test.sample_set)
+    assert 0 == len(query_result_test.unknown_set)
+    assert 3 == len(query_result_test.universe_set)
+
+    # Test HGVS smaller deletion in same region with amino acid notation
+    query_result_test = query_result.hasa('hgvs:NC_011083:SEHA_RS15905:p.Asp144_His155del')
+    assert 2 == len(query_result_test)
+    assert {sample_sh14_001.id, sample_sh14_014.id} == set(query_result_test.sample_set)
+    assert 0 == len(query_result_test.unknown_set)
+    assert 3 == len(query_result_test.universe_set)
+
+    # Test HGVS smaller deletion in same region with nucleotide coding notation
+    query_result_test = query_result.hasa(
+        'hgvs:NC_011083:SEHA_RS15905:c.429_464delCGACCACGACCACGACCACGACCACGACCACGACCA')
+    assert 2 == len(query_result_test)
+    assert {sample_sh14_001.id, sample_sh14_014.id} == set(query_result_test.sample_set)
+    assert 0 == len(query_result_test.unknown_set)
+    assert 3 == len(query_result_test.universe_set)
+
+    # Test SPDI, smaller deletion in same region sequence
+    query_result_test = query_result.hasa('NC_011083:3167187:AACCACGACCACGACCACGACCACGACCACGACCACG:A')
+    assert 2 == len(query_result_test)
+    assert {sample_sh14_001.id, sample_sh14_014.id} == set(query_result_test.sample_set)
+    assert 0 == len(query_result_test.unknown_set)
+    assert 3 == len(query_result_test.universe_set)
+
+    # Test SPDI, smaller deletion in same region integer
+    query_result_test = query_result.hasa(f'NC_011083:3167187:{len("AACCACGACCACGACCACGACCACGACCACGACCACG")}:A')
+    assert 2 == len(query_result_test)
+    assert {sample_sh14_001.id, sample_sh14_014.id} == set(query_result_test.sample_set)
+    assert 0 == len(query_result_test.unknown_set)
+    assert 3 == len(query_result_test.universe_set)
+
+    # Test HGVSGN.c single mutation
+    query_result_test = query_result.hasa('hgvs_gn:NC_011083:murF:c.497C>A')
+    assert 3 == len(query_result_test)
+    assert {sample_sh10_014.id, sample_sh14_001.id, sample_sh14_014.id} == set(query_result_test.sample_set)
+    assert 0 == len(query_result_test.unknown_set)
+    assert 3 == len(query_result_test.universe_set)
+
+    # Test HGVSGN.p single mutation
+    query_result_test = query_result.hasa('hgvs_gn:NC_011083:murF:p.Ala166Glu')
+    assert 3 == len(query_result_test)
+    assert {sample_sh10_014.id, sample_sh14_001.id, sample_sh14_014.id} == set(query_result_test.sample_set)
+    assert 0 == len(query_result_test.unknown_set)
+    assert 3 == len(query_result_test.universe_set)
+
+    # Test HGVSGN.c single mutation 2 results
+    query_result_test = query_result.hasa('hgvs_gn:NC_011083:oadA:c.609T>C')
+    assert 2 == len(query_result_test)
+    assert {sample_sh10_014.id, sample_sh14_001.id} == set(query_result_test.sample_set)
+    assert 0 == len(query_result_test.unknown_set)
+    assert 3 == len(query_result_test.universe_set)
+
+    # Test HGVSGN.p single mutation 2 results
+    query_result_test = query_result.hasa('hgvs_gn:NC_011083:oadA:p.Cys203Cys')
+    assert 2 == len(query_result_test)
+    assert {sample_sh10_014.id, sample_sh14_001.id} == set(query_result_test.sample_set)
+    assert 0 == len(query_result_test.unknown_set)
+    assert 3 == len(query_result_test.universe_set)
+
+    # Test HGVS.c single mutation 2 results
+    query_result_test = query_result.hasa('hgvs:NC_011083:SEHA_RS17780:c.609T>C')
+    assert 2 == len(query_result_test)
+    assert {sample_sh10_014.id, sample_sh14_001.id} == set(query_result_test.sample_set)
+    assert 0 == len(query_result_test.unknown_set)
+    assert 3 == len(query_result_test.universe_set)
+
+    # Test HGVS.c single mutation 2 results
+    query_result_test = query_result.hasa('hgvs:NC_011083:SEHA_RS17780:p.Cys203Cys')
+    assert 2 == len(query_result_test)
+    assert {sample_sh10_014.id, sample_sh14_001.id} == set(query_result_test.sample_set)
+    assert 0 == len(query_result_test.unknown_set)
+    assert 3 == len(query_result_test.universe_set)
+
+    # Test equivalent SPDI identifier for above
+    query_result_test = query_result.hasa('NC_011083:3535635:A:G')
+    assert 2 == len(query_result_test)
+    assert {sample_sh10_014.id, sample_sh14_001.id} == set(query_result_test.sample_set)
+    assert 0 == len(query_result_test.unknown_set)
+    assert 3 == len(query_result_test.universe_set)
+
+
+def test_query_hasa_string_features_snpeff_duplicate_genes(
+        loaded_database_connection_annotations_duplicate_genes: DataIndexConnection):
+    db = loaded_database_connection_annotations_duplicate_genes.database
+    sample1 = db.get_session().query(Sample).filter(Sample.name == 'SH10-014-dup-gene-variant').one()
+    sample2 = db.get_session().query(Sample).filter(Sample.name == 'SH10-014-dup-gene-variant-2').one()
+
+    query_result = query(loaded_database_connection_annotations_duplicate_genes)
+
+    # Test HGVSGN.c single mutation but there are two different copies of murF gene and so query should investigate both
+    query_result_test = query_result.hasa('hgvs_gn:NC_011083:murF:c.497C>A')
+    assert 2 == len(query_result_test)
+    assert {sample1.id, sample2.id} == set(query_result_test.sample_set)
+    assert 0 == len(query_result_test.unknown_set)
+    assert 2 == len(query_result_test.universe_set)
+
+    # Test HGVSGN.p single mutation but there are two different copies of murF gene and so query should investigate both
+    query_result_test = query_result.hasa('hgvs_gn:NC_011083:murF:p.Ala166Glu')
+    assert 2 == len(query_result_test)
+    assert {sample1.id, sample2.id} == set(query_result_test.sample_set)
+    assert 0 == len(query_result_test.unknown_set)
+    assert 2 == len(query_result_test.universe_set)
+
+    # Test HGVS.c single mutation which, because it's selecting by locus identifier which is unique, should give 1 result
+    query_result_test = query_result.hasa('hgvs:NC_011083:SEHA_RS01180:c.497C>A')
+    assert 1 == len(query_result_test)
+    assert {sample1.id} == set(query_result_test.sample_set)
+    assert 0 == len(query_result_test.unknown_set)
+    assert 2 == len(query_result_test.universe_set)
+
+    # Test HGVS.p single mutation which, because it's selecting by locus identifier which is unique, should give 1 result
+    query_result_test = query_result.hasa('hgvs:NC_011083:SEHA_RS01180:p.Ala166Glu')
+    assert 1 == len(query_result_test)
+    assert {sample1.id} == set(query_result_test.sample_set)
+    assert 0 == len(query_result_test.unknown_set)
+    assert 2 == len(query_result_test.universe_set)
 
 
 def test_query_single_mutation_no_results_is_empty(loaded_database_connection: DataIndexConnection):
@@ -3156,7 +3366,7 @@ def test_summary_features_kindmutations_annotations(loaded_database_connection_a
     assert ['Sequence', 'Position', 'Deletion', 'Insertion',
             'Count', 'Total', 'Percent', 'Annotation', 'Annotation_Impact',
             'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
-            'HGVS.c', 'HGVS.p', 'ID_HGVS.c', 'ID_HGVS.p'] == list(mutations_df.columns)
+            'HGVS.c', 'HGVS.p', 'ID_HGVS.c', 'ID_HGVS.p', 'ID_HGVS_GN.c', 'ID_HGVS_GN.p'] == list(mutations_df.columns)
     assert 139 == len(mutations_df)
 
     ## Convert percent to int to make it easier to compare in assert statements
@@ -3166,14 +3376,16 @@ def test_summary_features_kindmutations_annotations(loaded_database_connection_a
     assert ['NC_011083', 140658, 'C', 'A', 1, 1, 100,
             'missense_variant', 'MODERATE', 'murF', 'SEHA_RS01180', 'transcript', 'protein_coding',
             'c.497C>A', 'p.Ala166Glu',
-            'hgvs:NC_011083:SEHA_RS01180:c.497C>A', 'hgvs:NC_011083:SEHA_RS01180:p.Ala166Glu'] == list(
+            'hgvs:NC_011083:SEHA_RS01180:c.497C>A', 'hgvs:NC_011083:SEHA_RS01180:p.Ala166Glu',
+            'hgvs_gn:NC_011083:murF:c.497C>A', 'hgvs_gn:NC_011083:murF:p.Ala166Glu'] == list(
         mutations_df.loc['NC_011083:140658:C:A'])
 
     ## inframe deletion
     assert ['NC_011083', 4465400, 'GGCCGAA', 'G', 1, 1, 100,
             'conservative_inframe_deletion', 'MODERATE', 'tyrB', 'SEHA_RS22180', 'transcript', 'protein_coding',
             'c.157_162delGAAGCC', 'p.Glu53_Ala54del',
-            'hgvs:NC_011083:SEHA_RS22180:c.157_162delGAAGCC', 'hgvs:NC_011083:SEHA_RS22180:p.Glu53_Ala54del'] == list(
+            'hgvs:NC_011083:SEHA_RS22180:c.157_162delGAAGCC', 'hgvs:NC_011083:SEHA_RS22180:p.Glu53_Ala54del',
+            'hgvs_gn:NC_011083:tyrB:c.157_162delGAAGCC', 'hgvs_gn:NC_011083:tyrB:p.Glu53_Ala54del'] == list(
         mutations_df.loc['NC_011083:4465400:GGCCGAA:G'])
 
     ## Intergenic variant (with some NA values in fields)
@@ -3181,7 +3393,8 @@ def test_summary_features_kindmutations_annotations(loaded_database_connection_a
             'intergenic_region', 'MODIFIER', 'SEHA_RS22510-SEHA_RS26685', 'SEHA_RS22510-SEHA_RS26685',
             'intergenic_region', 'NA',
             'n.4555461_4555462insC', 'NA',
-            'hgvs:NC_011083:n.4555461_4555462insC', 'NA'] == list(
+            'hgvs:NC_011083:n.4555461_4555462insC', 'NA',
+            'hgvs_gn:NC_011083:n.4555461_4555462insC', 'NA'] == list(
         mutations_df.loc['NC_011083:4555461:T:TC'].fillna('NA'))
 
     # 3 samples
@@ -3193,14 +3406,15 @@ def test_summary_features_kindmutations_annotations(loaded_database_connection_a
     assert ['Sequence', 'Position', 'Deletion', 'Insertion',
             'Count', 'Total', 'Percent', 'Annotation', 'Annotation_Impact',
             'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
-            'HGVS.c', 'HGVS.p', 'ID_HGVS.c', 'ID_HGVS.p'] == list(mutations_df.columns)
+            'HGVS.c', 'HGVS.p', 'ID_HGVS.c', 'ID_HGVS.p', 'ID_HGVS_GN.c', 'ID_HGVS_GN.p'] == list(mutations_df.columns)
     assert 177 == len(mutations_df)
 
     ## missense variant (3/3)
     assert ['NC_011083', 140658, 'C', 'A', 3, 3, 100,
             'missense_variant', 'MODERATE', 'murF', 'SEHA_RS01180', 'transcript', 'protein_coding',
             'c.497C>A', 'p.Ala166Glu',
-            'hgvs:NC_011083:SEHA_RS01180:c.497C>A', 'hgvs:NC_011083:SEHA_RS01180:p.Ala166Glu'] == list(
+            'hgvs:NC_011083:SEHA_RS01180:c.497C>A', 'hgvs:NC_011083:SEHA_RS01180:p.Ala166Glu',
+            'hgvs_gn:NC_011083:murF:c.497C>A', 'hgvs_gn:NC_011083:murF:p.Ala166Glu'] == list(
         mutations_df.loc['NC_011083:140658:C:A'])
 
     ## Intergenic variant (1/3)
@@ -3208,7 +3422,8 @@ def test_summary_features_kindmutations_annotations(loaded_database_connection_a
             'intergenic_region', 'MODIFIER', 'SEHA_RS22510-SEHA_RS26685', 'SEHA_RS22510-SEHA_RS26685',
             'intergenic_region', 'NA',
             'n.4555461_4555462insC', 'NA',
-            'hgvs:NC_011083:n.4555461_4555462insC', 'NA'] == list(
+            'hgvs:NC_011083:n.4555461_4555462insC', 'NA',
+            'hgvs_gn:NC_011083:n.4555461_4555462insC', 'NA'] == list(
         mutations_df.loc['NC_011083:4555461:T:TC'].fillna('NA'))
 
     # Test ignore annotations
@@ -3227,14 +3442,15 @@ def test_summary_features_kindmutations_annotations(loaded_database_connection_a
     assert ['Sequence', 'Position', 'Deletion', 'Insertion',
             'Count', 'Total', 'Percent', 'Annotation', 'Annotation_Impact',
             'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
-            'HGVS.c', 'HGVS.p', 'ID_HGVS.c', 'ID_HGVS.p'] == list(mutations_df.columns)
+            'HGVS.c', 'HGVS.p', 'ID_HGVS.c', 'ID_HGVS.p', 'ID_HGVS_GN.c', 'ID_HGVS_GN.p'] == list(mutations_df.columns)
     assert 60 == len(mutations_df)
 
     ## missense variant
     assert ['NC_011083', 2049576, 'A', 'C', 1, 1, 100,
             'missense_variant', 'MODERATE', 'cutC', 'SEHA_RS10675', 'transcript', 'protein_coding',
             'c.536T>G', 'p.Val179Gly',
-            'hgvs:NC_011083:SEHA_RS10675:c.536T>G', 'hgvs:NC_011083:SEHA_RS10675:p.Val179Gly'] == list(
+            'hgvs:NC_011083:SEHA_RS10675:c.536T>G', 'hgvs:NC_011083:SEHA_RS10675:p.Val179Gly',
+            'hgvs_gn:NC_011083:cutC:c.536T>G', 'hgvs_gn:NC_011083:cutC:p.Val179Gly'] == list(
         mutations_df.loc['NC_011083:2049576:A:C'])
 
 

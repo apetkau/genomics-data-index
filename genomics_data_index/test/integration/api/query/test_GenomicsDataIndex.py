@@ -108,12 +108,12 @@ def test_summaries_loaded_data(loaded_database_genomic_data_store: GenomicsDataI
     assert ['Sequence', 'Position', 'Deletion', 'Insertion',
             'Count', 'Total', 'Percent', 'Annotation', 'Annotation_Impact',
             'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
-            'HGVS.c', 'HGVS.p', 'ID_HGVS.c', 'ID_HGVS.p'] == list(ms.columns)
+            'HGVS.c', 'HGVS.p', 'ID_HGVS.c', 'ID_HGVS.p', 'ID_HGVS_GN.c', 'ID_HGVS_GN.p'] == list(ms.columns)
 
     ## Convert percent to int to make it easier to compare in assert statements
     ms['Percent'] = ms['Percent'].astype(int)
 
-    assert ['reference', 839, 1, 'G', 2, 3, 66] + ['NA'] * 10 == ms.loc['reference:839:1:G'].fillna(
+    assert ['reference', 839, 1, 'G', 2, 3, 66] + ['NA'] * 12 == ms.loc['reference:839:1:G'].fillna(
         'NA').values.tolist()
 
 
@@ -138,7 +138,7 @@ def test_summaries_variant_annotations(loaded_database_genomic_data_store_annota
     assert ['Sequence', 'Position', 'Deletion', 'Insertion',
             'Count', 'Total', 'Percent', 'Annotation', 'Annotation_Impact',
             'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
-            'HGVS.c', 'HGVS.p', 'ID_HGVS.c', 'ID_HGVS.p'] == list(ms.columns)
+            'HGVS.c', 'HGVS.p', 'ID_HGVS.c', 'ID_HGVS.p', 'ID_HGVS_GN.c', 'ID_HGVS_GN.p'] == list(ms.columns)
 
     ## Convert percent to int to make it easier to compare in assert statements
     ms['Percent'] = ms['Percent'].astype(int)
@@ -147,14 +147,16 @@ def test_summaries_variant_annotations(loaded_database_genomic_data_store_annota
     assert ['NC_011083', 140658, 1, 'A', 3, 3, 100,
             'missense_variant', 'MODERATE', 'murF', 'SEHA_RS01180', 'transcript', 'protein_coding',
             'c.497C>A', 'p.Ala166Glu',
-            'hgvs:NC_011083:SEHA_RS01180:c.497C>A', 'hgvs:NC_011083:SEHA_RS01180:p.Ala166Glu'] == list(
+            'hgvs:NC_011083:SEHA_RS01180:c.497C>A', 'hgvs:NC_011083:SEHA_RS01180:p.Ala166Glu',
+            'hgvs_gn:NC_011083:murF:c.497C>A', 'hgvs_gn:NC_011083:murF:p.Ala166Glu'] == list(
         ms.loc['NC_011083:140658:1:A'])
 
     ## inframe deletion
     assert ['NC_011083', 4465400, len('GGCCGAA'), 'G', 3, 3, 100,
             'conservative_inframe_deletion', 'MODERATE', 'tyrB', 'SEHA_RS22180', 'transcript', 'protein_coding',
             'c.157_162delGAAGCC', 'p.Glu53_Ala54del',
-            'hgvs:NC_011083:SEHA_RS22180:c.157_162delGAAGCC', 'hgvs:NC_011083:SEHA_RS22180:p.Glu53_Ala54del'] == list(
+            'hgvs:NC_011083:SEHA_RS22180:c.157_162delGAAGCC', 'hgvs:NC_011083:SEHA_RS22180:p.Glu53_Ala54del',
+            'hgvs_gn:NC_011083:tyrB:c.157_162delGAAGCC', 'hgvs_gn:NC_011083:tyrB:p.Glu53_Ala54del'] == list(
         ms.loc['NC_011083:4465400:7:G'])
 
     ## Intergenic variant (with some NA values in fields)
@@ -162,7 +164,8 @@ def test_summaries_variant_annotations(loaded_database_genomic_data_store_annota
             'intergenic_region', 'MODIFIER', 'SEHA_RS22510-SEHA_RS26685', 'SEHA_RS22510-SEHA_RS26685',
             'intergenic_region', 'NA',
             'n.4555461_4555462insC', 'NA',
-            'hgvs:NC_011083:n.4555461_4555462insC', 'NA'] == list(ms.loc['NC_011083:4555461:1:TC'].fillna('NA'))
+            'hgvs:NC_011083:n.4555461_4555462insC', 'NA',
+            'hgvs_gn:NC_011083:n.4555461_4555462insC', 'NA'] == list(ms.loc['NC_011083:4555461:1:TC'].fillna('NA'))
 
     # spdi_ref
     ms = gds.mutations_summary('NC_011083', id_type='spdi_ref')
@@ -171,7 +174,7 @@ def test_summaries_variant_annotations(loaded_database_genomic_data_store_annota
     assert ['Sequence', 'Position', 'Deletion', 'Insertion',
             'Count', 'Total', 'Percent', 'Annotation', 'Annotation_Impact',
             'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
-            'HGVS.c', 'HGVS.p', 'ID_HGVS.c', 'ID_HGVS.p'] == list(ms.columns)
+            'HGVS.c', 'HGVS.p', 'ID_HGVS.c', 'ID_HGVS.p', 'ID_HGVS_GN.c', 'ID_HGVS_GN.p'] == list(ms.columns)
 
     ## Convert percent to int to make it easier to compare in assert statements
     ms['Percent'] = ms['Percent'].astype(int)
@@ -180,14 +183,16 @@ def test_summaries_variant_annotations(loaded_database_genomic_data_store_annota
     assert ['NC_011083', 140658, 'C', 'A', 3, 3, 100,
             'missense_variant', 'MODERATE', 'murF', 'SEHA_RS01180', 'transcript', 'protein_coding',
             'c.497C>A', 'p.Ala166Glu',
-            'hgvs:NC_011083:SEHA_RS01180:c.497C>A', 'hgvs:NC_011083:SEHA_RS01180:p.Ala166Glu'] == list(
+            'hgvs:NC_011083:SEHA_RS01180:c.497C>A', 'hgvs:NC_011083:SEHA_RS01180:p.Ala166Glu',
+            'hgvs_gn:NC_011083:murF:c.497C>A', 'hgvs_gn:NC_011083:murF:p.Ala166Glu'] == list(
         ms.loc['NC_011083:140658:C:A'])
 
     ## inframe deletion
     assert ['NC_011083', 4465400, 'GGCCGAA', 'G', 3, 3, 100,
             'conservative_inframe_deletion', 'MODERATE', 'tyrB', 'SEHA_RS22180', 'transcript', 'protein_coding',
             'c.157_162delGAAGCC', 'p.Glu53_Ala54del',
-            'hgvs:NC_011083:SEHA_RS22180:c.157_162delGAAGCC', 'hgvs:NC_011083:SEHA_RS22180:p.Glu53_Ala54del'] == list(
+            'hgvs:NC_011083:SEHA_RS22180:c.157_162delGAAGCC', 'hgvs:NC_011083:SEHA_RS22180:p.Glu53_Ala54del',
+            'hgvs_gn:NC_011083:tyrB:c.157_162delGAAGCC', 'hgvs_gn:NC_011083:tyrB:p.Glu53_Ala54del'] == list(
         ms.loc['NC_011083:4465400:GGCCGAA:G'])
 
     ## Intergenic variant (with some NA values in fields)
@@ -195,7 +200,8 @@ def test_summaries_variant_annotations(loaded_database_genomic_data_store_annota
             'intergenic_region', 'MODIFIER', 'SEHA_RS22510-SEHA_RS26685', 'SEHA_RS22510-SEHA_RS26685',
             'intergenic_region', 'NA',
             'n.4555461_4555462insC', 'NA',
-            'hgvs:NC_011083:n.4555461_4555462insC', 'NA'] == list(ms.loc['NC_011083:4555461:T:TC'].fillna('NA'))
+            'hgvs:NC_011083:n.4555461_4555462insC', 'NA',
+            'hgvs_gn:NC_011083:n.4555461_4555462insC', 'NA'] == list(ms.loc['NC_011083:4555461:T:TC'].fillna('NA'))
 
 
 def test_connect_to_project_from_dir():
