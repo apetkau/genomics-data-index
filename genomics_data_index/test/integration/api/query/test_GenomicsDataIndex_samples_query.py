@@ -1361,6 +1361,42 @@ def test_query_hasa_string_features_snpeff(loaded_database_connection_annotation
     assert 3 == len(query_result_test.universe_set)
 
 
+def test_query_hasa_string_features_snpeff_duplicate_genes(loaded_database_connection_annotations_duplicate_genes: DataIndexConnection):
+    db = loaded_database_connection_annotations_duplicate_genes.database
+    sample1 = db.get_session().query(Sample).filter(Sample.name == 'SH10-014-dup-gene-variant').one()
+    sample2 = db.get_session().query(Sample).filter(Sample.name == 'SH10-014-dup-gene-variant-2').one()
+
+    query_result = query(loaded_database_connection_annotations_duplicate_genes)
+
+    # Test HGVSGN.c single mutation but there are two different copies of murF gene and so query should investigate both
+    query_result_test = query_result.hasa('hgvs_gn:NC_011083:murF:c.497C>A')
+    assert 2 == len(query_result_test)
+    assert {sample1.id, sample2.id} == set(query_result_test.sample_set)
+    assert 0 == len(query_result_test.unknown_set)
+    assert 2 == len(query_result_test.universe_set)
+
+    # Test HGVSGN.p single mutation but there are two different copies of murF gene and so query should investigate both
+    query_result_test = query_result.hasa('hgvs_gn:NC_011083:murF:p.Ala166Glu')
+    assert 2 == len(query_result_test)
+    assert {sample1.id, sample2.id} == set(query_result_test.sample_set)
+    assert 0 == len(query_result_test.unknown_set)
+    assert 2 == len(query_result_test.universe_set)
+
+    # Test HGVS.c single mutation which, because it's selecting by locus identifier which is unique, should give 1 result
+    query_result_test = query_result.hasa('hgvs:NC_011083:SEHA_RS01180:c.497C>A')
+    assert 1 == len(query_result_test)
+    assert {sample1.id} == set(query_result_test.sample_set)
+    assert 0 == len(query_result_test.unknown_set)
+    assert 2 == len(query_result_test.universe_set)
+
+    # Test HGVS.p single mutation which, because it's selecting by locus identifier which is unique, should give 1 result
+    query_result_test = query_result.hasa('hgvs:NC_011083:SEHA_RS01180:p.Ala166Glu')
+    assert 1 == len(query_result_test)
+    assert {sample1.id} == set(query_result_test.sample_set)
+    assert 0 == len(query_result_test.unknown_set)
+    assert 2 == len(query_result_test.universe_set)
+
+
 def test_query_single_mutation_no_results_is_empty(loaded_database_connection: DataIndexConnection):
     # Test is_empty for something with unknown positions
     query_result = query(loaded_database_connection).hasa(QueryFeatureMutationSPDI('reference:1:1:A'))

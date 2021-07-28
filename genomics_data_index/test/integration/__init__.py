@@ -87,6 +87,7 @@ snpeff_sample_vcfs = {
 
 snpeff_sample_vcfs_fake_dup = {
     'SH10-014-dup-gene-variant': snpeff_data_dir / 'SH10-014-dup-gene-variant.vcf.gz',
+    'SH10-014-dup-gene-variant-2': snpeff_data_dir / 'SH10-014-dup-gene-variant-2.vcf.gz',
 }
 
 
