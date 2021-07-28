@@ -140,16 +140,16 @@ class VariationService(FeatureService):
             variants_samples = id_to_nucleotide_variants_samples[mutation_id]
 
             if variants_samples.id_hgvs_c is not None:
-                id_hgvs_gn_c = QueryFeatureHGVSGN(sequence_name=variants_samples.sequence,
-                                                  gene=variants_samples.annotation_gene_name,
-                                                  variant=variants_samples.annotation_hgvs_c).id
+                id_hgvs_gn_c = QueryFeatureHGVSGN.create(sequence_name=variants_samples.sequence,
+                                                         gene=variants_samples.annotation_gene_name,
+                                                         variant=variants_samples.annotation_hgvs_c).id
             else:
                 id_hgvs_gn_c = pd.NA
 
             if variants_samples.id_hgvs_p is not None:
-                id_hgvs_gn_p = QueryFeatureHGVSGN(sequence_name=variants_samples.sequence,
-                                                  gene=variants_samples.annotation_gene_name,
-                                                  variant=variants_samples.annotation_hgvs_p).id
+                id_hgvs_gn_p = QueryFeatureHGVSGN.create(sequence_name=variants_samples.sequence,
+                                                         gene=variants_samples.annotation_gene_name,
+                                                         variant=variants_samples.annotation_hgvs_p).id
             else:
                 id_hgvs_gn_p = pd.NA
 

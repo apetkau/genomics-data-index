@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List
+from typing import List, Optional
 
 from genomics_data_index.storage.model.QueryFeatureHGVS import QueryFeatureHGVS
 from genomics_data_index.storage.model.QueryFeature import QueryFeature
@@ -21,6 +21,14 @@ class QueryFeatureHGVSGN(QueryFeatureHGVS):
 
     def to_unknown_explode(self) -> List[QueryFeature]:
         raise NotImplementedError('Not implemented')
+
+    @classmethod
+    def create(cls, sequence_name: str, gene: Optional[str], variant: Optional[str]) -> QueryFeatureHGVSGN:
+        # If variant is given as nucleotide coordinates with respect to the sequence 'n.' then ignore gene id
+        if variant is not None and variant.startswith('n.'):
+            gene = None
+
+        return QueryFeatureHGVSGN(sequence_name=sequence_name, gene=gene, variant=variant)
 
     @classmethod
     def create_from_id(cls, hgvs_id: str, prefix: str = None) -> QueryFeatureHGVSGN:
