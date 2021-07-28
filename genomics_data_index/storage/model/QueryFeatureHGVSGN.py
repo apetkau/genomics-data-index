@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import List
 
 from genomics_data_index.storage.model.QueryFeatureHGVS import QueryFeatureHGVS
@@ -21,7 +23,7 @@ class QueryFeatureHGVSGN(QueryFeatureHGVS):
         raise NotImplementedError('Not implemented')
 
     @classmethod
-    def create_from_id(cls, hgvs_id: str, prefix: str = None) -> QueryFeatureHGVS:
+    def create_from_id(cls, hgvs_id: str, prefix: str = None) -> QueryFeatureHGVSGN:
         """
         Creates a new HGVSGN feature which uses the gene name (instead of locus id) for the "gene" component. This
         is nearly identical to an HGVS identifier, except that the [gene] portion in the id
@@ -32,4 +34,8 @@ class QueryFeatureHGVSGN(QueryFeatureHGVS):
         :param prefix: The prefix to use for this identifier. Used to override prefix for HGVSGN
         :return: A new HGVS query feature.
         """
-        return QueryFeatureHGVS.create_from_id(hgvs_id=hgvs_id, prefix=cls.PREFIX)
+        if prefix is None:
+            prefix = cls.PREFIX
+
+        sequence_name, gene, variant = QueryFeatureHGVS.split_id(hgvs_id, prefix=prefix)
+        return QueryFeatureHGVSGN(sequence_name=sequence_name, gene=gene, variant=variant)

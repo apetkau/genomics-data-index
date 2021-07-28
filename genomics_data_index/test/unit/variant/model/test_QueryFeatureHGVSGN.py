@@ -5,7 +5,7 @@ from genomics_data_index.storage.model.QueryFeatureHGVSGN import QueryFeatureHGV
 
 def test_create_from_id():
     f = QueryFeatureHGVSGN.create_from_id('hgvs_gn:NC_011083:murF:c.497C>A')
-    assert 'hgvs:NC_011083:murF:c.497C>A' == f.id
+    assert 'hgvs_gn:NC_011083:murF:c.497C>A' == f.id
     assert 'NC_011083' == f.sequence
     assert 'NC_011083' == f.scope
     assert 'murF' == f.gene
@@ -16,7 +16,7 @@ def test_create_from_id():
     assert not f.is_protein()
 
     f = QueryFeatureHGVSGN.create_from_id('hgvs_gn:NC_011083:murF:p.Ala166Glu')
-    assert 'hgvs:NC_011083:murF:p.Ala166Glu' == f.id
+    assert 'hgvs_gn:NC_011083:murF:p.Ala166Glu' == f.id
     assert 'NC_011083' == f.sequence
     assert 'NC_011083' == f.scope
     assert 'murF' == f.gene

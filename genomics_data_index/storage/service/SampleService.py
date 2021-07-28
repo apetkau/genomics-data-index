@@ -7,6 +7,7 @@ from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.NucleotideMutationTranslater import NucleotideMutationTranslater
 from genomics_data_index.storage.model.QueryFeature import QueryFeature
 from genomics_data_index.storage.model.QueryFeatureHGVS import QueryFeatureHGVS
+from genomics_data_index.storage.model.QueryFeatureHGVSGN import QueryFeatureHGVSGN
 from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
 from genomics_data_index.storage.model.QueryFeatureMutation import QueryFeatureMutation
 from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
@@ -67,6 +68,25 @@ class SampleService:
                 return unknown_features
         else:
             return feature.to_unknown_explode()
+
+    def find_features_spdi_for_hgvsgn(self, feature: QueryFeatureHGVSGN) -> List[QueryFeatureMutationSPDI]:
+        if not isinstance(feature, QueryFeatureHGVSGN):
+            raise Exception(f'Cannot handle feature={feature}. Not of type {QueryFeatureHGVSGN.__name__}')
+
+        query = self._connection.get_session().query(NucleotideVariantsSamples).filter(
+            NucleotideVariantsSamples.sequence == feature.sequence)
+
+        if feature.has_gene():
+            query = query.filter(NucleotideVariantsSamples.annotation_gene_name == feature.gene)
+
+        if feature.is_nucleotide():
+            query = query.filter(NucleotideVariantsSamples.annotation_hgvs_c == feature.variant)
+        elif feature.is_protein():
+            query = query.filter(NucleotideVariantsSamples.annotation_hgvs_p == feature.variant)
+        else:
+            raise Exception(f'feature={feature} is neither protein nor nucleotide')
+
+        return [QueryFeatureMutationSPDI(s.spdi) for s in query.all()]
 
     def get_samples_with_mlst_alleles(self, scheme_name: str) -> List[Sample]:
         """
@@ -206,6 +226,8 @@ class SampleService:
                 else:
                     standardized_features_to_input_feature[dbf.id] = [feature.id]
                 standardized_features_ids.add(dbf.id)
+            elif isinstance(feature, QueryFeatureHGVSGN):
+                pass
             elif isinstance(feature, QueryFeatureHGVS):
                 if feature.is_nucleotide():
                     standardized_feature_hgvs_c_ids.add(feature.id)
