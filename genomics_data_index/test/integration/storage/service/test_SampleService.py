@@ -2,9 +2,9 @@ import pytest
 
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.QueryFeatureHGVS import QueryFeatureHGVS
+from genomics_data_index.storage.model.QueryFeatureHGVSGN import QueryFeatureHGVSGN
 from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
 from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
-from genomics_data_index.storage.model.QueryFeatureHGVSGN import QueryFeatureHGVSGN
 from genomics_data_index.storage.model.db import Sample
 from genomics_data_index.storage.service.SampleService import SampleService, FeatureExplodeUnknownError
 
@@ -409,10 +409,12 @@ def test_find_features_spdi_for_hgvsgn(database, sample_service_snpeff_annotatio
         feature = QueryFeatureHGVS.create_from_id('hgvs:NC_011083:SEHA_RS05995:c.418delG')
         sample_service_snpeff_annotations.find_features_spdi_for_hgvsgn(feature)
 
-    assert 'Cannot handle feature=hgvs:NC_011083:SEHA_RS05995:c.418delG. Not of type QueryFeatureHGVSGN' in str(execinfo.value)
+    assert 'Cannot handle feature=hgvs:NC_011083:SEHA_RS05995:c.418delG. Not of type QueryFeatureHGVSGN' in str(
+        execinfo.value)
 
 
-def test_find_features_spdi_for_hgvsgn_duplicate_gene(database, sample_service_snpeff_annotations_fake_duplicate_gene: SampleService):
+def test_find_features_spdi_for_hgvsgn_duplicate_gene(database,
+                                                      sample_service_snpeff_annotations_fake_duplicate_gene: SampleService):
     # Test cases where there's a duplicate of a gene name and so I get two features from the hgvs_gn identifier
 
     # Test hgvs_gn p
@@ -489,7 +491,8 @@ def test_find_sample_sets_by_features_variations_hgvs_gn(database, sample_servic
     sample_sets = sample_service_snpeff_annotations.find_sample_sets_by_features(features)
     assert 1 == len(sample_sets)
     assert 'hgvs_gn:NC_011083:oadA:c.582_588delTTTTGAGinsCTATGAC' in sample_sets
-    assert {sample_sh10_014.id, sample_sh14_001.id} == set(sample_sets['hgvs_gn:NC_011083:oadA:c.582_588delTTTTGAGinsCTATGAC'])
+    assert {sample_sh10_014.id, sample_sh14_001.id} == set(
+        sample_sets['hgvs_gn:NC_011083:oadA:c.582_588delTTTTGAGinsCTATGAC'])
 
     # hgvs p with gene name different
     features = [QueryFeatureHGVSGN.create_from_id('hgvs_gn:NC_011083:oadA:p.PheGlu195TyrAsp')]
@@ -503,14 +506,16 @@ def test_find_sample_sets_by_features_variations_hgvs_gn(database, sample_servic
     sample_sets = sample_service_snpeff_annotations.find_sample_sets_by_features(features)
     assert 1 == len(sample_sets)
     assert 'hgvs_gn:NC_011083:murF:c.497C>A' in sample_sets
-    assert {sample_sh10_014.id, sample_sh14_014.id, sample_sh14_001.id} == set(sample_sets['hgvs_gn:NC_011083:murF:c.497C>A'])
+    assert {sample_sh10_014.id, sample_sh14_014.id, sample_sh14_001.id} == set(
+        sample_sets['hgvs_gn:NC_011083:murF:c.497C>A'])
 
     # hgvs p with gene name different 2
     features = [QueryFeatureHGVSGN.create_from_id('hgvs_gn:NC_011083:murF:p.Ala166Glu')]
     sample_sets = sample_service_snpeff_annotations.find_sample_sets_by_features(features)
     assert 1 == len(sample_sets)
     assert 'hgvs_gn:NC_011083:murF:p.Ala166Glu' in sample_sets
-    assert {sample_sh10_014.id, sample_sh14_014.id, sample_sh14_001.id} == set(sample_sets['hgvs_gn:NC_011083:murF:p.Ala166Glu'])
+    assert {sample_sh10_014.id, sample_sh14_014.id, sample_sh14_001.id} == set(
+        sample_sets['hgvs_gn:NC_011083:murF:p.Ala166Glu'])
 
 
 def test_find_sample_sets_by_features_variations_two_samples(database, sample_service, variation_service):

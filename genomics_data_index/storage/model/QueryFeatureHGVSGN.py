@@ -2,12 +2,11 @@ from __future__ import annotations
 
 from typing import List, Optional
 
-from genomics_data_index.storage.model.QueryFeatureHGVS import QueryFeatureHGVS
 from genomics_data_index.storage.model.QueryFeature import QueryFeature
+from genomics_data_index.storage.model.QueryFeatureHGVS import QueryFeatureHGVS
 
 
 class QueryFeatureHGVSGN(QueryFeatureHGVS):
-
     PREFIX = 'hgvs_gn:'
 
     def __init__(self, sequence_name: str, gene: str, variant: str):

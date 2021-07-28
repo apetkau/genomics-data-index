@@ -106,6 +106,7 @@ def snpeff_nucleotide_data_package() -> NucleotideSampleDataPackage:
                                                                   sample_files_processor=SerialSampleFilesProcessor(
                                                                       tmp_dir))
 
+
 @pytest.fixture
 def snpeff_nucleotide_data_package_fake_duplicate_gene() -> NucleotideSampleDataPackage:
     tmp_dir = Path(tempfile.mkdtemp())
@@ -160,8 +161,9 @@ def sample_service_snpeff_annotations(database, reference_service_with_snpeff_da
 
 @pytest.fixture
 def sample_service_snpeff_annotations_fake_duplicate_gene(database, reference_service_with_snpeff_data,
-                                      snpeff_nucleotide_data_package_fake_duplicate_gene, sample_service,
-                                      filesystem_storage) -> SampleService:
+                                                          snpeff_nucleotide_data_package_fake_duplicate_gene,
+                                                          sample_service,
+                                                          filesystem_storage) -> SampleService:
     var_service = VariationService(database_connection=database,
                                    reference_service=reference_service_with_snpeff_data,
                                    sample_service=sample_service,

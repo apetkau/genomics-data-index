@@ -5,7 +5,6 @@ from genomics_data_index.storage.model.QueryFeatureHGVS import QueryFeatureHGVS
 from genomics_data_index.storage.model.QueryFeatureHGVSGN import QueryFeatureHGVSGN
 from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
 
-
 query_feature_factory = QueryFeatureFactory.instance()
 
 

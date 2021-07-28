@@ -14,10 +14,8 @@ from genomics_data_index.api.query.impl.TreeSamplesQueryFactory import TreeSampl
 from genomics_data_index.configuration.connector import DataIndexConnection
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.QueryFeature import QueryFeature
-from genomics_data_index.storage.model.QueryFeatureHGVS import QueryFeatureHGVS
-from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
-from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
 from genomics_data_index.storage.model.QueryFeatureFactory import QueryFeatureFactory
+from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
 from genomics_data_index.storage.service.KmerService import KmerService
 
 logger = logging.getLogger(__name__)

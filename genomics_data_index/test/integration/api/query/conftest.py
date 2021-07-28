@@ -14,7 +14,8 @@ from genomics_data_index.api.query.GenomicsDataIndex import GenomicsDataIndex
 
 from genomics_data_index.test.integration import sample_dirs, reference_file, basic_mlst_file, tree_file, \
     mlst_snippy_file
-from genomics_data_index.test.integration import sourmash_signatures, snpeff_sample_vcfs, snpeff_sample_vcfs_fake_dup, reference_file_snpeff
+from genomics_data_index.test.integration import sourmash_signatures, snpeff_sample_vcfs, snpeff_sample_vcfs_fake_dup, \
+    reference_file_snpeff
 from genomics_data_index.test.integration import snippy_sample2_vcfs_dict, snippy_sample2_mask_sequences_dict
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
 from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage

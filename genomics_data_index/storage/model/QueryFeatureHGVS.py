@@ -7,7 +7,6 @@ from genomics_data_index.storage.model.QueryFeatureMutation import QueryFeatureM
 
 
 class QueryFeatureHGVS(QueryFeatureMutation):
-
     PREFIX = 'hgvs:'
 
     def __init__(self, sequence_name: str, gene: Optional[str], variant: str):

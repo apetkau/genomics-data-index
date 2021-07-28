@@ -1263,7 +1263,8 @@ def test_query_hasa_string_features_snpeff(loaded_database_connection_annotation
     assert 3 == len(query_result_test.universe_set)
 
     # Test HGVS large deletion with nucleotide coding notation
-    query_result_test = query_result.hasa('hgvs:NC_011083:SEHA_RS15905:c.417_464delCGACCACGACCACGACCACGACCACGACCACGACCACGACCACGACCA')
+    query_result_test = query_result.hasa(
+        'hgvs:NC_011083:SEHA_RS15905:c.417_464delCGACCACGACCACGACCACGACCACGACCACGACCACGACCACGACCA')
     assert 1 == len(query_result_test)
     assert {sample_sh10_014.id} == set(query_result_test.sample_set)
     assert 0 == len(query_result_test.unknown_set)
@@ -1277,7 +1278,8 @@ def test_query_hasa_string_features_snpeff(loaded_database_connection_annotation
     assert 3 == len(query_result_test.universe_set)
 
     # Test SPDI, large deletion integer
-    query_result_test = query_result.hasa(f'NC_011083:3167187:{len("AACCACGACCACGACCACGACCACGACCACGACCACGACCACGACCACG")}:A')
+    query_result_test = query_result.hasa(
+        f'NC_011083:3167187:{len("AACCACGACCACGACCACGACCACGACCACGACCACGACCACGACCACG")}:A')
     assert 1 == len(query_result_test)
     assert {sample_sh10_014.id} == set(query_result_test.sample_set)
     assert 0 == len(query_result_test.unknown_set)
@@ -1291,7 +1293,8 @@ def test_query_hasa_string_features_snpeff(loaded_database_connection_annotation
     assert 3 == len(query_result_test.universe_set)
 
     # Test HGVS smaller deletion in same region with nucleotide coding notation
-    query_result_test = query_result.hasa('hgvs:NC_011083:SEHA_RS15905:c.429_464delCGACCACGACCACGACCACGACCACGACCACGACCA')
+    query_result_test = query_result.hasa(
+        'hgvs:NC_011083:SEHA_RS15905:c.429_464delCGACCACGACCACGACCACGACCACGACCACGACCA')
     assert 2 == len(query_result_test)
     assert {sample_sh14_001.id, sample_sh14_014.id} == set(query_result_test.sample_set)
     assert 0 == len(query_result_test.unknown_set)
@@ -1361,7 +1364,8 @@ def test_query_hasa_string_features_snpeff(loaded_database_connection_annotation
     assert 3 == len(query_result_test.universe_set)
 
 
-def test_query_hasa_string_features_snpeff_duplicate_genes(loaded_database_connection_annotations_duplicate_genes: DataIndexConnection):
+def test_query_hasa_string_features_snpeff_duplicate_genes(
+        loaded_database_connection_annotations_duplicate_genes: DataIndexConnection):
     db = loaded_database_connection_annotations_duplicate_genes.database
     sample1 = db.get_session().query(Sample).filter(Sample.name == 'SH10-014-dup-gene-variant').one()
     sample2 = db.get_session().query(Sample).filter(Sample.name == 'SH10-014-dup-gene-variant-2').one()

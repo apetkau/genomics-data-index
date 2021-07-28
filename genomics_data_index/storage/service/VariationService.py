@@ -11,9 +11,9 @@ from genomics_data_index.storage.io.SampleDataPackage import SampleDataPackage
 from genomics_data_index.storage.io.mutation.NucleotideSampleData import NucleotideSampleData
 from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
 from genomics_data_index.storage.io.mutation.VariationFile import VariationFile
-from genomics_data_index.storage.model.QueryFeatureHGVSGN import QueryFeatureHGVSGN
 from genomics_data_index.storage.io.mutation.VcfVariantsReader import VcfVariantsReader
 from genomics_data_index.storage.model import NUCLEOTIDE_UNKNOWN_TYPE
+from genomics_data_index.storage.model.QueryFeatureHGVSGN import QueryFeatureHGVSGN
 from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
 from genomics_data_index.storage.model.db import NucleotideVariantsSamples, SampleNucleotideVariation, Sample, \
     FeatureSamples
