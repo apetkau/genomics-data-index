@@ -12,6 +12,7 @@ from genomics_data_index.storage.io.mlst.MLSTSampleData import MLSTSampleData
 from genomics_data_index.storage.io.mlst.MLSTSampleDataPackage import MLSTSampleDataPackage
 from genomics_data_index.storage.model.db import MLSTScheme, SampleMLSTAlleles, MLSTAllelesSamples, Sample, \
     FeatureSamples
+from genomics_data_index.storage.model import MLST_UNKNOWN_ALLELE
 from genomics_data_index.storage.service import DatabaseConnection
 from genomics_data_index.storage.service.FeatureService import FeatureService, AUTO_SCOPE
 from genomics_data_index.storage.service.SampleService import SampleService
@@ -52,6 +53,17 @@ class MLSTService(FeatureService):
             schemes[name] = scheme
 
         return schemes
+
+    def get_features_for_scheme(self, scheme: str, include_unknown: bool = False) -> Dict[str, MLSTAllelesSamples]:
+        query = self._database.get_session().query(MLSTAllelesSamples).filter(
+            MLSTAllelesSamples.scheme == scheme)
+
+        if not include_unknown:
+            query = query.filter(MLSTAllelesSamples.allele != MLST_UNKNOWN_ALLELE)
+
+        allele_samples = query.all()
+
+        return {f.id: f for f in allele_samples}
 
     def get_all_alleles(self, scheme: str, locus: str) -> Set[str]:
         return {a for a, in self._database.get_session().query(MLSTAllelesSamples.allele) \

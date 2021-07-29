@@ -18,6 +18,7 @@ from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.NucleotideMutationTranslater import NucleotideMutationTranslater
 from genomics_data_index.storage.service import EntityExistsError
 from genomics_data_index.storage.service.VariationService import VariationService
+from genomics_data_index.storage.service.MLSTService import MLSTService
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +30,7 @@ class GenomicsDataIndex:
 
     QUERY_UNIVERSE = ['all', 'mutations', 'mutations_experimental', 'dataframe']
     MUTATION_ID_TYPES = ['spdi_ref', 'spdi']
-    FEAUTRE_KINDS = ['mutations']
+    FEAUTRE_KINDS = ['mutations', 'mlst']
 
     def __init__(self, connection: DataIndexConnection):
         """
@@ -141,8 +142,36 @@ class GenomicsDataIndex:
         """
         if kind == 'mutations' or kind == 'mutation':
             return self._mutations_summary(reference_name=scope, include_unknown=include_unknown, **kwargs)
+        elif kind == 'mlst':
+            return self._mlst_summary(scheme_name=scope, include_unknown=include_unknown)
         else:
             raise Exception(f'Unknown value for kind=[{kind}]. Must be one of {self.FEAUTRE_KINDS}.')
+
+    def _mlst_summary(self, scheme_name: str, include_unknown: bool = False) -> pd.DataFrame:
+        """
+        Summarizes all MLST alleles stored in this index relative to the passed scheme name.
+
+        :param scheme_name: The MLST scheme to summarize.
+        :param include_unknown: Whether or not unknown MLST alleles should be included.
+        :return: A summary of all MLST alleles in this index as a DataFrame.
+        """
+        mlst_service: MLSTService = self._connection.mlst_service
+        mlst_features = mlst_service.get_features_for_scheme(scheme_name, include_unknown=include_unknown)
+        total_samples = self._connection.sample_service.count_samples_associated_with_mlst_scheme(scheme_name)
+
+        data = []
+        for mlst_feature_id in mlst_features:
+            mlst_feature = mlst_features[mlst_feature_id]
+            count = len(mlst_feature.sample_ids)
+            data.append([mlst_feature_id, mlst_feature.scheme, mlst_feature.locus, mlst_feature.allele, count, total_samples])
+
+        features_df = pd.DataFrame(data,
+                                   columns=['MLST Feature', 'Scheme', 'Locus',
+                                            'Allele', 'Count', 'Total']).set_index('MLST Feature')
+
+        features_df['Percent'] = 100 * (features_df['Count'] / features_df['Total'])
+
+        return features_df
 
     def _mutations_summary(self, reference_name: str, id_type: str = 'spdi_ref',
                            include_unknown: bool = False, ignore_annotations: bool = False) -> pd.DataFrame:

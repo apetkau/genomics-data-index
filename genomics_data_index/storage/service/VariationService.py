@@ -67,7 +67,7 @@ class VariationService(FeatureService):
 
         return {m.spdi: len(m.sample_ids) for m in mutations}
 
-    def get_variants_on_reference(self, reference_name: str, include_unknown: bool) -> Dict[str, int]:
+    def get_variants_on_reference(self, reference_name: str, include_unknown: bool) -> Dict[str, NucleotideVariantsSamples]:
         reference_sequence_names = self._reference_sequence_names(reference_name)
 
         query = self._connection.get_session().query(NucleotideVariantsSamples) \
