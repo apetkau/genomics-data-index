@@ -595,9 +595,9 @@ def test_find_samples_by_features_mlst(database, sample_service, mlst_service_lo
 
     mlst_samples = sample_service.find_samples_by_features([QueryFeatureMLST('mlst:lmonocytogenes:abcZ:1')])
 
-    assert {'lmonocytogenes:abcZ:1'} == set(mlst_samples.keys())
-    assert {'CFSAN002349', 'CFSAN023463'} == {s.name for s in mlst_samples['lmonocytogenes:abcZ:1']}
-    assert {sample1.id, sample2.id} == {s.id for s in mlst_samples['lmonocytogenes:abcZ:1']}
+    assert {'mlst:lmonocytogenes:abcZ:1'} == set(mlst_samples.keys())
+    assert {'CFSAN002349', 'CFSAN023463'} == {s.name for s in mlst_samples['mlst:lmonocytogenes:abcZ:1']}
+    assert {sample1.id, sample2.id} == {s.id for s in mlst_samples['mlst:lmonocytogenes:abcZ:1']}
 
 
 def test_find_sample_sets_by_features_mlst(database, sample_service: SampleService, mlst_service_loaded):
@@ -606,8 +606,8 @@ def test_find_sample_sets_by_features_mlst(database, sample_service: SampleServi
 
     mlst_sample_sets = sample_service.find_sample_sets_by_features([QueryFeatureMLST('mlst:lmonocytogenes:abcZ:1')])
 
-    assert {'lmonocytogenes:abcZ:1'} == set(mlst_sample_sets.keys())
-    assert {sample1.id, sample2.id} == set(mlst_sample_sets['lmonocytogenes:abcZ:1'])
+    assert {'mlst:lmonocytogenes:abcZ:1'} == set(mlst_sample_sets.keys())
+    assert {sample1.id, sample2.id} == set(mlst_sample_sets['mlst:lmonocytogenes:abcZ:1'])
 
 
 def test_find_samples_by_features_mlst_two(database, sample_service, mlst_service_loaded):
@@ -619,13 +619,13 @@ def test_find_samples_by_features_mlst_two(database, sample_service, mlst_servic
     mlst_samples = sample_service.find_samples_by_features([QueryFeatureMLST('mlst:lmonocytogenes:abcZ:1'),
                                                             QueryFeatureMLST('mlst:ecoli:adk:100')])
 
-    assert {'lmonocytogenes:abcZ:1', 'ecoli:adk:100'} == set(mlst_samples.keys())
+    assert {'mlst:lmonocytogenes:abcZ:1', 'mlst:ecoli:adk:100'} == set(mlst_samples.keys())
 
-    assert {'CFSAN002349', 'CFSAN023463'} == {s.name for s in mlst_samples['lmonocytogenes:abcZ:1']}
-    assert {sample1.id, sample2.id} == {s.id for s in mlst_samples['lmonocytogenes:abcZ:1']}
+    assert {'CFSAN002349', 'CFSAN023463'} == {s.name for s in mlst_samples['mlst:lmonocytogenes:abcZ:1']}
+    assert {sample1.id, sample2.id} == {s.id for s in mlst_samples['mlst:lmonocytogenes:abcZ:1']}
 
-    assert {'2014C-3599', '2014C-3598'} == {s.name for s in mlst_samples['ecoli:adk:100']}
-    assert {sample3.id, sample4.id} == {s.id for s in mlst_samples['ecoli:adk:100']}
+    assert {'2014C-3599', '2014C-3598'} == {s.name for s in mlst_samples['mlst:ecoli:adk:100']}
+    assert {sample3.id, sample4.id} == {s.id for s in mlst_samples['mlst:ecoli:adk:100']}
 
 
 def test_find_sample_sets_by_features_mlst_two(database, sample_service, mlst_service_loaded):
@@ -637,10 +637,10 @@ def test_find_sample_sets_by_features_mlst_two(database, sample_service, mlst_se
     mlst_sample_sets = sample_service.find_sample_sets_by_features([QueryFeatureMLST('mlst:lmonocytogenes:abcZ:1'),
                                                                     QueryFeatureMLST('mlst:ecoli:adk:100')])
 
-    assert {'lmonocytogenes:abcZ:1', 'ecoli:adk:100'} == set(mlst_sample_sets.keys())
+    assert {'mlst:lmonocytogenes:abcZ:1', 'mlst:ecoli:adk:100'} == set(mlst_sample_sets.keys())
 
-    assert {sample1.id, sample2.id} == set(mlst_sample_sets['lmonocytogenes:abcZ:1'])
-    assert {sample3.id, sample4.id} == set(mlst_sample_sets['ecoli:adk:100'])
+    assert {sample1.id, sample2.id} == set(mlst_sample_sets['mlst:lmonocytogenes:abcZ:1'])
+    assert {sample3.id, sample4.id} == set(mlst_sample_sets['mlst:ecoli:adk:100'])
 
 
 def test_count_samples_by_mlst_features_single_feature(sample_service, mlst_service_loaded):
@@ -649,7 +649,7 @@ def test_count_samples_by_mlst_features_single_feature(sample_service, mlst_serv
     mlst_counts = sample_service.count_samples_by_features(features)
 
     assert 1 == len(mlst_counts)
-    assert 2 == mlst_counts['lmonocytogenes:abcZ:1']
+    assert 2 == mlst_counts['mlst:lmonocytogenes:abcZ:1']
 
 
 def test_count_samples_by_mlst_features_multiple_features(sample_service, mlst_service_loaded):
@@ -658,8 +658,8 @@ def test_count_samples_by_mlst_features_multiple_features(sample_service, mlst_s
     mlst_counts = sample_service.count_samples_by_features(features)
 
     assert 2 == len(mlst_counts)
-    assert 2 == mlst_counts['lmonocytogenes:abcZ:1']
-    assert 2 == mlst_counts['ecoli:adk:100']
+    assert 2 == mlst_counts['mlst:lmonocytogenes:abcZ:1']
+    assert 2 == mlst_counts['mlst:ecoli:adk:100']
 
 
 def test_create_dataframe_from_sample_set(database, sample_service: SampleService, variation_service):

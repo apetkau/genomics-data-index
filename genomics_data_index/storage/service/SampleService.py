@@ -373,7 +373,7 @@ class SampleService:
             features = cast(List[QueryFeatureMLST], features)
             mlst_alleles = self._get_mlst_samples_by_mlst_features(features)
 
-            return {a.sla: a.sample_ids for a in mlst_alleles}
+            return {a.query_id: a.sample_ids for a in mlst_alleles}
         else:
             raise Exception(f'Invalid feature type {feature_type}')
 
@@ -389,7 +389,7 @@ class SampleService:
             features = cast(List[QueryFeatureMLST], features)
             mlst_alleles = self._get_mlst_samples_by_mlst_features(features)
 
-            return {a.sla: self.find_samples_by_ids(a.sample_ids) for a in mlst_alleles}
+            return {a.query_id: self.find_samples_by_ids(a.sample_ids) for a in mlst_alleles}
         else:
             raise Exception(f'Invalid feature type {feature_type}')
 
@@ -405,10 +405,10 @@ class SampleService:
             features = cast(List[QueryFeatureMLST], features)
             mlst_alleles = self._get_mlst_samples_by_mlst_features(features)
 
-            allele_id_to_count = {a.sla: len(a.sample_ids) for a in mlst_alleles}
+            allele_id_to_count = {a.query_id: len(a.sample_ids) for a in mlst_alleles}
             for f in features:
-                if f.id_no_prefix not in allele_id_to_count:
-                    allele_id_to_count[f.id_no_prefix] = 0
+                if f.id not in allele_id_to_count:
+                    allele_id_to_count[f.id] = 0
             return allele_id_to_count
         else:
             raise Exception(f'Invalid feature type {feature_type}')
