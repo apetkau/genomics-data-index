@@ -116,6 +116,20 @@ def test_summaries_loaded_data(loaded_database_genomic_data_store: GenomicsDataI
     assert ['reference', 839, 1, 'G', 2, 3, 66] + ['NA'] * 12 == ms.loc['reference:839:1:G'].fillna(
         'NA').values.tolist()
 
+    # Test case of directly calling features_summary
+    ms = gds.features_summary(kind='mutations', scope='genome', id_type='spdi', ignore_annotations=True)
+    assert 111 == len(ms)
+    assert 'Mutation' == ms.index.name
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Count', 'Total', 'Percent'] == list(ms.columns)
+
+    ## Convert percent to int to make it easier to compare in assert statements
+    ms['Percent'] = ms['Percent'].astype(int)
+
+    assert ['reference', 839, 1, 'G', 2, 3, 66] == ms.loc['reference:839:1:G'].values.tolist()
+    assert ['reference', 866, 9, 'G', 1, 3, 33] == ms.loc['reference:866:9:G'].values.tolist()
+    assert ['reference', 1048, 1, 'G', 1, 3, 33] == ms.loc['reference:1048:1:G'].values.tolist()
+    assert ['reference', 3897, 5, 'G', 2, 3, 66] == ms.loc['reference:3897:5:G'].values.tolist()
+
 
 def test_summaries_variant_annotations(loaded_database_genomic_data_store_annotations: GenomicsDataIndex):
     gds = loaded_database_genomic_data_store_annotations

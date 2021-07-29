@@ -29,6 +29,7 @@ class GenomicsDataIndex:
 
     QUERY_UNIVERSE = ['all', 'mutations', 'mutations_experimental', 'dataframe']
     MUTATION_ID_TYPES = ['spdi_ref', 'spdi']
+    FEAUTRE_KINDS = ['mutations']
 
     def __init__(self, connection: DataIndexConnection):
         """
@@ -104,12 +105,44 @@ class GenomicsDataIndex:
         return self._connection.variation_service.count_on_reference(reference_genome,
                                                                      include_unknown=include_unknown)
 
-    def mutations_summary(self, reference_genome: str, id_type: str = 'spdi_ref',
-                          include_unknown: bool = False, ignore_annotations: bool = False) -> pd.DataFrame:
+    def mutations_summary(self, reference_name: str, id_type: str = 'spdi_ref',
+                           include_unknown: bool = False, ignore_annotations: bool = False) -> pd.DataFrame:
+        """
+        Summarizes all mutations stored in this index relative to a string for the passed scope.
+        Shorthand for features_summary(kind='mutations', ...)
+
+        :param reference_name: The reference genome name.
+        :param id_type: The type of identifier to use.
+        :param include_unknown: Whether or not unknown mutations should be included.
+        :param ignore_annotations: Whether or not mutation annotations should be ignored.
+        :return: A summary of all mutations in this index as a DataFrame.
+        """
+        return self.features_summary(kind='mutations', scope=reference_name, include_unknown=include_unknown,
+                                     id_type=id_type, ignore_annotations=ignore_annotations)
+
+    def features_summary(self, kind: str = 'mutations', scope: str = None,
+                         include_present: bool = True, include_unknown: bool = False, **kwargs) -> pd.DataFrame:
+        """
+        Summarizes all features stored in this index relative to a string for the passed scope.
+
+        :param kind: The kind of feature (e.g., 'mutations' or 'mlst').
+        :param scope: The scope (e.g., reference genome or MLST scheme).
+        :param include_present: Whether or not features present in this index (i.e., not unknown/missing)
+                                should be included.
+        :param include_unknown: Whether or not unknown/missing features should be included.
+        :return: A summary of all features in this index as a DataFrame.
+        """
+        if kind == 'mutations' or kind == 'mutation':
+            return self._mutations_summary(reference_name=scope, include_unknown=include_unknown, **kwargs)
+        else:
+            raise Exception(f'Unknown value for kind=[{kind}]. Must be one of {self.FEAUTRE_KINDS}.')
+
+    def _mutations_summary(self, reference_name: str, id_type: str = 'spdi_ref',
+                           include_unknown: bool = False, ignore_annotations: bool = False) -> pd.DataFrame:
         """
         Summarizes all mutations stored in this index relative to the passed reference genome.
 
-        :param reference_genome: The reference genome.
+        :param reference_name: The reference genome.
         :param id_type: The type of identifier to use.
         :param include_unknown: Whether or not unknown mutations should be included.
         :param ignore_annotations: Whether or not mutation annotations should be ignored.
@@ -121,7 +154,7 @@ class GenomicsDataIndex:
             raise Exception(f'id_type={id_type} must be one of {self.MUTATION_ID_TYPES}')
 
         vs: VariationService = self._connection.variation_service
-        mutations = vs.get_variants_on_reference(reference_genome, include_unknown=include_unknown)
+        mutations = vs.get_variants_on_reference(reference_name, include_unknown=include_unknown)
 
         if id_type == 'spdi_ref':
             translated_ids = rs.translate_spdi(mutations.keys(), to=id_type)
@@ -130,7 +163,7 @@ class GenomicsDataIndex:
         else:
             convert_deletion = True
 
-        total_samples = self._connection.sample_service.count_samples_associated_with_reference(reference_genome)
+        total_samples = self._connection.sample_service.count_samples_associated_with_reference(reference_name)
 
         data = []
         for mutation in mutations:
