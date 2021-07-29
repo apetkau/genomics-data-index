@@ -81,6 +81,13 @@ class GenomicsDataIndex:
         """
         return [r.name for r in self._connection.reference_service.get_reference_genomes()]
 
+    def mlst_schemes(self) -> List[str]:
+        """
+        Gets a list of the MLST schemes used in this index.
+        :return: A list of all MLST scheme names.
+        """
+        return [r.name for r in self._connection.mlst_service.get_mlst_schemes()]
+
     def reference_tree(self, reference_name: str) -> Tree:
         """
         Gets a tree associated with a reference genome.

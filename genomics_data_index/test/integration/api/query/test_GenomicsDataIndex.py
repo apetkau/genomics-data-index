@@ -23,6 +23,13 @@ def test_get_reference_tree(loaded_database_genomic_data_store_with_tree: Genomi
     assert 'No reference genome with name=[invalid_reference]' in str(execinfo.value)
 
 
+def test_mlst_schemes(loaded_database_genomic_data_store: GenomicsDataIndex):
+    mlst_schemes = loaded_database_genomic_data_store.mlst_schemes()
+    assert 3 == len(mlst_schemes)
+    assert isinstance(mlst_schemes, list)
+    assert {'lmonocytogenes', 'ecoli', 'campylobacter'} == set(mlst_schemes)
+
+
 def test_summaries_loaded_data(loaded_database_genomic_data_store: GenomicsDataIndex):
     gds = loaded_database_genomic_data_store
 

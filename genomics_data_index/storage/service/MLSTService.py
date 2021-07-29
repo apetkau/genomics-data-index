@@ -33,6 +33,9 @@ class MLSTService(FeatureService):
             .filter(MLSTScheme.name == name) \
             .one()
 
+    def get_mlst_schemes(self) -> List[MLSTScheme]:
+        return self._database.get_session().query(MLSTScheme).all()
+
     def exists_mlst_scheme(self, name: str):
         return self._connection.get_session().query(MLSTScheme.id).filter_by(name=name).scalar() is not None
 

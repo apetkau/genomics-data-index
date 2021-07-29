@@ -1,6 +1,6 @@
 import pytest
 
-from genomics_data_index.storage.model.db import SampleMLSTAlleles, MLSTAllelesSamples, Sample
+from genomics_data_index.storage.model.db import SampleMLSTAlleles, MLSTAllelesSamples, Sample, MLSTScheme
 from genomics_data_index.storage.service import EntityExistsError
 from genomics_data_index.storage.service.MLSTService import MLSTService
 
@@ -343,6 +343,13 @@ def test_multiple_inserts_3_inserts(database, mlst_data_package_single_scheme,
     assert set(m.sample_ids) == {sample_CFSAN002349.id, sample_CFSAN023463.id,
                                  sample_CFSAN002349_2.id,
                                  sample_CFSAN002349_3.id}
+
+
+def test_get_mlst_schemes(mlst_service_loaded):
+    mlst_schemes = mlst_service_loaded.get_mlst_schemes()
+    assert 3 == len(mlst_schemes)
+    assert isinstance(mlst_schemes[0], MLSTScheme)
+    assert {'lmonocytogenes', 'ecoli', 'campylobacter'} == {s.name for s in mlst_schemes}
 
 
 def test_get_all_alleles(mlst_service_loaded: MLSTService):
