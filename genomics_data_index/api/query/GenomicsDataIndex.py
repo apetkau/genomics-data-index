@@ -114,19 +114,22 @@ class GenomicsDataIndex:
         return self._connection.variation_service.count_on_reference(reference_genome,
                                                                      include_unknown=include_unknown)
 
-    def mutations_summary(self, reference_name: str, id_type: str = 'spdi_ref',
-                           include_unknown: bool = False, ignore_annotations: bool = False) -> pd.DataFrame:
+    def mutations_summary(self, reference_name: str, id_type: str = 'spdi_ref', include_present: bool = True,
+                          include_unknown: bool = False, ignore_annotations: bool = False) -> pd.DataFrame:
         """
         Summarizes all mutations stored in this index relative to a string for the passed scope.
         Shorthand for features_summary(kind='mutations', ...)
 
         :param reference_name: The reference genome name.
         :param id_type: The type of identifier to use.
+        :param include_present: Whether or not mutation features present in this index (i.e., not unknown/missing)
+                                should be included.
         :param include_unknown: Whether or not unknown mutations should be included.
         :param ignore_annotations: Whether or not mutation annotations should be ignored.
         :return: A summary of all mutations in this index as a DataFrame.
         """
-        return self.features_summary(kind='mutations', scope=reference_name, include_unknown=include_unknown,
+        return self.features_summary(kind='mutations', scope=reference_name,
+                                     include_present=include_present, include_unknown=include_unknown,
                                      id_type=id_type, ignore_annotations=ignore_annotations)
 
     def mlst_summary(self, scheme_name: str, include_present: bool = True,
@@ -157,7 +160,8 @@ class GenomicsDataIndex:
         :return: A summary of all features in this index as a DataFrame.
         """
         if kind == 'mutations' or kind == 'mutation':
-            return self._mutations_summary_internal(reference_name=scope, include_unknown=include_unknown, **kwargs)
+            return self._mutations_summary_internal(reference_name=scope, include_present=include_present,
+                                                    include_unknown=include_unknown, **kwargs)
         elif kind == 'mlst':
             return self._mlst_summary_internal(scheme_name=scope, include_present=include_present,
                                                include_unknown=include_unknown)
@@ -184,7 +188,8 @@ class GenomicsDataIndex:
         for mlst_feature_id in mlst_features:
             mlst_feature = mlst_features[mlst_feature_id]
             count = len(mlst_feature.sample_ids)
-            data.append([mlst_feature.query_id, mlst_feature.scheme, mlst_feature.locus, mlst_feature.allele, count, total_samples])
+            data.append([mlst_feature.query_id, mlst_feature.scheme, mlst_feature.locus, mlst_feature.allele, count,
+                         total_samples])
 
         features_df = pd.DataFrame(data,
                                    columns=['MLST Feature', 'Scheme', 'Locus',
@@ -195,12 +200,15 @@ class GenomicsDataIndex:
         return features_df
 
     def _mutations_summary_internal(self, reference_name: str, id_type: str = 'spdi_ref',
-                           include_unknown: bool = False, ignore_annotations: bool = False) -> pd.DataFrame:
+                                    include_present: bool = True,
+                                    include_unknown: bool = False, ignore_annotations: bool = False) -> pd.DataFrame:
         """
         Summarizes all mutations stored in this index relative to the passed reference genome.
 
         :param reference_name: The reference genome.
         :param id_type: The type of identifier to use.
+        :param include_present: Whether or not mutation features present in this index (i.e., not unknown/missing)
+                                should be included.
         :param include_unknown: Whether or not unknown mutations should be included.
         :param ignore_annotations: Whether or not mutation annotations should be ignored.
 
@@ -211,7 +219,8 @@ class GenomicsDataIndex:
             raise Exception(f'id_type={id_type} must be one of {self.MUTATION_ID_TYPES}')
 
         vs: VariationService = self._connection.variation_service
-        mutations = vs.get_variants_on_reference(reference_name, include_unknown=include_unknown)
+        mutations = vs.get_variants_on_reference(reference_name, include_present=include_present,
+                                                 include_unknown=include_unknown)
 
         if id_type == 'spdi_ref':
             translated_ids = rs.translate_spdi(mutations.keys(), to=id_type)

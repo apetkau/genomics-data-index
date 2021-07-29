@@ -137,6 +137,16 @@ def test_summaries_loaded_data(loaded_database_genomic_data_store: GenomicsDataI
     assert ['reference', 1048, 1, 'G', 1, 3, 33] == ms.loc['reference:1048:1:G'].values.tolist()
     assert ['reference', 3897, 5, 'G', 2, 3, 66] == ms.loc['reference:3897:5:G'].values.tolist()
 
+    # Test case of only including unknowns
+    ms = gds.mutations_summary('genome', id_type='spdi', include_present=False, include_unknown=True)
+    assert 521 == len(ms)
+    assert 'reference:649:1:?' in set(ms.index.tolist())
+    assert 'reference:839:1:G' not in (ms.index.tolist())
+
+    # Test case of no present or unknowns
+    ms = gds.mutations_summary('genome', id_type='spdi', include_present=False, include_unknown=False)
+    assert 0 == len(ms)
+
 
 def test_summaries_mlst_data(loaded_database_genomic_data_store: GenomicsDataIndex):
     gds = loaded_database_genomic_data_store
