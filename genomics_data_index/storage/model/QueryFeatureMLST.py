@@ -24,7 +24,8 @@ class QueryFeatureMLST(QueryFeature):
             scheme, locus = values[0], values[1]
             allele = None
         else:
-            raise Exception(f'Invalid MLST feature [{sla}]. Must be either mlst:scheme:locus or mlst:scheme:locus:allele')
+            raise Exception(
+                f'Invalid MLST feature [{sla}]. Must be either mlst:scheme:locus or mlst:scheme:locus:allele')
 
         if scheme == self.WILD:
             raise Exception(f'Cannot set seq to be wild ({self.WILD}): {sla}')
@@ -42,7 +43,8 @@ class QueryFeatureMLST(QueryFeature):
             self._allele = allele
 
         if self._locus == self.WILD and self._allele != self.WILD:
-            raise Exception(f'Unsupported to set wild ({self.WILD}) for locus and not for allele ({self.WILD}): {mlst_id}')
+            raise Exception(
+                f'Unsupported to set wild ({self.WILD}) for locus and not for allele ({self.WILD}): {mlst_id}')
 
     @property
     def id_no_prefix(self) -> Optional[str]:

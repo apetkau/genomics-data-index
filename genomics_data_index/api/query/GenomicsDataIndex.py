@@ -17,9 +17,8 @@ from genomics_data_index.configuration.connector.DataIndexConnection import Data
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.NucleotideMutationTranslater import NucleotideMutationTranslater
 from genomics_data_index.storage.service import EntityExistsError
-from genomics_data_index.storage.service.VariationService import VariationService
 from genomics_data_index.storage.service.MLSTService import MLSTService
-from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
+from genomics_data_index.storage.service.VariationService import VariationService
 
 logger = logging.getLogger(__name__)
 

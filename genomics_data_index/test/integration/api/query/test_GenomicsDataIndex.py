@@ -153,7 +153,7 @@ def test_summaries_mlst_data(loaded_database_genomic_data_store: GenomicsDataInd
 
     # MLST summaries for lmonocytogenes
     summary_df = gds.features_summary(kind='mlst', scope='lmonocytogenes')
-    summary_df['Percent'] = summary_df['Percent'].astype(int) # Convert to int for easier comparison
+    summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
     assert 10 == len(summary_df)
     assert 'MLST Feature' == summary_df.index.name
     assert ['Scheme', 'Locus', 'Allele', 'Count', 'Total', 'Percent'] == list(summary_df.columns)
@@ -165,7 +165,7 @@ def test_summaries_mlst_data(loaded_database_genomic_data_store: GenomicsDataInd
 
     # MLST summaries for lmonocytogenes include unknown
     summary_df = gds.features_summary(kind='mlst', scope='lmonocytogenes', include_unknown=True)
-    summary_df['Percent'] = summary_df['Percent'].astype(int) # Convert to int for easier comparison
+    summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
     assert 11 == len(summary_df)
     assert 'MLST Feature' == summary_df.index.name
     assert ['Scheme', 'Locus', 'Allele', 'Count', 'Total', 'Percent'] == list(summary_df.columns)
@@ -178,7 +178,7 @@ def test_summaries_mlst_data(loaded_database_genomic_data_store: GenomicsDataInd
 
     # MLST summaries for lmonocytogenes include unknown and not present
     summary_df = gds.features_summary(kind='mlst', scope='lmonocytogenes', include_present=False, include_unknown=True)
-    summary_df['Percent'] = summary_df['Percent'].astype(int) # Convert to int for easier comparison
+    summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
     assert 1 == len(summary_df)
     assert 'MLST Feature' == summary_df.index.name
     assert ['Scheme', 'Locus', 'Allele', 'Count', 'Total', 'Percent'] == list(summary_df.columns)
@@ -186,7 +186,7 @@ def test_summaries_mlst_data(loaded_database_genomic_data_store: GenomicsDataInd
 
     # MLST summaries for lmonocytogenes not include present or unknown
     summary_df = gds.features_summary(kind='mlst', scope='lmonocytogenes', include_present=False, include_unknown=False)
-    summary_df['Percent'] = summary_df['Percent'].astype(int) # Convert to int for easier comparison
+    summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
     assert 0 == len(summary_df)
     assert 'MLST Feature' == summary_df.index.name
     assert ['Scheme', 'Locus', 'Allele', 'Count', 'Total', 'Percent'] == list(summary_df.columns)

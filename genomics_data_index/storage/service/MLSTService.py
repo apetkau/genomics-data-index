@@ -10,9 +10,9 @@ from genomics_data_index.storage.io.SampleData import SampleData
 from genomics_data_index.storage.io.SampleDataPackage import SampleDataPackage
 from genomics_data_index.storage.io.mlst.MLSTSampleData import MLSTSampleData
 from genomics_data_index.storage.io.mlst.MLSTSampleDataPackage import MLSTSampleDataPackage
+from genomics_data_index.storage.model import MLST_UNKNOWN_ALLELE
 from genomics_data_index.storage.model.db import MLSTScheme, SampleMLSTAlleles, MLSTAllelesSamples, Sample, \
     FeatureSamples
-from genomics_data_index.storage.model import MLST_UNKNOWN_ALLELE
 from genomics_data_index.storage.service import DatabaseConnection
 from genomics_data_index.storage.service.FeatureService import FeatureService, AUTO_SCOPE
 from genomics_data_index.storage.service.SampleService import SampleService
