@@ -147,11 +147,11 @@ def test_summaries_mlst_data(loaded_database_genomic_data_store: GenomicsDataInd
     assert 10 == len(summary_df)
     assert 'MLST Feature' == summary_df.index.name
     assert ['Scheme', 'Locus', 'Allele', 'Count', 'Total', 'Percent'] == list(summary_df.columns)
-    assert ['lmonocytogenes', 'abcZ', '1', 5, 5, 100] == summary_df.loc['lmonocytogenes:abcZ:1'].tolist()
-    assert ['lmonocytogenes', 'bglA', '51', 3, 5, 60] == summary_df.loc['lmonocytogenes:bglA:51'].tolist()
-    assert ['lmonocytogenes', 'lhkA', '4', 1, 5, 20] == summary_df.loc['lmonocytogenes:lhkA:4'].tolist()
-    assert ['lmonocytogenes', 'lhkA', '5', 4, 5, 80] == summary_df.loc['lmonocytogenes:lhkA:5'].tolist()
-    assert ['lmonocytogenes', 'ldh', '5', 4, 5, 80] == summary_df.loc['lmonocytogenes:ldh:5'].tolist()
+    assert ['lmonocytogenes', 'abcZ', '1', 5, 5, 100] == summary_df.loc['mlst:lmonocytogenes:abcZ:1'].tolist()
+    assert ['lmonocytogenes', 'bglA', '51', 3, 5, 60] == summary_df.loc['mlst:lmonocytogenes:bglA:51'].tolist()
+    assert ['lmonocytogenes', 'lhkA', '4', 1, 5, 20] == summary_df.loc['mlst:lmonocytogenes:lhkA:4'].tolist()
+    assert ['lmonocytogenes', 'lhkA', '5', 4, 5, 80] == summary_df.loc['mlst:lmonocytogenes:lhkA:5'].tolist()
+    assert ['lmonocytogenes', 'ldh', '5', 4, 5, 80] == summary_df.loc['mlst:lmonocytogenes:ldh:5'].tolist()
 
     # MLST summaries for lmonocytogenes include unknown
     summary_df = gds.features_summary(kind='mlst', scope='lmonocytogenes', include_unknown=True)
@@ -159,12 +159,12 @@ def test_summaries_mlst_data(loaded_database_genomic_data_store: GenomicsDataInd
     assert 11 == len(summary_df)
     assert 'MLST Feature' == summary_df.index.name
     assert ['Scheme', 'Locus', 'Allele', 'Count', 'Total', 'Percent'] == list(summary_df.columns)
-    assert ['lmonocytogenes', 'abcZ', '1', 5, 5, 100] == summary_df.loc['lmonocytogenes:abcZ:1'].tolist()
-    assert ['lmonocytogenes', 'bglA', '51', 3, 5, 60] == summary_df.loc['lmonocytogenes:bglA:51'].tolist()
-    assert ['lmonocytogenes', 'lhkA', '4', 1, 5, 20] == summary_df.loc['lmonocytogenes:lhkA:4'].tolist()
-    assert ['lmonocytogenes', 'lhkA', '5', 4, 5, 80] == summary_df.loc['lmonocytogenes:lhkA:5'].tolist()
-    assert ['lmonocytogenes', 'ldh', '5', 4, 5, 80] == summary_df.loc['lmonocytogenes:ldh:5'].tolist()
-    assert ['lmonocytogenes', 'ldh', '?', 1, 5, 20] == summary_df.loc['lmonocytogenes:ldh:?'].tolist()
+    assert ['lmonocytogenes', 'abcZ', '1', 5, 5, 100] == summary_df.loc['mlst:lmonocytogenes:abcZ:1'].tolist()
+    assert ['lmonocytogenes', 'bglA', '51', 3, 5, 60] == summary_df.loc['mlst:lmonocytogenes:bglA:51'].tolist()
+    assert ['lmonocytogenes', 'lhkA', '4', 1, 5, 20] == summary_df.loc['mlst:lmonocytogenes:lhkA:4'].tolist()
+    assert ['lmonocytogenes', 'lhkA', '5', 4, 5, 80] == summary_df.loc['mlst:lmonocytogenes:lhkA:5'].tolist()
+    assert ['lmonocytogenes', 'ldh', '5', 4, 5, 80] == summary_df.loc['mlst:lmonocytogenes:ldh:5'].tolist()
+    assert ['lmonocytogenes', 'ldh', '?', 1, 5, 20] == summary_df.loc['mlst:lmonocytogenes:ldh:?'].tolist()
 
     # Summaries using 'mlst_summery()'
     summary_df = gds.mlst_summary(scheme_name='lmonocytogenes')

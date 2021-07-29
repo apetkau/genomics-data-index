@@ -19,6 +19,7 @@ from genomics_data_index.storage.model.NucleotideMutationTranslater import Nucle
 from genomics_data_index.storage.service import EntityExistsError
 from genomics_data_index.storage.service.VariationService import VariationService
 from genomics_data_index.storage.service.MLSTService import MLSTService
+from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
 
 logger = logging.getLogger(__name__)
 
@@ -174,7 +175,7 @@ class GenomicsDataIndex:
         for mlst_feature_id in mlst_features:
             mlst_feature = mlst_features[mlst_feature_id]
             count = len(mlst_feature.sample_ids)
-            data.append([mlst_feature_id, mlst_feature.scheme, mlst_feature.locus, mlst_feature.allele, count, total_samples])
+            data.append([mlst_feature.query_id, mlst_feature.scheme, mlst_feature.locus, mlst_feature.allele, count, total_samples])
 
         features_df = pd.DataFrame(data,
                                    columns=['MLST Feature', 'Scheme', 'Locus',

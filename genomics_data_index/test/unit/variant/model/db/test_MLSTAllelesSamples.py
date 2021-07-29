@@ -68,3 +68,10 @@ def test_update_sample_ids_feature_id_mismatch():
 
     assert 'Cannot merge other' in str(execinfo.value)
     assert 'since identifiers are not equal' in str(execinfo.value)
+
+
+def test_query_id():
+    s1 = SampleSet([1, 2])
+    v1 = MLSTAllelesSamples(sla='ecoli:abc:1', sample_ids=s1)
+
+    assert v1.query_id == 'mlst:ecoli:abc:1'
