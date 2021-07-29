@@ -6,6 +6,7 @@ from genomics_data_index.storage.model.QueryFeatureHGVSGN import QueryFeatureHGV
 def test_create_from_id():
     f = QueryFeatureHGVSGN.create_from_id('hgvs_gn:NC_011083:murF:c.497C>A')
     assert 'hgvs_gn:NC_011083:murF:c.497C>A' == f.id
+    assert 'NC_011083:murF:c.497C>A' == f.id_no_prefix
     assert 'NC_011083' == f.sequence
     assert 'NC_011083' == f.scope
     assert 'murF' == f.gene
@@ -17,6 +18,7 @@ def test_create_from_id():
 
     f = QueryFeatureHGVSGN.create_from_id('hgvs_gn:NC_011083:murF:p.Ala166Glu')
     assert 'hgvs_gn:NC_011083:murF:p.Ala166Glu' == f.id
+    assert 'NC_011083:murF:p.Ala166Glu' == f.id_no_prefix
     assert 'NC_011083' == f.sequence
     assert 'NC_011083' == f.scope
     assert 'murF' == f.gene
@@ -37,6 +39,7 @@ def test_create():
     # Test create where hgvs sequence id begins with 'c.'
     f = QueryFeatureHGVSGN.create(sequence_name='NC_011083', gene='murF', variant='c.497C>A')
     assert 'hgvs_gn:NC_011083:murF:c.497C>A' == f.id
+    assert 'NC_011083:murF:c.497C>A' == f.id_no_prefix
     assert 'NC_011083' == f.sequence
     assert 'NC_011083' == f.scope
     assert 'murF' == f.gene
@@ -49,6 +52,7 @@ def test_create():
     # Test create where hgvs sequence id begins with 'n.'
     f = QueryFeatureHGVSGN.create(sequence_name='NC_011083', gene='gene', variant='n.1031571T>C')
     assert 'hgvs_gn:NC_011083:n.1031571T>C' == f.id
+    assert 'NC_011083:n.1031571T>C' == f.id_no_prefix
     assert 'NC_011083' == f.sequence
     assert 'NC_011083' == f.scope
     assert f.gene is None

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List
+from typing import List, Optional
 
 from genomics_data_index.storage.model import MLST_UNKNOWN_ALLELE
 from genomics_data_index.storage.model.QueryFeature import QueryFeature
@@ -45,8 +45,8 @@ class QueryFeatureMLST(QueryFeature):
             raise Exception(f'Unsupported to set wild ({self.WILD}) for locus and not for allele ({self.WILD}): {mlst_id}')
 
     @property
-    def id(self) -> str:
-        return f'{self.prefix}{self.scheme}:{self.locus}:{self.allele}'
+    def id_no_prefix(self) -> Optional[str]:
+        return f'{self.scheme}:{self.locus}:{self.allele}'
 
     @property
     def prefix(self) -> str:

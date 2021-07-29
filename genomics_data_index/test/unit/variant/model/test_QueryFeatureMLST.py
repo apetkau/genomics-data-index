@@ -6,6 +6,7 @@ from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
 def test_create_from_id():
     f = QueryFeatureMLST.create_from_id('mlst:ecoli:adk:100')
     assert 'mlst:ecoli:adk:100' == f.id
+    assert 'ecoli:adk:100' == f.id_no_prefix
     assert 'ecoli' == f.scheme
     assert 'ecoli' == f.scope
     assert 'adk' == f.locus
@@ -14,6 +15,7 @@ def test_create_from_id():
 
     f = QueryFeatureMLST.create_from_id('mlst:ecoli:adk:?')
     assert 'mlst:ecoli:adk:?' == f.id
+    assert 'ecoli:adk:?' == f.id_no_prefix
     assert 'ecoli' == f.scheme
     assert 'ecoli' == f.scope
     assert 'adk' == f.locus
