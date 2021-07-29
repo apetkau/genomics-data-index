@@ -377,6 +377,18 @@ def test_get_features_for_scheme(mlst_service_loaded: MLSTService):
             'campylobacter:uncA:6', 'campylobacter:uncA:?'} == set(mlst_features.keys())
     assert isinstance(mlst_features['campylobacter:glyA:3'], MLSTAllelesSamples)
 
+    # Test include only unknown (not present)
+    mlst_features = mlst_service_loaded.get_features_for_scheme('campylobacter', include_present=False,
+                                                                include_unknown=True)
+    assert 1 == len(mlst_features)
+    assert {'campylobacter:uncA:?'} == set(mlst_features.keys())
+    assert isinstance(mlst_features['campylobacter:uncA:?'], MLSTAllelesSamples)
+
+    # Test include neither present nor unknown
+    mlst_features = mlst_service_loaded.get_features_for_scheme('campylobacter', include_present=False,
+                                                                include_unknown=False)
+    assert 0 == len(mlst_features)
+
     # Test invalid scheme
     assert 0 == len(mlst_service_loaded.get_features_for_scheme('invalid_scheme'))
 

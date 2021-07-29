@@ -54,11 +54,18 @@ class MLSTService(FeatureService):
 
         return schemes
 
-    def get_features_for_scheme(self, scheme: str, include_unknown: bool = False) -> Dict[str, MLSTAllelesSamples]:
+    def get_features_for_scheme(self, scheme: str, include_present: bool = True,
+                                include_unknown: bool = False) -> Dict[str, MLSTAllelesSamples]:
         query = self._database.get_session().query(MLSTAllelesSamples).filter(
             MLSTAllelesSamples.scheme == scheme)
 
-        if not include_unknown:
+        if not include_present:
+            if include_unknown:
+                query = query.filter(MLSTAllelesSamples.allele == MLST_UNKNOWN_ALLELE)
+            else:
+                # Here, I'm not including unknown or present, so don't query database
+                return dict()
+        elif not include_unknown:
             query = query.filter(MLSTAllelesSamples.allele != MLST_UNKNOWN_ALLELE)
 
         allele_samples = query.all()
