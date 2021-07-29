@@ -128,6 +128,17 @@ class GenomicsDataIndex:
         return self.features_summary(kind='mutations', scope=reference_name, include_unknown=include_unknown,
                                      id_type=id_type, ignore_annotations=ignore_annotations)
 
+    def mlst_summary(self, scheme_name: str, include_unknown: bool = False) -> pd.DataFrame:
+        """
+        Summarizes all MLST alleles stored in this index relative to the passed scheme name.
+        Shorthand for features_summary(kind='mlst', ...)
+
+        :param scheme_name: The MLST scheme to summarize.
+        :param include_unknown: Whether or not unknown MLST alleles should be included.
+        :return: A summary of all MLST alleles in this index as a DataFrame.
+        """
+        return self.features_summary(kind='mlst', scope=scheme_name, include_unknown=include_unknown)
+
     def features_summary(self, kind: str = 'mutations', scope: str = None,
                          include_present: bool = True, include_unknown: bool = False, **kwargs) -> pd.DataFrame:
         """
@@ -141,13 +152,13 @@ class GenomicsDataIndex:
         :return: A summary of all features in this index as a DataFrame.
         """
         if kind == 'mutations' or kind == 'mutation':
-            return self._mutations_summary(reference_name=scope, include_unknown=include_unknown, **kwargs)
+            return self._mutations_summary_internal(reference_name=scope, include_unknown=include_unknown, **kwargs)
         elif kind == 'mlst':
-            return self._mlst_summary(scheme_name=scope, include_unknown=include_unknown)
+            return self._mlst_summary_internal(scheme_name=scope, include_unknown=include_unknown)
         else:
             raise Exception(f'Unknown value for kind=[{kind}]. Must be one of {self.FEAUTRE_KINDS}.')
 
-    def _mlst_summary(self, scheme_name: str, include_unknown: bool = False) -> pd.DataFrame:
+    def _mlst_summary_internal(self, scheme_name: str, include_unknown: bool = False) -> pd.DataFrame:
         """
         Summarizes all MLST alleles stored in this index relative to the passed scheme name.
 
@@ -173,7 +184,7 @@ class GenomicsDataIndex:
 
         return features_df
 
-    def _mutations_summary(self, reference_name: str, id_type: str = 'spdi_ref',
+    def _mutations_summary_internal(self, reference_name: str, id_type: str = 'spdi_ref',
                            include_unknown: bool = False, ignore_annotations: bool = False) -> pd.DataFrame:
         """
         Summarizes all mutations stored in this index relative to the passed reference genome.

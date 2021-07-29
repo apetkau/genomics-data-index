@@ -166,6 +166,10 @@ def test_summaries_mlst_data(loaded_database_genomic_data_store: GenomicsDataInd
     assert ['lmonocytogenes', 'ldh', '5', 4, 5, 80] == summary_df.loc['lmonocytogenes:ldh:5'].tolist()
     assert ['lmonocytogenes', 'ldh', '?', 1, 5, 20] == summary_df.loc['lmonocytogenes:ldh:?'].tolist()
 
+    # Summaries using 'mlst_summery()'
+    summary_df = gds.mlst_summary(scheme_name='lmonocytogenes')
+    assert 10 == len(summary_df)
+
 
 def test_summaries_variant_annotations(loaded_database_genomic_data_store_annotations: GenomicsDataIndex):
     gds = loaded_database_genomic_data_store_annotations
