@@ -76,6 +76,12 @@ class QueryFeatureMLST(QueryFeature):
         return QueryFeatureMLST(cls.SPLIT_CHAR.join([scheme, locus, allele]))
 
     @classmethod
+    def to_query_id(cls, mlst_id: str) -> str:
+        if not mlst_id.startswith(QueryFeatureMLST.PREFIX):
+            mlst_id = 'mlst:' + mlst_id
+        return QueryFeatureMLST.create_from_id(mlst_id).id
+
+    @classmethod
     def create_from_id(cls, mlst_id: str) -> QueryFeatureMLST:
         return QueryFeatureMLST(mlst_id)
 

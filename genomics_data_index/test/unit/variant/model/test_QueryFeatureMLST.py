@@ -25,3 +25,15 @@ def test_create_from_id():
         QueryFeatureMLST.create_from_id('ecoli:adk:100')
 
     assert 'mlst_id=[ecoli:adk:100] must start with [mlst:]' in str(execinfo)
+
+
+def test_standardize_id():
+    assert 'mlst:ecoli:adk:100' == QueryFeatureMLST.to_query_id('ecoli:adk:100')
+    assert 'mlst:ecoli:adk:100' == QueryFeatureMLST.to_query_id('mlst:ecoli:adk:100')
+    assert 'mlst:ecoli:adk:?' == QueryFeatureMLST.to_query_id('ecoli:adk:?')
+
+    # Test to make sure error if id does not have enough items
+    with pytest.raises(Exception) as execinfo:
+        QueryFeatureMLST.to_query_id('ecoli')
+
+    assert 'Invalid MLST feature [ecoli]' in str(execinfo)
