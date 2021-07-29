@@ -21,8 +21,8 @@ def test_query_chained_mlst_alleles(loaded_data_store_from_project_dir: Genomics
     sample1 = db.get_session().query(Sample).filter(Sample.name == 'CFSAN002349').one()
 
     query_result = ds.samples_query().hasa(
-        QueryFeatureMLST('lmonocytogenes:abcZ:1')).hasa(
-        QueryFeatureMLST('lmonocytogenes:lhkA:4'))
+        QueryFeatureMLST('mlst:lmonocytogenes:abcZ:1')).hasa(
+        QueryFeatureMLST('mlst:lmonocytogenes:lhkA:4'))
     assert 1 == len(query_result)
     assert {sample1.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)
