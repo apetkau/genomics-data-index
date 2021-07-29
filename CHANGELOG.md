@@ -6,7 +6,7 @@
 * [api]: Adding ability to summarize only features unique to a selected set (for `q.features_summary()`).
 * [api]: Adding `Total` and `Percent` columns to `q.features_summary()` dataframe.
 * [analysis]: Added ability to load VCF files with [SnpEff](http://pcingola.github.io/SnpEff/) annotations and associte these with the nucleotide identifiers.
-    * `summary_features()` and `hasa()` works with the SnpEff variant identifiers (HGVS).
+    * `features_summary()` and `hasa()` works with the SnpEff variant identifiers (HGVS).
     * SnpEff results will be included when loading assemblies.
 * [analysis]: Added the ability to analyze and index sequence reads (by mapping to a reference genome using [snippy](https://github.com/tseemann/snippy)).
 * [analysis]: Added ability to insert new genomes into an existing index.
@@ -15,6 +15,7 @@
 * [developer]: Added custom TRACE log level.
 * [analysis]: Added parallel processing for construction of features table.
 * [analysis]: Switched command-line interface to use my Python API for queries.
+* [api]: `features_summary()` for the database now works with MLST results.
 
 # 0.1.0
 
