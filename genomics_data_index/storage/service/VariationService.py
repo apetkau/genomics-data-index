@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import List, Set, Any, Dict, cast, Union
 
 import pandas as pd
+import sqlalchemy
 
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.io.FeaturesReader import FeaturesReader
@@ -44,8 +45,14 @@ class VariationService(FeatureService):
     def _reference_sequence_names(self, reference_name: str) -> List[str]:
         return list(self._reference_service.get_reference_sequences(reference_name).keys())
 
-    def _query_include_unknown(self, query, include_unknown: bool):
-        if not include_unknown:
+    def _query_include_unknown(self, query, include_present: bool = True, include_unknown: bool = False):
+        if not include_present:
+            if include_unknown:
+                return query.filter(NucleotideVariantsSamples.var_type == NUCLEOTIDE_UNKNOWN_TYPE)
+            else:
+                # Should return a query that gives no results
+                return query.filter(sqlalchemy.sql.false())
+        elif not include_unknown:
             return query.filter(NucleotideVariantsSamples.var_type != NUCLEOTIDE_UNKNOWN_TYPE)
         else:
             return query
@@ -67,13 +74,15 @@ class VariationService(FeatureService):
 
         return {m.spdi: len(m.sample_ids) for m in mutations}
 
-    def get_variants_on_reference(self, reference_name: str, include_unknown: bool) -> Dict[str, NucleotideVariantsSamples]:
+    def get_variants_on_reference(self, reference_name: str, include_present: bool = True,
+                                  include_unknown: bool = False) -> Dict[str, NucleotideVariantsSamples]:
         reference_sequence_names = self._reference_sequence_names(reference_name)
 
         query = self._connection.get_session().query(NucleotideVariantsSamples) \
             .filter(NucleotideVariantsSamples.sequence.in_(reference_sequence_names))
 
-        mutations = self._query_include_unknown(query, include_unknown=include_unknown).all()
+        mutations = self._query_include_unknown(query, include_present=include_present,
+                                                include_unknown=include_unknown).all()
 
         return {m.spdi: m for m in mutations}
 
