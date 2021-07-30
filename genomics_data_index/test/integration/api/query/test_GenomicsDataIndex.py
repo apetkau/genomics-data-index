@@ -183,7 +183,7 @@ def test_summaries_mlst_data(loaded_database_genomic_data_store: GenomicsDataInd
     assert 'MLST Feature' == summary_df.index.name
     assert ['Scheme', 'Locus', 'Allele', 'Count', 'Total', 'Percent'] == list(summary_df.columns)
     assert ['lmonocytogenes', 'bglA', '51', 3, 5, 60] == summary_df.loc['mlst:lmonocytogenes:bglA:51'].tolist()
-    assert ['lmonocytogenes', 'bglA', '52', 2, 5, 60] == summary_df.loc['mlst:lmonocytogenes:bglA:52'].tolist()
+    assert ['lmonocytogenes', 'bglA', '52', 2, 5, 40] == summary_df.loc['mlst:lmonocytogenes:bglA:52'].tolist()
 
     # MLST summaries for lmonocytogenes include unknown and not present
     summary_df = gds.features_summary(kind='mlst', scope='lmonocytogenes', include_present=False, include_unknown=True)
