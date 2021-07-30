@@ -4,6 +4,7 @@ from genomics_data_index.storage.model.QueryFeature import QueryFeature
 from genomics_data_index.storage.model.QueryFeatureHGVS import QueryFeatureHGVS
 from genomics_data_index.storage.model.QueryFeatureHGVSGN import QueryFeatureHGVSGN
 from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
+from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
 
 
 class QueryFeatureFactory:
@@ -13,7 +14,8 @@ class QueryFeatureFactory:
         # Maps the prefix string (e.g. 'hgvs:') to a function used to create the specific QueryFeature from the ID
         self._registered_feature_creators = {
             QueryFeatureHGVS.PREFIX: lambda i: QueryFeatureHGVS.create_from_id(i),
-            QueryFeatureHGVSGN.PREFIX: lambda i: QueryFeatureHGVSGN.create_from_id(i)
+            QueryFeatureHGVSGN.PREFIX: lambda i: QueryFeatureHGVSGN.create_from_id(i),
+            QueryFeatureMLST.PREFIX: lambda i: QueryFeatureMLST.create_from_id(i),
         }
 
     def create_feature(self, id: str) -> QueryFeature:

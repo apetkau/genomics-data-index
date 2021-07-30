@@ -55,9 +55,13 @@ class QueryFeatureHGVS(QueryFeatureMutation):
     @property
     def id(self) -> Optional[str]:
         if self.has_id():
-            return f'{self.prefix}{self._hgvs_id}'
+            return super().id
         else:
             return None
+
+    @property
+    def id_no_prefix(self) -> Optional[str]:
+        return self._hgvs_id
 
     def is_unknown(self) -> bool:
         raise NotImplementedError('Not implemented')

@@ -1452,7 +1452,7 @@ def test_query_mlst_allele(loaded_database_connection: DataIndexConnection):
     sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
 
     # No unknowns
-    query_result = query(loaded_database_connection).hasa(QueryFeatureMLST('lmonocytogenes:abcZ:1'))
+    query_result = query(loaded_database_connection).hasa(QueryFeatureMLST('mlst:lmonocytogenes:abcZ:1'))
     assert 5 == len(query_result)
     assert {sample_CFSAN002349.id, sample_CFSAN023463.id, sampleA.id, sampleB.id, sampleC.id} == set(
         query_result.sample_set)
@@ -1465,7 +1465,7 @@ def test_query_mlst_allele(loaded_database_connection: DataIndexConnection):
         query_result.tolist(names=False))
 
     # With unknown and present
-    query_result = query(loaded_database_connection).hasa(QueryFeatureMLST('campylobacter:uncA:6'))
+    query_result = query(loaded_database_connection).hasa(QueryFeatureMLST('mlst:campylobacter:uncA:6'))
     assert 1 == len(query_result)
     assert {sample_2014D_0068.id} == set(query_result.sample_set)
     assert 1 == len(query_result.unknown_set)
@@ -1474,11 +1474,20 @@ def test_query_mlst_allele(loaded_database_connection: DataIndexConnection):
     assert 9 == len(query_result.universe_set)
 
     # With unknown and absent
-    query_result = query(loaded_database_connection).hasa(QueryFeatureMLST('campylobacter:uncA:5'))
+    query_result = query(loaded_database_connection).hasa(QueryFeatureMLST('mlst:campylobacter:uncA:5'))
     assert 0 == len(query_result)
     assert 1 == len(query_result.unknown_set)
     assert {sample_2014D_0067.id} == set(query_result.unknown_set)
     assert 8 == len(query_result.absent_set)
+    assert 9 == len(query_result.universe_set)
+    
+    # Direct from string
+    query_result = query(loaded_database_connection).hasa('mlst:campylobacter:uncA:6')
+    assert 1 == len(query_result)
+    assert {sample_2014D_0068.id} == set(query_result.sample_set)
+    assert 1 == len(query_result.unknown_set)
+    assert {sample_2014D_0067.id} == set(query_result.unknown_set)
+    assert 7 == len(query_result.absent_set)
     assert 9 == len(query_result.universe_set)
 
 
@@ -1487,8 +1496,8 @@ def test_query_chained_mlst_alleles(loaded_database_connection: DataIndexConnect
     sample1 = db.get_session().query(Sample).filter(Sample.name == 'CFSAN002349').one()
 
     query_result = query(loaded_database_connection).hasa(
-        QueryFeatureMLST('lmonocytogenes:abcZ:1')).hasa(
-        QueryFeatureMLST('lmonocytogenes:lhkA:4'))
+        QueryFeatureMLST('mlst:lmonocytogenes:abcZ:1')).hasa(
+        QueryFeatureMLST('mlst:lmonocytogenes:lhkA:4'))
     assert 1 == len(query_result)
     assert {sample1.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)
@@ -1499,8 +1508,8 @@ def test_query_chained_mlst_alleles_has_allele(loaded_database_connection: DataI
     sample1 = db.get_session().query(Sample).filter(Sample.name == 'CFSAN002349').one()
 
     query_result = query(loaded_database_connection) \
-        .hasa('lmonocytogenes:abcZ:1', kind='mlst') \
-        .hasa('lmonocytogenes:lhkA:4', kind='mlst')
+        .hasa('mlst:lmonocytogenes:abcZ:1', kind='mlst') \
+        .hasa('mlst:lmonocytogenes:lhkA:4', kind='mlst')
     assert 1 == len(query_result)
     assert {sample1.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)
@@ -1515,7 +1524,7 @@ def test_query_chained_mlst_nucleotide(loaded_database_connection: DataIndexConn
     # Test query mutation then MLST
     query_result = query(loaded_database_connection) \
         .hasa('reference:839:C:G', kind='mutation') \
-        .hasa('lmonocytogenes:cat:12', kind='mlst')
+        .hasa('mlst:lmonocytogenes:cat:12', kind='mlst')
     assert 1 == len(query_result)
     assert {sampleC.id} == set(query_result.sample_set)
     assert 0 == len(query_result.unknown_set)
@@ -1528,7 +1537,7 @@ def test_query_chained_mlst_nucleotide(loaded_database_connection: DataIndexConn
 
     # Test query MLST then mutation with a deletion that will be switched to unknown
     query_result = query(loaded_database_connection) \
-        .hasa('lmonocytogenes:cat:11', kind='mlst') \
+        .hasa('mlst:lmonocytogenes:cat:11', kind='mlst') \
         .hasa('reference:3897:GCGCA:G', kind='mutation')
     assert 0 == len(query_result)
     assert 1 == len(query_result.unknown_set)
@@ -1539,7 +1548,7 @@ def test_query_chained_mlst_nucleotide(loaded_database_connection: DataIndexConn
 
     # Test query MLST (with unknown allele) then mutation with a deletion that will be switched to unknown
     query_result = query(loaded_database_connection) \
-        .hasa('lmonocytogenes:ldh:5', kind='mlst') \
+        .hasa('mlst:lmonocytogenes:ldh:5', kind='mlst') \
         .hasa('reference:3897:GCGCA:G', kind='mutation')
     assert 0 == len(query_result)
     assert 2 == len(query_result.unknown_set)
@@ -1550,7 +1559,7 @@ def test_query_chained_mlst_nucleotide(loaded_database_connection: DataIndexConn
 
     # Test the unknown allele of MLST with a deletion that will be switched to unknown
     query_result = query(loaded_database_connection) \
-        .hasa('lmonocytogenes:ldh:?', kind='mlst') \
+        .hasa('mlst:lmonocytogenes:ldh:?', kind='mlst') \
         .hasa('reference:3897:GCGCA:G', kind='mutation')
     assert 0 == len(query_result)
     assert 1 == len(query_result.unknown_set)
@@ -1561,7 +1570,7 @@ def test_query_chained_mlst_nucleotide(loaded_database_connection: DataIndexConn
 
     # Test query MLST (with unknown allele) then mutation (no issues with unknown/found overlap)
     query_result = query(loaded_database_connection) \
-        .hasa('lmonocytogenes:ldh:5', kind='mlst') \
+        .hasa('mlst:lmonocytogenes:ldh:5', kind='mlst') \
         .hasa('reference:839:C:G', kind='mutation')
     print(query_result.toframe(include_unknown=True)[['Sample Name', 'Status']])
     assert 1 == len(query_result)
@@ -1575,7 +1584,7 @@ def test_query_chained_mlst_nucleotide(loaded_database_connection: DataIndexConn
     # Test query mutation (no issues with unknown/found overlap) then MLST (with unknown allele)
     query_result = query(loaded_database_connection) \
         .hasa('reference:839:C:G', kind='mutation') \
-        .hasa('lmonocytogenes:ldh:5', kind='mlst')
+        .hasa('mlst:lmonocytogenes:ldh:5', kind='mlst')
     assert 1 == len(query_result)
     assert {sampleC.id} == set(query_result.sample_set)
     assert 1 == len(query_result.unknown_set)
@@ -1720,8 +1729,8 @@ def test_query_chained_allele_dataframe(loaded_database_connection: DataIndexCon
     sample1 = db.get_session().query(Sample).filter(Sample.name == 'CFSAN002349').one()
 
     df = query(loaded_database_connection) \
-        .hasa('lmonocytogenes:abcZ:1', kind='mlst') \
-        .hasa('lmonocytogenes:lhkA:4', kind='mlst').toframe()
+        .hasa('mlst:lmonocytogenes:abcZ:1', kind='mlst') \
+        .hasa('mlst:lmonocytogenes:lhkA:4', kind='mlst').toframe()
 
     assert 1 == len(df)
     assert ['Query', 'Sample Name', 'Sample ID', 'Status'] == df.columns.tolist()
@@ -1729,7 +1738,7 @@ def test_query_chained_allele_dataframe(loaded_database_connection: DataIndexCon
     df = df.sort_values(['Sample Name'])
     assert ['CFSAN002349'] == df['Sample Name'].tolist()
     assert [sample1.id] == df['Sample ID'].tolist()
-    assert {'lmonocytogenes:abcZ:1 AND lmonocytogenes:lhkA:4'} == set(df['Query'].tolist())
+    assert {'mlst:lmonocytogenes:abcZ:1 AND mlst:lmonocytogenes:lhkA:4'} == set(df['Query'].tolist())
 
 
 def test_query_single_mutation_no_results_toframe(loaded_database_connection: DataIndexConnection):

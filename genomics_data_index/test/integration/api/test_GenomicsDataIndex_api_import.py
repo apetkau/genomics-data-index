@@ -56,7 +56,7 @@ def test_query_single_mutation(loaded_genomics_index: gdi.GenomicsDataIndex):
     assert {sampleB.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)
 
-    query_result = gi.samples_query().hasa(QueryFeatureMLST('lmonocytogenes:abcZ:1'))
+    query_result = gi.samples_query().hasa(QueryFeatureMLST('mlst:lmonocytogenes:abcZ:1'))
     assert 2 == len(query_result)
     assert {sample1.id, sample2.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)

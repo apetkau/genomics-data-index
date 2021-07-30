@@ -6,6 +6,7 @@ from genomics_data_index.storage.model.QueryFeatureHGVS import QueryFeatureHGVS
 def test_create_from_id():
     f = QueryFeatureHGVS.create_from_id('hgvs:NC_011083:SEHA_RS01180:c.497C>A')
     assert 'hgvs:NC_011083:SEHA_RS01180:c.497C>A' == f.id
+    assert 'NC_011083:SEHA_RS01180:c.497C>A' == f.id_no_prefix
     assert 'NC_011083' == f.sequence
     assert 'NC_011083' == f.scope
     assert 'SEHA_RS01180' == f.gene
@@ -17,6 +18,7 @@ def test_create_from_id():
 
     f = QueryFeatureHGVS.create_from_id('hgvs:NC_011083:SEHA_RS01180:p.Ala166Glu')
     assert 'hgvs:NC_011083:SEHA_RS01180:p.Ala166Glu' == f.id
+    assert 'NC_011083:SEHA_RS01180:p.Ala166Glu' == f.id_no_prefix
     assert 'NC_011083' == f.sequence
     assert 'NC_011083' == f.scope
     assert 'SEHA_RS01180' == f.gene
@@ -36,6 +38,7 @@ def test_create_from_id():
 def test_create():
     f = QueryFeatureHGVS.create('NC_011083', 'SEHA_RS01180', 'c.497C>A')
     assert 'hgvs:NC_011083:SEHA_RS01180:c.497C>A' == f.id
+    assert 'NC_011083:SEHA_RS01180:c.497C>A' == f.id_no_prefix
     assert 'NC_011083' == f.sequence
     assert 'NC_011083' == f.scope
     assert 'SEHA_RS01180' == f.gene
@@ -47,6 +50,7 @@ def test_create():
 
     f = QueryFeatureHGVS.create('NC_011083', 'SEHA_RS01180', 'p.Ala166Glu')
     assert 'hgvs:NC_011083:SEHA_RS01180:p.Ala166Glu' == f.id
+    assert 'NC_011083:SEHA_RS01180:p.Ala166Glu' == f.id_no_prefix
     assert 'NC_011083' == f.sequence
     assert 'NC_011083' == f.scope
     assert 'SEHA_RS01180' == f.gene
@@ -58,6 +62,7 @@ def test_create():
 
     f = QueryFeatureHGVS.create('NC_011083', None, 'n.1031571T>C')
     assert 'hgvs:NC_011083:n.1031571T>C' == f.id
+    assert 'NC_011083:n.1031571T>C' == f.id_no_prefix
     assert 'NC_011083' == f.sequence
     assert 'NC_011083' == f.scope
     assert f.gene is None
@@ -70,6 +75,7 @@ def test_create():
     # Don't include gene id if variant starts with 'n.' (coordinates with respect to sequence
     f = QueryFeatureHGVS.create('NC_011083', 'gene', 'n.1031571T>C')
     assert 'hgvs:NC_011083:n.1031571T>C' == f.id
+    assert 'NC_011083:n.1031571T>C' == f.id_no_prefix
     assert 'NC_011083' == f.sequence
     assert 'NC_011083' == f.scope
     assert f.gene is None
@@ -82,6 +88,7 @@ def test_create():
     # None
     f = QueryFeatureHGVS.create('NC_011083', 'gene', None)
     assert f.id is None
+    assert f.id_no_prefix is None
     assert 'NC_011083' == f.sequence
     assert 'NC_011083' == f.scope
     assert f.gene == 'gene'
@@ -94,6 +101,7 @@ def test_create():
     # None2
     f = QueryFeatureHGVS.create('NC_011083', None, None)
     assert f.id is None
+    assert f.id_no_prefix is None
     assert 'NC_011083' == f.sequence
     assert 'NC_011083' == f.scope
     assert f.gene is None

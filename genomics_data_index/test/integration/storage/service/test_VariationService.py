@@ -240,6 +240,15 @@ def test_get_variants_on_reference_no_index_unknowns(database, snippy_nucleotide
     assert 2 == len(mutations['reference:3897:5:G'].sample_ids)
     assert 3897 == mutations['reference:3897:5:G'].position
 
+    # Test should still have the same number of mutations when including unknowns since none were indexed
+    mutations = variation_service.get_variants_on_reference('genome', include_unknown=True)
+    assert 112 == len(mutations)
+    assert 'reference:839:1:G' in mutations
+
+    # Test setting include_present to False, which should give no results in this case
+    mutations = variation_service.get_variants_on_reference('genome', include_present=False, include_unknown=True)
+    assert 0 == len(mutations)
+
 
 def test_get_variants_on_reference_index_unknowns(database, snippy_nucleotide_data_package, reference_service_with_data,
                                                   sample_service, filesystem_storage):
@@ -283,6 +292,16 @@ def test_get_variants_on_reference_index_unknowns(database, snippy_nucleotide_da
     assert 3897 == mutations['reference:3897:5:G'].position
 
     assert 'reference:87:1:?' not in mutations
+
+    # Test only including unknowns
+    mutations = variation_service.get_variants_on_reference('genome', include_present=False, include_unknown=True)
+    assert 521 == len(mutations)
+    assert 'reference:87:1:?' in mutations
+    assert 'reference:839:1:G' not in mutations
+
+    # Test inluding neigther present nor unknowns
+    mutations = variation_service.get_variants_on_reference('genome', include_present=False, include_unknown=False)
+    assert 0 == len(mutations)
 
 
 def test_insert_variants_examine_variation_with_unknown(database, snippy_nucleotide_data_package,

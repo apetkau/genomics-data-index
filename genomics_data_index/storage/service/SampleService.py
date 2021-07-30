@@ -239,7 +239,7 @@ class SampleService:
                     standardized_features_to_input_feature[dbf.id] = [feature.id]
                 standardized_features_ids.add(dbf.id)
             elif isinstance(feature, QueryFeatureHGVSGN):
-                pass
+                logger.warning(f'feature=[{feature}] is a QueryFeatureHGVSGN and I do not handle it here.')
             elif isinstance(feature, QueryFeatureHGVS):
                 if feature.is_nucleotide():
                     standardized_feature_hgvs_c_ids.add(feature.id)
@@ -287,7 +287,7 @@ class SampleService:
         return unstandardized_variants
 
     def _get_mlst_samples_by_mlst_features(self, features: List[QueryFeatureMLST]) -> List[MLSTAllelesSamples]:
-        feature_ids = list({f.id for f in features})
+        feature_ids = list({f.id_no_prefix for f in features})
         mlst_alleles = self._connection.get_session().query(MLSTAllelesSamples) \
             .filter(MLSTAllelesSamples._sla.in_(feature_ids)) \
             .all()
@@ -313,7 +313,7 @@ class SampleService:
                     unknown_to_features_dict[unknown_feature.id] = feature
             except FeatureExplodeUnknownError as e:
                 logger.warning(
-                    f'Could map feature={feature} to a set of unknown features. Will assume no unknowns exist.')
+                    f'Could not map feature={feature} to a set of unknown features. Will assume no unknowns exist.')
 
         if len(unknown_features) > 0:
             unknown_features_sets = self.find_sample_sets_by_features(unknown_features)
@@ -373,7 +373,7 @@ class SampleService:
             features = cast(List[QueryFeatureMLST], features)
             mlst_alleles = self._get_mlst_samples_by_mlst_features(features)
 
-            return {a.sla: a.sample_ids for a in mlst_alleles}
+            return {a.query_id: a.sample_ids for a in mlst_alleles}
         else:
             raise Exception(f'Invalid feature type {feature_type}')
 
@@ -389,7 +389,7 @@ class SampleService:
             features = cast(List[QueryFeatureMLST], features)
             mlst_alleles = self._get_mlst_samples_by_mlst_features(features)
 
-            return {a.sla: self.find_samples_by_ids(a.sample_ids) for a in mlst_alleles}
+            return {a.query_id: self.find_samples_by_ids(a.sample_ids) for a in mlst_alleles}
         else:
             raise Exception(f'Invalid feature type {feature_type}')
 
@@ -405,7 +405,7 @@ class SampleService:
             features = cast(List[QueryFeatureMLST], features)
             mlst_alleles = self._get_mlst_samples_by_mlst_features(features)
 
-            allele_id_to_count = {a.sla: len(a.sample_ids) for a in mlst_alleles}
+            allele_id_to_count = {a.query_id: len(a.sample_ids) for a in mlst_alleles}
             for f in features:
                 if f.id not in allele_id_to_count:
                     allele_id_to_count[f.id] = 0
