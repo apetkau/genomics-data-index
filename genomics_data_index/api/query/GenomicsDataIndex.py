@@ -131,20 +131,21 @@ class GenomicsDataIndex:
                                      include_present=include_present, include_unknown=include_unknown,
                                      id_type=id_type, ignore_annotations=ignore_annotations)
 
-    def mlst_summary(self, scheme_name: str, include_present: bool = True,
+    def mlst_summary(self, scheme_name: str, locus: str = None, include_present: bool = True,
                      include_unknown: bool = False) -> pd.DataFrame:
         """
         Summarizes all MLST alleles stored in this index relative to the passed scheme name.
         Shorthand for features_summary(kind='mlst', ...)
 
         :param scheme_name: The MLST scheme to summarize.
+        :param locus: The locus id to restrict summaries to. Defaults to all locus IDs.
         :param include_present: Whether or not MLST features present in this index (i.e., not unknown/missing)
                                 should be included.
         :param include_unknown: Whether or not unknown MLST alleles should be included.
         :return: A summary of all MLST alleles in this index as a DataFrame.
         """
         return self.features_summary(kind='mlst', scope=scheme_name, include_present=include_present,
-                                     include_unknown=include_unknown)
+                                     include_unknown=include_unknown, locus=locus)
 
     def features_summary(self, kind: str = 'mutations', scope: str = None,
                          include_present: bool = True, include_unknown: bool = False, **kwargs) -> pd.DataFrame:
@@ -163,23 +164,25 @@ class GenomicsDataIndex:
                                                     include_unknown=include_unknown, **kwargs)
         elif kind == 'mlst':
             return self._mlst_summary_internal(scheme_name=scope, include_present=include_present,
-                                               include_unknown=include_unknown)
+                                               include_unknown=include_unknown, **kwargs)
         else:
             raise Exception(f'Unknown value for kind=[{kind}]. Must be one of {self.FEAUTRE_KINDS}.')
 
-    def _mlst_summary_internal(self, scheme_name: str, include_present: bool = True,
+    def _mlst_summary_internal(self, scheme_name: str, locus: str = None, include_present: bool = True,
                                include_unknown: bool = False) -> pd.DataFrame:
         """
         Summarizes all MLST alleles stored in this index relative to the passed scheme name.
 
         :param scheme_name: The MLST scheme to summarize.
+        :param locus: The locus id to restrict summaries to. Defaults to all locus IDs.
         :param include_present: Whether or not MLST features present in this index (i.e., not unknown/missing)
                                 should be included.
         :param include_unknown: Whether or not unknown MLST alleles should be included.
         :return: A summary of all MLST alleles in this index as a DataFrame.
         """
         mlst_service: MLSTService = self._connection.mlst_service
-        mlst_features = mlst_service.get_features_for_scheme(scheme_name, include_present=include_present,
+        mlst_features = mlst_service.get_features_for_scheme(scheme_name, locus=locus,
+                                                             include_present=include_present,
                                                              include_unknown=include_unknown)
         total_samples = self._connection.sample_service.count_samples_associated_with_mlst_scheme(scheme_name)
 

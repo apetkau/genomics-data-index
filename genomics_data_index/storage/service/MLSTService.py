@@ -54,7 +54,7 @@ class MLSTService(FeatureService):
 
         return schemes
 
-    def get_features_for_scheme(self, scheme: str, include_present: bool = True,
+    def get_features_for_scheme(self, scheme: str, locus: str = None, include_present: bool = True,
                                 include_unknown: bool = False) -> Dict[str, MLSTAllelesSamples]:
         query = self._database.get_session().query(MLSTAllelesSamples).filter(
             MLSTAllelesSamples.scheme == scheme)
@@ -67,6 +67,9 @@ class MLSTService(FeatureService):
                 return dict()
         elif not include_unknown:
             query = query.filter(MLSTAllelesSamples.allele != MLST_UNKNOWN_ALLELE)
+
+        if locus is not None:
+            query = query.filter(MLSTAllelesSamples.locus == locus)
 
         allele_samples = query.all()
 

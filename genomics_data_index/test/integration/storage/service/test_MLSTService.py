@@ -369,6 +369,16 @@ def test_get_features_for_scheme(mlst_service_loaded: MLSTService):
             'campylobacter:uncA:6'} == set(mlst_features.keys())
     assert isinstance(mlst_features['campylobacter:glyA:3'], MLSTAllelesSamples)
 
+    # Test lmonocytogenes with specific locus
+    mlst_features = mlst_service_loaded.get_features_for_scheme('lmonocytogenes', locus='abcZ')
+    assert 1 == len(mlst_features)
+    assert {'lmonocytogenes:abcZ:1'} == set(mlst_features.keys())
+
+    # Test lmonocytogenes with specific locus 2
+    mlst_features = mlst_service_loaded.get_features_for_scheme('lmonocytogenes', locus='lhkA')
+    assert 2 == len(mlst_features)
+    assert {'lmonocytogenes:lhkA:4', 'lmonocytogenes:lhkA:5'} == set(mlst_features.keys())
+
     # Test include unknown
     mlst_features = mlst_service_loaded.get_features_for_scheme('campylobacter', include_unknown=True)
     assert 8 == len(mlst_features)
