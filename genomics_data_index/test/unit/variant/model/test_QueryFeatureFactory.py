@@ -4,6 +4,7 @@ from genomics_data_index.storage.model.QueryFeatureFactory import QueryFeatureFa
 from genomics_data_index.storage.model.QueryFeatureHGVS import QueryFeatureHGVS
 from genomics_data_index.storage.model.QueryFeatureHGVSGN import QueryFeatureHGVSGN
 from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
+from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
 
 query_feature_factory = QueryFeatureFactory.instance()
 
@@ -119,6 +120,28 @@ def test_create_spdi():
     assert '?' == f.insertion
     assert 1 == f.deletion_length()
     assert f.has_deletion_sequence()
+    assert f.is_unknown()
+
+
+def test_create_mlst():
+    f = query_feature_factory.create_feature('mlst:ecoli:adk:100')
+    assert isinstance(f, QueryFeatureMLST)
+    assert 'mlst:ecoli:adk:100' == f.id
+    assert 'ecoli:adk:100' == f.id_no_prefix
+    assert 'ecoli' == f.scheme
+    assert 'ecoli' == f.scope
+    assert 'adk' == f.locus
+    assert '100' == f.allele
+    assert not f.is_unknown()
+
+    f = query_feature_factory.create_feature('mlst:ecoli:adk:?')
+    assert isinstance(f, QueryFeatureMLST)
+    assert 'mlst:ecoli:adk:?' == f.id
+    assert 'ecoli:adk:?' == f.id_no_prefix
+    assert 'ecoli' == f.scheme
+    assert 'ecoli' == f.scope
+    assert 'adk' == f.locus
+    assert '?' == f.allele
     assert f.is_unknown()
 
 

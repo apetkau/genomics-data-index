@@ -401,10 +401,8 @@ class SamplesQueryIndex(SamplesQuery):
                             f'dataframe. Perhaps you could try attaching a dataframe with join() first before querying.')
         elif kind is None:
             raise Exception(f'property=[{property}] is not of type QueryFeature so must set "kind" parameter')
-        elif kind == 'mutation' or kind == 'mutations':
+        elif kind == 'mutation' or kind == 'mutations' or kind == 'mlst':
             query_feature = self._query_feature_factory.create_feature(property)
-        elif kind == 'mlst':
-            query_feature = QueryFeatureMLST(property)
         else:
             raise Exception(f'kind={kind} is not recognized for {self}. Must be one of {self._get_has_kinds()}')
 

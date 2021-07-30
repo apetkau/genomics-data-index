@@ -1480,6 +1480,15 @@ def test_query_mlst_allele(loaded_database_connection: DataIndexConnection):
     assert {sample_2014D_0067.id} == set(query_result.unknown_set)
     assert 8 == len(query_result.absent_set)
     assert 9 == len(query_result.universe_set)
+    
+    # Direct from string
+    query_result = query(loaded_database_connection).hasa('mlst:campylobacter:uncA:6')
+    assert 1 == len(query_result)
+    assert {sample_2014D_0068.id} == set(query_result.sample_set)
+    assert 1 == len(query_result.unknown_set)
+    assert {sample_2014D_0067.id} == set(query_result.unknown_set)
+    assert 7 == len(query_result.absent_set)
+    assert 9 == len(query_result.universe_set)
 
 
 def test_query_chained_mlst_alleles(loaded_database_connection: DataIndexConnection):
