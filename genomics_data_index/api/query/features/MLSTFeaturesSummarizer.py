@@ -26,9 +26,12 @@ class MLSTFeaturesSummarizer(FeaturesFromIndexSummarizer):
     def summary_columns(self) -> List[str]:
         return ['Scheme', 'Locus', 'Allele', 'Count', 'Total', 'Percent']
 
-    def _create_feature_sample_count_row(self, feature: FeatureSamples, sample_count: int) -> List[Any]:
+    def _create_feature_sample_count_row(self, feature: FeatureSamples,
+                                         sample_count: int, total: int) -> List[Any]:
         if isinstance(feature, MLSTAllelesSamples):
-            return [feature.query_id, feature.scheme, feature.locus, feature.allele, sample_count]
+            percent = (sample_count / total) * 100
+            return [feature.query_id, feature.scheme, feature.locus, feature.allele,
+                    sample_count, total, percent]
         else:
             raise Exception(f'feature={feature} is not of type {MLSTAllelesSamples.__name__}')
 
@@ -41,8 +44,6 @@ class MLSTFeaturesSummarizer(FeaturesFromIndexSummarizer):
                                                           include_unknown=self._include_unknown)
         data = self._create_feature_sample_count_rows(mlst_present_features, present_samples=sample_set)
         summary_df = pd.DataFrame(data,
-                                  columns=['MLST Feature', 'Scheme', 'Locus', 'Allele', 'Count'])
-        summary_df['Total'] = len(sample_set)
-        summary_df['Percent'] = 100 * (summary_df['Count'] / summary_df['Total'])
-
+                                  columns=['MLST Feature', 'Scheme', 'Locus', 'Allele', 'Count',
+                                           'Total', 'Percent'])
         return summary_df.set_index('MLST Feature')
