@@ -15,7 +15,7 @@ class FeaturesFromIndexSummarizer(FeaturesSummarizer, abc.ABC):
         super().__init__(connection=connection)
 
     def _create_summary_df(self, present_features: Dict[str, FeatureSamples],
-                                   present_samples: SampleSet) -> pd.DataFrame:
+                           present_samples: SampleSet) -> pd.DataFrame:
         data = []
         total = len(present_samples)
         for feature_id in present_features:
@@ -23,7 +23,8 @@ class FeaturesFromIndexSummarizer(FeaturesSummarizer, abc.ABC):
             samples_in_feature = present_samples.intersection(feature.sample_ids)
             sample_count = len(samples_in_feature)
             if sample_count > 0:
-                data.append(self._create_feature_sample_count_row(feature,
+                data.append(self._create_feature_sample_count_row(feature_id,
+                                                                  feature=feature,
                                                                   sample_count=sample_count,
                                                                   total=total))
         summary_df = pd.DataFrame(data,
@@ -31,6 +32,6 @@ class FeaturesFromIndexSummarizer(FeaturesSummarizer, abc.ABC):
         return summary_df.set_index(self.index_name)
 
     @abc.abstractmethod
-    def _create_feature_sample_count_row(self, feature: FeatureSamples,
+    def _create_feature_sample_count_row(self, feature_id: str, feature: FeatureSamples,
                                          sample_count: int, total: int) -> List[Any]:
         pass

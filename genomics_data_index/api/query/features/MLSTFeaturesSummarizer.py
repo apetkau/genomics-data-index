@@ -30,7 +30,7 @@ class MLSTFeaturesSummarizer(FeaturesFromIndexSummarizer):
     def index_name(self) -> str:
         return 'MLST Feature'
 
-    def _create_feature_sample_count_row(self, feature: FeatureSamples,
+    def _create_feature_sample_count_row(self, feature_id: str, feature: FeatureSamples,
                                          sample_count: int, total: int) -> List[Any]:
         if isinstance(feature, MLSTAllelesSamples):
             percent = (sample_count / total) * 100
