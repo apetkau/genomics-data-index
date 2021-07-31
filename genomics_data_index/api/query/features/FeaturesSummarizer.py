@@ -3,13 +3,14 @@ import abc
 import pandas as pd
 
 from genomics_data_index.storage.SampleSet import SampleSet
+from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
 
 
 class FeaturesSummarizer(abc.ABC):
     FEATURES_SELECTIONS = ['all', 'unique']
 
-    def __init__(self):
-        pass
+    def __init__(self, connection: DataIndexConnection):
+        self._connection = connection
 
     @abc.abstractmethod
     def summary(self, present_samples: SampleSet,

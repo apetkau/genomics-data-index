@@ -8,9 +8,7 @@ from genomics_data_index.api.query.features.FeaturesSummarizer import FeaturesSu
 class MutationFeaturesSummarizer(FeaturesSummarizer):
 
     def __init__(self, connection: DataIndexConnection, ignore_annotations: bool):
-        super().__init__()
-
-        self._connection = connection
+        super().__init__(connection=connection)
         self._ignore_annotations = ignore_annotations
 
     def summary(self, present_samples: SampleSet,
