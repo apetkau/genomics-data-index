@@ -15,13 +15,13 @@ class MutationFeaturesFromIndexSummarizer(FeaturesFromIndexSummarizer):
 
     def __init__(self, connection: DataIndexConnection, ignore_annotations: bool = False,
                  include_present: bool = True, include_unknown: bool = False,
-                 mutation_type: str = 'all'):
+                 mutation_type: str = 'all', id_type: str = 'spdi_ref'):
         super().__init__(connection=connection)
         self._ignore_annotations = ignore_annotations
         self._mutation_type = mutation_type
         self._include_present = include_present
         self._include_unknown = include_unknown
-        self._id_type = 'spdi_ref'
+        self._id_type = id_type
 
     @property
     def summary_columns(self) -> List[str]:

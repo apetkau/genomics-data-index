@@ -48,6 +48,20 @@ def test_summary_all(loaded_database_genomic_data_store: GenomicsDataIndex):
     assert list(expected_df['Total']) == list(mutations_df['Total'])
     assert 22 == mutations_df.loc['reference:619:G:C', 'Percent']
 
+    # Test with different id type where deletion is int instead of sequence
+    mutations_summarizer = MutationFeaturesFromIndexSummarizer(connection=loaded_database_genomic_data_store.connection,
+                                                               ignore_annotations=True, id_type='spdi')
+    mutations_df = mutations_summarizer.summary(present_set)
+    mutations_df['Percent'] = mutations_df['Percent'].astype(int)  # Convert to int for easier comparison
+    mutations_df = mutations_df.sort_index()
+
+    assert len(expected_df) == len(mutations_df)
+    assert list(expected_df.columns) == list(mutations_df.columns)
+    assert 2 == mutations_df.loc['reference:619:1:C', 'Count']
+    assert 2 == mutations_df.loc['reference:3063:1:ATGCAGC', 'Count']
+    assert 1 == mutations_df.loc['reference:1984:7:TTGA', 'Count']
+    assert 1 == mutations_df.loc['reference:866:9:G', 'Count']
+
 
 def test_summary_unique(loaded_database_genomic_data_store: GenomicsDataIndex):
     db = loaded_database_genomic_data_store.connection.database
