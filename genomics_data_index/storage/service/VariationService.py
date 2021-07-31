@@ -74,6 +74,21 @@ class VariationService(FeatureService):
 
         return {m.spdi: len(m.sample_ids) for m in mutations}
 
+    def get_features(self, include_present: bool = True,
+                     include_unknown: bool = False) -> Dict[str, NucleotideVariantsSamples]:
+        query = self._connection.get_session().query(NucleotideVariantsSamples)
+
+        if not include_present:
+            if include_unknown:
+                query = query.filter(NucleotideVariantsSamples.var_type == NUCLEOTIDE_UNKNOWN_TYPE)
+            else:
+                # Here, I'm not including unknown or present, so don't query database
+                return dict()
+        elif not include_unknown:
+            query = query.filter(NucleotideVariantsSamples.var_type != NUCLEOTIDE_UNKNOWN_TYPE)
+
+        return {f.id: f for f in query.all()}
+
     def get_variants_on_reference(self, reference_name: str, include_present: bool = True,
                                   include_unknown: bool = False) -> Dict[str, NucleotideVariantsSamples]:
         reference_sequence_names = self._reference_sequence_names(reference_name)
