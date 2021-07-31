@@ -149,7 +149,9 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def features_summary(self, kind: str = 'mutations', selection: str = 'all', **kwargs) -> pd.DataFrame:
+    def features_summary(self, kind: str = 'mutations', selection: str = 'all',
+                         include_present_features: bool = True, include_unknown_features: bool = False,
+                         **kwargs) -> pd.DataFrame:
         """
         Summarizes the selected features in a DataFrame. Please specify the kind of features with the kind parameter.
 
@@ -172,6 +174,8 @@ class SamplesQuery(abc.ABC):
                           at least one of the selected samples in this query. Use 'unique' to select only those features
                           that are present in the selected samples of this query
                           (and nowhere else in the universe of samples).
+        :param include_present_features: Will determine if present (i.e., not unknown) features should be included.
+        :param include_unknown_features: Will determine if unknown features should be included.
         :param **kwargs: Additional keyword arguments. Please see the documentation for the underlying implementation.
 
         :return: A DataFrame summarizing the features within the selected samples.

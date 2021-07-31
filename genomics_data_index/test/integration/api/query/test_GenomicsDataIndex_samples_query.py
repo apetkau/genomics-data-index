@@ -3236,6 +3236,36 @@ def test_summary_features_kindmutations(loaded_database_connection: DataIndexCon
     assert list(expected_df['Total']) == list(mutations_df['Total'])
     assert math.isclose(100 * (2 / 9), mutations_df.loc['reference:619:G:C', 'Percent'])
 
+    # Test including unknowns
+    mutations_df = query(loaded_database_connection).features_summary(ignore_annotations=True,
+                                                                      include_unknown_features=True)
+    mutations_df['Percent'] = mutations_df['Percent'].astype(int)  # Convert to int for easier comparison
+    mutations_df = mutations_df.sort_index()
+
+    assert 632 == len(mutations_df)
+    assert list(expected_df.columns) == list(mutations_df.columns)
+    assert 2 == mutations_df.loc['reference:619:G:C', 'Count']
+    assert 2 == mutations_df.loc['reference:3063:A:ATGCAGC', 'Count']
+    assert 1 == mutations_df.loc['reference:1984:GTGATTG:TTGA', 'Count']
+    assert 1 == mutations_df.loc['reference:866:GCCAGATCC:G', 'Count']
+    assert 3 == mutations_df.loc['reference:90:T:?', 'Count']
+    assert 2 == mutations_df.loc['reference:190:A:?', 'Count']
+    assert 1 == mutations_df.loc['reference:887:T:?', 'Count']
+
+    # Test only include unknowns
+    mutations_df = query(loaded_database_connection).features_summary(ignore_annotations=True,
+                                                                      include_unknown_features=True,
+                                                                      include_present_features=False)
+    mutations_df['Percent'] = mutations_df['Percent'].astype(int)  # Convert to int for easier comparison
+    mutations_df = mutations_df.sort_index()
+
+    assert 521 == len(mutations_df)
+    assert list(expected_df.columns) == list(mutations_df.columns)
+    assert 3 == mutations_df.loc['reference:90:T:?', 'Count']
+    assert 2 == mutations_df.loc['reference:190:A:?', 'Count']
+    assert 1 == mutations_df.loc['reference:887:T:?', 'Count']
+    assert 'reference:619:G:C' not in mutations_df
+
 
 def test_summary_features_kindmutations_unique(loaded_database_connection: DataIndexConnection):
     dfA = pd.read_csv(snippy_all_dataframes['SampleA'], sep='\t')
@@ -3502,8 +3532,6 @@ def test_summary_features_two(loaded_database_connection: DataIndexConnection):
 
 
 def test_summary_features_kindmlst(loaded_database_connection: DataIndexConnection):
-    db = loaded_database_connection.database
-
     # Test case of summary of single sample
     summary_df = query(loaded_database_connection).isa('SampleA').features_summary(kind='mlst')
     summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
@@ -3535,7 +3563,7 @@ def test_summary_features_kindmlst(loaded_database_connection: DataIndexConnecti
     # Test only unknown
     summary_df = query(loaded_database_connection).isin(
         ['SampleA', 'SampleB', 'CFSAN002349', '2014D-0067']).features_summary(
-        kind='mlst', include_present=False, include_unknown=True)
+        kind='mlst', include_present_features=False, include_unknown_features=True)
     summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
     assert 2 == len(summary_df)
     assert {'lmonocytogenes', 'campylobacter'} == set(summary_df['Scheme'].tolist())
@@ -3547,7 +3575,7 @@ def test_summary_features_kindmlst(loaded_database_connection: DataIndexConnecti
     # Test only unknown, restrict scheme
     summary_df = query(loaded_database_connection).isin(
         ['SampleA', 'SampleB', 'CFSAN002349', '2014D-0067']).features_summary(
-        kind='mlst', scheme='lmonocytogenes', include_present=False, include_unknown=True)
+        kind='mlst', scheme='lmonocytogenes', include_present_features=False, include_unknown_features=True)
     summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
     assert 1 == len(summary_df)
     assert {'lmonocytogenes'} == set(summary_df['Scheme'].tolist())

@@ -248,11 +248,19 @@ class SamplesQueryIndex(SamplesQuery):
             '% Unknown': per_unknown,
         }])
 
-    def features_summary(self, kind: str = 'mutations', selection: str = 'all', **kwargs) -> pd.DataFrame:
+    def features_summary(self, kind: str = 'mutations', selection: str = 'all',
+                         include_present_features: bool = True, include_unknown_features: bool = False,
+                         **kwargs) -> pd.DataFrame:
         if kind == 'mutations':
-            features_summarizier = MutationFeaturesFromIndexSummarizer(connection=self._query_connection, **kwargs)
+            features_summarizier = MutationFeaturesFromIndexSummarizer(connection=self._query_connection,
+                                                                       include_unknown=include_unknown_features,
+                                                                       include_present=include_present_features,
+                                                                       **kwargs)
         elif kind == 'mlst':
-            features_summarizier = MLSTFeaturesSummarizer(connection=self._query_connection, **kwargs)
+            features_summarizier = MLSTFeaturesSummarizer(connection=self._query_connection,
+                                                          include_unknown=include_unknown_features,
+                                                          include_present=include_present_features,
+                                                          **kwargs)
         else:
             raise Exception(f'Unsupported value kind=[{kind}]. Must be one of {self.SUMMARY_FEATURES_KINDS}.')
 
