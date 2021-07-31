@@ -15,7 +15,7 @@ from genomics_data_index.configuration.connector import DataIndexConnection
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.QueryFeature import QueryFeature
 from genomics_data_index.storage.model.QueryFeatureFactory import QueryFeatureFactory
-from genomics_data_index.api.query.features.MutationFeaturesSummarizer import MutationFeaturesSummarizer
+from genomics_data_index.api.query.features.MutationFeaturesFromIndexSummarizer import MutationFeaturesFromIndexSummarizer
 from genomics_data_index.api.query.features.MLSTFeaturesSummarizer import MLSTFeaturesSummarizer
 from genomics_data_index.storage.service.KmerService import KmerService
 
@@ -250,7 +250,7 @@ class SamplesQueryIndex(SamplesQuery):
 
     def features_summary(self, kind: str = 'mutations', selection: str = 'all', **kwargs) -> pd.DataFrame:
         if kind == 'mutations':
-            features_summarizier = MutationFeaturesSummarizer(connection=self._query_connection, **kwargs)
+            features_summarizier = MutationFeaturesFromIndexSummarizer(connection=self._query_connection, **kwargs)
         elif kind == 'mlst':
             features_summarizier = MLSTFeaturesSummarizer(connection=self._query_connection, **kwargs)
         else:
@@ -264,10 +264,8 @@ class SamplesQueryIndex(SamplesQuery):
         else:
             raise Exception(f'selection=[{selection}] is unknown. Must be one of {self.FEATURES_SELECTIONS}')
 
-    def tofeaturesset(self, kind: str = 'mutations', selection: str = 'all',
-                      ncores: int = 1) -> Set[str]:
-        return set(self.features_summary(kind=kind, selection=selection, ncores=ncores,
-                                         ignore_annotations=True).index)
+    def tofeaturesset(self, kind: str = 'mutations', selection: str = 'all') -> Set[str]:
+        return set(self.features_summary(kind=kind, selection=selection, ignore_annotations=True).index)
 
     def and_(self, other):
         if isinstance(other, SamplesQuery):

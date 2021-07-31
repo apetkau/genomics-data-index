@@ -179,15 +179,13 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def tofeaturesset(self, kind: str = 'mutations', selection: str = 'all',
-                      ncores: int = 1) -> Set[str]:
+    def tofeaturesset(self, kind: str = 'mutations', selection: str = 'all') -> Set[str]:
         """
         Returns all features as a set of strings for the selected samples.
 
         :param kind: The kind of feature to summarize. By default this is *mutations*.
         :param selection: The method used to select features. Use 'all' (default) to select all features.
                   Use 'unique' to select only those features unique to the selected samples.
-        :param ncores: The number of cores to use for generating the features set.
 
         :return: A set of feature identifiers derived from the selected samples.
         """
