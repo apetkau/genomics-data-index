@@ -11,8 +11,9 @@ from genomics_data_index.storage.model.db import FeatureSamples, MLSTAllelesSamp
 
 class MLSTFeaturesSummarizer(FeaturesSummarizer):
 
-    def __init__(self, connection: DataIndexConnection):
+    def __init__(self, connection: DataIndexConnection, scheme: str = None):
         super().__init__(connection=connection)
+        self._scheme = scheme
 
     def _feature_sample_count_iter(self, present_features: Dict[str, FeatureSamples],
                                    present_samples: SampleSet) -> Generator[Tuple[FeatureSamples, int], None, None]:
@@ -30,7 +31,7 @@ class MLSTFeaturesSummarizer(FeaturesSummarizer):
         # TODO: This isn't the best implementation right now since I have to load
         # all MLST feature => sample mappings and then iterate over them
         # To do this more efficiently I would probably need to modify my data model
-        mlst_present_features = mlst_service.get_features(include_unknown=False)
+        mlst_present_features = mlst_service.get_features(scheme=self._scheme, include_unknown=False)
         data = []
         for feature, sample_count in self._feature_sample_count_iter(present_features=mlst_present_features,
                                                                      present_samples=present_samples):
