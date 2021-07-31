@@ -15,7 +15,7 @@ from genomics_data_index.configuration.connector import DataIndexConnection
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.QueryFeature import QueryFeature
 from genomics_data_index.storage.model.QueryFeatureFactory import QueryFeatureFactory
-from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
+from genomics_data_index.api.query.features.MutationFeaturesSummarizer import MutationFeaturesSummarizer
 from genomics_data_index.storage.service.KmerService import KmerService
 
 logger = logging.getLogger(__name__)
@@ -249,7 +249,11 @@ class SamplesQueryIndex(SamplesQuery):
 
     def features_summary(self, kind: str = 'mutations', selection: str = 'all', **kwargs) -> pd.DataFrame:
         if kind == 'mutations':
-            return self._summary_features_mutations(kind=kind, selection=selection, **kwargs)
+            mutations_summarizer = MutationFeaturesSummarizer(connection=self._query_connection, **kwargs)
+            return mutations_summarizer.summary(present_samples=self.sample_set,
+                                                unknown_samples=self.unknown_set,
+                                                absent_samples=self.absent_set,
+                                                selection=selection)
         else:
             raise Exception(f'Unsupported value kind=[{kind}]. Must be one of {self.SUMMARY_FEATURES_KINDS}.')
 
