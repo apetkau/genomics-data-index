@@ -16,6 +16,7 @@ from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.QueryFeature import QueryFeature
 from genomics_data_index.storage.model.QueryFeatureFactory import QueryFeatureFactory
 from genomics_data_index.api.query.features.MutationFeaturesSummarizer import MutationFeaturesSummarizer
+from genomics_data_index.api.query.features.MLSTFeaturesSummarizer import MLSTFeaturesSummarizer
 from genomics_data_index.storage.service.KmerService import KmerService
 
 logger = logging.getLogger(__name__)
@@ -28,7 +29,7 @@ class SamplesQueryIndex(SamplesQuery):
     """
 
     HAS_KINDS = ['mutation', 'mutations', 'mlst']
-    SUMMARY_FEATURES_KINDS = ['mutations']
+    SUMMARY_FEATURES_KINDS = ['mutations', 'mlst']
     FEATURES_SELECTIONS = ['all', 'unique']
     ISIN_TYPES = ['sample', 'samples', 'distance', 'distances']
     ISA_TYPES = ['sample', 'samples']
@@ -249,13 +250,16 @@ class SamplesQueryIndex(SamplesQuery):
 
     def features_summary(self, kind: str = 'mutations', selection: str = 'all', **kwargs) -> pd.DataFrame:
         if kind == 'mutations':
-            mutations_summarizer = MutationFeaturesSummarizer(connection=self._query_connection, **kwargs)
-            return mutations_summarizer.summary(present_samples=self.sample_set,
-                                                unknown_samples=self.unknown_set,
-                                                absent_samples=self.absent_set,
-                                                selection=selection)
+            features_summarizier = MutationFeaturesSummarizer(connection=self._query_connection, **kwargs)
+        elif kind == 'mlst':
+            features_summarizier = MLSTFeaturesSummarizer(connection=self._query_connection, **kwargs)
         else:
             raise Exception(f'Unsupported value kind=[{kind}]. Must be one of {self.SUMMARY_FEATURES_KINDS}.')
+
+        return features_summarizier.summary(present_samples=self.sample_set,
+                                            unknown_samples=self.unknown_set,
+                                            absent_samples=self.absent_set,
+                                            selection=selection)
 
     def tofeaturesset(self, kind: str = 'mutations', selection: str = 'all',
                       ncores: int = 1) -> Set[str]:

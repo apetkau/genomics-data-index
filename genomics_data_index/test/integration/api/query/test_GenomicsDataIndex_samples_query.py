@@ -3488,6 +3488,61 @@ def test_summary_features_two(loaded_database_connection: DataIndexConnection):
     assert math.isclose(100 * (2 / 2), mutations_df.loc['reference:839:C:G', 'Percent'])
 
 
+def test_summary_features_kindmlst(loaded_database_connection: DataIndexConnection):
+    db = loaded_database_connection.database
+
+    # Test case of summary of single sample
+    summary_df = query(loaded_database_connection).isa('SampleA').features_summary(kind='mlst')
+    summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
+    assert 7 == len(summary_df)
+    assert {'lmonocytogenes'} == set(summary_df['Scheme'].tolist())
+    assert 'MLST Feature' == summary_df.index.name
+    assert ['Scheme', 'Locus', 'Allele', 'Count', 'Total', 'Percent'] == list(summary_df.columns)
+    assert ['lmonocytogenes', 'abcZ', '1', 1, 1, 100] == summary_df.loc['mlst:lmonocytogenes:abcZ:1'].tolist()
+    assert ['lmonocytogenes', 'bglA', '51', 1, 1, 100] == summary_df.loc['mlst:lmonocytogenes:bglA:51'].tolist()
+
+    # Test samples across multiple schemes
+    summary_df = query(loaded_database_connection).isin(['SampleA', 'SampleB', 'CFSAN002349',
+                                                         '2014D-0067']).features_summary(kind='mlst')
+    summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
+    assert 15 == len(summary_df)
+    assert {'lmonocytogenes', 'campylobacter'} == set(summary_df['Scheme'].tolist())
+    assert 'MLST Feature' == summary_df.index.name
+    assert ['Scheme', 'Locus', 'Allele', 'Count', 'Total', 'Percent'] == list(summary_df.columns)
+    assert ['lmonocytogenes', 'abcZ', '1', 3, 4, 75] == summary_df.loc['mlst:lmonocytogenes:abcZ:1'].tolist()
+    assert ['lmonocytogenes', 'bglA', '51', 2, 4, 50] == summary_df.loc['mlst:lmonocytogenes:bglA:51'].tolist()
+    assert ['lmonocytogenes', 'bglA', '52', 1, 4, 25] == summary_df.loc['mlst:lmonocytogenes:bglA:52'].tolist()
+    assert ['lmonocytogenes', 'ldh', '5', 2, 4, 50] == summary_df.loc['mlst:lmonocytogenes:ldh:5'].tolist()
+    assert ['lmonocytogenes', 'lhkA', '5', 2, 4, 50] == summary_df.loc['mlst:lmonocytogenes:lhkA:5'].tolist()
+    assert ['lmonocytogenes', 'lhkA', '4', 1, 4, 25] == summary_df.loc['mlst:lmonocytogenes:lhkA:4'].tolist()
+    assert ['campylobacter', 'aspA', '2', 1, 4, 25] == summary_df.loc['mlst:campylobacter:aspA:2'].tolist()
+    assert ['campylobacter', 'glyA', '3', 1, 4, 25] == summary_df.loc['mlst:campylobacter:glyA:3'].tolist()
+    assert 6 == len(summary_df[summary_df['Scheme'] == 'campylobacter']) # Missing one feature since it's unknown
+
+    # Test only unknown
+    summary_df = query(loaded_database_connection).isin(
+        ['SampleA', 'SampleB', 'CFSAN002349', '2014D-0067']).features_summary(
+        kind='mlst', include_present=False, include_unknown=True)
+    summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
+    assert 2 == len(summary_df)
+    assert {'lmonocytogenes', 'campylobacter'} == set(summary_df['Scheme'].tolist())
+    assert 'MLST Feature' == summary_df.index.name
+    assert ['Scheme', 'Locus', 'Allele', 'Count', 'Total', 'Percent'] == list(summary_df.columns)
+    assert ['lmonocytogenes', 'ldh', '?', 1, 4, 25] == summary_df.loc['mlst:lmonocytogenes:ldh:?'].tolist()
+    assert ['campylobacter', 'uncA', '?', 1, 4, 25] == summary_df.loc['mlst:campylobacter:uncA:?'].tolist()
+
+    # Test only unknown, restrict scheme
+    summary_df = query(loaded_database_connection).isin(
+        ['SampleA', 'SampleB', 'CFSAN002349', '2014D-0067']).features_summary(
+        kind='mlst', scheme='lmonocytogenes', include_present=False, include_unknown=True)
+    summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
+    assert 1 == len(summary_df)
+    assert {'lmonocytogenes'} == set(summary_df['Scheme'].tolist())
+    assert 'MLST Feature' == summary_df.index.name
+    assert ['Scheme', 'Locus', 'Allele', 'Count', 'Total', 'Percent'] == list(summary_df.columns)
+    assert ['lmonocytogenes', 'ldh', '?', 1, 4, 25] == summary_df.loc['mlst:lmonocytogenes:ldh:?'].tolist()
+
+
 def test_tofeaturesset_all(loaded_database_only_snippy: DataIndexConnection):
     dfA = pd.read_csv(snippy_all_dataframes['SampleA'], sep='\t')
     dfB = pd.read_csv(snippy_all_dataframes['SampleB'], sep='\t')
