@@ -26,16 +26,10 @@ def test_summary_all(loaded_database_genomic_data_store: GenomicsDataIndex):
     expected_df['Percent'] = 100 * (expected_df['Count'] / expected_df['Total'])
 
     present_set = SampleSet(all_sample_ids)
-    unknown_set = SampleSet.create_empty()
-    absent_set = SampleSet.create_empty()
-
     mutations_summarizer = MutationFeaturesSummarizer(connection=loaded_database_genomic_data_store.connection,
                                                       ignore_annotations=True)
 
-    mutations_df = mutations_summarizer.summary(present_samples=present_set,
-                                                unknown_samples=unknown_set,
-                                                absent_samples=absent_set,
-                                                selection='all')
+    mutations_df = mutations_summarizer.summary(present_set)
     mutations_df['Percent'] = mutations_df['Percent'].astype(int) # Convert to int for easier comparison
     mutations_df = mutations_df.sort_index()
 
@@ -52,13 +46,9 @@ def test_summary_unique(loaded_database_genomic_data_store: GenomicsDataIndex):
     sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
     sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
-    all_sample_ids = {s.id for s in db.get_session().query(Sample).all()}
 
     # Unique to A
     present_set = SampleSet({sampleA.id})
-    unknown_set = SampleSet.create_empty()
-    absent_set = SampleSet(all_sample_ids - {sampleA.id})
-
     mutations_summarizer = MutationFeaturesSummarizer(connection=loaded_database_genomic_data_store.connection,
                                                       ignore_annotations=True)
 
@@ -77,10 +67,7 @@ def test_summary_unique(loaded_database_genomic_data_store: GenomicsDataIndex):
     expected_df['Total'] = 1
     expected_df['Percent'] = 100 * (expected_df['Count'] / expected_df['Total'])
 
-    mutations_df = mutations_summarizer.summary(present_samples=present_set,
-                                                unknown_samples=unknown_set,
-                                                absent_samples=absent_set,
-                                                selection='all').sort_index()
+    mutations_df = mutations_summarizer.summary(present_set).sort_index()
     mutations_df['Percent'] = mutations_df['Percent'].astype(int) # Convert to int for easier comparison
 
     assert len(expected_df) == len(mutations_df)
@@ -92,8 +79,8 @@ def test_summary_unique(loaded_database_genomic_data_store: GenomicsDataIndex):
 
     # Unique to BC
     present_set = SampleSet({sampleB.id, sampleC.id})
-    unknown_set = SampleSet.create_empty()
-    absent_set = SampleSet(all_sample_ids - {sampleB.id, sampleC.id})
+    mutations_df = mutations_summarizer.summary(present_set).sort_index()
+    mutations_df['Percent'] = mutations_df['Percent'].astype(int) # Convert to int for easier comparison
 
     dfBC = pd.concat([dfB, dfC])
     expected_df = dfBC[~dfBC['Mutation'].isin(list(dfA['Mutation']))]
@@ -107,12 +94,6 @@ def test_summary_unique(loaded_database_genomic_data_store: GenomicsDataIndex):
     expected_df['Total'] = 2
     expected_df['Percent'] = 100 * (expected_df['Count'] / expected_df['Total'])
 
-    mutations_df = mutations_summarizer.summary(present_samples=present_set,
-                                                unknown_samples=unknown_set,
-                                                absent_samples=absent_set,
-                                                selection='all').sort_index()
-    mutations_df['Percent'] = mutations_df['Percent'].astype(int) # Convert to int for easier comparison
-
     assert len(expected_df) == len(mutations_df)
     assert 66 == len(mutations_df)  # Check length against independently generated length
     assert list(expected_df.index) == list(mutations_df.index)
@@ -125,7 +106,6 @@ def test_summary_unique(loaded_database_genomic_data_store: GenomicsDataIndex):
 
 def test_summary_annotations(loaded_database_genomic_data_store_annotations: GenomicsDataIndex):
     db = loaded_database_genomic_data_store_annotations.connection.database
-    all_sample_ids = {s.id for s in db.get_session().query(Sample).all()}
 
     mutations_summarizer = MutationFeaturesSummarizer(connection=loaded_database_genomic_data_store_annotations.connection,
                                                       ignore_annotations=False)
@@ -136,13 +116,7 @@ def test_summary_annotations(loaded_database_genomic_data_store_annotations: Gen
     three_samples = {sample_sh14_001.id, sample_sh14_014.id, sample_sh10_014.id}
 
     present_set = SampleSet(three_samples)
-    unknown_set = SampleSet.create_empty()
-    absent_set = SampleSet(all_sample_ids - three_samples)
-
-    mutations_df = mutations_summarizer.summary(present_samples=present_set,
-                                                unknown_samples=unknown_set,
-                                                absent_samples=absent_set,
-                                                selection='all')
+    mutations_df = mutations_summarizer.summary(present_set)
 
     assert ['Sequence', 'Position', 'Deletion', 'Insertion',
             'Count', 'Total', 'Percent', 'Annotation', 'Annotation_Impact',

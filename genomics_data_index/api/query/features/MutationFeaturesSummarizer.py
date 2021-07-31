@@ -1,3 +1,5 @@
+from typing import List
+
 import pandas as pd
 
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
@@ -10,18 +12,30 @@ class MutationFeaturesSummarizer(FeaturesSummarizer):
     def __init__(self, connection: DataIndexConnection, ignore_annotations: bool = False):
         super().__init__(connection=connection)
         self._ignore_annotations = ignore_annotations
+        self._ncores = 1
+        self._batch_size = 500
+        self._mutation_type = 'all'
 
-    def summary(self, present_samples: SampleSet,
-                unknown_samples: SampleSet,
-                absent_samples: SampleSet,
-                selection: str) -> pd.DataFrame:
-        return self._summary_features_mutations(present_samples=present_samples,
-                                                unknown_samples=unknown_samples,
-                                                absent_samples=absent_samples,
-                                                selection=selection)
+    def summary(self, sample_set: SampleSet) -> pd.DataFrame:
+        vs = self._connection.variation_service
+        features_df = vs.count_mutations_in_sample_ids_dataframe(sample_ids=sample_set,
+                                                                     ncores=self._ncores,
+                                                                     batch_size=self._batch_size,
+                                                                     mutation_type=self._mutation_type
+                                                                     )
+        features_df['Total'] = len(sample_set)
+        features_df['Percent'] = 100 * (features_df['Count'] / features_df['Total'])
 
-    def summary_unique(self, samples_set: SampleSet, complement_set: SampleSet) -> pd.DataFrame:
-        pass
+        return self._join_additional_columns(features_df)
+
+    def _join_additional_columns(self, features_df: pd.DataFrame) -> pd.DataFrame:
+        if not self._ignore_annotations:
+            return self._connection.variation_service.append_mutation_annotations(features_df)
+        else:
+            return features_df
+
+    def summary_columns(self) -> List[str]:
+        return ['Sequence', 'Position', 'Deletion', 'Insertion', 'Count', 'Total', 'Percent']
 
     def _summary_features_mutations(self, present_samples: SampleSet,
                                     unknown_samples: SampleSet,
@@ -64,8 +78,5 @@ class MutationFeaturesSummarizer(FeaturesSummarizer):
                                                       'Count', 'Total', 'Percent']]
         else:
             raise Exception(f'selection=[{selection}] is unknown. Must be one of {self.FEATURES_SELECTIONS}')
-
-        if not self._ignore_annotations:
-            features_results_df = vs.append_mutation_annotations(features_results_df)
 
         return features_results_df

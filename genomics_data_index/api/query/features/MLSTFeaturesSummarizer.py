@@ -1,4 +1,4 @@
-from typing import Generator, Tuple, Dict, cast
+from typing import Generator, Tuple, Dict, List, cast
 
 import pandas as pd
 
@@ -21,6 +21,9 @@ class MLSTFeaturesSummarizer(FeaturesSummarizer):
         self._locus = locus
         self._include_present = include_present
         self._include_unknown = include_unknown
+
+    def summary_columns(self) -> List[str]:
+        return ['Scheme', 'Locus', 'Allele', 'Count', 'Total', 'Percent']
 
     def _feature_sample_count_iter(self, present_features: Dict[str, FeatureSamples],
                                    present_samples: SampleSet) -> Generator[Tuple[FeatureSamples, int], None, None]:
