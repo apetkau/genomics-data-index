@@ -256,7 +256,13 @@ class SamplesQueryIndex(SamplesQuery):
         else:
             raise Exception(f'Unsupported value kind=[{kind}]. Must be one of {self.SUMMARY_FEATURES_KINDS}.')
 
-        return features_summarizier.summary(self.sample_set)
+        if selection == 'all':
+            return features_summarizier.summary(self.sample_set)
+        elif selection == 'unique':
+            return features_summarizier.unique_summary(self.sample_set,
+                                                       other_set=self.universe_set.minus(self.sample_set))
+        else:
+            raise Exception(f'selection=[{selection}] is unknown. Must be one of {self.FEATURES_SELECTIONS}')
 
     def tofeaturesset(self, kind: str = 'mutations', selection: str = 'all',
                       ncores: int = 1) -> Set[str]:

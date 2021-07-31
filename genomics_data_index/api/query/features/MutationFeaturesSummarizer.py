@@ -9,12 +9,13 @@ from genomics_data_index.api.query.features.FeaturesSummarizer import FeaturesSu
 
 class MutationFeaturesSummarizer(FeaturesSummarizer):
 
-    def __init__(self, connection: DataIndexConnection, ignore_annotations: bool = False):
+    def __init__(self, connection: DataIndexConnection, ignore_annotations: bool = False,
+                 ncores: int = 1, batch_size: int = 500, mutation_type: str = 'all'):
         super().__init__(connection=connection)
         self._ignore_annotations = ignore_annotations
-        self._ncores = 1
-        self._batch_size = 500
-        self._mutation_type = 'all'
+        self._ncores = ncores
+        self._batch_size = batch_size
+        self._mutation_type = mutation_type
 
     def summary(self, sample_set: SampleSet) -> pd.DataFrame:
         vs = self._connection.variation_service
