@@ -20,6 +20,9 @@ class MutationFeaturesSummarizer(FeaturesSummarizer):
                                                 absent_samples=absent_samples,
                                                 selection=selection)
 
+    def summary_unique(self, samples_set: SampleSet, complement_set: SampleSet) -> pd.DataFrame:
+        pass
+
     def _summary_features_mutations(self, present_samples: SampleSet,
                                     unknown_samples: SampleSet,
                                     absent_samples: SampleSet,

@@ -12,13 +12,8 @@ def test_summary_all(loaded_database_genomic_data_store: GenomicsDataIndex):
     mlst_summarizier = MLSTFeaturesSummarizer(connection=loaded_database_genomic_data_store.connection)
 
     present_set = SampleSet(all_sample_ids)
-    unknown_set = SampleSet.create_empty()
-    absent_set = SampleSet.create_empty()
 
-    summary_df = mlst_summarizier.summary(present_samples=present_set,
-                                          unknown_samples=unknown_set,
-                                          absent_samples=absent_set,
-                                          selection='all')
+    summary_df = mlst_summarizier.summary(present_set)
     summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
     assert 24 == len(summary_df)
     assert 'MLST Feature' == summary_df.index.name
@@ -55,13 +50,8 @@ def test_summary_selections(loaded_database_genomic_data_store: GenomicsDataInde
 
     # Test only single sample features
     present_set = SampleSet([sampleA.id])
-    unknown_set = SampleSet.create_empty()
-    absent_set = SampleSet(all_sample_ids - {sampleA.id})
 
-    summary_df = mlst_summarizer.summary(present_samples=present_set,
-                                          unknown_samples=unknown_set,
-                                          absent_samples=absent_set,
-                                          selection='all')
+    summary_df = mlst_summarizer.summary(present_set)
 
     summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
     assert 7 == len(summary_df)
@@ -73,13 +63,7 @@ def test_summary_selections(loaded_database_genomic_data_store: GenomicsDataInde
 
     # Test two samples
     present_set = SampleSet([sampleA.id, sampleB.id])
-    unknown_set = SampleSet.create_empty()
-    absent_set = SampleSet(all_sample_ids - {sampleA.id, sampleB.id})
-
-    summary_df = mlst_summarizer.summary(present_samples=present_set,
-                                          unknown_samples=unknown_set,
-                                          absent_samples=absent_set,
-                                          selection='all')
+    summary_df = mlst_summarizer.summary(present_set)
 
     summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
     assert 8 == len(summary_df)
@@ -93,13 +77,7 @@ def test_summary_selections(loaded_database_genomic_data_store: GenomicsDataInde
 
     # Test three samples
     present_set = SampleSet([sampleA.id, sampleB.id, sample_CFSAN002349.id])
-    unknown_set = SampleSet.create_empty()
-    absent_set = SampleSet(all_sample_ids - {sampleA.id, sampleB.id, sample_CFSAN002349.id})
-
-    summary_df = mlst_summarizer.summary(present_samples=present_set,
-                                          unknown_samples=unknown_set,
-                                          absent_samples=absent_set,
-                                          selection='all')
+    summary_df = mlst_summarizer.summary(present_set)
 
     summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
     assert 9 == len(summary_df)
@@ -115,13 +93,7 @@ def test_summary_selections(loaded_database_genomic_data_store: GenomicsDataInde
 
     # Test multiple schemes
     present_set = SampleSet([sampleA.id, sampleB.id, sample_CFSAN002349.id, sample_2014D_0067.id])
-    unknown_set = SampleSet.create_empty()
-    absent_set = SampleSet(all_sample_ids - {sampleA.id, sampleB.id, sample_CFSAN002349.id, sample_2014D_0067.id})
-
-    summary_df = mlst_summarizer.summary(present_samples=present_set,
-                                          unknown_samples=unknown_set,
-                                          absent_samples=absent_set,
-                                          selection='all')
+    summary_df = mlst_summarizer.summary(present_set)
 
     summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
     assert 15 == len(summary_df)
@@ -140,15 +112,9 @@ def test_summary_selections(loaded_database_genomic_data_store: GenomicsDataInde
 
     # Test multiple schemes sample set but summarize for only a particular scheme
     present_set = SampleSet([sampleA.id, sampleB.id, sample_CFSAN002349.id, sample_2014D_0067.id])
-    unknown_set = SampleSet.create_empty()
-    absent_set = SampleSet(all_sample_ids - {sampleA.id, sampleB.id, sample_CFSAN002349.id, sample_2014D_0067.id})
-
     mlst_summarizer = MLSTFeaturesSummarizer(connection=loaded_database_genomic_data_store.connection,
                                               scheme='lmonocytogenes')
-    summary_df = mlst_summarizer.summary(present_samples=present_set,
-                                          unknown_samples=unknown_set,
-                                          absent_samples=absent_set,
-                                          selection='all')
+    summary_df = mlst_summarizer.summary(present_set)
 
     summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
     assert 9 == len(summary_df)
@@ -164,15 +130,9 @@ def test_summary_selections(loaded_database_genomic_data_store: GenomicsDataInde
 
     # Test multiple schemes sample set but summarize for only a particular scheme/locus
     present_set = SampleSet([sampleA.id, sampleB.id, sample_CFSAN002349.id, sample_2014D_0067.id])
-    unknown_set = SampleSet.create_empty()
-    absent_set = SampleSet(all_sample_ids - {sampleA.id, sampleB.id, sample_CFSAN002349.id, sample_2014D_0067.id})
-
     mlst_summarizer = MLSTFeaturesSummarizer(connection=loaded_database_genomic_data_store.connection,
                                               scheme='lmonocytogenes', locus='bglA')
-    summary_df = mlst_summarizer.summary(present_samples=present_set,
-                                          unknown_samples=unknown_set,
-                                          absent_samples=absent_set,
-                                          selection='all')
+    summary_df = mlst_summarizer.summary(present_set)
 
     summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
     assert 2 == len(summary_df)
@@ -184,15 +144,9 @@ def test_summary_selections(loaded_database_genomic_data_store: GenomicsDataInde
 
     # Test multiple schemes, include unknown
     present_set = SampleSet([sampleA.id, sampleB.id, sample_CFSAN002349.id, sample_2014D_0067.id])
-    unknown_set = SampleSet.create_empty()
-    absent_set = SampleSet(all_sample_ids - {sampleA.id, sampleB.id, sample_CFSAN002349.id, sample_2014D_0067.id})
-
     mlst_summarizer = MLSTFeaturesSummarizer(connection=loaded_database_genomic_data_store.connection,
                                              include_unknown=True)
-    summary_df = mlst_summarizer.summary(present_samples=present_set,
-                                          unknown_samples=unknown_set,
-                                          absent_samples=absent_set,
-                                          selection='all')
+    summary_df = mlst_summarizer.summary(present_set)
 
     summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
     assert 17 == len(summary_df)
@@ -212,15 +166,9 @@ def test_summary_selections(loaded_database_genomic_data_store: GenomicsDataInde
 
     # Test multiple schemes, only unknown
     present_set = SampleSet([sampleA.id, sampleB.id, sample_CFSAN002349.id, sample_2014D_0067.id])
-    unknown_set = SampleSet.create_empty()
-    absent_set = SampleSet(all_sample_ids - {sampleA.id, sampleB.id, sample_CFSAN002349.id, sample_2014D_0067.id})
-
     mlst_summarizer = MLSTFeaturesSummarizer(connection=loaded_database_genomic_data_store.connection,
                                              include_present=False, include_unknown=True)
-    summary_df = mlst_summarizer.summary(present_samples=present_set,
-                                          unknown_samples=unknown_set,
-                                          absent_samples=absent_set,
-                                          selection='all')
+    summary_df = mlst_summarizer.summary(present_set)
 
     summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
     assert 2 == len(summary_df)

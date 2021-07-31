@@ -29,10 +29,7 @@ class MLSTFeaturesSummarizer(FeaturesSummarizer):
             samples_in_feature = present_samples.intersection(feature.sample_ids)
             yield feature, len(samples_in_feature)
 
-    def summary(self, present_samples: SampleSet,
-                unknown_samples: SampleSet,
-                absent_samples: SampleSet,
-                selection: str) -> pd.DataFrame:
+    def summary(self, sample_set: SampleSet) -> pd.DataFrame:
         mlst_service: MLSTService = self._connection.mlst_service
 
         # TODO: This isn't the best implementation right now since I have to load
@@ -44,13 +41,13 @@ class MLSTFeaturesSummarizer(FeaturesSummarizer):
                                                           include_unknown=self._include_unknown)
         data = []
         for feature, sample_count in self._feature_sample_count_iter(present_features=mlst_present_features,
-                                                                     present_samples=present_samples):
+                                                                     present_samples=sample_set):
             if sample_count > 0:
                 feature = cast(MLSTAllelesSamples, feature)
                 data.append([feature.query_id, feature.scheme, feature.locus, feature.allele, sample_count])
         summary_df = pd.DataFrame(data,
                                   columns=['MLST Feature', 'Scheme', 'Locus', 'Allele', 'Count'])
-        summary_df['Total'] = len(present_samples)
+        summary_df['Total'] = len(sample_set)
         summary_df['Percent'] = 100 * (summary_df['Count'] / summary_df['Total'])
 
         return summary_df.set_index('MLST Feature')
