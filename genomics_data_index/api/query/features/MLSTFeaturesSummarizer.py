@@ -32,8 +32,9 @@ class MLSTFeaturesSummarizer(FeaturesSummarizer):
         data = []
         for feature, sample_count in self._feature_sample_count_iter(present_features=mlst_present_features,
                                                                      present_samples=present_samples):
-            feature = cast(MLSTAllelesSamples, feature)
-            data.append([feature.query_id, feature.scheme, feature.locus, feature.allele, sample_count])
+            if sample_count > 0:
+                feature = cast(MLSTAllelesSamples, feature)
+                data.append([feature.query_id, feature.scheme, feature.locus, feature.allele, sample_count])
         summary_df = pd.DataFrame(data,
                                   columns=['MLST Feature', 'Scheme', 'Locus', 'Allele', 'Count'])
         summary_df['Total'] = len(present_samples)
