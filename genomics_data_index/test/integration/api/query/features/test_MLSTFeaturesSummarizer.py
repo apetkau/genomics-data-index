@@ -161,3 +161,71 @@ def test_summary_selections(loaded_database_genomic_data_store: GenomicsDataInde
     assert ['lmonocytogenes', 'ldh', '5', 2, 4, 50] == summary_df.loc['mlst:lmonocytogenes:ldh:5'].tolist()
     assert ['lmonocytogenes', 'lhkA', '5', 2, 4, 50] == summary_df.loc['mlst:lmonocytogenes:lhkA:5'].tolist()
     assert ['lmonocytogenes', 'lhkA', '4', 1, 4, 25] == summary_df.loc['mlst:lmonocytogenes:lhkA:4'].tolist()
+
+    # Test multiple schemes sample set but summarize for only a particular scheme/locus
+    present_set = SampleSet([sampleA.id, sampleB.id, sample_CFSAN002349.id, sample_2014D_0067.id])
+    unknown_set = SampleSet.create_empty()
+    absent_set = SampleSet(all_sample_ids - {sampleA.id, sampleB.id, sample_CFSAN002349.id, sample_2014D_0067.id})
+
+    mlst_summarizer = MLSTFeaturesSummarizer(connection=loaded_database_genomic_data_store.connection,
+                                              scheme='lmonocytogenes', locus='bglA')
+    summary_df = mlst_summarizer.summary(present_samples=present_set,
+                                          unknown_samples=unknown_set,
+                                          absent_samples=absent_set,
+                                          selection='all')
+
+    summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
+    assert 2 == len(summary_df)
+    assert {'lmonocytogenes'} == set(summary_df['Scheme'].tolist()) # Only results for one scheme
+    assert 'MLST Feature' == summary_df.index.name
+    assert ['Scheme', 'Locus', 'Allele', 'Count', 'Total', 'Percent'] == list(summary_df.columns)
+    assert ['lmonocytogenes', 'bglA', '51', 2, 4, 50] == summary_df.loc['mlst:lmonocytogenes:bglA:51'].tolist()
+    assert ['lmonocytogenes', 'bglA', '52', 1, 4, 25] == summary_df.loc['mlst:lmonocytogenes:bglA:52'].tolist()
+
+    # Test multiple schemes, include unknown
+    present_set = SampleSet([sampleA.id, sampleB.id, sample_CFSAN002349.id, sample_2014D_0067.id])
+    unknown_set = SampleSet.create_empty()
+    absent_set = SampleSet(all_sample_ids - {sampleA.id, sampleB.id, sample_CFSAN002349.id, sample_2014D_0067.id})
+
+    mlst_summarizer = MLSTFeaturesSummarizer(connection=loaded_database_genomic_data_store.connection,
+                                             include_unknown=True)
+    summary_df = mlst_summarizer.summary(present_samples=present_set,
+                                          unknown_samples=unknown_set,
+                                          absent_samples=absent_set,
+                                          selection='all')
+
+    summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
+    assert 17 == len(summary_df)
+    assert {'lmonocytogenes', 'campylobacter'} == set(summary_df['Scheme'].tolist())
+    assert 'MLST Feature' == summary_df.index.name
+    assert ['Scheme', 'Locus', 'Allele', 'Count', 'Total', 'Percent'] == list(summary_df.columns)
+    assert ['lmonocytogenes', 'abcZ', '1', 3, 4, 75] == summary_df.loc['mlst:lmonocytogenes:abcZ:1'].tolist()
+    assert ['lmonocytogenes', 'bglA', '51', 2, 4, 50] == summary_df.loc['mlst:lmonocytogenes:bglA:51'].tolist()
+    assert ['lmonocytogenes', 'bglA', '52', 1, 4, 25] == summary_df.loc['mlst:lmonocytogenes:bglA:52'].tolist()
+    assert ['lmonocytogenes', 'ldh', '5', 2, 4, 50] == summary_df.loc['mlst:lmonocytogenes:ldh:5'].tolist()
+    assert ['lmonocytogenes', 'ldh', '?', 1, 4, 25] == summary_df.loc['mlst:lmonocytogenes:ldh:?'].tolist()
+    assert ['lmonocytogenes', 'lhkA', '5', 2, 4, 50] == summary_df.loc['mlst:lmonocytogenes:lhkA:5'].tolist()
+    assert ['lmonocytogenes', 'lhkA', '4', 1, 4, 25] == summary_df.loc['mlst:lmonocytogenes:lhkA:4'].tolist()
+    assert ['campylobacter', 'aspA', '2', 1, 4, 25] == summary_df.loc['mlst:campylobacter:aspA:2'].tolist()
+    assert ['campylobacter', 'glyA', '3', 1, 4, 25] == summary_df.loc['mlst:campylobacter:glyA:3'].tolist()
+    assert ['campylobacter', 'uncA', '?', 1, 4, 25] == summary_df.loc['mlst:campylobacter:uncA:?'].tolist()
+
+    # Test multiple schemes, only unknown
+    present_set = SampleSet([sampleA.id, sampleB.id, sample_CFSAN002349.id, sample_2014D_0067.id])
+    unknown_set = SampleSet.create_empty()
+    absent_set = SampleSet(all_sample_ids - {sampleA.id, sampleB.id, sample_CFSAN002349.id, sample_2014D_0067.id})
+
+    mlst_summarizer = MLSTFeaturesSummarizer(connection=loaded_database_genomic_data_store.connection,
+                                             include_present=False, include_unknown=True)
+    summary_df = mlst_summarizer.summary(present_samples=present_set,
+                                          unknown_samples=unknown_set,
+                                          absent_samples=absent_set,
+                                          selection='all')
+
+    summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
+    assert 2 == len(summary_df)
+    assert {'lmonocytogenes', 'campylobacter'} == set(summary_df['Scheme'].tolist())
+    assert 'MLST Feature' == summary_df.index.name
+    assert ['Scheme', 'Locus', 'Allele', 'Count', 'Total', 'Percent'] == list(summary_df.columns)
+    assert ['lmonocytogenes', 'ldh', '?', 1, 4, 25] == summary_df.loc['mlst:lmonocytogenes:ldh:?'].tolist()
+    assert ['campylobacter', 'uncA', '?', 1, 4, 25] == summary_df.loc['mlst:campylobacter:uncA:?'].tolist()
