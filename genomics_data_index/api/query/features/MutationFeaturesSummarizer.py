@@ -20,10 +20,10 @@ class MutationFeaturesSummarizer(FeaturesSummarizer):
     def summary(self, sample_set: SampleSet) -> pd.DataFrame:
         vs = self._connection.variation_service
         features_df = vs.count_mutations_in_sample_ids_dataframe(sample_ids=sample_set,
-                                                                     ncores=self._ncores,
-                                                                     batch_size=self._batch_size,
-                                                                     mutation_type=self._mutation_type
-                                                                     )
+                                                                 ncores=self._ncores,
+                                                                 batch_size=self._batch_size,
+                                                                 mutation_type=self._mutation_type
+                                                                 )
         features_df['Total'] = len(sample_set)
         features_df['Percent'] = 100 * (features_df['Count'] / features_df['Total'])
 

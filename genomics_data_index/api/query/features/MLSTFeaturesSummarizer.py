@@ -1,15 +1,15 @@
-from typing import Generator, Tuple, Dict, List, cast
+from typing import List, cast
 
 import pandas as pd
 
-from genomics_data_index.api.query.features.FeaturesSummarizer import FeaturesSummarizer
+from genomics_data_index.api.query.features.FeaturesFromIndexSummarizer import FeaturesFromIndexSummarizer
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
 from genomics_data_index.storage.service.MLSTService import MLSTService
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.db import FeatureSamples, MLSTAllelesSamples
 
 
-class MLSTFeaturesSummarizer(FeaturesSummarizer):
+class MLSTFeaturesSummarizer(FeaturesFromIndexSummarizer):
 
     def __init__(self, connection: DataIndexConnection,
                  scheme: str = None,
@@ -25,13 +25,6 @@ class MLSTFeaturesSummarizer(FeaturesSummarizer):
     @property
     def summary_columns(self) -> List[str]:
         return ['Scheme', 'Locus', 'Allele', 'Count', 'Total', 'Percent']
-
-    def _feature_sample_count_iter(self, present_features: Dict[str, FeatureSamples],
-                                   present_samples: SampleSet) -> Generator[Tuple[FeatureSamples, int], None, None]:
-        for feature_id in present_features:
-            feature = present_features[feature_id]
-            samples_in_feature = present_samples.intersection(feature.sample_ids)
-            yield feature, len(samples_in_feature)
 
     def summary(self, sample_set: SampleSet) -> pd.DataFrame:
         mlst_service: MLSTService = self._connection.mlst_service
