@@ -272,8 +272,11 @@ class SamplesQueryIndex(SamplesQuery):
         else:
             raise Exception(f'selection=[{selection}] is unknown. Must be one of {self.FEATURES_SELECTIONS}')
 
-    def tofeaturesset(self, kind: str = 'mutations', selection: str = 'all') -> Set[str]:
-        return set(self.features_summary(kind=kind, selection=selection, ignore_annotations=True).index)
+    def tofeaturesset(self, kind: str = 'mutations', selection: str = 'all',
+                      include_present_features: bool = True, include_unknown_features: bool = False) -> Set[str]:
+        return set(self.features_summary(kind=kind, selection=selection, ignore_annotations=True,
+                                         include_present_features=include_present_features,
+                                         include_unknown_features=include_unknown_features).index)
 
     def and_(self, other):
         if isinstance(other, SamplesQuery):

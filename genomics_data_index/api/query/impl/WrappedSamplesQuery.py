@@ -95,8 +95,11 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
                                                     include_unknown_features=include_unknown_features,
                                                     **kwargs)
 
-    def tofeaturesset(self, kind: str = 'mutations', selection: str = 'all') -> Set[str]:
-        return self._wrapped_query.tofeaturesset(kind=kind, selection=selection)
+    def tofeaturesset(self, kind: str = 'mutations', selection: str = 'all',
+                      include_present_features: bool = True, include_unknown_features: bool = False) -> Set[str]:
+        return self._wrapped_query.tofeaturesset(kind=kind, selection=selection,
+                                                 include_present_features=include_present_features,
+                                                 include_unknown_features=include_unknown_features)
 
     def and_(self, other: SamplesQuery) -> SamplesQuery:
         return self._wrap_create(self._wrapped_query.and_(other))

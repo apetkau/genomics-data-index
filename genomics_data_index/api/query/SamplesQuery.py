@@ -183,13 +183,16 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def tofeaturesset(self, kind: str = 'mutations', selection: str = 'all') -> Set[str]:
+    def tofeaturesset(self, kind: str = 'mutations', selection: str = 'all',
+                      include_present_features: bool = True, include_unknown_features: bool = False) -> Set[str]:
         """
         Returns all features as a set of strings for the selected samples.
 
         :param kind: The kind of feature to summarize. By default this is *mutations*.
         :param selection: The method used to select features. Use 'all' (default) to select all features.
                   Use 'unique' to select only those features unique to the selected samples.
+        :param include_present_features: Will determine if present (i.e., not unknown) features should be included.
+        :param include_unknown_features: Will determine if unknown features should be included.
 
         :return: A set of feature identifiers derived from the selected samples.
         """

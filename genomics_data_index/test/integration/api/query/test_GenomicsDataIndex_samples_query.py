@@ -3603,15 +3603,35 @@ def test_tofeaturesset_all(loaded_database_only_snippy: DataIndexConnection):
 
     expected_set = set(expected_df.index)
 
+    # Test default (no unknown features)
     mutations = query(loaded_database_only_snippy).tofeaturesset()
-
     assert 111 == len(mutations)
     assert set(expected_set) == set(mutations)
+
+    # Test include unknowns
+    mutations = query(loaded_database_only_snippy).tofeaturesset(include_unknown_features=True)
+    assert 632 == len(mutations)
+
+    # Test only unknowns
+    mutations = query(loaded_database_only_snippy).tofeaturesset(include_present_features=False,
+                                                                 include_unknown_features=True)
+    assert 521 == len(mutations)
 
 
 def test_tofeaturesset_unique_all_selected(loaded_database_connection: DataIndexConnection):
     unique_mutations = query(loaded_database_connection).tofeaturesset(selection='unique')
     assert 111 == len(unique_mutations)
+
+    # Include unknowns
+    unique_mutations = query(loaded_database_connection).tofeaturesset(selection='unique',
+                                                                       include_unknown_features=True)
+    assert 632 == len(unique_mutations)
+
+    # Include only unknowns
+    unique_mutations = query(loaded_database_connection).tofeaturesset(selection='unique',
+                                                                       include_present_features=False,
+                                                                       include_unknown_features=True)
+    assert 521 == len(unique_mutations)
 
 
 def test_tofeaturesset_unique_none_selected(loaded_database_connection: DataIndexConnection):
@@ -3633,11 +3653,22 @@ def test_tofeaturesset_unique_one_sample(loaded_database_only_snippy: DataIndexC
 
     sample_setA = SampleSet([sampleA.id])
 
+    # No unknowns
     query_A = query(loaded_database_only_snippy).intersect(sample_setA)
     unique_mutations_A = query_A.tofeaturesset(selection='unique')
-
     assert 45 == len(unique_mutations_A)
     assert expected_set == unique_mutations_A
+
+    # Include unknowns
+    query_A = query(loaded_database_only_snippy).intersect(sample_setA)
+    unique_mutations_A = query_A.tofeaturesset(selection='unique', include_unknown_features=True)
+    assert 45 + 138 == len(unique_mutations_A)
+
+    # Include only unknowns
+    query_A = query(loaded_database_only_snippy).intersect(sample_setA)
+    unique_mutations_A = query_A.tofeaturesset(selection='unique', include_unknown_features=True,
+                                               include_present_features=False)
+    assert 138 == len(unique_mutations_A)
 
 
 def test_tofeaturesset_unique_two_samples(loaded_database_only_snippy: DataIndexConnection):
@@ -3650,8 +3681,19 @@ def test_tofeaturesset_unique_two_samples(loaded_database_only_snippy: DataIndex
 
     sample_setBC = SampleSet([sampleB.id, sampleC.id])
 
+    # No include unknowns
     query_BC = query(loaded_database_only_snippy).intersect(sample_setBC)
     unique_mutations_BC = query_BC.tofeaturesset(selection='unique')
-
     assert 66 == len(unique_mutations_BC)
     assert expected_set == unique_mutations_BC
+
+    # Include unknowns
+    query_BC = query(loaded_database_only_snippy).intersect(sample_setBC)
+    unique_mutations_BC = query_BC.tofeaturesset(selection='unique', include_unknown_features=True)
+    assert 66 + 84 == len(unique_mutations_BC)
+
+    # Include only unknowns
+    query_BC = query(loaded_database_only_snippy).intersect(sample_setBC)
+    unique_mutations_BC = query_BC.tofeaturesset(selection='unique', include_unknown_features=True,
+                                                 include_present_features=False)
+    assert 84 == len(unique_mutations_BC)
