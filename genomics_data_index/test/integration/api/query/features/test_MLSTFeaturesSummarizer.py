@@ -25,16 +25,50 @@ def test_summary_all(loaded_database_genomic_data_store: GenomicsDataIndex):
     assert ['ecoli', 'recA', '7', 2, 9, 22] == summary_df.loc['mlst:ecoli:recA:7'].tolist()
     assert ['campylobacter', 'uncA', '6', 1, 9, 11] == summary_df.loc['mlst:campylobacter:uncA:6'].tolist()
 
-    # Test unique (should give me identical results since nothing is absent from the selection)
-    # summary_df = mlst_summarizier.summary(present_samples=present_set,
-    #                                       unknown_samples=unknown_set,
-    #                                       absent_samples=absent_set,
-    #                                       selection='unique')
-    # summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
-    # assert 24 == len(summary_df)
-    # assert 'MLST Feature' == summary_df.index.name
-    # assert ['Scheme', 'Locus', 'Allele', 'Count', 'Total', 'Percent'] == list(summary_df.columns)
-    # assert ['lmonocytogenes', 'abcZ', '1', 5, 9, 55] == summary_df.loc['mlst:lmonocytogenes:abcZ:1'].tolist()
+
+def test_unique_summary(loaded_database_genomic_data_store: GenomicsDataIndex):
+    db = loaded_database_genomic_data_store.connection.database
+    all_sample_ids = {s.id for s in db.get_session().query(Sample).all()}
+    sample_CFSAN002349 = db.get_session().query(Sample).filter(Sample.name == 'CFSAN002349').one()
+    sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+    assert 9 == len(all_sample_ids)
+
+    mlst_summarizier = MLSTFeaturesSummarizer(connection=loaded_database_genomic_data_store.connection)
+
+    # Test unique on all (should give me identical results to all since nothing is absent from the selection)
+    present_set = SampleSet(all_sample_ids)
+    complement_set = SampleSet.create_empty()
+    summary_df = mlst_summarizier.unique_summary(present_set, other_set=complement_set)
+
+    summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
+    assert 24 == len(summary_df)
+    assert 'MLST Feature' == summary_df.index.name
+    assert ['Scheme', 'Locus', 'Allele', 'Count', 'Total', 'Percent'] == list(summary_df.columns)
+    assert ['lmonocytogenes', 'abcZ', '1', 5, 9, 55] == summary_df.loc['mlst:lmonocytogenes:abcZ:1'].tolist()
+
+    # Test unique on single sample (only a singl feature)
+    present_set = SampleSet({sample_CFSAN002349.id})
+    complement_set = SampleSet(all_sample_ids - {sample_CFSAN002349.id})
+    summary_df = mlst_summarizier.unique_summary(present_set, other_set=complement_set)
+
+    summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
+    assert 1 == len(summary_df)
+    print(summary_df)
+    assert 'MLST Feature' == summary_df.index.name
+    assert ['Scheme', 'Locus', 'Allele', 'Count', 'Total', 'Percent'] == list(summary_df.columns)
+    assert ['lmonocytogenes', 'lhkA', '4', 1, 1, 100] == summary_df.loc['mlst:lmonocytogenes:lhkA:4'].tolist()
+
+    # Test unique on two samples
+    present_set = SampleSet({sample_CFSAN002349.id, sampleC.id})
+    complement_set = SampleSet(all_sample_ids - {sample_CFSAN002349.id, sampleC.id})
+    summary_df = mlst_summarizier.unique_summary(present_set, other_set=complement_set)
+
+    summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
+    assert 2 == len(summary_df)
+    assert 'MLST Feature' == summary_df.index.name
+    assert ['Scheme', 'Locus', 'Allele', 'Count', 'Total', 'Percent'] == list(summary_df.columns)
+    assert ['lmonocytogenes', 'lhkA', '4', 1, 2, 50] == summary_df.loc['mlst:lmonocytogenes:lhkA:4'].tolist()
+    assert ['lmonocytogenes', 'cat', '12', 1, 2, 50] == summary_df.loc['mlst:lmonocytogenes:cat:12'].tolist()
 
 
 def test_summary_selections(loaded_database_genomic_data_store: GenomicsDataIndex):
