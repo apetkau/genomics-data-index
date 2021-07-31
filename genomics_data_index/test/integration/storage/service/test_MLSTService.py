@@ -354,10 +354,8 @@ def test_get_mlst_schemes(mlst_service_loaded):
 
 def test_get_all_mlst_features(mlst_service_loaded: MLSTService):
     # Test no unknown
-    mlst_features_list = mlst_service_loaded.get_all_mlst_features(include_present=True, include_unknown=False)
-    assert 22 == len(mlst_features_list)
-    assert isinstance(mlst_features_list[0], MLSTAllelesSamples)
-    mlst_features = {m.id for m in mlst_features_list}
+    mlst_features = mlst_service_loaded.get_features(include_present=True, include_unknown=False)
+    assert 22 == len(mlst_features)
     assert {'lmonocytogenes:abcZ:1', 'lmonocytogenes:bglA:51', 'lmonocytogenes:cat:11',
             'lmonocytogenes:dapE:13', 'lmonocytogenes:dat:2', 'lmonocytogenes:ldh:5',
             'lmonocytogenes:lhkA:4', 'lmonocytogenes:lhkA:5',
@@ -365,13 +363,12 @@ def test_get_all_mlst_features(mlst_service_loaded: MLSTService):
             'ecoli:purA:35', 'ecoli:recA:7',
             'campylobacter:aspA:2', 'campylobacter:glnA:1', 'campylobacter:gltA:1',
             'campylobacter:glyA:3', 'campylobacter:pgm:2', 'campylobacter:tkt:1',
-            'campylobacter:uncA:6'} == mlst_features
+            'campylobacter:uncA:6'} == set(mlst_features.keys())
+    assert isinstance(mlst_features['lmonocytogenes:abcZ:1'], MLSTAllelesSamples)
 
     # Test include unknown
-    mlst_features_list = mlst_service_loaded.get_all_mlst_features(include_present=True, include_unknown=True)
-    assert 23 == len(mlst_features_list)
-    assert isinstance(mlst_features_list[0], MLSTAllelesSamples)
-    mlst_features = {m.id for m in mlst_features_list}
+    mlst_features = mlst_service_loaded.get_features(include_present=True, include_unknown=True)
+    assert 23 == len(mlst_features)
     assert {'lmonocytogenes:abcZ:1', 'lmonocytogenes:bglA:51', 'lmonocytogenes:cat:11',
             'lmonocytogenes:dapE:13', 'lmonocytogenes:dat:2', 'lmonocytogenes:ldh:5',
             'lmonocytogenes:lhkA:4', 'lmonocytogenes:lhkA:5',
@@ -379,14 +376,14 @@ def test_get_all_mlst_features(mlst_service_loaded: MLSTService):
             'ecoli:purA:35', 'ecoli:recA:7',
             'campylobacter:aspA:2', 'campylobacter:glnA:1', 'campylobacter:gltA:1',
             'campylobacter:glyA:3', 'campylobacter:pgm:2', 'campylobacter:tkt:1',
-            'campylobacter:uncA:6', 'campylobacter:uncA:?'} == mlst_features
+            'campylobacter:uncA:6', 'campylobacter:uncA:?'} == set(mlst_features.keys())
+    assert isinstance(mlst_features['lmonocytogenes:abcZ:1'], MLSTAllelesSamples)
 
     # Test only unknown
-    mlst_features_list = mlst_service_loaded.get_all_mlst_features(include_present=False, include_unknown=True)
-    assert 1 == len(mlst_features_list)
-    assert isinstance(mlst_features_list[0], MLSTAllelesSamples)
-    mlst_features = {m.id for m in mlst_features_list}
-    assert {'campylobacter:uncA:?'} == mlst_features
+    mlst_features = mlst_service_loaded.get_features(include_present=False, include_unknown=True)
+    assert 1 == len(mlst_features)
+    assert {'campylobacter:uncA:?'} == set(mlst_features.keys())
+    assert isinstance(mlst_features['campylobacter:uncA:?'], MLSTAllelesSamples)
 
 
 def test_get_features_for_scheme(mlst_service_loaded: MLSTService):
