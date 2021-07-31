@@ -48,6 +48,38 @@ def test_summary_all(loaded_database_genomic_data_store: GenomicsDataIndex):
     assert list(expected_df['Total']) == list(mutations_df['Total'])
     assert 22 == mutations_df.loc['reference:619:G:C', 'Percent']
 
+    # Test with unknown
+    mutations_summarizer = MutationFeaturesFromIndexSummarizer(connection=loaded_database_genomic_data_store.connection,
+                                                               ignore_annotations=True, include_unknown=True)
+    mutations_df = mutations_summarizer.summary(present_set)
+    mutations_df['Percent'] = mutations_df['Percent'].astype(int)  # Convert to int for easier comparison
+    mutations_df = mutations_df.sort_index()
+
+    assert 632 == len(mutations_df)
+    assert list(expected_df.columns) == list(mutations_df.columns)
+    assert 2 == mutations_df.loc['reference:619:G:C', 'Count']
+    assert 2 == mutations_df.loc['reference:3063:A:ATGCAGC', 'Count']
+    assert 1 == mutations_df.loc['reference:1984:GTGATTG:TTGA', 'Count']
+    assert 1 == mutations_df.loc['reference:866:GCCAGATCC:G', 'Count']
+    assert 3 == mutations_df.loc['reference:90:T:?', 'Count']
+    assert 2 == mutations_df.loc['reference:190:A:?', 'Count']
+    assert 1 == mutations_df.loc['reference:887:T:?', 'Count']
+
+    # Test only include unknown
+    mutations_summarizer = MutationFeaturesFromIndexSummarizer(connection=loaded_database_genomic_data_store.connection,
+                                                               ignore_annotations=True, include_unknown=True,
+                                                               include_present=False)
+    mutations_df = mutations_summarizer.summary(present_set)
+    mutations_df['Percent'] = mutations_df['Percent'].astype(int)  # Convert to int for easier comparison
+    mutations_df = mutations_df.sort_index()
+
+    assert 521 == len(mutations_df)
+    assert list(expected_df.columns) == list(mutations_df.columns)
+    assert 3 == mutations_df.loc['reference:90:T:?', 'Count']
+    assert 2 == mutations_df.loc['reference:190:A:?', 'Count']
+    assert 1 == mutations_df.loc['reference:887:T:?', 'Count']
+    assert 'reference:619:G:C' not in mutations_df
+
     # Test with different id type where deletion is int instead of sequence
     mutations_summarizer = MutationFeaturesFromIndexSummarizer(connection=loaded_database_genomic_data_store.connection,
                                                                ignore_annotations=True, id_type='spdi')
@@ -55,12 +87,30 @@ def test_summary_all(loaded_database_genomic_data_store: GenomicsDataIndex):
     mutations_df['Percent'] = mutations_df['Percent'].astype(int)  # Convert to int for easier comparison
     mutations_df = mutations_df.sort_index()
 
-    assert len(expected_df) == len(mutations_df)
+    assert 112 - 1 == len(mutations_df)
     assert list(expected_df.columns) == list(mutations_df.columns)
     assert 2 == mutations_df.loc['reference:619:1:C', 'Count']
     assert 2 == mutations_df.loc['reference:3063:1:ATGCAGC', 'Count']
     assert 1 == mutations_df.loc['reference:1984:7:TTGA', 'Count']
     assert 1 == mutations_df.loc['reference:866:9:G', 'Count']
+
+    # Test with different id type include unknown
+    mutations_summarizer = MutationFeaturesFromIndexSummarizer(connection=loaded_database_genomic_data_store.connection,
+                                                               ignore_annotations=True, id_type='spdi',
+                                                               include_unknown=True)
+    mutations_df = mutations_summarizer.summary(present_set)
+    mutations_df['Percent'] = mutations_df['Percent'].astype(int)  # Convert to int for easier comparison
+    mutations_df = mutations_df.sort_index()
+
+    assert 632 == len(mutations_df)
+    assert list(expected_df.columns) == list(mutations_df.columns)
+    assert 2 == mutations_df.loc['reference:619:1:C', 'Count']
+    assert 2 == mutations_df.loc['reference:3063:1:ATGCAGC', 'Count']
+    assert 1 == mutations_df.loc['reference:1984:7:TTGA', 'Count']
+    assert 1 == mutations_df.loc['reference:866:9:G', 'Count']
+    assert 3 == mutations_df.loc['reference:90:1:?', 'Count']
+    assert 2 == mutations_df.loc['reference:190:1:?', 'Count']
+    assert 1 == mutations_df.loc['reference:887:1:?', 'Count']
 
 
 def test_summary_unique(loaded_database_genomic_data_store: GenomicsDataIndex):
