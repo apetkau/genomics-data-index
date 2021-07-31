@@ -391,7 +391,7 @@ def test_get_all_mlst_features(mlst_service_loaded: MLSTService):
 
 def test_get_features_for_scheme(mlst_service_loaded: MLSTService):
     # Test lmonocytogenes
-    mlst_features = mlst_service_loaded.get_features_for_scheme('lmonocytogenes')
+    mlst_features = mlst_service_loaded.get_features('lmonocytogenes')
     assert 8 == len(mlst_features)
     assert {'lmonocytogenes:abcZ:1', 'lmonocytogenes:bglA:51', 'lmonocytogenes:cat:11',
             'lmonocytogenes:dapE:13', 'lmonocytogenes:dat:2', 'lmonocytogenes:ldh:5',
@@ -399,7 +399,7 @@ def test_get_features_for_scheme(mlst_service_loaded: MLSTService):
     assert isinstance(mlst_features['lmonocytogenes:abcZ:1'], MLSTAllelesSamples)
 
     # Test campylobacter
-    mlst_features = mlst_service_loaded.get_features_for_scheme('campylobacter')
+    mlst_features = mlst_service_loaded.get_features('campylobacter')
     assert 7 == len(mlst_features)
     assert {'campylobacter:aspA:2', 'campylobacter:glnA:1', 'campylobacter:gltA:1',
             'campylobacter:glyA:3', 'campylobacter:pgm:2', 'campylobacter:tkt:1',
@@ -407,17 +407,17 @@ def test_get_features_for_scheme(mlst_service_loaded: MLSTService):
     assert isinstance(mlst_features['campylobacter:glyA:3'], MLSTAllelesSamples)
 
     # Test lmonocytogenes with specific locus
-    mlst_features = mlst_service_loaded.get_features_for_scheme('lmonocytogenes', locus='abcZ')
+    mlst_features = mlst_service_loaded.get_features('lmonocytogenes', locus='abcZ')
     assert 1 == len(mlst_features)
     assert {'lmonocytogenes:abcZ:1'} == set(mlst_features.keys())
 
     # Test lmonocytogenes with specific locus 2
-    mlst_features = mlst_service_loaded.get_features_for_scheme('lmonocytogenes', locus='lhkA')
+    mlst_features = mlst_service_loaded.get_features('lmonocytogenes', locus='lhkA')
     assert 2 == len(mlst_features)
     assert {'lmonocytogenes:lhkA:4', 'lmonocytogenes:lhkA:5'} == set(mlst_features.keys())
 
     # Test include unknown
-    mlst_features = mlst_service_loaded.get_features_for_scheme('campylobacter', include_unknown=True)
+    mlst_features = mlst_service_loaded.get_features('campylobacter', include_unknown=True)
     assert 8 == len(mlst_features)
     assert {'campylobacter:aspA:2', 'campylobacter:glnA:1', 'campylobacter:gltA:1',
             'campylobacter:glyA:3', 'campylobacter:pgm:2', 'campylobacter:tkt:1',
@@ -425,19 +425,19 @@ def test_get_features_for_scheme(mlst_service_loaded: MLSTService):
     assert isinstance(mlst_features['campylobacter:glyA:3'], MLSTAllelesSamples)
 
     # Test include only unknown (not present)
-    mlst_features = mlst_service_loaded.get_features_for_scheme('campylobacter', include_present=False,
-                                                                include_unknown=True)
+    mlst_features = mlst_service_loaded.get_features('campylobacter', include_present=False,
+                                                     include_unknown=True)
     assert 1 == len(mlst_features)
     assert {'campylobacter:uncA:?'} == set(mlst_features.keys())
     assert isinstance(mlst_features['campylobacter:uncA:?'], MLSTAllelesSamples)
 
     # Test include neither present nor unknown
-    mlst_features = mlst_service_loaded.get_features_for_scheme('campylobacter', include_present=False,
-                                                                include_unknown=False)
+    mlst_features = mlst_service_loaded.get_features('campylobacter', include_present=False,
+                                                     include_unknown=False)
     assert 0 == len(mlst_features)
 
     # Test invalid scheme
-    assert 0 == len(mlst_service_loaded.get_features_for_scheme('invalid_scheme'))
+    assert 0 == len(mlst_service_loaded.get_features('invalid_scheme'))
 
 
 def test_get_all_alleles(mlst_service_loaded: MLSTService):
