@@ -1,4 +1,4 @@
-from typing import List, cast
+from typing import List, cast, Any
 
 import pandas as pd
 
@@ -26,22 +26,20 @@ class MLSTFeaturesSummarizer(FeaturesFromIndexSummarizer):
     def summary_columns(self) -> List[str]:
         return ['Scheme', 'Locus', 'Allele', 'Count', 'Total', 'Percent']
 
+    def _create_feature_sample_count_row(self, feature: FeatureSamples, sample_count: int) -> List[Any]:
+        if isinstance(feature, MLSTAllelesSamples):
+            return [feature.query_id, feature.scheme, feature.locus, feature.allele, sample_count]
+        else:
+            raise Exception(f'feature={feature} is not of type {MLSTAllelesSamples.__name__}')
+
     def summary(self, sample_set: SampleSet) -> pd.DataFrame:
         mlst_service: MLSTService = self._connection.mlst_service
 
-        # TODO: This isn't the best implementation right now since I have to load
-        # all MLST feature => sample mappings and then iterate over them
-        # To do this more efficiently I would probably need to modify my data model
         mlst_present_features = mlst_service.get_features(scheme=self._scheme,
                                                           locus=self._locus,
                                                           include_present=self._include_present,
                                                           include_unknown=self._include_unknown)
-        data = []
-        for feature, sample_count in self._feature_sample_count_iter(present_features=mlst_present_features,
-                                                                     present_samples=sample_set):
-            if sample_count > 0:
-                feature = cast(MLSTAllelesSamples, feature)
-                data.append([feature.query_id, feature.scheme, feature.locus, feature.allele, sample_count])
+        data = self._create_feature_sample_count_rows(mlst_present_features, present_samples=sample_set)
         summary_df = pd.DataFrame(data,
                                   columns=['MLST Feature', 'Scheme', 'Locus', 'Allele', 'Count'])
         summary_df['Total'] = len(sample_set)
