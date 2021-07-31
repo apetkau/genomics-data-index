@@ -26,6 +26,10 @@ class MLSTFeaturesSummarizer(FeaturesFromIndexSummarizer):
     def summary_columns(self) -> List[str]:
         return ['Scheme', 'Locus', 'Allele', 'Count', 'Total', 'Percent']
 
+    @property
+    def index_name(self) -> str:
+        return 'MLST Feature'
+
     def _create_feature_sample_count_row(self, feature: FeatureSamples,
                                          sample_count: int, total: int) -> List[Any]:
         if isinstance(feature, MLSTAllelesSamples):
@@ -37,13 +41,8 @@ class MLSTFeaturesSummarizer(FeaturesFromIndexSummarizer):
 
     def summary(self, sample_set: SampleSet) -> pd.DataFrame:
         mlst_service: MLSTService = self._connection.mlst_service
-
         mlst_present_features = mlst_service.get_features(scheme=self._scheme,
                                                           locus=self._locus,
                                                           include_present=self._include_present,
                                                           include_unknown=self._include_unknown)
-        data = self._create_feature_sample_count_rows(mlst_present_features, present_samples=sample_set)
-        summary_df = pd.DataFrame(data,
-                                  columns=['MLST Feature', 'Scheme', 'Locus', 'Allele', 'Count',
-                                           'Total', 'Percent'])
-        return summary_df.set_index('MLST Feature')
+        return self._create_summary_df(mlst_present_features, present_samples=sample_set)

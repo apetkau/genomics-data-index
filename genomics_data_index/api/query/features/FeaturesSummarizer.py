@@ -18,6 +18,11 @@ class FeaturesSummarizer(abc.ABC):
     def summary_columns(self) -> List[str]:
         pass
 
+    @property
+    @abc.abstractmethod
+    def index_name(self) -> str:
+        pass
+
     def _join_additional_columns(self, features_df: pd.DataFrame) -> pd.DataFrame:
         return features_df
 

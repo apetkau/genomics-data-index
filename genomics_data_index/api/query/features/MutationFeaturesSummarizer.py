@@ -17,6 +17,10 @@ class MutationFeaturesSummarizer(FeaturesSummarizer):
         self._batch_size = batch_size
         self._mutation_type = mutation_type
 
+    @property
+    def index_name(self) -> str:
+        return 'Mutation'
+
     def summary(self, sample_set: SampleSet) -> pd.DataFrame:
         vs = self._connection.variation_service
         features_df = vs.count_mutations_in_sample_ids_dataframe(sample_ids=sample_set,
