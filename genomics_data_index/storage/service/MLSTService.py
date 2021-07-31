@@ -148,3 +148,17 @@ class MLSTService(FeatureService):
             .all()
 
         return {f.id: f for f in feature_samples}
+
+    def get_all_mlst_features(self, include_present: bool = True, include_unknown: bool = False) -> List[MLSTAllelesSamples]:
+        query = self._database.get_session().query(MLSTAllelesSamples)
+
+        if not include_present:
+            if include_unknown:
+                query = query.filter(MLSTAllelesSamples.allele == MLST_UNKNOWN_ALLELE)
+            else:
+                # Here, I'm not including unknown or present, so don't query database
+                return list()
+        elif not include_unknown:
+            query = query.filter(MLSTAllelesSamples.allele != MLST_UNKNOWN_ALLELE)
+
+        return query.all()

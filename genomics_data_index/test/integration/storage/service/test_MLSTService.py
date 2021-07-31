@@ -352,6 +352,43 @@ def test_get_mlst_schemes(mlst_service_loaded):
     assert {'lmonocytogenes', 'ecoli', 'campylobacter'} == {s.name for s in mlst_schemes}
 
 
+def test_get_all_mlst_features(mlst_service_loaded: MLSTService):
+    # Test no unknown
+    mlst_features_list = mlst_service_loaded.get_all_mlst_features(include_present=True, include_unknown=False)
+    assert 22 == len(mlst_features_list)
+    assert isinstance(mlst_features_list[0], MLSTAllelesSamples)
+    mlst_features = {m.id for m in mlst_features_list}
+    assert {'lmonocytogenes:abcZ:1', 'lmonocytogenes:bglA:51', 'lmonocytogenes:cat:11',
+            'lmonocytogenes:dapE:13', 'lmonocytogenes:dat:2', 'lmonocytogenes:ldh:5',
+            'lmonocytogenes:lhkA:4', 'lmonocytogenes:lhkA:5',
+            'ecoli:adk:100', 'ecoli:fumC:23', 'ecoli:gyrB:68', 'ecoli:icd:45', 'ecoli:mdh:1',
+            'ecoli:purA:35', 'ecoli:recA:7',
+            'campylobacter:aspA:2', 'campylobacter:glnA:1', 'campylobacter:gltA:1',
+            'campylobacter:glyA:3', 'campylobacter:pgm:2', 'campylobacter:tkt:1',
+            'campylobacter:uncA:6'} == mlst_features
+
+    # Test include unknown
+    mlst_features_list = mlst_service_loaded.get_all_mlst_features(include_present=True, include_unknown=True)
+    assert 23 == len(mlst_features_list)
+    assert isinstance(mlst_features_list[0], MLSTAllelesSamples)
+    mlst_features = {m.id for m in mlst_features_list}
+    assert {'lmonocytogenes:abcZ:1', 'lmonocytogenes:bglA:51', 'lmonocytogenes:cat:11',
+            'lmonocytogenes:dapE:13', 'lmonocytogenes:dat:2', 'lmonocytogenes:ldh:5',
+            'lmonocytogenes:lhkA:4', 'lmonocytogenes:lhkA:5',
+            'ecoli:adk:100', 'ecoli:fumC:23', 'ecoli:gyrB:68', 'ecoli:icd:45', 'ecoli:mdh:1',
+            'ecoli:purA:35', 'ecoli:recA:7',
+            'campylobacter:aspA:2', 'campylobacter:glnA:1', 'campylobacter:gltA:1',
+            'campylobacter:glyA:3', 'campylobacter:pgm:2', 'campylobacter:tkt:1',
+            'campylobacter:uncA:6', 'campylobacter:uncA:?'} == mlst_features
+
+    # Test only unknown
+    mlst_features_list = mlst_service_loaded.get_all_mlst_features(include_present=False, include_unknown=True)
+    assert 1 == len(mlst_features_list)
+    assert isinstance(mlst_features_list[0], MLSTAllelesSamples)
+    mlst_features = {m.id for m in mlst_features_list}
+    assert {'campylobacter:uncA:?'} == mlst_features
+
+
 def test_get_features_for_scheme(mlst_service_loaded: MLSTService):
     # Test lmonocytogenes
     mlst_features = mlst_service_loaded.get_features_for_scheme('lmonocytogenes')
