@@ -16,6 +16,10 @@ class MutationFeaturesSummarizer(FeaturesSummarizer):
         self._ncores = ncores
         self._batch_size = batch_size
         self._mutation_type = mutation_type
+        
+    @property
+    def summary_columns(self) -> List[str]:
+        return ['Sequence', 'Position', 'Deletion', 'Insertion', 'Count', 'Total', 'Percent']
 
     @property
     def index_name(self) -> str:
@@ -38,7 +42,3 @@ class MutationFeaturesSummarizer(FeaturesSummarizer):
             return self._connection.variation_service.append_mutation_annotations(features_df)
         else:
             return features_df
-
-    @property
-    def summary_columns(self) -> List[str]:
-        return ['Sequence', 'Position', 'Deletion', 'Insertion', 'Count', 'Total', 'Percent']
