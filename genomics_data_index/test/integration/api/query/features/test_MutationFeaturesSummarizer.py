@@ -46,16 +46,20 @@ def test_summary_unique(loaded_database_genomic_data_store: GenomicsDataIndex):
     sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
     sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+    all_sample_ids = {s.id for s in db.get_session().query(Sample).all()}
 
-    # Unique to A
-    present_set = SampleSet({sampleA.id})
     mutations_summarizer = MutationFeaturesSummarizer(connection=loaded_database_genomic_data_store.connection,
                                                       ignore_annotations=True)
 
-    # Grab expected data
     dfA = pd.read_csv(snippy_all_dataframes['SampleA'], sep='\t')
     dfB = pd.read_csv(snippy_all_dataframes['SampleB'], sep='\t')
     dfC = pd.read_csv(snippy_all_dataframes['SampleC'], sep='\t')
+
+    # Unique to A
+    present_set = SampleSet({sampleA.id})
+    other_set = SampleSet(all_sample_ids - {sampleA.id})
+    mutations_df = mutations_summarizer.unique_summary(present_set, other_set=other_set).sort_index()
+
     expected_df = dfA
     expected_df = expected_df.groupby('Mutation').agg({
         'Sequence': 'first',
@@ -67,7 +71,6 @@ def test_summary_unique(loaded_database_genomic_data_store: GenomicsDataIndex):
     expected_df['Total'] = 1
     expected_df['Percent'] = 100 * (expected_df['Count'] / expected_df['Total'])
 
-    mutations_df = mutations_summarizer.summary(present_set).sort_index()
     mutations_df['Percent'] = mutations_df['Percent'].astype(int) # Convert to int for easier comparison
 
     assert len(expected_df) == len(mutations_df)
@@ -77,10 +80,35 @@ def test_summary_unique(loaded_database_genomic_data_store: GenomicsDataIndex):
     assert list(expected_df['Total']) == list(mutations_df['Total'])
     assert 100 == mutations_df.loc['reference:3656:CATT:C', 'Percent']
 
+    # Unique to B
+    present_set = SampleSet({sampleB.id})
+    other_set = SampleSet(all_sample_ids - {sampleB.id})
+    mutations_df = mutations_summarizer.unique_summary(present_set, other_set=other_set).sort_index()
+
+    dfAC = pd.concat([dfA, dfC])
+    expected_df = dfB[~dfB['Mutation'].isin(list(dfAC['Mutation']))]
+    expected_df = expected_df.groupby('Mutation').agg({
+        'Sequence': 'first',
+        'Position': 'first',
+        'Deletion': 'first',
+        'Insertion': 'first',
+        'Mutation': 'count',
+    }).rename(columns={'Mutation': 'Count'}).sort_index()
+    expected_df['Total'] = 1
+    expected_df['Percent'] = 100 * (expected_df['Count'] / expected_df['Total'])
+
+    mutations_df['Percent'] = mutations_df['Percent'].astype(int) # Convert to int for easier comparison
+
+    assert len(expected_df) == len(mutations_df)
+    assert list(expected_df.index) == list(mutations_df.index)
+    assert list(expected_df['Count']) == list(mutations_df['Count'])
+    assert list(expected_df['Total']) == list(mutations_df['Total'])
+    assert 100 == mutations_df.loc['reference:349:AAGT:A', 'Percent']
+
     # Unique to BC
     present_set = SampleSet({sampleB.id, sampleC.id})
-    mutations_df = mutations_summarizer.summary(present_set).sort_index()
-    mutations_df['Percent'] = mutations_df['Percent'].astype(int) # Convert to int for easier comparison
+    other_set = SampleSet(all_sample_ids - {sampleB.id, sampleC.id})
+    mutations_df = mutations_summarizer.unique_summary(present_set, other_set=other_set).sort_index()
 
     dfBC = pd.concat([dfB, dfC])
     expected_df = dfBC[~dfBC['Mutation'].isin(list(dfA['Mutation']))]
@@ -93,6 +121,8 @@ def test_summary_unique(loaded_database_genomic_data_store: GenomicsDataIndex):
     }).rename(columns={'Mutation': 'Count'}).sort_index()
     expected_df['Total'] = 2
     expected_df['Percent'] = 100 * (expected_df['Count'] / expected_df['Total'])
+
+    mutations_df['Percent'] = mutations_df['Percent'].astype(int) # Convert to int for easier comparison
 
     assert len(expected_df) == len(mutations_df)
     assert 66 == len(mutations_df)  # Check length against independently generated length

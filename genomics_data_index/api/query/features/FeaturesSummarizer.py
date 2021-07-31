@@ -38,8 +38,8 @@ class FeaturesSummarizer(abc.ABC):
         :param other_set: The set of samples features should not appear in.
         :return: A dataframe summarizing unique features in this set of samples.
         """
-        features_df = self.summary(sample_set).reset_index()
-        features_complement_df = self.summary(other_set).reset_index()
+        features_df = self.summary(sample_set)
+        features_complement_df = self.summary(other_set)
         features_merged_df = features_df.merge(features_complement_df, left_index=True, right_index=True,
                                                    how='left', indicator=True, suffixes=('_x', '_y'))
         rename_dict = {col + '_x': col for col in self.summary_columns}

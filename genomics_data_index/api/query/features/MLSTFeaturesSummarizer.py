@@ -22,6 +22,7 @@ class MLSTFeaturesSummarizer(FeaturesSummarizer):
         self._include_present = include_present
         self._include_unknown = include_unknown
 
+    @property
     def summary_columns(self) -> List[str]:
         return ['Scheme', 'Locus', 'Allele', 'Count', 'Total', 'Percent']
 
