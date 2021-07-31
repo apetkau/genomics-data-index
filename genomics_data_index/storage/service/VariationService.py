@@ -31,6 +31,7 @@ logger = logging.getLogger(__name__)
 
 class VariationService(FeatureService):
     MUTATION_TYPES = ['snp', 'indel', 'all', 'other']
+    MUTATION_ID_TYPES = ['spdi_ref', 'spdi']
 
     def __init__(self, database_connection: DatabaseConnection, variation_dir: Path,
                  reference_service: ReferenceService, sample_service: SampleService,
@@ -75,7 +76,8 @@ class VariationService(FeatureService):
         return {m.spdi: len(m.sample_ids) for m in mutations}
 
     def get_features(self, include_present: bool = True,
-                     include_unknown: bool = False) -> Dict[str, NucleotideVariantsSamples]:
+                     include_unknown: bool = False,
+                     id_type: str = 'spdi') -> Dict[str, NucleotideVariantsSamples]:
         query = self._connection.get_session().query(NucleotideVariantsSamples)
 
         if not include_present:
@@ -87,7 +89,15 @@ class VariationService(FeatureService):
         elif not include_unknown:
             query = query.filter(NucleotideVariantsSamples.var_type != NUCLEOTIDE_UNKNOWN_TYPE)
 
-        return {f.id: f for f in query.all()}
+        features = query.all()
+        if id_type == 'spdi_ref':
+            feature_ids_db = {f.id: f for f in features}
+            feature_ids_translated = self._reference_service.translate_spdi(feature_ids_db.keys(), to=id_type)
+            return {feature_ids_translated[fid]: feature_ids_db[fid] for fid in feature_ids_db}
+        elif id_type == 'spdi':
+            return {f.id: f for f in features}
+        else:
+            raise Exception(f'Unknown value for id_type={id_type}. Must be one of {self.MUTATION_ID_TYPES}')
 
     def get_variants_on_reference(self, reference_name: str, include_present: bool = True,
                                   include_unknown: bool = False) -> Dict[str, NucleotideVariantsSamples]:

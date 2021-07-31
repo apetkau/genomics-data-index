@@ -323,8 +323,17 @@ def test_get_features(database, snippy_nucleotide_data_package, reference_servic
     assert 2 == len(mutations['reference:3897:5:G'].sample_ids)
     assert 3 == len(mutations['reference:87:1:?'].sample_ids)
 
+    # Test include unknown ids translated
+    mutations = variation_service.get_features(include_unknown=True, id_type='spdi_ref')
+    assert 632 == len(mutations)
+    assert 2 == len(mutations['reference:839:C:G'].sample_ids)
+    assert 1 == len(mutations['reference:866:GCCAGATCC:G'].sample_ids)
+    assert 1 == len(mutations['reference:1048:C:G'].sample_ids)
+    assert 2 == len(mutations['reference:3897:GCGCA:G'].sample_ids)
+    assert 3 == len(mutations['reference:87:G:?'].sample_ids)
+
     # Test no include unknown
-    mutations = variation_service.get_variants_on_reference('genome', include_unknown=False)
+    mutations = variation_service.get_features(include_unknown=False)
     assert 111 == len(mutations)
     assert 2 == len(mutations['reference:839:1:G'].sample_ids)
     assert 1 == len(mutations['reference:866:9:G'].sample_ids)
@@ -332,10 +341,28 @@ def test_get_features(database, snippy_nucleotide_data_package, reference_servic
     assert 2 == len(mutations['reference:3897:5:G'].sample_ids)
     assert 'reference:87:1:?' not in mutations
 
+    # Test no include unknown ids translated
+    mutations = variation_service.get_features(include_unknown=False,
+                                                            id_type='spdi_ref')
+    assert 111 == len(mutations)
+    assert 2 == len(mutations['reference:839:C:G'].sample_ids)
+    assert 1 == len(mutations['reference:866:GCCAGATCC:G'].sample_ids)
+    assert 1 == len(mutations['reference:1048:C:G'].sample_ids)
+    assert 2 == len(mutations['reference:3897:GCGCA:G'].sample_ids)
+    assert 'reference:87:G:?' not in mutations
+    assert 'reference:87:1:?' not in mutations
+
     # Test only including unknowns
-    mutations = variation_service.get_variants_on_reference('genome', include_present=False, include_unknown=True)
+    mutations = variation_service.get_features(include_present=False, include_unknown=True)
     assert 521 == len(mutations)
     assert 3 == len(mutations['reference:87:1:?'].sample_ids)
+    assert 'reference:839:1:G' not in mutations
+
+    # Test only including unknowns, id translated
+    mutations = variation_service.get_features(include_present=False, include_unknown=True,
+                                               id_type='spdi_ref')
+    assert 521 == len(mutations)
+    assert 3 == len(mutations['reference:87:G:?'].sample_ids)
     assert 'reference:839:1:G' not in mutations
 
     # Test including neither present nor unknowns
