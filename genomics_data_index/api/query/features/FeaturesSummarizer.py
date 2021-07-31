@@ -3,8 +3,8 @@ from typing import List
 
 import pandas as pd
 
-from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
+from genomics_data_index.storage.SampleSet import SampleSet
 
 
 class FeaturesSummarizer(abc.ABC):
@@ -46,7 +46,7 @@ class FeaturesSummarizer(abc.ABC):
         features_df = self.summary(sample_set)
         features_complement_df = self.summary(other_set)
         features_merged_df = features_df.merge(features_complement_df, left_index=True, right_index=True,
-                                                   how='left', indicator=True, suffixes=('_x', '_y'))
+                                               how='left', indicator=True, suffixes=('_x', '_y'))
         rename_dict = {col + '_x': col for col in self.summary_columns}
         features_unique_df = features_merged_df[features_merged_df['_merge'] == 'left_only'].rename(rename_dict,
                                                                                                     axis='columns')

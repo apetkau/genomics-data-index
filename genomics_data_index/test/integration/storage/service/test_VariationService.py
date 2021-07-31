@@ -305,7 +305,7 @@ def test_get_variants_on_reference_index_unknowns(database, snippy_nucleotide_da
 
 
 def test_get_features(database, snippy_nucleotide_data_package, reference_service_with_data,
-                                                  sample_service, filesystem_storage):
+                      sample_service, filesystem_storage):
     variation_service = VariationService(database_connection=database,
                                          reference_service=reference_service_with_data,
                                          sample_service=sample_service,
@@ -343,7 +343,7 @@ def test_get_features(database, snippy_nucleotide_data_package, reference_servic
 
     # Test no include unknown ids translated
     mutations = variation_service.get_features(include_unknown=False,
-                                                            id_type='spdi_ref')
+                                               id_type='spdi_ref')
     assert 111 == len(mutations)
     assert 2 == len(mutations['reference:839:C:G'].sample_ids)
     assert 1 == len(mutations['reference:866:GCCAGATCC:G'].sample_ids)

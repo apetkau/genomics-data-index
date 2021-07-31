@@ -2,8 +2,8 @@ import pandas as pd
 
 from genomics_data_index.api.query.GenomicsDataIndex import GenomicsDataIndex
 from genomics_data_index.api.query.features.MutationFeaturesSummarizer import MutationFeaturesSummarizer
-from genomics_data_index.storage.model.db import Sample
 from genomics_data_index.storage.SampleSet import SampleSet
+from genomics_data_index.storage.model.db import Sample
 from genomics_data_index.test.integration import snippy_all_dataframes
 
 
@@ -30,7 +30,7 @@ def test_summary_all(loaded_database_genomic_data_store: GenomicsDataIndex):
                                                       ignore_annotations=True)
 
     mutations_df = mutations_summarizer.summary(present_set)
-    mutations_df['Percent'] = mutations_df['Percent'].astype(int) # Convert to int for easier comparison
+    mutations_df['Percent'] = mutations_df['Percent'].astype(int)  # Convert to int for easier comparison
     mutations_df = mutations_df.sort_index()
 
     assert len(expected_df) == len(mutations_df)
@@ -71,7 +71,7 @@ def test_summary_unique(loaded_database_genomic_data_store: GenomicsDataIndex):
     expected_df['Total'] = 1
     expected_df['Percent'] = 100 * (expected_df['Count'] / expected_df['Total'])
 
-    mutations_df['Percent'] = mutations_df['Percent'].astype(int) # Convert to int for easier comparison
+    mutations_df['Percent'] = mutations_df['Percent'].astype(int)  # Convert to int for easier comparison
 
     assert len(expected_df) == len(mutations_df)
     assert 46 == len(mutations_df)  # Check length against independently generated length
@@ -97,7 +97,7 @@ def test_summary_unique(loaded_database_genomic_data_store: GenomicsDataIndex):
     expected_df['Total'] = 1
     expected_df['Percent'] = 100 * (expected_df['Count'] / expected_df['Total'])
 
-    mutations_df['Percent'] = mutations_df['Percent'].astype(int) # Convert to int for easier comparison
+    mutations_df['Percent'] = mutations_df['Percent'].astype(int)  # Convert to int for easier comparison
 
     assert len(expected_df) == len(mutations_df)
     assert list(expected_df.index) == list(mutations_df.index)
@@ -122,7 +122,7 @@ def test_summary_unique(loaded_database_genomic_data_store: GenomicsDataIndex):
     expected_df['Total'] = 2
     expected_df['Percent'] = 100 * (expected_df['Count'] / expected_df['Total'])
 
-    mutations_df['Percent'] = mutations_df['Percent'].astype(int) # Convert to int for easier comparison
+    mutations_df['Percent'] = mutations_df['Percent'].astype(int)  # Convert to int for easier comparison
 
     assert len(expected_df) == len(mutations_df)
     assert 66 == len(mutations_df)  # Check length against independently generated length
@@ -137,8 +137,9 @@ def test_summary_unique(loaded_database_genomic_data_store: GenomicsDataIndex):
 def test_summary_annotations(loaded_database_genomic_data_store_annotations: GenomicsDataIndex):
     db = loaded_database_genomic_data_store_annotations.connection.database
 
-    mutations_summarizer = MutationFeaturesSummarizer(connection=loaded_database_genomic_data_store_annotations.connection,
-                                                      ignore_annotations=False)
+    mutations_summarizer = MutationFeaturesSummarizer(
+        connection=loaded_database_genomic_data_store_annotations.connection,
+        ignore_annotations=False)
 
     sample_sh14_001 = db.get_session().query(Sample).filter(Sample.name == 'SH14-001').one()
     sample_sh14_014 = db.get_session().query(Sample).filter(Sample.name == 'SH14-014').one()
@@ -153,7 +154,7 @@ def test_summary_annotations(loaded_database_genomic_data_store_annotations: Gen
             'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
             'HGVS.c', 'HGVS.p', 'ID_HGVS.c', 'ID_HGVS.p', 'ID_HGVS_GN.c', 'ID_HGVS_GN.p'] == list(mutations_df.columns)
     assert 177 == len(mutations_df)
-    mutations_df['Percent'] = mutations_df['Percent'].astype(int) # easier to compare percents in assert
+    mutations_df['Percent'] = mutations_df['Percent'].astype(int)  # easier to compare percents in assert
 
     # missense variant (3/3)
     assert ['NC_011083', 140658, 'C', 'A', 3, 3, 100,

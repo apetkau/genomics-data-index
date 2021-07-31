@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # Used to print out the nucleotide and position in the reference genome to fill in information for tests.
 
-import sys
 import gzip
+import sys
 from functools import partial
 
 from Bio import SeqIO

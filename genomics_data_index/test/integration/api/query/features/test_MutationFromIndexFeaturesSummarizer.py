@@ -1,12 +1,12 @@
-import pandas as pd
-import logging
 import warnings
+
+import pandas as pd
 
 from genomics_data_index.api.query.GenomicsDataIndex import GenomicsDataIndex
 from genomics_data_index.api.query.features.MutationFeaturesFromIndexSummarizer import \
     MutationFeaturesFromIndexSummarizer
-from genomics_data_index.storage.model.db import Sample
 from genomics_data_index.storage.SampleSet import SampleSet
+from genomics_data_index.storage.model.db import Sample
 from genomics_data_index.test.integration import snippy_all_dataframes
 
 

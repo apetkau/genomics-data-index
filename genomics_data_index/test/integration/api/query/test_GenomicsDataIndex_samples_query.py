@@ -1,6 +1,6 @@
 import math
-from typing import cast
 import warnings
+from typing import cast
 
 import pandas as pd
 import pytest
@@ -1481,7 +1481,7 @@ def test_query_mlst_allele(loaded_database_connection: DataIndexConnection):
     assert {sample_2014D_0067.id} == set(query_result.unknown_set)
     assert 8 == len(query_result.absent_set)
     assert 9 == len(query_result.universe_set)
-    
+
     # Direct from string
     query_result = query(loaded_database_connection).hasa('mlst:campylobacter:uncA:6')
     assert 1 == len(query_result)
@@ -3558,7 +3558,7 @@ def test_summary_features_kindmlst(loaded_database_connection: DataIndexConnecti
     assert ['lmonocytogenes', 'lhkA', '4', 1, 4, 25] == summary_df.loc['mlst:lmonocytogenes:lhkA:4'].tolist()
     assert ['campylobacter', 'aspA', '2', 1, 4, 25] == summary_df.loc['mlst:campylobacter:aspA:2'].tolist()
     assert ['campylobacter', 'glyA', '3', 1, 4, 25] == summary_df.loc['mlst:campylobacter:glyA:3'].tolist()
-    assert 6 == len(summary_df[summary_df['Scheme'] == 'campylobacter']) # Missing one feature since it's unknown
+    assert 6 == len(summary_df[summary_df['Scheme'] == 'campylobacter'])  # Missing one feature since it's unknown
 
     # Test only unknown
     summary_df = query(loaded_database_connection).isin(

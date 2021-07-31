@@ -1,12 +1,12 @@
-from typing import List, cast, Any
+from typing import List, Any
 
 import pandas as pd
 
 from genomics_data_index.api.query.features.FeaturesFromIndexSummarizer import FeaturesFromIndexSummarizer
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
-from genomics_data_index.storage.service.MLSTService import MLSTService
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.db import FeatureSamples, MLSTAllelesSamples
+from genomics_data_index.storage.service.MLSTService import MLSTService
 
 
 class MLSTFeaturesSummarizer(FeaturesFromIndexSummarizer):

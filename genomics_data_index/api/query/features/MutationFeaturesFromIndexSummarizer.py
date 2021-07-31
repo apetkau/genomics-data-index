@@ -5,10 +5,10 @@ import pandas as pd
 from genomics_data_index.api.query.features.FeaturesFromIndexSummarizer import FeaturesFromIndexSummarizer
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
 from genomics_data_index.storage.SampleSet import SampleSet
+from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
 from genomics_data_index.storage.model.db import FeatureSamples
 from genomics_data_index.storage.model.db import NucleotideVariantsSamples
 from genomics_data_index.storage.service.VariationService import VariationService
-from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
 
 
 class MutationFeaturesFromIndexSummarizer(FeaturesFromIndexSummarizer):
@@ -36,7 +36,8 @@ class MutationFeaturesFromIndexSummarizer(FeaturesFromIndexSummarizer):
         if isinstance(feature, NucleotideVariantsSamples):
             feature = cast(NucleotideVariantsSamples, feature)
             percent = (sample_count / total) * 100
-            query_feature_id = QueryFeatureMutationSPDI(feature_id) # Use this since db deletion is an int (not sequence)
+            query_feature_id = QueryFeatureMutationSPDI(
+                feature_id)  # Use this since db deletion is an int (not sequence)
             return [feature_id, feature.sequence, feature.position, query_feature_id.deletion, feature.insertion,
                     sample_count, total, percent]
         else:

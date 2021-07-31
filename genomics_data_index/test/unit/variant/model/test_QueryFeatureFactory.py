@@ -3,8 +3,8 @@ import pytest
 from genomics_data_index.storage.model.QueryFeatureFactory import QueryFeatureFactory
 from genomics_data_index.storage.model.QueryFeatureHGVS import QueryFeatureHGVS
 from genomics_data_index.storage.model.QueryFeatureHGVSGN import QueryFeatureHGVSGN
-from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
 from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
+from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
 
 query_feature_factory = QueryFeatureFactory.instance()
 

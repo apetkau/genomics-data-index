@@ -206,17 +206,17 @@ def test_summary_selections(loaded_database_genomic_data_store: GenomicsDataInde
     assert ['lmonocytogenes', 'lhkA', '4', 1, 4, 25] == summary_df.loc['mlst:lmonocytogenes:lhkA:4'].tolist()
     assert ['campylobacter', 'aspA', '2', 1, 4, 25] == summary_df.loc['mlst:campylobacter:aspA:2'].tolist()
     assert ['campylobacter', 'glyA', '3', 1, 4, 25] == summary_df.loc['mlst:campylobacter:glyA:3'].tolist()
-    assert 6 == len(summary_df[summary_df['Scheme'] == 'campylobacter']) # Missing one feature since it's unknown
+    assert 6 == len(summary_df[summary_df['Scheme'] == 'campylobacter'])  # Missing one feature since it's unknown
 
     # Test multiple schemes sample set but summarize for only a particular scheme
     present_set = SampleSet([sampleA.id, sampleB.id, sample_CFSAN002349.id, sample_2014D_0067.id])
     mlst_summarizer = MLSTFeaturesSummarizer(connection=loaded_database_genomic_data_store.connection,
-                                              scheme='lmonocytogenes')
+                                             scheme='lmonocytogenes')
     summary_df = mlst_summarizer.summary(present_set)
 
     summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
     assert 9 == len(summary_df)
-    assert {'lmonocytogenes'} == set(summary_df['Scheme'].tolist()) # Only results for one scheme
+    assert {'lmonocytogenes'} == set(summary_df['Scheme'].tolist())  # Only results for one scheme
     assert 'MLST Feature' == summary_df.index.name
     assert ['Scheme', 'Locus', 'Allele', 'Count', 'Total', 'Percent'] == list(summary_df.columns)
     assert ['lmonocytogenes', 'abcZ', '1', 3, 4, 75] == summary_df.loc['mlst:lmonocytogenes:abcZ:1'].tolist()
@@ -229,12 +229,12 @@ def test_summary_selections(loaded_database_genomic_data_store: GenomicsDataInde
     # Test multiple schemes sample set but summarize for only a particular scheme/locus
     present_set = SampleSet([sampleA.id, sampleB.id, sample_CFSAN002349.id, sample_2014D_0067.id])
     mlst_summarizer = MLSTFeaturesSummarizer(connection=loaded_database_genomic_data_store.connection,
-                                              scheme='lmonocytogenes', locus='bglA')
+                                             scheme='lmonocytogenes', locus='bglA')
     summary_df = mlst_summarizer.summary(present_set)
 
     summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
     assert 2 == len(summary_df)
-    assert {'lmonocytogenes'} == set(summary_df['Scheme'].tolist()) # Only results for one scheme
+    assert {'lmonocytogenes'} == set(summary_df['Scheme'].tolist())  # Only results for one scheme
     assert 'MLST Feature' == summary_df.index.name
     assert ['Scheme', 'Locus', 'Allele', 'Count', 'Total', 'Percent'] == list(summary_df.columns)
     assert ['lmonocytogenes', 'bglA', '51', 2, 4, 50] == summary_df.loc['mlst:lmonocytogenes:bglA:51'].tolist()

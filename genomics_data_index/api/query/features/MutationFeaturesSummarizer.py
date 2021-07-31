@@ -2,9 +2,9 @@ from typing import List
 
 import pandas as pd
 
+from genomics_data_index.api.query.features.FeaturesSummarizer import FeaturesSummarizer
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
 from genomics_data_index.storage.SampleSet import SampleSet
-from genomics_data_index.api.query.features.FeaturesSummarizer import FeaturesSummarizer
 
 
 class MutationFeaturesSummarizer(FeaturesSummarizer):
@@ -16,7 +16,7 @@ class MutationFeaturesSummarizer(FeaturesSummarizer):
         self._ncores = ncores
         self._batch_size = batch_size
         self._mutation_type = mutation_type
-        
+
     @property
     def summary_columns(self) -> List[str]:
         return ['Sequence', 'Position', 'Deletion', 'Insertion', 'Count', 'Total', 'Percent']
