@@ -15,7 +15,8 @@
 * [developer]: Added custom TRACE log level.
 * [analysis]: Added parallel processing for construction of features table.
 * [analysis]: Switched command-line interface to use my Python API for queries.
-* [api]: `features_summary()` for the database now works with MLST results.
+* [api]: `features_summary()` now works with MLST results.
+* [api]: Improved performance/redesigned `features_summary()` for mutation results.
 
 # 0.1.0
 
