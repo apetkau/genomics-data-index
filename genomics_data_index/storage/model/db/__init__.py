@@ -12,6 +12,7 @@ from sqlalchemy.orm import relationship
 from genomics_data_index.storage.MaskedGenomicRegions import MaskedGenomicRegions
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.NucleotideMutationTranslater import NucleotideMutationTranslater
+from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
 from genomics_data_index.storage.model.db.DatabasePathTranslator import DatabasePathTranslator
 
 Base = declarative_base()
@@ -49,6 +50,9 @@ class FeatureSamples:
 
     @sample_ids.setter
     def sample_ids(self, sample_ids: SampleSet) -> None:
+        raise NotImplementedError()
+
+    def query_id(self) -> str:
         raise NotImplementedError()
 
     def update_sample_ids(self, other: FeatureSamples) -> None:
@@ -113,6 +117,10 @@ class NucleotideVariantsSamples(Base, FeatureSamples):
     @property
     def id(self) -> str:
         return self.spdi
+
+    @property
+    def query_id(self) -> str:
+        return self.id
 
     @hybrid_property
     def spdi(self) -> str:
@@ -325,6 +333,10 @@ class MLSTAllelesSamples(Base, FeatureSamples):
     @hybrid_property
     def id(self) -> str:
         return self.sla
+
+    @property
+    def query_id(self) -> str:
+        return QueryFeatureMLST.PREFIX + self.id
 
     @hybrid_property
     def sample_ids(self) -> SampleSet:

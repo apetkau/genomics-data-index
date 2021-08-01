@@ -4,7 +4,6 @@ from typing import List
 
 import pandas as pd
 import pytest
-from sqlalchemy.orm.exc import NoResultFound
 
 from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
 from genomics_data_index.storage.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor
@@ -112,9 +111,9 @@ def test_count_on_reference_no_index_unknowns(database, snippy_nucleotide_data_p
     assert 112 == variation_service.count_on_reference(reference_name='genome', include_unknown=False)
     assert 112 == variation_service.count_on_reference(reference_name='genome', include_unknown=True)
 
-    with pytest.raises(NoResultFound) as execinfo:
+    with pytest.raises(EntityExistsError) as execinfo:
         variation_service.count_on_reference('no_exists')
-    assert 'No row was found' in str(execinfo.value)
+    assert 'No reference genome with name=[no_exists]' in str(execinfo.value)
 
 
 def test_count_on_reference_with_index_unknowns_low_slice_limit(database, snippy_nucleotide_data_package,
@@ -132,9 +131,9 @@ def test_count_on_reference_with_index_unknowns_low_slice_limit(database, snippy
     assert 111 == variation_service.count_on_reference(reference_name='genome', include_unknown=False)
     assert 632 == variation_service.count_on_reference(reference_name='genome', include_unknown=True)
 
-    with pytest.raises(NoResultFound) as execinfo:
+    with pytest.raises(EntityExistsError) as execinfo:
         variation_service.count_on_reference('no_exists')
-    assert 'No row was found' in str(execinfo.value)
+    assert 'No reference genome with name=[no_exists]' in str(execinfo.value)
 
 
 def test_count_on_reference_with_index_unknowns_high_slice_limit(database, snippy_nucleotide_data_package,
@@ -152,9 +151,9 @@ def test_count_on_reference_with_index_unknowns_high_slice_limit(database, snipp
     assert 111 == variation_service.count_on_reference(reference_name='genome', include_unknown=False)
     assert 632 == variation_service.count_on_reference(reference_name='genome', include_unknown=True)
 
-    with pytest.raises(NoResultFound) as execinfo:
+    with pytest.raises(EntityExistsError) as execinfo:
         variation_service.count_on_reference('no_exists')
-    assert 'No row was found' in str(execinfo.value)
+    assert 'No reference genome with name=[no_exists]' in str(execinfo.value)
 
 
 def test_insert_variants_masked_regions(database, snippy_nucleotide_data_package, reference_service_with_data,
@@ -241,6 +240,15 @@ def test_get_variants_on_reference_no_index_unknowns(database, snippy_nucleotide
     assert 2 == len(mutations['reference:3897:5:G'].sample_ids)
     assert 3897 == mutations['reference:3897:5:G'].position
 
+    # Test should still have the same number of mutations when including unknowns since none were indexed
+    mutations = variation_service.get_variants_on_reference('genome', include_unknown=True)
+    assert 112 == len(mutations)
+    assert 'reference:839:1:G' in mutations
+
+    # Test setting include_present to False, which should give no results in this case
+    mutations = variation_service.get_variants_on_reference('genome', include_present=False, include_unknown=True)
+    assert 0 == len(mutations)
+
 
 def test_get_variants_on_reference_index_unknowns(database, snippy_nucleotide_data_package, reference_service_with_data,
                                                   sample_service, filesystem_storage):
@@ -284,6 +292,82 @@ def test_get_variants_on_reference_index_unknowns(database, snippy_nucleotide_da
     assert 3897 == mutations['reference:3897:5:G'].position
 
     assert 'reference:87:1:?' not in mutations
+
+    # Test only including unknowns
+    mutations = variation_service.get_variants_on_reference('genome', include_present=False, include_unknown=True)
+    assert 521 == len(mutations)
+    assert 'reference:87:1:?' in mutations
+    assert 'reference:839:1:G' not in mutations
+
+    # Test inluding neigther present nor unknowns
+    mutations = variation_service.get_variants_on_reference('genome', include_present=False, include_unknown=False)
+    assert 0 == len(mutations)
+
+
+def test_get_features(database, snippy_nucleotide_data_package, reference_service_with_data,
+                      sample_service, filesystem_storage):
+    variation_service = VariationService(database_connection=database,
+                                         reference_service=reference_service_with_data,
+                                         sample_service=sample_service,
+                                         variation_dir=filesystem_storage.variation_dir,
+                                         index_unknown_missing=True,
+                                         sql_select_limit=500)
+    variation_service.insert(feature_scope_name='genome', data_package=snippy_nucleotide_data_package)
+
+    # Test include unknown
+    mutations = variation_service.get_features(include_unknown=True)
+    assert 632 == len(mutations)
+    assert 2 == len(mutations['reference:839:1:G'].sample_ids)
+    assert 1 == len(mutations['reference:866:9:G'].sample_ids)
+    assert 1 == len(mutations['reference:1048:1:G'].sample_ids)
+    assert 2 == len(mutations['reference:3897:5:G'].sample_ids)
+    assert 3 == len(mutations['reference:87:1:?'].sample_ids)
+
+    # Test include unknown ids translated
+    mutations = variation_service.get_features(include_unknown=True, id_type='spdi_ref')
+    assert 632 == len(mutations)
+    assert 2 == len(mutations['reference:839:C:G'].sample_ids)
+    assert 1 == len(mutations['reference:866:GCCAGATCC:G'].sample_ids)
+    assert 1 == len(mutations['reference:1048:C:G'].sample_ids)
+    assert 2 == len(mutations['reference:3897:GCGCA:G'].sample_ids)
+    assert 3 == len(mutations['reference:87:G:?'].sample_ids)
+
+    # Test no include unknown
+    mutations = variation_service.get_features(include_unknown=False)
+    assert 111 == len(mutations)
+    assert 2 == len(mutations['reference:839:1:G'].sample_ids)
+    assert 1 == len(mutations['reference:866:9:G'].sample_ids)
+    assert 1 == len(mutations['reference:1048:1:G'].sample_ids)
+    assert 2 == len(mutations['reference:3897:5:G'].sample_ids)
+    assert 'reference:87:1:?' not in mutations
+
+    # Test no include unknown ids translated
+    mutations = variation_service.get_features(include_unknown=False,
+                                               id_type='spdi_ref')
+    assert 111 == len(mutations)
+    assert 2 == len(mutations['reference:839:C:G'].sample_ids)
+    assert 1 == len(mutations['reference:866:GCCAGATCC:G'].sample_ids)
+    assert 1 == len(mutations['reference:1048:C:G'].sample_ids)
+    assert 2 == len(mutations['reference:3897:GCGCA:G'].sample_ids)
+    assert 'reference:87:G:?' not in mutations
+    assert 'reference:87:1:?' not in mutations
+
+    # Test only including unknowns
+    mutations = variation_service.get_features(include_present=False, include_unknown=True)
+    assert 521 == len(mutations)
+    assert 3 == len(mutations['reference:87:1:?'].sample_ids)
+    assert 'reference:839:1:G' not in mutations
+
+    # Test only including unknowns, id translated
+    mutations = variation_service.get_features(include_present=False, include_unknown=True,
+                                               id_type='spdi_ref')
+    assert 521 == len(mutations)
+    assert 3 == len(mutations['reference:87:G:?'].sample_ids)
+    assert 'reference:839:1:G' not in mutations
+
+    # Test including neither present nor unknowns
+    mutations = variation_service.get_features(include_present=False, include_unknown=False)
+    assert 0 == len(mutations)
 
 
 def test_insert_variants_examine_variation_with_unknown(database, snippy_nucleotide_data_package,

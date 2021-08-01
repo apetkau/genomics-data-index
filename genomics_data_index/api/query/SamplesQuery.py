@@ -150,7 +150,9 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def features_summary(self, kind: str = 'mutations', selection: str = 'all', **kwargs) -> pd.DataFrame:
+    def features_summary(self, kind: str = 'mutations', selection: str = 'all',
+                         include_present_features: bool = True, include_unknown_features: bool = False,
+                         **kwargs) -> pd.DataFrame:
         """
         Summarizes the selected features in a DataFrame. Please specify the kind of features with the kind parameter.
 
@@ -173,6 +175,8 @@ class SamplesQuery(abc.ABC):
                           at least one of the selected samples in this query. Use 'unique' to select only those features
                           that are present in the selected samples of this query
                           (and nowhere else in the universe of samples).
+        :param include_present_features: Will determine if present (i.e., not unknown) features should be included.
+        :param include_unknown_features: Will determine if unknown features should be included.
         :param **kwargs: Additional keyword arguments. Please see the documentation for the underlying implementation.
 
         :return: A DataFrame summarizing the features within the selected samples.
@@ -181,14 +185,15 @@ class SamplesQuery(abc.ABC):
 
     @abc.abstractmethod
     def tofeaturesset(self, kind: str = 'mutations', selection: str = 'all',
-                      ncores: int = 1) -> Set[str]:
+                      include_present_features: bool = True, include_unknown_features: bool = False) -> Set[str]:
         """
         Returns all features as a set of strings for the selected samples.
 
         :param kind: The kind of feature to summarize. By default this is *mutations*.
         :param selection: The method used to select features. Use 'all' (default) to select all features.
                   Use 'unique' to select only those features unique to the selected samples.
-        :param ncores: The number of cores to use for generating the features set.
+        :param include_present_features: Will determine if present (i.e., not unknown) features should be included.
+        :param include_unknown_features: Will determine if unknown features should be included.
 
         :return: A set of feature identifiers derived from the selected samples.
         """
@@ -467,6 +472,20 @@ class SamplesQuery(abc.ABC):
         :param include_unknown: If True, include unknown samples.
         :param include_absent: If True, include absent samples from selection.
         :return: A list of sample names or IDs.
+        """
+        pass
+
+    @abc.abstractmethod
+    def toset(self, names: bool = True, include_present: bool = True,
+              include_unknown: bool = False, include_absent: bool = False) -> Union[Set[str], Set[int]]:
+        """
+        Converts the set of selected samples into a set of either sample names or sample IDs.
+
+        :param names: If True (default) return a set of sample names as strings, if False return a set of sample IDs.
+        :param include_present: If True (default) include selected samples.
+        :param include_unknown: If True, include unknown samples.
+        :param include_absent: If True, include absent samples from selection.
+        :return: A set of sample names or IDs.
         """
         pass
 

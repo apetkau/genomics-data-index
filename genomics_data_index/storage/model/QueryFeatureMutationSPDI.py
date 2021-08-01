@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Union, List
+from typing import Union, List, Optional
 
 from genomics_data_index.storage.model import NUCLEOTIDE_UNKNOWN
 from genomics_data_index.storage.model.QueryFeature import QueryFeature
@@ -38,7 +38,7 @@ class QueryFeatureMutationSPDI(QueryFeatureMutation):
             self._alt = alt
 
     @property
-    def id(self) -> str:
+    def id_no_prefix(self) -> Optional[str]:
         return self._spdi
 
     @property
@@ -98,7 +98,7 @@ class QueryFeatureMutationSPDI(QueryFeatureMutation):
         return self.alt
 
     def is_unknown(self) -> bool:
-        return False
+        return self.insertion == NUCLEOTIDE_UNKNOWN
 
     def to_unknown(self) -> QueryFeature:
         return QueryFeatureMutationSPDI(':'.join([

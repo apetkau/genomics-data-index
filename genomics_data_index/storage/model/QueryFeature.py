@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import abc
-from typing import List
+from typing import List, Optional
 
 
 class QueryFeature(abc.ABC):
@@ -12,8 +12,12 @@ class QueryFeature(abc.ABC):
         pass
 
     @property
+    def id(self) -> Optional[str]:
+        return f'{self.prefix}{self.id_no_prefix}'
+
+    @property
     @abc.abstractmethod
-    def id(self) -> str:
+    def id_no_prefix(self) -> Optional[str]:
         pass
 
     def is_wild(self) -> bool:
@@ -44,6 +48,10 @@ class QueryFeature(abc.ABC):
         :return: A list of unknown features, where each feature corresponds to a single position.
         """
         pass
+
+    @property
+    def prefix(self) -> str:
+        return ''
 
     def __str__(self) -> str:
         return self.id

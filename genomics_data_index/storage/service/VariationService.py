@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import List, Set, Any, Dict, cast, Union
 
 import pandas as pd
+import sqlalchemy
 
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.io.FeaturesReader import FeaturesReader
@@ -13,6 +14,7 @@ from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackage import 
 from genomics_data_index.storage.io.mutation.VariationFile import VariationFile
 from genomics_data_index.storage.io.mutation.VcfVariantsReader import VcfVariantsReader
 from genomics_data_index.storage.model import NUCLEOTIDE_UNKNOWN_TYPE
+from genomics_data_index.storage.model.QueryFeatureHGVSGN import QueryFeatureHGVSGN
 from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
 from genomics_data_index.storage.model.db import NucleotideVariantsSamples, SampleNucleotideVariation, Sample, \
     FeatureSamples
@@ -29,6 +31,7 @@ logger = logging.getLogger(__name__)
 
 class VariationService(FeatureService):
     MUTATION_TYPES = ['snp', 'indel', 'all', 'other']
+    MUTATION_ID_TYPES = ['spdi_ref', 'spdi']
 
     def __init__(self, database_connection: DatabaseConnection, variation_dir: Path,
                  reference_service: ReferenceService, sample_service: SampleService,
@@ -43,8 +46,14 @@ class VariationService(FeatureService):
     def _reference_sequence_names(self, reference_name: str) -> List[str]:
         return list(self._reference_service.get_reference_sequences(reference_name).keys())
 
-    def _query_include_unknown(self, query, include_unknown: bool):
-        if not include_unknown:
+    def _query_include_unknown(self, query, include_present: bool = True, include_unknown: bool = False):
+        if not include_present:
+            if include_unknown:
+                return query.filter(NucleotideVariantsSamples.var_type == NUCLEOTIDE_UNKNOWN_TYPE)
+            else:
+                # Should return a query that gives no results
+                return query.filter(sqlalchemy.sql.false())
+        elif not include_unknown:
             return query.filter(NucleotideVariantsSamples.var_type != NUCLEOTIDE_UNKNOWN_TYPE)
         else:
             return query
@@ -66,13 +75,39 @@ class VariationService(FeatureService):
 
         return {m.spdi: len(m.sample_ids) for m in mutations}
 
-    def get_variants_on_reference(self, reference_name: str, include_unknown: bool) -> Dict[str, int]:
+    def get_features(self, include_present: bool = True,
+                     include_unknown: bool = False,
+                     id_type: str = 'spdi') -> Dict[str, NucleotideVariantsSamples]:
+        query = self._connection.get_session().query(NucleotideVariantsSamples)
+
+        if not include_present:
+            if include_unknown:
+                query = query.filter(NucleotideVariantsSamples.var_type == NUCLEOTIDE_UNKNOWN_TYPE)
+            else:
+                # Here, I'm not including unknown or present, so don't query database
+                return dict()
+        elif not include_unknown:
+            query = query.filter(NucleotideVariantsSamples.var_type != NUCLEOTIDE_UNKNOWN_TYPE)
+
+        features = query.all()
+        if id_type == 'spdi_ref':
+            feature_ids_db = {f.id: f for f in features}
+            feature_ids_translated = self._reference_service.translate_spdi(feature_ids_db.keys(), to=id_type)
+            return {feature_ids_translated[fid]: feature_ids_db[fid] for fid in feature_ids_db}
+        elif id_type == 'spdi':
+            return {f.id: f for f in features}
+        else:
+            raise Exception(f'Unknown value for id_type={id_type}. Must be one of {self.MUTATION_ID_TYPES}')
+
+    def get_variants_on_reference(self, reference_name: str, include_present: bool = True,
+                                  include_unknown: bool = False) -> Dict[str, NucleotideVariantsSamples]:
         reference_sequence_names = self._reference_sequence_names(reference_name)
 
         query = self._connection.get_session().query(NucleotideVariantsSamples) \
             .filter(NucleotideVariantsSamples.sequence.in_(reference_sequence_names))
 
-        mutations = self._query_include_unknown(query, include_unknown=include_unknown).all()
+        mutations = self._query_include_unknown(query, include_present=include_present,
+                                                include_unknown=include_unknown).all()
 
         return {m.spdi: m for m in mutations}
 
@@ -138,6 +173,20 @@ class VariationService(FeatureService):
         for mutation_id in id_to_nucleotide_variants_samples:
             variants_samples = id_to_nucleotide_variants_samples[mutation_id]
 
+            if variants_samples.id_hgvs_c is not None:
+                id_hgvs_gn_c = QueryFeatureHGVSGN.create(sequence_name=variants_samples.sequence,
+                                                         gene=variants_samples.annotation_gene_name,
+                                                         variant=variants_samples.annotation_hgvs_c).id
+            else:
+                id_hgvs_gn_c = pd.NA
+
+            if variants_samples.id_hgvs_p is not None:
+                id_hgvs_gn_p = QueryFeatureHGVSGN.create(sequence_name=variants_samples.sequence,
+                                                         gene=variants_samples.annotation_gene_name,
+                                                         variant=variants_samples.annotation_hgvs_p).id
+            else:
+                id_hgvs_gn_p = pd.NA
+
             annotation_data.append([mutation_id,
                                     variants_samples.annotation if variants_samples.annotation is not None else pd.NA,
                                     variants_samples.annotation_impact if variants_samples.annotation_impact is not None else pd.NA,
@@ -149,6 +198,8 @@ class VariationService(FeatureService):
                                     variants_samples.annotation_hgvs_p if variants_samples.annotation_hgvs_p is not None else pd.NA,
                                     variants_samples.id_hgvs_c if variants_samples.id_hgvs_c is not None else pd.NA,
                                     variants_samples.id_hgvs_p if variants_samples.id_hgvs_p is not None else pd.NA,
+                                    id_hgvs_gn_c,
+                                    id_hgvs_gn_p,
                                     ])
 
         annotation_df = pd.DataFrame(data=annotation_data,
@@ -163,6 +214,8 @@ class VariationService(FeatureService):
                                               'HGVS.p',
                                               'ID_HGVS.c',
                                               'ID_HGVS.p',
+                                              'ID_HGVS_GN.c',
+                                              'ID_HGVS_GN.p',
                                               ]).set_index('Mutation')
 
         return features_df.merge(annotation_df, how='left', left_index=True, right_index=True)

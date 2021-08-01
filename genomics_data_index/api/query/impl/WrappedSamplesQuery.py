@@ -89,11 +89,19 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
     def summary(self) -> pd.DataFrame:
         return self._wrapped_query.summary()
 
-    def features_summary(self, kind: str = 'mutations', selection: str = 'all', **kwargs) -> pd.DataFrame:
-        return self._wrapped_query.features_summary(kind=kind, selection=selection, **kwargs)
+    def features_summary(self, kind: str = 'mutations', selection: str = 'all',
+                         include_present_features: bool = True, include_unknown_features: bool = False,
+                         **kwargs) -> pd.DataFrame:
+        return self._wrapped_query.features_summary(kind=kind, selection=selection,
+                                                    include_present_features=include_present_features,
+                                                    include_unknown_features=include_unknown_features,
+                                                    **kwargs)
 
-    def tofeaturesset(self, kind: str = 'mutations', selection: str = 'all', ncores: int = 1) -> Set[str]:
-        return self._wrapped_query.tofeaturesset(kind=kind, selection=selection, ncores=ncores)
+    def tofeaturesset(self, kind: str = 'mutations', selection: str = 'all',
+                      include_present_features: bool = True, include_unknown_features: bool = False) -> Set[str]:
+        return self._wrapped_query.tofeaturesset(kind=kind, selection=selection,
+                                                 include_present_features=include_present_features,
+                                                 include_unknown_features=include_unknown_features)
 
     def and_(self, other: SamplesQuery) -> SamplesQuery:
         return self._wrap_create(self._wrapped_query.and_(other))
@@ -117,6 +125,11 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
                include_unknown: bool = False, include_absent: bool = False) -> Union[List[str], List[int]]:
         return self._wrapped_query.tolist(names=names, include_present=include_present,
                                           include_unknown=include_unknown, include_absent=include_absent)
+
+    def toset(self, names: bool = True, include_present: bool = True,
+              include_unknown: bool = False, include_absent: bool = False) -> Union[Set[str], Set[int]]:
+        return self._wrapped_query.toset(names=names, include_present=include_present,
+                                         include_unknown=include_unknown, include_absent=include_absent)
 
     def _get_sample_name_ids(self, include_unknowns: bool = True) -> Dict[str, int]:
         sample_service = self._query_connection.sample_service

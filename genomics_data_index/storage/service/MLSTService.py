@@ -10,6 +10,7 @@ from genomics_data_index.storage.io.SampleData import SampleData
 from genomics_data_index.storage.io.SampleDataPackage import SampleDataPackage
 from genomics_data_index.storage.io.mlst.MLSTSampleData import MLSTSampleData
 from genomics_data_index.storage.io.mlst.MLSTSampleDataPackage import MLSTSampleDataPackage
+from genomics_data_index.storage.model import MLST_UNKNOWN_ALLELE
 from genomics_data_index.storage.model.db import MLSTScheme, SampleMLSTAlleles, MLSTAllelesSamples, Sample, \
     FeatureSamples
 from genomics_data_index.storage.service import DatabaseConnection
@@ -33,6 +34,9 @@ class MLSTService(FeatureService):
             .filter(MLSTScheme.name == name) \
             .one()
 
+    def get_mlst_schemes(self) -> List[MLSTScheme]:
+        return self._database.get_session().query(MLSTScheme).all()
+
     def exists_mlst_scheme(self, name: str):
         return self._connection.get_session().query(MLSTScheme.id).filter_by(name=name).scalar() is not None
 
@@ -49,6 +53,28 @@ class MLSTService(FeatureService):
             schemes[name] = scheme
 
         return schemes
+
+    def get_features(self, scheme: str = None, locus: str = None, include_present: bool = True,
+                     include_unknown: bool = False) -> Dict[str, MLSTAllelesSamples]:
+        query = self._database.get_session().query(MLSTAllelesSamples)
+        if scheme is not None:
+            query = query.filter(MLSTAllelesSamples.scheme == scheme)
+
+        if not include_present:
+            if include_unknown:
+                query = query.filter(MLSTAllelesSamples.allele == MLST_UNKNOWN_ALLELE)
+            else:
+                # Here, I'm not including unknown or present, so don't query database
+                return dict()
+        elif not include_unknown:
+            query = query.filter(MLSTAllelesSamples.allele != MLST_UNKNOWN_ALLELE)
+
+        if locus is not None:
+            query = query.filter(MLSTAllelesSamples.locus == locus)
+
+        allele_samples = query.all()
+
+        return {f.id: f for f in allele_samples}
 
     def get_all_alleles(self, scheme: str, locus: str) -> Set[str]:
         return {a for a, in self._database.get_session().query(MLSTAllelesSamples.allele) \

@@ -1,6 +1,12 @@
 from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
 
 
+def test_create():
+    f = QueryFeatureMutationSPDI('ref:1:A:T')
+    assert 'ref:1:A:T' == f.id
+    assert 'ref:1:A:T' == f.id_no_prefix
+
+
 def test_to_unknown():
     f = QueryFeatureMutationSPDI('ref:1:A:T')
     assert f.to_unknown().id == 'ref:1:A:?'

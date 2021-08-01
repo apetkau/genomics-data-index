@@ -52,7 +52,7 @@ class TreeBuilderReferenceMutations(TreeBuilder):
             logger.warning(f'Building build_tree with only ({len(tree_samples)}/{len(reference_samples)}) samples '
                            f'that are found on reference [{self._reference_name}]')
 
-        logger.info('Building build_tree using "iqtree" for {len(tree_samples_set)}) samples')
+        logger.info(f'Building build_tree using "iqtree" for {len(tree_samples_set)} samples')
         alignment_data = alignment_service.construct_alignment(reference_name=self._reference_name,
                                                                samples=samples_names,
                                                                align_type=align_type,

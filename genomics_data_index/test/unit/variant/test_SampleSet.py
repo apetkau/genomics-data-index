@@ -15,6 +15,12 @@ def test_create_sample_set_from_list():
     assert not sample_set.is_empty()
 
 
+def test_create_sample_set_from_set():
+    assert {1} == set(SampleSet(sample_ids={1}))
+    assert {1, 10} == set(SampleSet(sample_ids={1, 10}))
+    assert set() == set(SampleSet(sample_ids=set()))
+
+
 def test_create_sample_set_from_list_multiple():
     sample_set = SampleSet(sample_ids=[1, 10])
 
