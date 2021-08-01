@@ -1,8 +1,9 @@
-from typing import List, Dict, Any, Union
+from typing import List, Dict, Set, Any, Union
 from pathlib import Path
 import logging
 import json
 from collections import Counter
+import re
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.api.query.kind.isa.typing.SamplesTypingIsaKind import SamplesTypingIsaKind
@@ -11,48 +12,91 @@ from genomics_data_index.storage.SampleSet import SampleSet
 logger = logging.getLogger(__name__)
 
 
+class MutationParsingError(Exception):
+
+    def __init__(self, msg):
+        super().__init__(msg)
+
+
 class ExperimentalSARSCov2ConstellationsTyper(SamplesTypingIsaKind):
     """
     This is an experimental/test class to try out typing SARS-CoV-2 based on constellations of variants/mutations.
     This parses constellation definitions from https://github.com/cov-lineages/constellations/blob/main/constellations/definitions
     """
 
-    def __init__(self,  constellation_files: Union[List[Path], List[str]], sequence_name: str = 'MN908947.3'):
+    def __init__(self, constellation_files: Union[List[Path], List[str]],
+                 sequence_name: str = 'MN908947.3', valid_gene_identifiers: Set[str] = None):
         super().__init__()
 
         self._sequence_name = sequence_name
-        self._typing_definitions = self._parse_definitions(constellation_files, sequence_name=sequence_name)
+        if valid_gene_identifiers is None:
+            self._valid_gene_identifiers = {'orf1ab', 'S', 'ORF3a', 'E', 'M', 'ORF6', 'ORF7a', 'ORF8', 'N', 'ORF10'}
+        self._typing_definitions = self._parse_definitions(constellation_files)
 
-    def _parse_definitions(self, constellation_files: Union[List[Path], List[str]], sequence_name: str) -> Dict[str, Any]:
+    def _mutation_to_identifier(self, mutation: str) -> str:
+        values = mutation.split(':')
+        if len(values) == 2:
+            gene, mutation = values
+        else:
+            raise MutationParsingError(f'Cannot parse mutation [{mutation}], cannot be split by ":".')
+
+        if gene == 'nuc':
+            match = re.match(r'(\D+)(\d+)(\D+)', mutation)
+            if not match:
+                raise MutationParsingError(f'Could not parse mutation={mutation}, does not match pattern like [A150T].')
+            sequence_id = f'n.{match.group(1)}{match.group(0)}>{match.group(2)}'
+        else:
+            # Curation of different possible gene identifiers
+            gene_curation_map = {
+                's': 'S',
+                '1ab': 'orf1ab',
+                'ORF1a': 'orf1ab',
+                'ORF1ab': 'orf1ab',
+                'ORF1b': 'orf1ab',
+                '8': 'ORF8'
+            }
+            if gene in gene_curation_map:
+                gene = gene_curation_map[gene]
+            if gene not in self._valid_gene_identifiers:
+                raise MutationParsingError(
+                    f'gene=[{gene}] for mutation=[{mutation}] is not one of the valid '
+                    f"gene identifiers={self._valid_gene_identifiers}.")
+            sequence_id = f'{gene}:p.{mutation}'
+
+        return f'hgvs_gn:{self._sequence_name}:{sequence_id}'
+
+    def _parse_definitions(self, constellation_files: Union[List[Path], List[str]]) -> Dict[str, Any]:
         typing_definitions = dict()
         for file in constellation_files:
             if isinstance(file, str):
                 file = Path(file)
 
-            constellation_info = self._load_definitions(file)
-            signature_mutations_raw = constellation_info['sites']
-            signature_mutations_split = map(lambda x: x.split(':'), signature_mutations_raw)
-            signature_mutation_ids = {f'hgvs_gn:{sequence_name}:{m[0]}:p.{m[1]}' for m in signature_mutations_split}
-            logger.debug(f'constellation_file=[{file}], mutation_ids={signature_mutation_ids}')
+            try:
+                constellation_info = self._load_definitions(file)
+                signature_mutations_raw = constellation_info['sites']
+                signature_mutation_ids = {self._mutation_to_identifier(x) for x in signature_mutations_raw}
+                logger.debug(f'constellation_file=[{file}], mutation_ids={signature_mutation_ids}')
 
-            min_alt = constellation_info['rules'].get('min_alt', len(signature_mutation_ids))
-            max_ref = constellation_info['rules'].get('max_ref', 0)
-            tags = constellation_info['tags']
+                min_alt = constellation_info['rules'].get('min_alt', len(signature_mutation_ids))
+                max_ref = constellation_info['rules'].get('max_ref', 0)
+                tags = constellation_info['tags']
 
-            for tag in tags:
-                if tag in typing_definitions:
-                    previous_definition = typing_definitions[tag]
-                    previous_file = previous_definition['file']
-                    logger.warning(f'Attempting to set typing definition for tag=[{tag}], file=[{file.name}], '
-                                    f'but it has already been set in file [{previous_file}]. '
-                                   f'Will ignore definition for tag=[{tag}], file=[{file.name}].')
-                else:
-                    typing_definitions[tag] = {
-                        'signature_mutations': signature_mutation_ids,
-                        'min_alt': min_alt,
-                        'max_ref': max_ref,
-                        'file': file,
-                    }
+                for tag in tags:
+                    if tag in typing_definitions:
+                        previous_definition = typing_definitions[tag]
+                        previous_file = previous_definition['file']
+                        logger.warning(f'Attempting to set typing definition for tag=[{tag}], file=[{file.name}], '
+                                       f'but it has already been set in file [{previous_file.name}]. '
+                                       f'Will ignore definition for tag=[{tag}], file=[{file.name}].')
+                    else:
+                        typing_definitions[tag] = {
+                            'signature_mutations': signature_mutation_ids,
+                            'min_alt': min_alt,
+                            'max_ref': max_ref,
+                            'file': file,
+                        }
+            except MutationParsingError as e:
+                logger.error(f'Skipping file [{file}]: {e}')
         return typing_definitions
 
     def _load_definitions(self, constellation_file: Path) -> Dict[str, Any]:
