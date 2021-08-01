@@ -17,13 +17,13 @@ class SamplesTypingIsaKind(DelegateIsaKind, abc.ABC):
         else:
             raise Exception(f'Can only apply {self.__class__} to data of type string. Got data={data}')
 
-    @abc.abstractmethod
     @property
+    @abc.abstractmethod
     def name(self) -> str:
         pass
 
-    @abc.abstractmethod
     @property
+    @abc.abstractmethod
     def version(self) -> str:
         pass
 
