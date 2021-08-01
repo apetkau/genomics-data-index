@@ -169,14 +169,25 @@ class ExperimentalSARSCov2ConstellationsTyper(SamplesTypingIsaKind):
         signature_mutations = self._typing_definitions[data]['signature_mutations']
         min_alt = self._typing_definitions[data]['min_alt']
 
+        # SARS-CoV-2 typing with constellations does not have the concept of an "unknown" sample and
+        # instead tries to classify these using e.g., min_alt and max_ref, and so on
+        # So, for the purposes of typing, I want to ignore any "unknown" samples for typing and add
+        # the unknown set back in at the end. The is because no matter what the result of the sequence-typing
+        # code below, the statement 'query.isa("Type")' will still be unknown if the sample was already unknown
+        # in the input query (for example, if Sample A is already "Unknown" in the input query and the result
+        # below is "True" for Sample A, then the final result for Sample A is still "Unknown" since
+        # "Unknown" AND "True" = "Unknown").
+
+        query_no_unknowns = query.select_present().reset_universe()
+
         # I first look for perfect matches to all mutations to avoid having to count mutations for these
-        query_perfect_match = self.perfect_matches(data, query)
+        query_perfect_match = self.perfect_matches(data, query_no_unknowns).select_present()
         if min_alt < len(signature_mutations):
-            query_imperfect_matches = query.reset_universe() & (~(query_perfect_match.reset_universe()))
+            query_imperfect_matches = query_perfect_match.select_unknown() | query_perfect_match.select_absent()
             # Now I have to look for imperfect matches to mutations and include them in my final result
             query_imperfect_matches = self.imperfect_matches(data, query_imperfect_matches)
             query_type_results = query_perfect_match | query_imperfect_matches
         else:
             query_type_results = query_perfect_match
 
-        return query_type_results
+        return query & query_type_results.select_present() # and query to add back any existing unknown samples
