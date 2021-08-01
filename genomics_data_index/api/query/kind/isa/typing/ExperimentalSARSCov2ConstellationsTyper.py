@@ -41,10 +41,10 @@ class ExperimentalSARSCov2ConstellationsTyper(SamplesTypingIsaKind):
             raise MutationParsingError(f'Cannot parse mutation [{mutation}], cannot be split by ":".')
 
         if gene == 'nuc':
-            match = re.match(r'(\D+)(\d+)(\D+)', mutation)
+            match = re.match(r'([ATCG]+)(\d+)([ATCG]+)', mutation)
             if not match:
                 raise MutationParsingError(f'Could not parse mutation={mutation}, does not match pattern like [A150T].')
-            sequence_id = f'n.{match.group(1)}{match.group(0)}>{match.group(2)}'
+            sequence_id = f'n.{match.group(2)}{match.group(1)}>{match.group(3)}'
         else:
             # Curation of different possible gene identifiers
             gene_curation_map = {
