@@ -44,7 +44,7 @@ class ExperimentalSARSCov2ConstellationsTyper(SamplesTypingIsaKind):
             match = re.match(r'([ATCG]+)(\d+)([ATCG]+)', mutation)
             if not match:
                 raise MutationParsingError(f'Could not parse mutation={mutation}, does not match pattern like [A150T].')
-            sequence_id = f'n.{match.group(2)}{match.group(1)}>{match.group(3)}'
+            mutation_id = f'{self._sequence_name}:{match.group(2)}:{match.group(1)}:{match.group(3)}'
         else:
             # Curation of different possible gene identifiers
             gene_curation_map = {
@@ -61,9 +61,9 @@ class ExperimentalSARSCov2ConstellationsTyper(SamplesTypingIsaKind):
                 raise MutationParsingError(
                     f'gene=[{gene}] for mutation=[{mutation}] is not one of the valid '
                     f"gene identifiers={self._valid_gene_identifiers}.")
-            sequence_id = f'{gene}:p.{mutation}'
+            mutation_id = f'hgvs_gn:{self._sequence_name}:{gene}:p.{mutation}'
 
-        return f'hgvs_gn:{self._sequence_name}:{sequence_id}'
+        return mutation_id
 
     def _parse_definitions(self, constellation_files: Union[List[Path], List[str]]) -> Dict[str, Any]:
         typing_definitions = dict()
@@ -80,7 +80,7 @@ class ExperimentalSARSCov2ConstellationsTyper(SamplesTypingIsaKind):
                 rules = constellation_info['rules']
                 min_alt = rules.get('min_alt', len(signature_mutation_ids))
                 max_ref = rules.get('max_ref', 0)
-                other_rules = set(rules.keys()) - {'min_alt', 'min_ref'}
+                other_rules = set(rules.keys()) - {'min_alt', 'max_ref'}
 
                 # Handle any other special-rules
                 must_have_mutations = set()
@@ -89,7 +89,7 @@ class ExperimentalSARSCov2ConstellationsTyper(SamplesTypingIsaKind):
                         mutation_id = self._mutation_to_identifier(rule_key)
                         must_have_mutations.add(mutation_id)
                     else:
-                        logger.warning(f'Skipping unknown rule {rule_key}={rules[rule_key]}')
+                        logger.warning(f'Skipping unknown rule {rule_key}={rules[rule_key]}, file=[{file.name}]')
 
                 labels = constellation_info['tags']
                 labels = labels + [constellation_info['label']]
