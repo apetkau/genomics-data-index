@@ -50,6 +50,24 @@ def test_initialized_query_mutations(loaded_database_connection_with_built_tree:
     assert initial_query.tree is not None
 
 
+def test_empty_universe(loaded_database_connection: DataIndexConnection):
+    query_result = query(loaded_database_connection).isin('empty')
+    assert 0 == len(query_result)
+    assert 0 == len(query_result.unknown_set)
+    assert 9 == len(query_result.absent_set)
+    assert 9 == len(query_result.universe_set)
+
+    query_result = query_result.reset_universe()
+    assert 0 == len(query_result)
+    assert 0 == len(query_result.unknown_set)
+    assert 0 == len(query_result.absent_set)
+    assert 0 == len(query_result.universe_set)
+
+    assert '<SamplesQueryIndex[' in str(query_result)
+    assert 'selected=NA%' in str(query_result)
+    assert 'unknown=NA%' in str(query_result)
+
+
 def test_query_isin_samples(loaded_database_connection: DataIndexConnection):
     db = loaded_database_connection.database
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
@@ -2615,6 +2633,30 @@ def test_query_then_build_tree_then_join_dataframe(loaded_database_connection: D
     query_result = query_result.reset_universe()
     assert 2 == len(query_result)
     assert 2 == len(query_result.universe_set)
+
+
+def test_empty_universe_tree_query(prebuilt_tree: Tree, loaded_database_connection: DataIndexConnection):
+    query_result = query(loaded_database_connection).join_tree(
+        tree=prebuilt_tree, kind='mutation',
+        reference_name='genome',
+        alignment_length=5180)
+
+    query_result = query_result.isa('invalid_name')
+
+    assert 0 == len(query_result)
+    assert 0 == len(query_result.unknown_set)
+    assert 9 == len(query_result.absent_set)
+    assert 9 == len(query_result.universe_set)
+
+    query_result = query_result.reset_universe()
+    assert 0 == len(query_result)
+    assert 0 == len(query_result.unknown_set)
+    assert 0 == len(query_result.absent_set)
+    assert 0 == len(query_result.universe_set)
+
+    assert '<MutationTreeSamplesQuery[' in str(query_result)
+    assert 'selected=NA%' in str(query_result)
+    assert 'unknown=NA%' in str(query_result)
 
 
 def test_query_tree_join_dataframe_isa_dataframe_column(loaded_database_connection: DataIndexConnection):
