@@ -334,10 +334,15 @@ class SamplesQueryIndex(SamplesQuery):
         universe_length = len(self.universe_set)
         unknown_length = len(self.unknown_set)
         selected_length = len(self)
-        percent_selected = (selected_length / universe_length) * 100
-        percent_unknown = (unknown_length / universe_length) * 100
-        return f'<{self.__class__.__name__}[selected={percent_selected:0.0f}% ' \
-               f'({selected_length}/{universe_length}) samples, unknown={percent_unknown:0.0f}% ' \
+        if universe_length > 0:
+            percent_selected = f'{(selected_length / universe_length) * 100:0.0f}'
+            percent_unknown = f'{(unknown_length / universe_length) * 100:0.0f}'
+        else:
+            percent_selected = 'NA'
+            percent_unknown = 'NA'
+
+        return f'<{self.__class__.__name__}[selected={percent_selected}% ' \
+               f'({selected_length}/{universe_length}) samples, unknown={percent_unknown}% ' \
                f'({unknown_length}/{universe_length}) samples]>'
 
     def tolist(self, names: bool = True, include_present: bool = True,
