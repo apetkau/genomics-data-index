@@ -181,9 +181,9 @@ class GenomicsDataIndex:
         :return: A summary of all MLST alleles in this index as a DataFrame.
         """
         mlst_service: MLSTService = self._connection.mlst_service
-        mlst_features = mlst_service.get_features_for_scheme(scheme_name, locus=locus,
-                                                             include_present=include_present,
-                                                             include_unknown=include_unknown)
+        mlst_features = mlst_service.get_features(scheme_name, locus=locus,
+                                                  include_present=include_present,
+                                                  include_unknown=include_unknown)
         total_samples = self._connection.sample_service.count_samples_associated_with_mlst_scheme(scheme_name)
 
         data = []

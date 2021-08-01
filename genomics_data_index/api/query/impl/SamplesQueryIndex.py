@@ -8,6 +8,9 @@ import pandas as pd
 from ete3 import Tree
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
+from genomics_data_index.api.query.features.MLSTFeaturesSummarizer import MLSTFeaturesSummarizer
+from genomics_data_index.api.query.features.MutationFeaturesFromIndexSummarizer import \
+    MutationFeaturesFromIndexSummarizer
 from genomics_data_index.api.query.impl.DataFrameSamplesQuery import DataFrameSamplesQuery
 from genomics_data_index.api.query.impl.QueriesCollection import QueriesCollection
 from genomics_data_index.api.query.impl.TreeSamplesQueryFactory import TreeSamplesQueryFactory
@@ -15,7 +18,6 @@ from genomics_data_index.configuration.connector import DataIndexConnection
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.QueryFeature import QueryFeature
 from genomics_data_index.storage.model.QueryFeatureFactory import QueryFeatureFactory
-from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
 from genomics_data_index.storage.service.KmerService import KmerService
 
 logger = logging.getLogger(__name__)
@@ -28,7 +30,7 @@ class SamplesQueryIndex(SamplesQuery):
     """
 
     HAS_KINDS = ['mutation', 'mutations', 'mlst']
-    SUMMARY_FEATURES_KINDS = ['mutations']
+    SUMMARY_FEATURES_KINDS = ['mutations', 'mlst']
     FEATURES_SELECTIONS = ['all', 'unique']
     ISIN_TYPES = ['sample', 'samples', 'distance', 'distances']
     ISA_TYPES = ['sample', 'samples']
@@ -247,60 +249,35 @@ class SamplesQueryIndex(SamplesQuery):
             '% Unknown': per_unknown,
         }])
 
-    def features_summary(self, kind: str = 'mutations', selection: str = 'all', **kwargs) -> pd.DataFrame:
+    def features_summary(self, kind: str = 'mutations', selection: str = 'all',
+                         include_present_features: bool = True, include_unknown_features: bool = False,
+                         **kwargs) -> pd.DataFrame:
         if kind == 'mutations':
-            return self._summary_features_mutations(kind=kind, selection=selection, **kwargs)
+            features_summarizier = MutationFeaturesFromIndexSummarizer(connection=self._query_connection,
+                                                                       include_unknown=include_unknown_features,
+                                                                       include_present=include_present_features,
+                                                                       **kwargs)
+        elif kind == 'mlst':
+            features_summarizier = MLSTFeaturesSummarizer(connection=self._query_connection,
+                                                          include_unknown=include_unknown_features,
+                                                          include_present=include_present_features,
+                                                          **kwargs)
         else:
             raise Exception(f'Unsupported value kind=[{kind}]. Must be one of {self.SUMMARY_FEATURES_KINDS}.')
 
-    def _summary_features_mutations(self, kind: str, selection: str = 'all',
-                                    ncores: int = 1,
-                                    batch_size: int = 500,
-                                    mutation_type: str = 'all',
-                                    ignore_annotations: bool = False) -> pd.DataFrame:
-        if selection not in self.FEATURES_SELECTIONS:
-            raise Exception(f'selection=[{selection}] is unknown. Must be one of {self.FEATURES_SELECTIONS}')
-
-        vs = self._query_connection.variation_service
-        features_all_df = vs.count_mutations_in_sample_ids_dataframe(sample_ids=self._sample_set,
-                                                                     ncores=ncores,
-                                                                     batch_size=batch_size,
-                                                                     mutation_type=mutation_type
-                                                                     )
-        features_all_df['Total'] = len(self)
-        features_all_df['Percent'] = 100 * (features_all_df['Count'] / features_all_df['Total'])
-
         if selection == 'all':
-            features_results_df = features_all_df
+            return features_summarizier.summary(self.sample_set)
         elif selection == 'unique':
-            features_complement_df = self.complement().features_summary(kind=kind, selection='all',
-                                                                        ncores=ncores, batch_size=batch_size,
-                                                                        mutation_type=mutation_type)
-            features_merged_df = features_all_df.merge(features_complement_df, left_index=True, right_index=True,
-                                                       how='left', indicator=True, suffixes=('_x', '_y'))
-            features_merged_df = features_merged_df[features_merged_df['_merge'] == 'left_only'].rename({
-                'Sequence_x': 'Sequence',
-                'Position_x': 'Position',
-                'Deletion_x': 'Deletion',
-                'Insertion_x': 'Insertion',
-                'Count_x': 'Count',
-                'Total_x': 'Total',
-                'Percent_x': 'Percent',
-            }, axis='columns')
-            features_results_df = features_merged_df[['Sequence', 'Position', 'Deletion', 'Insertion',
-                                                      'Count', 'Total', 'Percent']]
+            return features_summarizier.unique_summary(self.sample_set,
+                                                       other_set=self.universe_set.minus(self.sample_set))
         else:
             raise Exception(f'selection=[{selection}] is unknown. Must be one of {self.FEATURES_SELECTIONS}')
 
-        if not ignore_annotations:
-            features_results_df = vs.append_mutation_annotations(features_results_df)
-
-        return features_results_df
-
     def tofeaturesset(self, kind: str = 'mutations', selection: str = 'all',
-                      ncores: int = 1) -> Set[str]:
-        return set(self.features_summary(kind=kind, selection=selection, ncores=ncores,
-                                         ignore_annotations=True).index)
+                      include_present_features: bool = True, include_unknown_features: bool = False) -> Set[str]:
+        return set(self.features_summary(kind=kind, selection=selection, ignore_annotations=True,
+                                         include_present_features=include_present_features,
+                                         include_unknown_features=include_unknown_features).index)
 
     def and_(self, other):
         if isinstance(other, SamplesQuery):

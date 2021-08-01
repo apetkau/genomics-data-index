@@ -118,6 +118,10 @@ class NucleotideVariantsSamples(Base, FeatureSamples):
     def id(self) -> str:
         return self.spdi
 
+    @property
+    def query_id(self) -> str:
+        return self.id
+
     @hybrid_property
     def spdi(self) -> str:
         return self.to_spdi(self.sequence, self.position, self.deletion, self.insertion)

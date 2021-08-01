@@ -54,10 +54,11 @@ class MLSTService(FeatureService):
 
         return schemes
 
-    def get_features_for_scheme(self, scheme: str, locus: str = None, include_present: bool = True,
-                                include_unknown: bool = False) -> Dict[str, MLSTAllelesSamples]:
-        query = self._database.get_session().query(MLSTAllelesSamples).filter(
-            MLSTAllelesSamples.scheme == scheme)
+    def get_features(self, scheme: str = None, locus: str = None, include_present: bool = True,
+                     include_unknown: bool = False) -> Dict[str, MLSTAllelesSamples]:
+        query = self._database.get_session().query(MLSTAllelesSamples)
+        if scheme is not None:
+            query = query.filter(MLSTAllelesSamples.scheme == scheme)
 
         if not include_present:
             if include_unknown:
