@@ -99,9 +99,11 @@ rule assembly_variant:
     log:
         mpileup="logs/assembly_variant.{sample}.mpileup.log",
         call="logs/assembly_variant.{sample}.call.log",
+        norm="logs/assembly_variant.{sample}.norm.log",
     shell:
         "bcftools mpileup -a DP --min-ireads 1 --threads {threads} -Ou -f {input.reference} {input.bam} 2> {log.mpileup} | "
-        "bcftools call --threads {threads} --ploidy 1 -Oz -mv 1> {output}"
+        "bcftools call --threads {threads} --ploidy 1 -Ou -mv 2> {log.call} | "
+        "bcftools norm --threads {threads} --old-rec-tag -m+both -f {input.reference} -Oz 1> {output} 2> {log.norm}"
 
 
 rule reads_paired_snippy:
