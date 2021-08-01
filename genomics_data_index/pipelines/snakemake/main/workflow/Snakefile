@@ -103,7 +103,7 @@ rule assembly_variant:
     shell:
         "bcftools mpileup -a DP --min-ireads 1 --threads {threads} -Ou -f {input.reference} {input.bam} 2> {log.mpileup} | "
         "bcftools call --threads {threads} --ploidy 1 -Ou -mv 2> {log.call} | "
-        "bcftools norm --threads {threads} --old-rec-tag -m+both -f {input.reference} -Oz 1> {output} 2> {log.norm}"
+        "bcftools norm --threads {threads} --old-rec-tag -f {input.reference} -Oz 1> {output} 2> {log.norm}"
 
 
 rule reads_paired_snippy:
