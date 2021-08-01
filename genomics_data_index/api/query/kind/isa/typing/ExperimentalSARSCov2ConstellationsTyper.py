@@ -1,4 +1,7 @@
+from typing import List, Dict, Any, Union
+from pathlib import Path
 import logging
+import json
 from collections import Counter
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
@@ -11,37 +14,51 @@ logger = logging.getLogger(__name__)
 class ExperimentalSARSCov2ConstellationsTyper(SamplesTypingIsaKind):
     """
     This is an experimental/test class to try out typing SARS-CoV-2 based on constellations of variants/mutations.
-    Delta mutations derived from https://github.com/cov-lineages/constellations/blob/main/constellations/definitions/cB.1.617.2.json
-    In the future I can see about making this more generalized.
+    This parses constellation definitions from https://github.com/cov-lineages/constellations/blob/main/constellations/definitions
     """
 
-    def __init__(self, sequence_name: str = 'MN996528.1', min_alt: int = 5):
+    def __init__(self,  constellation_files: Union[List[Path], List[str]], sequence_name: str = 'MN908947.3'):
         super().__init__()
 
         self._sequence_name = sequence_name
+        self._typing_definitions = self._parse_definitions(constellation_files, sequence_name=sequence_name)
 
-        initial_mutations = {
-            "S:T19R",
-            "S:G142D",
-            "S:L452R",
-            "S:T478K",
-            "S:P681R",
-            "S:D950N",
-            "ORF3a:S26L",
-            "M:I82T",
-            "ORF7a:V82A",
-            "ORF7a:T120I",
-            "N:D63G",
-            "N:R203M",
-            "N:D377Y",
-        }
-        initial_mutations_split = map(lambda x: x.split(':'), initial_mutations)
-        self._mutation_ids = {f'hgvs_gn:{self._sequence_name}:{m[0]}:p.{m[1]}' for m in initial_mutations_split}
-        logger.info(f'mutation_ids={self._mutation_ids}')
+    def _parse_definitions(self, constellation_files: Union[List[Path], List[str]], sequence_name: str) -> Dict[str, Any]:
+        typing_definitions = dict()
+        for file in constellation_files:
+            if isinstance(file, str):
+                file = Path(file)
 
-        self._number_mutations = len(self._mutation_ids)
-        self._min_alt = min_alt
-        self._max_ref = 3
+            constellation_info = self._load_definitions(file)
+            signature_mutations_raw = constellation_info['sites']
+            signature_mutations_split = map(lambda x: x.split(':'), signature_mutations_raw)
+            signature_mutation_ids = {f'hgvs_gn:{sequence_name}:{m[0]}:p.{m[1]}' for m in signature_mutations_split}
+            logger.debug(f'constellation_file=[{file}], mutation_ids={signature_mutation_ids}')
+
+            min_alt = constellation_info['rules'].get('min_alt', len(signature_mutation_ids))
+            max_ref = constellation_info['rules'].get('max_ref', 0)
+            tags = constellation_info['tags']
+
+            for tag in tags:
+                if tag in typing_definitions:
+                    previous_definition = typing_definitions[tag]
+                    previous_file = previous_definition['file']
+                    logger.warning(f'Attempting to set typing definition for tag=[{tag}], file=[{file.name}], '
+                                    f'but it has already been set in file [{previous_file}]. '
+                                   f'Will ignore definition for tag=[{tag}], file=[{file.name}].')
+                else:
+                    typing_definitions[tag] = {
+                        'signature_mutations': signature_mutation_ids,
+                        'min_alt': min_alt,
+                        'max_ref': max_ref,
+                        'file': file,
+                    }
+        return typing_definitions
+
+    def _load_definitions(self, constellation_file: Path) -> Dict[str, Any]:
+        with open(constellation_file, 'r') as f:
+            data = json.load(f)
+        return data
 
     @property
     def name(self) -> str:
@@ -51,34 +68,56 @@ class ExperimentalSARSCov2ConstellationsTyper(SamplesTypingIsaKind):
     def version(self) -> str:
         return 'experimental'
 
+    def _validate_type_name(self, type_name: str) -> None:
+        if type_name not in self._typing_definitions:
+            raise Exception(f'type_name=[{type_name}] is not a valid type.')
+
+    @property
+    def type_names(self) -> List[str]:
+        return list(self._typing_definitions.keys())
+
     def perfect_matches(self, data: str, query: SamplesQuery) -> SamplesQuery:
+        self._validate_type_name(data)
+        signature_mutations = self._typing_definitions[data]['signature_mutations']
+
         q = query
-        for mutation in self._mutation_ids:
+        for mutation in signature_mutations:
             q = q.hasa(mutation, kind='mutation')
 
         return q
 
     def imperfect_matches(self, data: str, query: SamplesQuery) -> SamplesQuery:
+        self._validate_type_name(data)
+        signature_mutations = self._typing_definitions[data]['signature_mutations']
+        min_alt = self._typing_definitions[data]['min_alt']
+
         # Use a Counter to keep track of number of mutations associated with each sample
         samples_present_counter = Counter(query.sample_set)
         # sample_unknown_mutation_counter = Counter(query.unknown_set)
 
-        for mutation in self._mutation_ids:
+        for mutation in signature_mutations:
             mutation_query = query.hasa(mutation, kind='mutation')
             samples_present_counter.update(mutation_query.sample_set)
             # sample_unknown_mutation_counter.update(mutation_query.unknown_set)
 
-        sample_ids_pass = {s for s in samples_present_counter if samples_present_counter[s] > self._min_alt}
+        sample_ids_pass = {s for s in samples_present_counter if samples_present_counter[s] > min_alt}
         sample_set_present = SampleSet(sample_ids_pass)
 
         return query.intersect(sample_set_present)
 
     def isa_type(self, data: str, query: SamplesQuery) -> SamplesQuery:
+        self._validate_type_name(data)
+        signature_mutations = self._typing_definitions[data]['signature_mutations']
+        min_alt = self._typing_definitions[data]['min_alt']
+
         # I first look for perfect matches to all mutations to avoid having to count mutations for these
         query_perfect_match = self.perfect_matches(data, query)
-        query_imperfect_matches = query.reset_universe() & (~(query_perfect_match.reset_universe()))
+        if min_alt < len(signature_mutations):
+            query_imperfect_matches = query.reset_universe() & (~(query_perfect_match.reset_universe()))
+            # Now I have to look for imperfect matches to mutations and include them in my final result
+            query_imperfect_matches = self.imperfect_matches(data, query_imperfect_matches)
+            query_type_results = query_perfect_match | query_imperfect_matches
+        else:
+            query_type_results = query_perfect_match
 
-        # Now I have to look for imperfect matches to mutations and include them in my final result
-        query_imperfect_matches = self.imperfect_matches(data, query_imperfect_matches)
-
-        return query_perfect_match | query_imperfect_matches
+        return query_type_results
