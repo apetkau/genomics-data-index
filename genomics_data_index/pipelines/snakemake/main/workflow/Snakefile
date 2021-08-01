@@ -100,7 +100,7 @@ rule assembly_variant:
         mpileup="logs/assembly_variant.{sample}.mpileup.log",
         call="logs/assembly_variant.{sample}.call.log",
     shell:
-        "bcftools mpileup --threads {threads} -Ou -f {input.reference} {input.bam} 2> {log.mpileup} | "
+        "bcftools mpileup -a DP --min-ireads 1 --threads {threads} -Ou -f {input.reference} {input.bam} 2> {log.mpileup} | "
         "bcftools call --threads {threads} --ploidy 1 -Oz -mv 1> {output}"
 
 
