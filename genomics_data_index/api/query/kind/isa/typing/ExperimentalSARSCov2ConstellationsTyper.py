@@ -130,21 +130,33 @@ class ExperimentalSARSCov2ConstellationsTyper(SamplesTypingIsaKind):
 
         return q
 
+    def _imperfect_pass_criteria(self, mutation_present_count: int, mutation_unknown_count: int,
+                                 total_mutations: int,
+                                 min_alt: int, max_ref: int) -> bool:
+        number_ref = total_mutations - mutation_present_count - mutation_unknown_count
+        return (mutation_present_count >= min_alt) and (number_ref <= max_ref)
+
     def imperfect_matches(self, data: str, query: SamplesQuery) -> SamplesQuery:
         self._validate_type_name(data)
         signature_mutations = self._typing_definitions[data]['signature_mutations']
+        total_mutations = len(signature_mutations)
         min_alt = self._typing_definitions[data]['min_alt']
+        max_ref = self._typing_definitions[data]['max_ref']
 
         # Use a Counter to keep track of number of mutations associated with each sample
         samples_present_counter = Counter(query.sample_set)
-        # sample_unknown_mutation_counter = Counter(query.unknown_set)
+        sample_unknown_counter = Counter(query.unknown_set)
 
         for mutation in signature_mutations:
             mutation_query = query.hasa(mutation, kind='mutation')
             samples_present_counter.update(mutation_query.sample_set)
-            # sample_unknown_mutation_counter.update(mutation_query.unknown_set)
+            sample_unknown_counter.update(mutation_query.unknown_set)
 
-        sample_ids_pass = {s for s in samples_present_counter if samples_present_counter[s] > min_alt}
+        sample_ids_pass = {s for s in samples_present_counter if
+                           self._imperfect_pass_criteria(samples_present_counter[s],
+                                                         sample_unknown_counter[s],
+                                                         total_mutations=total_mutations,
+                                                         min_alt=min_alt, max_ref=max_ref)}
         sample_set_present = SampleSet(sample_ids_pass)
 
         return query.intersect(sample_set_present)
