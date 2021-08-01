@@ -77,8 +77,20 @@ class ExperimentalSARSCov2ConstellationsTyper(SamplesTypingIsaKind):
                 signature_mutation_ids = {self._mutation_to_identifier(x) for x in signature_mutations_raw}
                 logger.debug(f'constellation_file=[{file}], mutation_ids={signature_mutation_ids}')
 
-                min_alt = constellation_info['rules'].get('min_alt', len(signature_mutation_ids))
-                max_ref = constellation_info['rules'].get('max_ref', 0)
+                rules = constellation_info['rules']
+                min_alt = rules.get('min_alt', len(signature_mutation_ids))
+                max_ref = rules.get('max_ref', 0)
+                other_rules = set(rules.keys()) - {'min_alt', 'min_ref'}
+
+                # Handle any other special-rules
+                must_have_mutations = set()
+                for rule_key in other_rules:
+                    if rules[rule_key] == 'alt':
+                        mutation_id = self._mutation_to_identifier(rule_key)
+                        must_have_mutations.add(mutation_id)
+                    else:
+                        logger.warning(f'Skipping unknown rule {rule_key}={rules[rule_key]}')
+
                 labels = constellation_info['tags']
                 labels = labels + [constellation_info['label']]
 
@@ -93,6 +105,7 @@ class ExperimentalSARSCov2ConstellationsTyper(SamplesTypingIsaKind):
                     else:
                         typing_definitions[label] = {
                             'signature_mutations': signature_mutation_ids,
+                            'must_have_mutations': must_have_mutations,
                             'min_alt': min_alt,
                             'max_ref': max_ref,
                             'file': file,
@@ -123,9 +136,10 @@ class ExperimentalSARSCov2ConstellationsTyper(SamplesTypingIsaKind):
     def type_names(self) -> List[str]:
         return list(self._typing_definitions.keys())
 
-    def perfect_matches(self, data: str, query: SamplesQuery) -> SamplesQuery:
+    def perfect_matches(self, data: str, query: SamplesQuery, signature_mutations: Set[str] = None) -> SamplesQuery:
         self._validate_type_name(data)
-        signature_mutations = self._typing_definitions[data]['signature_mutations']
+        if signature_mutations is None:
+            signature_mutations = self._typing_definitions[data]['signature_mutations']
 
         q = query
         for mutation in signature_mutations:
@@ -167,6 +181,7 @@ class ExperimentalSARSCov2ConstellationsTyper(SamplesTypingIsaKind):
     def isa_type(self, data: str, query: SamplesQuery) -> SamplesQuery:
         self._validate_type_name(data)
         signature_mutations = self._typing_definitions[data]['signature_mutations']
+        must_have_mutations = self._typing_definitions[data]['must_have_mutations']
         min_alt = self._typing_definitions[data]['min_alt']
 
         # SARS-CoV-2 typing with constellations does not have the concept of an "unknown" sample and
@@ -180,10 +195,17 @@ class ExperimentalSARSCov2ConstellationsTyper(SamplesTypingIsaKind):
 
         query_no_unknowns = query.select_present().reset_universe()
 
-        # I first look for perfect matches to all mutations to avoid having to count mutations for these
+        # If any must_have mutations, handle these first to try to eliminate as much as possible ahead of time
+        if len(must_have_mutations) > 0:
+            query_no_unknowns = self.perfect_matches(data, query_no_unknowns,
+                                                     signature_mutations=must_have_mutations)
+            query_no_unknowns = query_no_unknowns.select_present().reset_universe()
+
+        # Look for perfect matches to all mutations to avoid having to count mutations for these
         query_perfect_match = self.perfect_matches(data, query_no_unknowns).select_present()
         if min_alt < len(signature_mutations):
             query_imperfect_matches = query_perfect_match.select_unknown() | query_perfect_match.select_absent()
+
             # Now I have to look for imperfect matches to mutations and include them in my final result
             query_imperfect_matches = self.imperfect_matches(data, query_imperfect_matches)
             query_type_results = query_perfect_match | query_imperfect_matches
