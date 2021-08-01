@@ -35,7 +35,7 @@ class ExperimentalSARSCov2ConstellationsTyper(SamplesTypingIsaKind):
         self._typing_definitions = self._parse_definitions(constellation_files)
         self._perfect_match_only = perfect_match_only
 
-    def _mutation_to_identifier(self, mutation: str) -> str:
+    def mutation_to_identifier(self, mutation: str) -> str:
         values = mutation.split(':')
         if len(values) == 2:
             gene, mutation = values
@@ -63,9 +63,25 @@ class ExperimentalSARSCov2ConstellationsTyper(SamplesTypingIsaKind):
                 raise MutationParsingError(
                     f'gene=[{gene}] for mutation=[{mutation}] is not one of the valid '
                     f"gene identifiers={self._valid_gene_identifiers}.")
+            if mutation.endswith('-'):
+                mutation = self._convert_aa_deletion(mutation)
             mutation_id = f'hgvs_gn:{self._sequence_name}:{gene}:p.{mutation}'
 
         return mutation_id
+
+    def _convert_aa_deletion(self, mutation: str) -> str:
+        match = re.match(r'(\D+)(\d+)-$', mutation)
+        if not match:
+            raise MutationParsingError(f'Could not parse mutation={mutation}, does not match pattern like [HV69-].')
+        aa_values = match.group(1)
+        position = match.group(2)
+        if len(aa_values) == 1:
+            return f'{aa_values}{position}del'
+        else:
+            first_aa = aa_values[0]
+            last_aa = aa_values[-1]
+            last_position = int(position) + len(aa_values) - 1
+            return f'{first_aa}{position}_{last_aa}{last_position}del'
 
     def _parse_definitions(self, constellation_files: Union[List[Path], List[str]]) -> Dict[str, Any]:
         typing_definitions = dict()
@@ -76,7 +92,7 @@ class ExperimentalSARSCov2ConstellationsTyper(SamplesTypingIsaKind):
             try:
                 constellation_info = self._load_definitions(file)
                 signature_mutations_raw = constellation_info['sites']
-                signature_mutation_ids = {self._mutation_to_identifier(x) for x in signature_mutations_raw}
+                signature_mutation_ids = {self.mutation_to_identifier(x) for x in signature_mutations_raw}
                 logger.debug(f'constellation_file=[{file}], mutation_ids={signature_mutation_ids}')
 
                 rules = constellation_info['rules']
@@ -88,7 +104,7 @@ class ExperimentalSARSCov2ConstellationsTyper(SamplesTypingIsaKind):
                 must_have_mutations = set()
                 for rule_key in other_rules:
                     if rules[rule_key] == 'alt':
-                        mutation_id = self._mutation_to_identifier(rule_key)
+                        mutation_id = self.mutation_to_identifier(rule_key)
                         must_have_mutations.add(mutation_id)
                     else:
                         logger.warning(f'Skipping unknown rule {rule_key}={rules[rule_key]}, file=[{file.name}]')
