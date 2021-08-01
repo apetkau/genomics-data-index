@@ -25,13 +25,15 @@ class ExperimentalSARSCov2ConstellationsTyper(SamplesTypingIsaKind):
     """
 
     def __init__(self, constellation_files: Union[List[Path], List[str]],
-                 sequence_name: str = 'MN908947.3', valid_gene_identifiers: Set[str] = None):
+                 sequence_name: str = 'MN908947.3', perfect_match_only: bool = False,
+                 valid_gene_identifiers: Set[str] = None):
         super().__init__()
 
         self._sequence_name = sequence_name
         if valid_gene_identifiers is None:
             self._valid_gene_identifiers = {'orf1ab', 'S', 'ORF3a', 'E', 'M', 'ORF6', 'ORF7a', 'ORF8', 'N', 'ORF10'}
         self._typing_definitions = self._parse_definitions(constellation_files)
+        self._perfect_match_only = perfect_match_only
 
     def _mutation_to_identifier(self, mutation: str) -> str:
         values = mutation.split(':')
@@ -136,10 +138,10 @@ class ExperimentalSARSCov2ConstellationsTyper(SamplesTypingIsaKind):
     def type_names(self) -> List[str]:
         return list(self._typing_definitions.keys())
 
-    def perfect_matches(self, data: str, query: SamplesQuery, signature_mutations: Set[str] = None) -> SamplesQuery:
-        self._validate_type_name(data)
+    def perfect_matches(self, type_name: str, query: SamplesQuery, signature_mutations: Set[str] = None) -> SamplesQuery:
+        self._validate_type_name(type_name)
         if signature_mutations is None:
-            signature_mutations = self._typing_definitions[data]['signature_mutations']
+            signature_mutations = self._typing_definitions[type_name]['signature_mutations']
 
         q = query
         for mutation in signature_mutations:
@@ -184,32 +186,32 @@ class ExperimentalSARSCov2ConstellationsTyper(SamplesTypingIsaKind):
         must_have_mutations = self._typing_definitions[data]['must_have_mutations']
         min_alt = self._typing_definitions[data]['min_alt']
 
-        # SARS-CoV-2 typing with constellations does not have the concept of an "unknown" sample and
-        # instead tries to classify these using e.g., min_alt and max_ref, and so on
-        # So, for the purposes of typing, I want to ignore any "unknown" samples for typing and add
-        # the unknown set back in at the end. The is because no matter what the result of the sequence-typing
-        # code below, the statement 'query.isa("Type")' will still be unknown if the sample was already unknown
-        # in the input query (for example, if Sample A is already "Unknown" in the input query and the result
-        # below is "True" for Sample A, then the final result for Sample A is still "Unknown" since
-        # "Unknown" AND "True" = "Unknown").
-
-        query_no_unknowns = query.select_present().reset_universe()
-
         # If any must_have mutations, handle these first to try to eliminate as much as possible ahead of time
         if len(must_have_mutations) > 0:
-            query_no_unknowns = self.perfect_matches(data, query_no_unknowns,
-                                                     signature_mutations=must_have_mutations)
-            query_no_unknowns = query_no_unknowns.select_present().reset_universe()
+            query = self.perfect_matches(type_name=data, query=query, signature_mutations=must_have_mutations)
 
-        # Look for perfect matches to all mutations to avoid having to count mutations for these
-        query_perfect_match = self.perfect_matches(data, query_no_unknowns).select_present()
-        if min_alt < len(signature_mutations):
-            query_imperfect_matches = query_perfect_match.select_unknown() | query_perfect_match.select_absent()
-
-            # Now I have to look for imperfect matches to mutations and include them in my final result
-            query_imperfect_matches = self.imperfect_matches(data, query_imperfect_matches)
-            query_type_results = query_perfect_match | query_imperfect_matches
+        if self._perfect_match_only or min_alt == len(signature_mutations):
+            # Separate case for all perfect matches since I can take advantage of tracking unknowns
+            return self.perfect_matches(type_name=data, query=query)
         else:
-            query_type_results = query_perfect_match
+            # SARS-CoV-2 typing with constellations does not have the concept of an "unknown" sample and
+            # instead tries to classify these using e.g., min_alt and max_ref, and so on
+            # So, for the purposes of typing, I want to ignore any "unknown" samples for typing and add
+            # the unknown set back in at the end. The is because no matter what the result of the sequence-typing
+            # code below, the statement 'query.isa("Type")' will still be unknown if the sample was already unknown
+            # in the input query (for example, if Sample A is already "Unknown" in the input query and the result
+            # below is "True" for Sample A, then the final result for Sample A is still "Unknown" since
+            # "Unknown" AND "True" = "Unknown").
+            query_no_unknowns = query.select_present().reset_universe()
 
-        return query & query_type_results.select_present() # and query to add back any existing unknown samples
+            # Look for perfect matches
+            query_perfect_match = self.perfect_matches(type_name=data,
+                                                       query=query_no_unknowns,
+                                                       signature_mutations=signature_mutations)
+
+            # Look for imperfect matches in what's left over
+            query_imperfect_matches = query_perfect_match.select_unknown() | query_perfect_match.select_absent()
+            query_imperfect_matches = self.imperfect_matches(data, query_imperfect_matches)
+
+            # and query to add back any existing unknown samples
+            return query & (query_perfect_match.select_present() | query_imperfect_matches.select_present())
