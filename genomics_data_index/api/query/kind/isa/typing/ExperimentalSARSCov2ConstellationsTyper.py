@@ -79,21 +79,24 @@ class ExperimentalSARSCov2ConstellationsTyper(SamplesTypingIsaKind):
 
                 min_alt = constellation_info['rules'].get('min_alt', len(signature_mutation_ids))
                 max_ref = constellation_info['rules'].get('max_ref', 0)
-                tags = constellation_info['tags']
+                labels = constellation_info['tags']
+                labels = labels + [constellation_info['label']]
 
-                for tag in tags:
-                    if tag in typing_definitions:
-                        previous_definition = typing_definitions[tag]
+                for label in labels:
+                    if label in typing_definitions:
+                        previous_definition = typing_definitions[label]
                         previous_file = previous_definition['file']
-                        logger.warning(f'Attempting to set typing definition for tag=[{tag}], file=[{file.name}], '
+                        logger.warning(f'Attempting to set typing definition for tag/label=[{label}], '
+                                       f'file=[{file.name}], '
                                        f'but it has already been set in file [{previous_file.name}]. '
-                                       f'Will ignore definition for tag=[{tag}], file=[{file.name}].')
+                                       f'Will ignore definition for tag/label=[{label}], file=[{file.name}].')
                     else:
-                        typing_definitions[tag] = {
+                        typing_definitions[label] = {
                             'signature_mutations': signature_mutation_ids,
                             'min_alt': min_alt,
                             'max_ref': max_ref,
                             'file': file,
+                            'tags': labels,
                         }
             except MutationParsingError as e:
                 logger.error(f'Skipping file [{file}]: {e}')
