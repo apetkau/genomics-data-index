@@ -33,8 +33,8 @@ class ExperimentalSARSCov2ConstellationsTyper(SamplesTypingIsaKind):
                  valid_gene_identifiers: Set[str] = None):
         super().__init__()
 
-        sequence_name = sequence.id
-        if sequence_name != 'NC_045512.2' or sequence_name != 'NC_045512':
+        sequence_name = str(sequence.id)
+        if sequence_name not in ['NC_045512.2', 'NC_045512']:
             logger.warning(f"sequence_name=[{sequence_name}] is not 'NC_045512.2' or 'NC_045512'. This is what the constellations are with respect"
                             "to <https://github.com/cov-lineages/constellations/blob/main/constellations/data/SARS-CoV-2.json>")
 
@@ -65,7 +65,7 @@ class ExperimentalSARSCov2ConstellationsTyper(SamplesTypingIsaKind):
                 # becomes "sequence:ATC:A".
                 deletion_start = position_0coord
                 deletion_stop = deletion_start + (length + 1)
-                position_start = deletion_start
+                position_start = position
 
             deletion_sequence = self._sequence.seq[deletion_start:deletion_stop]
             insertion_sequence = self._sequence.seq[deletion_start:deletion_start + 1]

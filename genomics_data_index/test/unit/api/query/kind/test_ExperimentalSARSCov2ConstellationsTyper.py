@@ -28,7 +28,7 @@ def test_mutation_to_identifier(sequence_record):
     assert 'hgvs_gn:NC_045512.2:ORF8:p.Q27*' == typer.mutation_to_identifier('8:Q27*')
     assert 'hgvs_gn:NC_045512.2:S:p.Y144del' == typer.mutation_to_identifier('s:Y144-')
 
-    assert 'NC_045512.2:3:AA:A' == typer.mutation_to_identifier('del:4:1')
-    assert 'NC_045512.2:3:AAA:A' == typer.mutation_to_identifier('del:4:2')
-    assert 'NC_045512.2:3:AAAG:A' == typer.mutation_to_identifier('del:4:3')
-    assert 'NC_045512.2:20:CAGGTAACAAA:C' == typer.mutation_to_identifier('del:21:10')
+    assert 'NC_045512.2:4:AA:A' == typer.mutation_to_identifier('del:4:1')
+    assert 'NC_045512.2:4:AAA:A' == typer.mutation_to_identifier('del:4:2')
+    assert 'NC_045512.2:4:AAAG:A' == typer.mutation_to_identifier('del:4:3')
+    assert 'NC_045512.2:21:CAGGTAACAAA:C' == typer.mutation_to_identifier('del:21:10')
