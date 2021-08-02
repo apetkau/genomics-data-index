@@ -138,6 +138,7 @@ class ExperimentalSARSCov2ConstellationsTyper(SamplesTypingIsaKind):
                     else:
                         typing_definitions[label] = {
                             'signature_mutations': signature_mutation_ids,
+                            'signature_mutations_original': signature_mutations_raw,
                             'must_have_mutations': must_have_mutations,
                             'min_alt': min_alt,
                             'max_ref': max_ref,
