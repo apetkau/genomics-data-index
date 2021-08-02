@@ -47,25 +47,25 @@ class ExperimentalSARSCov2ConstellationsTyper(SamplesTypingIsaKind):
 
     def _handle_deletion_identifier(self, mutation_values: List[str], mutation: str) -> str:
         if mutation_values[0] == 'del':
+            # Based on looking at some real-world data (for a single deletion identifier), it looks like the
+            # position here is the position of the unchanged base, with the deletion occuring right after.
             position = int(mutation_values[1])
             position_0coord = position - 1
             length = int(mutation_values[2])
 
-            if position_0coord <= 0:
-                raise MutationParsingError(f'Cannot parse mutation [{mutation}], position is the '
-                                           f'very start of the sequence and I have not implemented '
-                                           f'handling this case.')
+            if position_0coord < 0:
+                raise MutationParsingError(f'Cannot parse mutation [{mutation}], position is negative')
             else:
-                # Subtract 1 since for an SPDI mutation ID I need to specify an insertion that's not of length 0
-                # (for my use of these identifiers). For example, say the sequence is "ATCG" and the
-                # position_0coord=1, and deletion length = 2. Then this means deleting "A[TC]G" and inserting
-                # nothing. But to convert this to an identifier where I have at least 1 insertion, I need to delete
+                # I need to specify an insertion that's not of length 0 (for my use of these identifiers).
+                # For example, say the sequence is "ATCG" and position=1 (position right before deletion),
+                # and deletion length = 2. Then this means deleting "A[TC]G" and inserting nothing.
+                # But to convert this to an identifier where I have at least 1 insertion, I need to delete
                 # and re-insert one of the reference characters. I do this with the left-most base, so the actual
                 # deletion becomes "[ATC]G" followed by an insertion of "A". That is, the identifier
                 # becomes "sequence:ATC:A".
-                deletion_start = position_0coord - 1
+                deletion_start = position_0coord
                 deletion_stop = deletion_start + (length + 1)
-                position_start = position - 1
+                position_start = deletion_start
 
             deletion_sequence = self._sequence.seq[deletion_start:deletion_stop]
             insertion_sequence = self._sequence.seq[deletion_start:deletion_start + 1]
