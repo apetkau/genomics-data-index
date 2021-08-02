@@ -22,16 +22,22 @@ class ExperimentalSARSCov2ConstellationsTyper(SamplesTypingIsaKind):
     """
     This is an experimental/test class to try out typing SARS-CoV-2 based on constellations of variants/mutations.
     This parses constellation definitions from https://github.com/cov-lineages/constellations/blob/main/constellations/definitions
+    TODO: I need to review code in here https://github.com/cov-lineages/scorpio/blob/main/scorpio/scripts/type_constellations.py
+          to make sure I match what's going on there.
     """
 
     def __init__(self, constellation_files: Union[List[Path], List[str]],
-                 sequence_name: str = 'MN908947.3', perfect_match_only: bool = False,
+                 sequence_name: str = 'NC_045512.2', perfect_match_only: bool = False,
                  valid_gene_identifiers: Set[str] = None):
         super().__init__()
 
+        if sequence_name != 'NC_045512.2' and sequence_name != 'NC_045512':
+            logger.warning(f"sequence_name=[{sequence_name}] is not 'NC_045512.2' or 'NC_045512'. This is what the constellations are with respect"
+                            "to <https://github.com/cov-lineages/constellations/blob/main/constellations/data/SARS-CoV-2.json>")
+
         self._sequence_name = sequence_name
         if valid_gene_identifiers is None:
-            self._valid_gene_identifiers = {'orf1ab', 'S', 'ORF3a', 'E', 'M', 'ORF6', 'ORF7a', 'ORF8', 'N', 'ORF10'}
+            self._valid_gene_identifiers = {'ORF1ab', 'S', 'ORF3a', 'E', 'M', 'ORF6', 'ORF7a', 'ORF7b', 'ORF8', 'N', 'ORF10'}
         self._typing_definitions = self._parse_definitions(constellation_files)
         self._perfect_match_only = perfect_match_only
 
@@ -51,9 +57,9 @@ class ExperimentalSARSCov2ConstellationsTyper(SamplesTypingIsaKind):
             # Curation of different possible gene identifiers
             gene_curation_map = {
                 's': 'S',
-                '1ab': 'orf1ab',
-                'ORF1a': 'orf1ab',
-                'ORF1ab': 'orf1ab',
+                '1ab': 'ORF1ab',
+                'ORF1a': 'ORF1ab',
+                'orf1ab': 'ORF1ab',
                 'ORF1b': 'orf1ab',
                 '8': 'ORF8'
             }
