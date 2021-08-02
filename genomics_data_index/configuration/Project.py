@@ -37,6 +37,9 @@ class Project:
         self._database_connection = self.get_database_connection_str()
         self._database_dir = self.get_database_dir()
 
+    def get_root_dir(self) -> Path:
+        return self._root_dir
+
     def get_database_connection_str(self) -> str:
         if self._config.database_connection is None:
             if self._config.sqlite_database is None:

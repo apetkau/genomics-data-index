@@ -120,24 +120,32 @@ def load(ctx):
 
 
 def load_variants_common(data_index_connection: DataIndexConnection, ncores: int,
-                         data_package: NucleotideSampleDataPackage, reference_file, input, build_tree, align_type,
-                         extra_tree_params: str):
+                         data_package: NucleotideSampleDataPackage,
+                         reference_file: Path, reference_name: str,
+                         input: Path, build_tree: bool,
+                         align_type: str, extra_tree_params: str):
     reference_service = data_index_connection.reference_service
     variation_service = cast(VariationService, data_index_connection.variation_service)
     sample_service = cast(SampleService, data_index_connection.sample_service)
     tree_service = data_index_connection.tree_service
 
-    try:
-        reference_service.add_reference_genome(reference_file)
-    except EntityExistsError as e:
-        logger.warning(f'Reference genome [{reference_file}] already exists, will not load')
+    if reference_name is not None and not reference_service.exists_reference_genome(reference_name):
+        logger.error(f'Reference genome [{reference_name}] does not exist in the system. Please try adding '
+                     f'a new reference genome by using the --reference-file parameter.')
+    elif reference_name is not None:
+        logger.info(f'Using reference genome with name=[{reference_name}]')
+    else:
+        try:
+            logger.info(f'Attempting to load reference genome=[{reference_file}]')
+            reference_service.add_reference_genome(reference_file)
+        except EntityExistsError as e:
+            logger.warning(f'Reference genome [{reference_file}] already exists, will not load')
+        reference_name = SequenceFile(reference_file).get_genome_name()
 
     samples_exist = sample_service.which_exists(list(data_package.sample_names()))
     if len(samples_exist) > 0:
         logger.error(f'Samples {samples_exist} already exist, will not load any variants')
     else:
-        reference_name = SequenceFile(reference_file).get_genome_name()
-
         variation_service.insert(feature_scope_name=reference_name,
                                  data_package=data_package)
         click.echo(f'Loaded variants from [{input}] into database')
@@ -153,7 +161,8 @@ def load_variants_common(data_index_connection: DataIndexConnection, ncores: int
 @load.command(name='snippy')
 @click.pass_context
 @click.argument('snippy_dir', type=click.Path(exists=True))
-@click.option('--reference-file', help='Reference genome', required=True, type=click.Path(exists=True))
+@click.option('--reference-file', help='Reference genome file', required=False, type=click.Path(exists=True))
+@click.option('--reference-name', help='Reference genome name', required=False)
 @click.option('--index-unknown/--no-index-unknown',
               help='Enable/disable indexing unknown/missing positions. Indexing missing positions can significantly '
                    'slow down the indexing process.',
@@ -163,14 +172,23 @@ def load_variants_common(data_index_connection: DataIndexConnection, ncores: int
               type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
 @click.option('--extra-tree-params', help='Extra parameters to tree-building software',
               default=None)
-def load_snippy(ctx, snippy_dir: Path, reference_file: Path, index_unknown: bool, build_tree: bool,
+def load_snippy(ctx, snippy_dir: Path, reference_file: Path, reference_name: str,
+                index_unknown: bool, build_tree: bool,
                 align_type: str, extra_tree_params: str):
     ncores = ctx.obj['ncores']
     project = get_project_exit_on_error(ctx)
     data_index_connection = project.create_connection()
 
+    if reference_name is None and reference_file is None:
+        logger.error(f'Neither --reference-file nor --reference-name are specified. Please define either '
+                     f'a new reference genome (--refrence-file [FILE]) or the name of an existing reference genome '
+                     f'(--reference-name [NAME]). You can view previously-loaded reference genomes with '
+                     f'"gdi --project-dir {project.get_root_dir()} list genomes"')
+        sys.exit(1)
+    elif reference_file is not None:
+        reference_file = Path(reference_file)
+
     snippy_dir = Path(snippy_dir)
-    reference_file = Path(reference_file)
     click.echo(f'Loading {snippy_dir}')
     sample_dirs = [snippy_dir / d for d in listdir(snippy_dir) if path.isdir(snippy_dir / d)]
 
@@ -190,6 +208,7 @@ def load_snippy(ctx, snippy_dir: Path, reference_file: Path, index_unknown: bool
 
         load_variants_common(data_index_connection=data_index_connection, ncores=ncores, data_package=data_package,
                              reference_file=reference_file,
+                             reference_name=reference_name,
                              input=snippy_dir, build_tree=build_tree, align_type=align_type,
                              extra_tree_params=extra_tree_params)
 
@@ -197,7 +216,8 @@ def load_snippy(ctx, snippy_dir: Path, reference_file: Path, index_unknown: bool
 @load.command(name='vcf')
 @click.pass_context
 @click.argument('vcf_fofns', type=click.Path(exists=True))
-@click.option('--reference-file', help='Reference genome', required=True, type=click.Path(exists=True))
+@click.option('--reference-file', help='Reference genome file', required=False, type=click.Path(exists=True))
+@click.option('--reference-name', help='Reference genome name', required=False)
 @click.option('--index-unknown/--no-index-unknown',
               help='Enable/disable indexing unknown/missing positions. Indexing missing positions can significantly '
                    'slow down the indexing process.',
@@ -207,12 +227,21 @@ def load_snippy(ctx, snippy_dir: Path, reference_file: Path, index_unknown: bool
               type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
 @click.option('--extra-tree-params', help='Extra parameters to tree-building software',
               default=None)
-def load_vcf(ctx, vcf_fofns: str, reference_file: str, index_unknown: bool, build_tree: bool,
-             align_type: str, extra_tree_params: str):
+def load_vcf(ctx, vcf_fofns: str, reference_file: str, reference_name: str,
+             index_unknown: bool, build_tree: bool, align_type: str, extra_tree_params: str):
     ncores = ctx.obj['ncores']
-    vcf_fofns = Path(vcf_fofns)
-    reference_file = Path(reference_file)
     project = get_project_exit_on_error(ctx)
+    vcf_fofns = Path(vcf_fofns)
+
+    if reference_name is None and reference_file is None:
+        logger.error(f'Neither --reference-file nor --reference-name are specified. Please define either '
+                     f'a new reference genome (--refrence-file [FILE]) or the name of an existing reference genome '
+                     f'(--reference-name [NAME]). You can view previously-loaded reference genomes with '
+                     f'"gdi --project-dir {project.get_root_dir()} list genomes"')
+        sys.exit(1)
+    elif reference_file is not None:
+        reference_file = Path(reference_file)
+
     data_index_connection = project.create_connection()
 
     click.echo(f'Loading files listed in {vcf_fofns}')
@@ -244,6 +273,7 @@ def load_vcf(ctx, vcf_fofns: str, reference_file: str, index_unknown: bool, buil
 
         load_variants_common(data_index_connection=data_index_connection, ncores=ncores, data_package=data_package,
                              reference_file=reference_file,
+                             reference_name=reference_name,
                              input=Path(vcf_fofns), build_tree=build_tree, align_type=align_type,
                              extra_tree_params=extra_tree_params)
 
