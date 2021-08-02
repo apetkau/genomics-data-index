@@ -5,6 +5,8 @@ import json
 from collections import Counter
 import re
 
+from Bio.SeqRecord import SeqRecord
+
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.api.query.kind.isa.typing.SamplesTypingIsaKind import SamplesTypingIsaKind
 from genomics_data_index.storage.SampleSet import SampleSet
@@ -27,27 +29,54 @@ class ExperimentalSARSCov2ConstellationsTyper(SamplesTypingIsaKind):
     """
 
     def __init__(self, constellation_files: Union[List[Path], List[str]],
-                 sequence_name: str = 'NC_045512.2', perfect_match_only: bool = False,
+                 sequence: SeqRecord, perfect_match_only: bool = False,
                  valid_gene_identifiers: Set[str] = None):
         super().__init__()
 
-        if sequence_name != 'NC_045512.2' and sequence_name != 'NC_045512':
+        sequence_name = sequence.id
+        if sequence_name != 'NC_045512.2' or sequence_name != 'NC_045512':
             logger.warning(f"sequence_name=[{sequence_name}] is not 'NC_045512.2' or 'NC_045512'. This is what the constellations are with respect"
                             "to <https://github.com/cov-lineages/constellations/blob/main/constellations/data/SARS-CoV-2.json>")
 
         self._sequence_name = sequence_name
+        self._sequence = sequence
         if valid_gene_identifiers is None:
             self._valid_gene_identifiers = {'ORF1ab', 'S', 'ORF3a', 'E', 'M', 'ORF6', 'ORF7a', 'ORF7b', 'ORF8', 'N', 'ORF10'}
         self._typing_definitions = self._parse_definitions(constellation_files)
         self._perfect_match_only = perfect_match_only
 
-    def mutation_to_identifier(self, mutation: str) -> str:
-        values = mutation.split(':')
-        if len(values) == 2:
-            gene, mutation = values
-        else:
-            raise MutationParsingError(f'Cannot parse mutation [{mutation}], cannot be split by ":".')
+    def _handle_deletion_identifier(self, mutation_values: List[str], mutation: str) -> str:
+        if mutation_values[0] == 'del':
+            position = int(mutation_values[1])
+            position_0coord = position - 1
+            length = int(mutation_values[2])
 
+            if position_0coord <= 0:
+                raise MutationParsingError(f'Cannot parse mutation [{mutation}], position is the '
+                                           f'very start of the sequence and I have not implemented '
+                                           f'handling this case.')
+            else:
+                # Subtract 1 since for an SPDI mutation ID I need to specify an insertion that's not of length 0
+                # (for my use of these identifiers). For example, say the sequence is "ATCG" and the
+                # position_0coord=1, and deletion length = 2. Then this means deleting "A[TC]G" and inserting
+                # nothing. But to convert this to an identifier where I have at least 1 insertion, I need to delete
+                # and re-insert one of the reference characters. I do this with the left-most base, so the actual
+                # deletion becomes "[ATC]G" followed by an insertion of "A". That is, the identifier
+                # becomes "sequence:ATC:A".
+                deletion_start = position_0coord - 1
+                deletion_stop = deletion_start + (length + 1)
+                position_start = position - 1
+
+            deletion_sequence = self._sequence.seq[deletion_start:deletion_stop]
+            insertion_sequence = self._sequence.seq[deletion_start:deletion_start + 1]
+
+            return f'{self._sequence_name}:{position_start}:{deletion_sequence}:{insertion_sequence}'
+        else:
+            raise MutationParsingError(f'Cannot parse mutation [{mutation}], has three parts but first '
+                                       f'is not "del".')
+
+    def _handle_gene_nucleotide_identifier(self, mutation_values: List[str], mutation: str) -> str:
+        gene, mutation = mutation_values
         if gene == 'nuc':
             match = re.match(r'([ATCG]+)(\d+)([ATCG]+)', mutation)
             if not match:
@@ -81,8 +110,16 @@ class ExperimentalSARSCov2ConstellationsTyper(SamplesTypingIsaKind):
             if mutation.endswith('-'):
                 mutation = self._convert_aa_deletion(mutation)
             mutation_id = f'hgvs_gn:{self._sequence_name}:{gene}:p.{mutation}'
-
         return mutation_id
+
+    def mutation_to_identifier(self, mutation: str) -> str:
+        values = mutation.split(':')
+        if len(values) == 2:
+            return self._handle_gene_nucleotide_identifier(values, mutation=mutation)
+        elif len(values) == 3:
+            return self._handle_deletion_identifier(values, mutation=mutation)
+        else:
+            raise MutationParsingError(f'Cannot parse mutation [{mutation}], cannot be split by ":".')
 
     def _convert_aa_deletion(self, mutation: str) -> str:
         match = re.match(r'(\D+)(\d+)-$', mutation)
