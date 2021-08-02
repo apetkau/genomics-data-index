@@ -132,6 +132,7 @@ def load_variants_common(data_index_connection: DataIndexConnection, ncores: int
     if reference_name is not None and not reference_service.exists_reference_genome(reference_name):
         logger.error(f'Reference genome [{reference_name}] does not exist in the system. Please try adding '
                      f'a new reference genome by using the --reference-file parameter.')
+        sys.exit(1)
     elif reference_name is not None:
         logger.info(f'Using reference genome with name=[{reference_name}]')
     else:
@@ -144,7 +145,13 @@ def load_variants_common(data_index_connection: DataIndexConnection, ncores: int
 
     samples_exist = sample_service.which_exists(list(data_package.sample_names()))
     if len(samples_exist) > 0:
-        logger.error(f'Samples {samples_exist} already exist, will not load any variants')
+        max_samples_to_print = 5
+        if len(samples_exist) > max_samples_to_print:
+            samples_to_print = '[' + ', '.join(samples_exist[0:max_samples_to_print]) + ', ...]'
+        else:
+            samples_to_print = str(samples_exist)
+        logger.error(f'There are {len(samples_exist)} samples which already exist: {samples_to_print}. '
+                     f'Will not load any samples.')
     else:
         variation_service.insert(feature_scope_name=reference_name,
                                  data_package=data_package)
