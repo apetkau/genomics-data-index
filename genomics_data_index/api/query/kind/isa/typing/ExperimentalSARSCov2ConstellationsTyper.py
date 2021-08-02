@@ -58,9 +58,18 @@ class ExperimentalSARSCov2ConstellationsTyper(SamplesTypingIsaKind):
             gene_curation_map = {
                 's': 'S',
                 '1ab': 'ORF1ab',
-                'ORF1a': 'ORF1ab',
                 'orf1ab': 'ORF1ab',
-                'ORF1b': 'orf1ab',
+                'ORF1a': 'ORF1ab',
+                'ORF1b': 'ORF1ab',
+                'NSP2': 'ORF1ab',
+                'nsp3': 'ORF1ab',
+                'nsp4': 'ORF1ab',
+                'nsp5': 'ORF1ab',
+                'nsp6': 'ORF1ab',
+                'nsp7': 'ORF1ab',
+                'nsp12': 'ORF1ab',
+                'nsp13': 'ORF1ab',
+                'nsp15': 'ORF1ab',
                 '8': 'ORF8'
             }
             if gene in gene_curation_map:
