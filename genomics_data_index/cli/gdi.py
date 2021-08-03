@@ -429,8 +429,9 @@ def input_command(absolute: bool, input_genomes_file: str, genomes: List[str]):
 @main.command()
 @click.pass_context
 @click.option('--reference-file', help='Reference genome', required=True, type=click.Path(exists=True))
-@click.option('--index/--no-index', help='Whether or not to load the processed files into the index or'
-                                         ' just produce the VCFs from assemblies. --no-index implies --no-clean.',
+@click.option('--load-data/--no-load-data', help='Whether or not to load the processed files into the index or'
+                                                 ' just produce the VCFs from assemblies. --no-load-data implies '
+                                                 '--no-clean.',
               default=True)
 @click.option('--index-unknown/--no-index-unknown',
               help='Enable/disable indexing unknown/missing positions. Indexing missing positions can significantly '
@@ -476,18 +477,19 @@ def input_command(absolute: bool, input_genomes_file: str, genomes: List[str]):
               type=click.Path(exists=True),
               required=False)
 @click.argument('genomes', type=click.Path(exists=True), nargs=-1)
-def analysis(ctx, reference_file: str, index: bool, index_unknown: bool, clean: bool, build_tree: bool, align_type: str,
+def analysis(ctx, reference_file: str, load_data: bool, index_unknown: bool, clean: bool, build_tree: bool, align_type: str,
              extra_tree_params: str, use_conda: bool,
              include_mlst: bool, include_kmer: bool, ignore_snpeff: bool,
              reads_mincov: int, reads_minqual: int,
              kmer_size: List[int], kmer_scaled: int,
              batch_size: int,
              input_genomes_file: str, input_structured_genomes_file: str, genomes: List[str]):
-    data_index_connection = get_project_exit_on_error(ctx).create_connection()
+    project = get_project_exit_on_error(ctx)
+    data_index_connection = project.create_connection()
     kmer_service = data_index_connection.kmer_service
 
-    if not index:
-        logger.debug('--no-index is enabled so setting --no-clean')
+    if not load_data:
+        logger.debug('--no-load-data is enabled so setting --no-clean')
         clean = False
 
     if not index_unknown:
@@ -539,7 +541,7 @@ def analysis(ctx, reference_file: str, index: bool, index_unknown: bool, clean: 
 
     processed_files_fofn = results.get_file('gdi-fofn')
 
-    if index:
+    if load_data:
         try:
             logger.info(f'Indexing processed VCF files defined in [{processed_files_fofn}]')
             ctx.invoke(load_vcf, index_unknown=index_unknown, vcf_fofns=str(processed_files_fofn),
@@ -564,11 +566,16 @@ def analysis(ctx, reference_file: str, index: bool, index_unknown: bool, clean: 
             shutil.rmtree(snakemake_directory)
     else:
         logger.debug(f'Not indexing processed files defined in [{processed_files_fofn}]')
+        reference_name = SequenceFile(Path(reference_file)).get_genome_name()
         click.echo(f'Processed files found in: {processed_files_fofn}')
+        click.echo(f'Load with: "gdi --project-dir {project.get_root_dir()} load vcf '
+                   f'--reference-name {reference_name} {processed_files_fofn}"')
 
         if include_mlst:
             mlst_file = results.get_file('mlst')
             click.echo(f'MLST results found in: {mlst_file}')
+            click.echo(f'Load with: "gdi --project-dir {project.get_root_dir()} load mlst-tseemann '
+                       f'{mlst_file}"')
 
 
 @main.group()
