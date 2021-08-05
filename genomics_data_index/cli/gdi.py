@@ -35,6 +35,8 @@ from genomics_data_index.storage.io.mutation.variants_processor.SerialVcfVariant
     SerialVcfVariantsTableProcessorFactory
 from genomics_data_index.storage.io.processor.MultipleProcessSampleFilesProcessor import \
     MultipleProcessSampleFilesProcessor
+from genomics_data_index.storage.io.SampleDataPackage import SampleDataPackage
+from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackageFactory import NucleotideSampleDataPackageFactory
 from genomics_data_index.storage.io.processor.NullSampleFilesProcessor import NullSampleFilesProcessor
 from genomics_data_index.storage.model.QueryFeature import QueryFeature
 from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
@@ -120,7 +122,7 @@ def load(ctx):
 
 
 def load_variants_common(data_index_connection: DataIndexConnection, ncores: int,
-                         data_package: NucleotideSampleDataPackage,
+                         data_package: SampleDataPackage,
                          reference_file: Path, reference_name: str,
                          input: Path, build_tree: bool,
                          align_type: str, extra_tree_params: str):
@@ -195,23 +197,11 @@ def load_snippy(ctx, snippy_dir: Path, reference_file: Path, reference_name: str
     elif reference_file is not None:
         reference_file = Path(reference_file)
 
-    snippy_dir = Path(snippy_dir)
-    click.echo(f'Loading {snippy_dir}')
-    sample_dirs = [snippy_dir / d for d in listdir(snippy_dir) if path.isdir(snippy_dir / d)]
-
     with TemporaryDirectory() as preprocess_dir:
-        if ncores > 1:
-            file_processor = MultipleProcessSampleFilesProcessor(preprocess_dir=Path(preprocess_dir),
-                                                                 processing_cores=ncores)
-            variants_processor_factory = MultipleProcessVcfVariantsTableProcessorFactory(ncores=ncores)
-        else:
-            file_processor = NullSampleFilesProcessor.instance()
-            variants_processor_factory = SerialVcfVariantsTableProcessorFactory.instance()
-
-        data_package = NucleotideSampleDataPackage.create_from_snippy(sample_dirs,
-                                                                      sample_files_processor=file_processor,
-                                                                      variants_processor_factory=variants_processor_factory,
-                                                                      index_unknown_missing=index_unknown)
+        preprocess_dir = Path(preprocess_dir)
+        data_package_factory = NucleotideSampleDataPackageFactory(ncores=ncores, index_unknown=index_unknown,
+                                                                  preprocess_dir=preprocess_dir)
+        data_package = data_package_factory.create_data_package_from_snippy(snippy_dir=snippy_dir)
 
         load_variants_common(data_index_connection=data_index_connection, ncores=ncores, data_package=data_package,
                              reference_file=reference_file,
@@ -251,32 +241,11 @@ def load_vcf(ctx, vcf_fofns: str, reference_file: str, reference_name: str,
 
     data_index_connection = project.create_connection()
 
-    click.echo(f'Loading files listed in {vcf_fofns}')
-    sample_vcf_map = {}
-    mask_files_map = {}
-    files_df = pd.read_csv(vcf_fofns, sep='\t')
-    for index, row in files_df.iterrows():
-        if row['Sample'] in sample_vcf_map:
-            raise Exception(f'Error, duplicate samples {row["Sample"]} in file {vcf_fofns}')
-
-        sample_vcf_map[row['Sample']] = row['VCF']
-        if not pd.isna(row['Mask File']):
-            mask_files_map[row['Sample']] = row['Mask File']
-
     with TemporaryDirectory() as preprocess_dir:
-        if ncores > 1:
-            file_processor = MultipleProcessSampleFilesProcessor(preprocess_dir=Path(preprocess_dir),
-                                                                 processing_cores=ncores)
-            variants_processor_factory = MultipleProcessVcfVariantsTableProcessorFactory(ncores=ncores)
-        else:
-            file_processor = NullSampleFilesProcessor.instance()
-            variants_processor_factory = SerialVcfVariantsTableProcessorFactory.instance()
-
-        data_package = NucleotideSampleDataPackage.create_from_sequence_masks(sample_vcf_map=sample_vcf_map,
-                                                                              masked_genomic_files_map=mask_files_map,
-                                                                              sample_files_processor=file_processor,
-                                                                              variants_processor_factory=variants_processor_factory,
-                                                                              index_unknown_missing=index_unknown)
+        preprocess_dir = Path(preprocess_dir)
+        data_package_factory = NucleotideSampleDataPackageFactory(ncores=ncores, index_unknown=index_unknown,
+                                                                  preprocess_dir=preprocess_dir)
+        data_package = data_package_factory.create_data_package(input_files_file=vcf_fofns)
 
         load_variants_common(data_index_connection=data_index_connection, ncores=ncores, data_package=data_package,
                              reference_file=reference_file,
