@@ -1,4 +1,5 @@
 from typing import List, Dict, Tuple
+import abc
 from pathlib import Path
 from os import path, listdir
 import logging
@@ -23,7 +24,7 @@ from genomics_data_index.storage.io.processor.NullSampleFilesProcessor import Nu
 logger = logging.getLogger(__file__)
 
 
-class NucleotideSampleDataPackageFactory(SampleDataPackageFactory):
+class NucleotideSampleDataPackageFactory(SampleDataPackageFactory, abc.ABC):
 
     def __init__(self, ncores: int, index_unknown: bool, preprocess_dir: Path):
         super().__init__()
@@ -31,6 +32,25 @@ class NucleotideSampleDataPackageFactory(SampleDataPackageFactory):
         self._preprocess_dir = preprocess_dir
         self._index_unknown = index_unknown
         self._sample_files_processor, self._variants_processor_factory = self._create_file_processors()
+
+    def _create_file_processors(self) -> Tuple[SampleFilesProcessor, VcfVariantsTableProcessorFactory]:
+        if self._ncores > 1:
+            file_processor = MultipleProcessSampleFilesProcessor(preprocess_dir=Path(self._preprocess_dir),
+                                                                 processing_cores=self._ncores)
+            variants_processor_factory = MultipleProcessVcfVariantsTableProcessorFactory(ncores=self._ncores)
+        else:
+            file_processor = NullSampleFilesProcessor.instance()
+            variants_processor_factory = SerialVcfVariantsTableProcessorFactory.instance()
+
+        return file_processor, variants_processor_factory
+
+
+class NucleotideInputFilesSampleDataPackageFactory(NucleotideSampleDataPackageFactory):
+
+    def __init__(self, ncores: int, index_unknown: bool, preprocess_dir: Path,
+                 input_files_file: Path):
+        super().__init__(ncores=ncores, index_unknown=index_unknown, preprocess_dir=preprocess_dir)
+        self._input_files_file = input_files_file
 
     def expected_input_columns(self) -> List[str]:
         return ['Sample', 'VCF', 'Mask File']
@@ -52,19 +72,26 @@ class NucleotideSampleDataPackageFactory(SampleDataPackageFactory):
 
         return sample_vcf_map, mask_files_map
 
-    def _create_file_processors(self) -> Tuple[SampleFilesProcessor, VcfVariantsTableProcessorFactory]:
-        if self._ncores > 1:
-            file_processor = MultipleProcessSampleFilesProcessor(preprocess_dir=Path(self._preprocess_dir),
-                                                                 processing_cores=self._ncores)
-            variants_processor_factory = MultipleProcessVcfVariantsTableProcessorFactory(ncores=self._ncores)
-        else:
-            file_processor = NullSampleFilesProcessor.instance()
-            variants_processor_factory = SerialVcfVariantsTableProcessorFactory.instance()
+    def create_data_package(self) -> SampleDataPackage:
+        sample_vcf, mask_files = self.create_sample_vcf_mask(self._input_files_file)
 
-        return file_processor, variants_processor_factory
+        data_package = NucleotideSampleDataPackage.create_from_sequence_masks(sample_vcf_map=sample_vcf,
+                                                                              masked_genomic_files_map=mask_files,
+                                                                              sample_files_processor=self._sample_files_processor,
+                                                                              variants_processor_factory=self._variants_processor_factory,
+                                                                              index_unknown_missing=self._index_unknown)
+        return data_package
 
-    def create_data_package_from_snippy(self, snippy_dir: Path) -> SampleDataPackage:
-        snippy_dir = Path(snippy_dir)
+
+class NucleotideSnippySampleDataPackageFactory(NucleotideSampleDataPackageFactory):
+
+    def __init__(self, ncores: int, index_unknown: bool, preprocess_dir: Path,
+                 snippy_dir: Path):
+        super().__init__(ncores=ncores, index_unknown=index_unknown, preprocess_dir=preprocess_dir)
+        self._snippy_dir = snippy_dir
+
+    def create_data_package(self) -> SampleDataPackage:
+        snippy_dir = Path(self._snippy_dir)
         sample_dirs = [snippy_dir / d for d in listdir(snippy_dir) if path.isdir(snippy_dir / d)]
         logger.debug(f'Found {len(sample_dirs)} directories in snippy_dir=[{snippy_dir}], loading files from '
                      f'these directories.')
@@ -72,14 +99,4 @@ class NucleotideSampleDataPackageFactory(SampleDataPackageFactory):
                                                                       sample_files_processor=self._sample_files_processor,
                                                                       variants_processor_factory=self._variants_processor_factory,
                                                                       index_unknown_missing=self._index_unknown)
-        return data_package
-
-    def create_data_package(self, input_files_file: Path) -> SampleDataPackage:
-        sample_vcf, mask_files = self.create_sample_vcf_mask(input_files_file)
-
-        data_package = NucleotideSampleDataPackage.create_from_sequence_masks(sample_vcf_map=sample_vcf,
-                                                                              masked_genomic_files_map=mask_files,
-                                                                              sample_files_processor=self._sample_files_processor,
-                                                                              variants_processor_factory=self._variants_processor_factory,
-                                                                              index_unknown_missing=self._index_unknown)
         return data_package

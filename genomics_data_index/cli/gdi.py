@@ -27,17 +27,12 @@ from genomics_data_index.storage.io.mlst.MLSTChewbbacaReader import MLSTChewbbac
 from genomics_data_index.storage.io.mlst.MLSTSampleDataPackage import MLSTSampleDataPackage
 from genomics_data_index.storage.io.mlst.MLSTSistrReader import MLSTSistrReader
 from genomics_data_index.storage.io.mlst.MLSTTSeemannFeaturesReader import MLSTTSeemannFeaturesReader
-from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
 from genomics_data_index.storage.io.mutation.SequenceFile import SequenceFile
-from genomics_data_index.storage.io.mutation.variants_processor.MultipleProcessVcfVariantsTableProcessor import \
-    MultipleProcessVcfVariantsTableProcessorFactory
-from genomics_data_index.storage.io.mutation.variants_processor.SerialVcfVariantsTableProcessor import \
-    SerialVcfVariantsTableProcessorFactory
-from genomics_data_index.storage.io.processor.MultipleProcessSampleFilesProcessor import \
-    MultipleProcessSampleFilesProcessor
 from genomics_data_index.storage.io.SampleDataPackage import SampleDataPackage
-from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackageFactory import NucleotideSampleDataPackageFactory
-from genomics_data_index.storage.io.processor.NullSampleFilesProcessor import NullSampleFilesProcessor
+from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackageFactory import \
+    NucleotideInputFilesSampleDataPackageFactory
+from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackageFactory import \
+    NucleotideSnippySampleDataPackageFactory
 from genomics_data_index.storage.model.QueryFeature import QueryFeature
 from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
 from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
@@ -199,9 +194,10 @@ def load_snippy(ctx, snippy_dir: Path, reference_file: Path, reference_name: str
 
     with TemporaryDirectory() as preprocess_dir:
         preprocess_dir = Path(preprocess_dir)
-        data_package_factory = NucleotideSampleDataPackageFactory(ncores=ncores, index_unknown=index_unknown,
-                                                                  preprocess_dir=preprocess_dir)
-        data_package = data_package_factory.create_data_package_from_snippy(snippy_dir=snippy_dir)
+        data_package_factory = NucleotideSnippySampleDataPackageFactory(ncores=ncores, index_unknown=index_unknown,
+                                                                        preprocess_dir=preprocess_dir,
+                                                                        snippy_dir=snippy_dir)
+        data_package = data_package_factory.create_data_package()
 
         load_variants_common(data_index_connection=data_index_connection, ncores=ncores, data_package=data_package,
                              reference_file=reference_file,
@@ -243,9 +239,10 @@ def load_vcf(ctx, vcf_fofns: str, reference_file: str, reference_name: str,
 
     with TemporaryDirectory() as preprocess_dir:
         preprocess_dir = Path(preprocess_dir)
-        data_package_factory = NucleotideSampleDataPackageFactory(ncores=ncores, index_unknown=index_unknown,
-                                                                  preprocess_dir=preprocess_dir)
-        data_package = data_package_factory.create_data_package(input_files_file=vcf_fofns)
+        data_package_factory = NucleotideInputFilesSampleDataPackageFactory(ncores=ncores, index_unknown=index_unknown,
+                                                                            preprocess_dir=preprocess_dir,
+                                                                            input_files_file=vcf_fofns)
+        data_package = data_package_factory.create_data_package()
 
         load_variants_common(data_index_connection=data_index_connection, ncores=ncores, data_package=data_package,
                              reference_file=reference_file,
@@ -446,7 +443,8 @@ def input_command(absolute: bool, input_genomes_file: str, genomes: List[str]):
               type=click.Path(exists=True),
               required=False)
 @click.argument('genomes', type=click.Path(exists=True), nargs=-1)
-def analysis(ctx, reference_file: str, load_data: bool, index_unknown: bool, clean: bool, build_tree: bool, align_type: str,
+def analysis(ctx, reference_file: str, load_data: bool, index_unknown: bool, clean: bool, build_tree: bool,
+             align_type: str,
              extra_tree_params: str, use_conda: bool,
              include_mlst: bool, include_kmer: bool, ignore_snpeff: bool,
              reads_mincov: int, reads_minqual: int,

@@ -10,5 +10,5 @@ class SampleDataPackageFactory:
         pass
 
     @abc.abstractmethod
-    def create_data_package(self, input_files_file: Path) -> SampleDataPackage:
+    def create_data_package(self) -> SampleDataPackage:
         pass
