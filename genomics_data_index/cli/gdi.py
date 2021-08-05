@@ -4,7 +4,7 @@ import shutil
 import sys
 import time
 from functools import partial
-from os import path, listdir, getcwd, mkdir
+from os import getcwd, mkdir
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import List, cast
@@ -23,17 +23,16 @@ from genomics_data_index.configuration.Project import Project, ProjectConfigurat
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
 from genomics_data_index.pipelines.SnakemakePipelineExecutor import SnakemakePipelineExecutor
 from genomics_data_index.storage.index.KmerIndexer import KmerIndexerSourmash, KmerIndexManager
+from genomics_data_index.storage.io.SampleDataPackageFactory import SampleDataPackageFactory
 from genomics_data_index.storage.io.mlst.MLSTChewbbacaReader import MLSTChewbbacaReader
 from genomics_data_index.storage.io.mlst.MLSTSampleDataPackage import MLSTSampleDataPackage
 from genomics_data_index.storage.io.mlst.MLSTSistrReader import MLSTSistrReader
 from genomics_data_index.storage.io.mlst.MLSTTSeemannFeaturesReader import MLSTTSeemannFeaturesReader
-from genomics_data_index.storage.io.mutation.SequenceFile import SequenceFile
-from genomics_data_index.storage.io.SampleDataPackage import SampleDataPackage
 from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackageFactory import \
     NucleotideInputFilesSampleDataPackageFactory
 from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackageFactory import \
     NucleotideSnippySampleDataPackageFactory
-from genomics_data_index.storage.io.SampleDataPackageFactory import SampleDataPackageFactory
+from genomics_data_index.storage.io.mutation.SequenceFile import SequenceFile
 from genomics_data_index.storage.model.QueryFeature import QueryFeature
 from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
 from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI

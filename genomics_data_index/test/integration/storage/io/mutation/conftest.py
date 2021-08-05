@@ -1,10 +1,12 @@
-import pytest
 from os import path, listdir
 from pathlib import Path
 from typing import List
 
+import pytest
+
 from genomics_data_index.test.integration import data_dir
 from genomics_data_index.test.integration import data_dir_empty
+
 
 @pytest.fixture
 def sample_dirs() -> List[Path]:

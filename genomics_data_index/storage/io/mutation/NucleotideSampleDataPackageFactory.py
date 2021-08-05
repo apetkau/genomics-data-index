@@ -1,27 +1,26 @@
-from typing import List, Dict, Tuple, Generator
 import abc
-from pathlib import Path
-from os import path, listdir
 import logging
+from os import path, listdir
+from pathlib import Path
+from typing import List, Dict, Tuple, Generator
+
 import pandas as pd
-from genomics_data_index.storage.util.SamplesProgressLogger import SamplesProgressLogger
 
-from genomics_data_index.storage.io.mutation.variants_processor.SerialVcfVariantsTableProcessor import \
-    SerialVcfVariantsTableProcessorFactory
-
+from genomics_data_index.storage.io.SampleDataPackage import SampleDataPackage
+from genomics_data_index.storage.io.SampleDataPackageFactory import SampleDataPackageFactory
+from genomics_data_index.storage.io.SampleFilesProcessor import SampleFilesProcessor
+from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
 from genomics_data_index.storage.io.mutation.variants_processor.MultipleProcessVcfVariantsTableProcessor import \
     MultipleProcessVcfVariantsTableProcessorFactory
-
-from genomics_data_index.storage.io.SampleDataPackageFactory import SampleDataPackageFactory
-from genomics_data_index.storage.io.SampleDataPackage import SampleDataPackage
-from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
-from genomics_data_index.storage.io.SampleFilesProcessor import SampleFilesProcessor
+from genomics_data_index.storage.io.mutation.variants_processor.SerialVcfVariantsTableProcessor import \
+    SerialVcfVariantsTableProcessorFactory
 from genomics_data_index.storage.io.mutation.variants_processor.VcfVariantsTableProcessor import \
     VcfVariantsTableProcessorFactory
 from genomics_data_index.storage.io.processor.MultipleProcessSampleFilesProcessor import \
     MultipleProcessSampleFilesProcessor
 from genomics_data_index.storage.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor
 from genomics_data_index.storage.util.ListSliceIter import ListSliceIter
+from genomics_data_index.storage.util.SamplesProgressLogger import SamplesProgressLogger
 
 logger = logging.getLogger(__file__)
 

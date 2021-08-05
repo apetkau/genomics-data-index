@@ -1,16 +1,15 @@
-from typing import List
-from tempfile import TemporaryDirectory
 from pathlib import Path
+from tempfile import TemporaryDirectory
+from typing import List
 
 import pandas as pd
 
-from genomics_data_index.test.integration import data_dir as snippy_dir
-from genomics_data_index.test.integration.storage.io.mutation import vcf_and_mask_files
-from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackageFactory import \
-    NucleotideSnippySampleDataPackageFactory
-
 from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackageFactory import \
     NucleotideInputFilesSampleDataPackageFactory
+from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackageFactory import \
+    NucleotideSnippySampleDataPackageFactory
+from genomics_data_index.test.integration import data_dir as snippy_dir
+from genomics_data_index.test.integration.storage.io.mutation import vcf_and_mask_files
 
 
 def create_samples_input_file(tmp_dir: Path, sample_dirs: List[Path]) -> Path:

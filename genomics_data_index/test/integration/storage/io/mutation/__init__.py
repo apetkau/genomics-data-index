@@ -1,6 +1,6 @@
-from typing import Dict
-from pathlib import Path
 from os import path
+from pathlib import Path
+from typing import Dict
 
 
 def vcf_and_mask_files(sample_dirs) -> Dict[str, Dict[str, Path]]:

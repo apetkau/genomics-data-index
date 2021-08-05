@@ -5,7 +5,6 @@ from typing import cast
 
 import pytest
 
-from genomics_data_index.test.integration.storage.io.mutation import vcf_and_mask_files
 from genomics_data_index.storage.io.mutation.NucleotideSampleData import NucleotideSampleData
 from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
 from genomics_data_index.storage.io.mutation.variants_processor.MultipleProcessVcfVariantsTableProcessor import \
@@ -15,6 +14,7 @@ from genomics_data_index.storage.io.mutation.variants_processor.SerialVcfVariant
 from genomics_data_index.storage.io.processor.MultipleProcessSampleFilesProcessor import \
     MultipleProcessSampleFilesProcessor
 from genomics_data_index.storage.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor
+from genomics_data_index.test.integration.storage.io.mutation import vcf_and_mask_files
 
 
 def test_iter_sample_data(sample_dirs):
