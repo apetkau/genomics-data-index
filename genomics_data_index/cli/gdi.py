@@ -181,7 +181,7 @@ def load_variants_common(data_index_connection: DataIndexConnection, ncores: int
               type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
 @click.option('--extra-tree-params', help='Extra parameters to tree-building software',
               default=None)
-def load_snippy(ctx, snippy_dir: Path, reference_file: Path, reference_name: str,
+def load_snippy(ctx, snippy_dir: str, reference_file: str, reference_name: str,
                 index_unknown: bool, sample_batch_size: int, build_tree: bool,
                 align_type: str, extra_tree_params: str):
     ncores = ctx.obj['ncores']
@@ -201,13 +201,13 @@ def load_snippy(ctx, snippy_dir: Path, reference_file: Path, reference_name: str
         preprocess_dir = Path(preprocess_dir)
         data_package_factory = NucleotideSnippySampleDataPackageFactory(ncores=ncores, index_unknown=index_unknown,
                                                                         preprocess_dir=preprocess_dir,
-                                                                        snippy_dir=snippy_dir)
+                                                                        snippy_dir=Path(snippy_dir))
 
         load_variants_common(data_index_connection=data_index_connection, ncores=ncores,
                              data_package_factory=data_package_factory,
                              reference_file=reference_file,
                              reference_name=reference_name,
-                             input=snippy_dir, build_tree=build_tree, align_type=align_type,
+                             input=Path(snippy_dir), build_tree=build_tree, align_type=align_type,
                              extra_tree_params=extra_tree_params,
                              sample_batch_size=sample_batch_size)
 
