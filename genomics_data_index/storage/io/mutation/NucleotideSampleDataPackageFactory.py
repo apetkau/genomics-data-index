@@ -30,6 +30,7 @@ class NucleotideSampleDataPackageFactory(SampleDataPackageFactory):
         self._ncores = ncores
         self._preprocess_dir = preprocess_dir
         self._index_unknown = index_unknown
+        self._sample_files_processor, self._variants_processor_factory = self._create_file_processors()
 
     def expected_input_columns(self) -> List[str]:
         return ['Sample', 'VCF', 'Mask File']
@@ -63,24 +64,22 @@ class NucleotideSampleDataPackageFactory(SampleDataPackageFactory):
         return file_processor, variants_processor_factory
 
     def create_data_package_from_snippy(self, snippy_dir: Path) -> SampleDataPackage:
-        file_processor, variants_processor_factory = self._create_file_processors()
         snippy_dir = Path(snippy_dir)
         sample_dirs = [snippy_dir / d for d in listdir(snippy_dir) if path.isdir(snippy_dir / d)]
         logger.debug(f'Found {len(sample_dirs)} directories in snippy_dir=[{snippy_dir}], loading files from '
                      f'these directories.')
         data_package = NucleotideSampleDataPackage.create_from_snippy(sample_dirs=sample_dirs,
-                                                                      sample_files_processor=file_processor,
-                                                                      variants_processor_factory=variants_processor_factory,
+                                                                      sample_files_processor=self._sample_files_processor,
+                                                                      variants_processor_factory=self._variants_processor_factory,
                                                                       index_unknown_missing=self._index_unknown)
         return data_package
 
     def create_data_package(self, input_files_file: Path) -> SampleDataPackage:
         sample_vcf, mask_files = self.create_sample_vcf_mask(input_files_file)
-        file_processor, variants_processor_factory = self._create_file_processors()
 
         data_package = NucleotideSampleDataPackage.create_from_sequence_masks(sample_vcf_map=sample_vcf,
                                                                               masked_genomic_files_map=mask_files,
-                                                                              sample_files_processor=file_processor,
-                                                                              variants_processor_factory=variants_processor_factory,
+                                                                              sample_files_processor=self._sample_files_processor,
+                                                                              variants_processor_factory=self._variants_processor_factory,
                                                                               index_unknown_missing=self._index_unknown)
         return data_package
