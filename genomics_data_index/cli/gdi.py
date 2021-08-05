@@ -33,6 +33,7 @@ from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackageFactory 
     NucleotideInputFilesSampleDataPackageFactory
 from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackageFactory import \
     NucleotideSnippySampleDataPackageFactory
+from genomics_data_index.storage.io.SampleDataPackageFactory import SampleDataPackageFactory
 from genomics_data_index.storage.model.QueryFeature import QueryFeature
 from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
 from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
@@ -117,10 +118,11 @@ def load(ctx):
 
 
 def load_variants_common(data_index_connection: DataIndexConnection, ncores: int,
-                         data_package: SampleDataPackage,
+                         data_package_factory: SampleDataPackageFactory,
                          reference_file: Path, reference_name: str,
                          input: Path, build_tree: bool,
-                         align_type: str, extra_tree_params: str):
+                         align_type: str, extra_tree_params: str,
+                         sample_batch_size: int):
     reference_service = data_index_connection.reference_service
     variation_service = cast(VariationService, data_index_connection.variation_service)
     sample_service = cast(SampleService, data_index_connection.sample_service)
@@ -140,26 +142,27 @@ def load_variants_common(data_index_connection: DataIndexConnection, ncores: int
             logger.warning(f'Reference genome [{reference_file}] already exists, will not load')
         reference_name = SequenceFile(reference_file).get_genome_name()
 
-    samples_exist = sample_service.which_exists(list(data_package.sample_names()))
-    if len(samples_exist) > 0:
-        max_samples_to_print = 5
-        if len(samples_exist) > max_samples_to_print:
-            samples_to_print = '[' + ', '.join(samples_exist[0:max_samples_to_print]) + ', ...]'
+    for data_package in data_package_factory.create_data_package_iter(sample_batch_size):
+        samples_exist = sample_service.which_exists(list(data_package.sample_names()))
+        if len(samples_exist) > 0:
+            max_samples_to_print = 5
+            if len(samples_exist) > max_samples_to_print:
+                samples_to_print = '[' + ', '.join(samples_exist[0:max_samples_to_print]) + ', ...]'
+            else:
+                samples_to_print = str(samples_exist)
+            logger.error(f'There are {len(samples_exist)} samples which already exist: {samples_to_print}. '
+                         f'Will not load any samples.')
         else:
-            samples_to_print = str(samples_exist)
-        logger.error(f'There are {len(samples_exist)} samples which already exist: {samples_to_print}. '
-                     f'Will not load any samples.')
-    else:
-        variation_service.insert(feature_scope_name=reference_name,
-                                 data_package=data_package)
-        click.echo(f'Loaded variants from [{input}] into database')
+            variation_service.insert(feature_scope_name=reference_name,
+                                     data_package=data_package)
+        logger.info(f'Loaded variants from [{input}] into database')
 
         if build_tree:
             tree_service.rebuild_tree(reference_name=reference_name,
                                       align_type=align_type,
                                       num_cores=ncores,
                                       extra_params=extra_tree_params)
-            click.echo('Finished building tree of all samples')
+            logger.info('Finished building tree of all samples')
 
 
 @load.command(name='snippy')
@@ -171,13 +174,15 @@ def load_variants_common(data_index_connection: DataIndexConnection, ncores: int
               help='Enable/disable indexing unknown/missing positions. Indexing missing positions can significantly '
                    'slow down the indexing process.',
               required=False, default=True)
+@click.option('--sample-batch-size', help='Number of samples to process within a single batch.', default=100,
+              type=click.IntRange(min=1))
 @click.option('--build-tree/--no-build-tree', default=False, help='Builds tree of all samples after loading')
 @click.option('--align-type', help=f'The type of alignment to generate', default='core',
               type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
 @click.option('--extra-tree-params', help='Extra parameters to tree-building software',
               default=None)
 def load_snippy(ctx, snippy_dir: Path, reference_file: Path, reference_name: str,
-                index_unknown: bool, build_tree: bool,
+                index_unknown: bool, sample_batch_size: int, build_tree: bool,
                 align_type: str, extra_tree_params: str):
     ncores = ctx.obj['ncores']
     project = get_project_exit_on_error(ctx)
@@ -197,13 +202,14 @@ def load_snippy(ctx, snippy_dir: Path, reference_file: Path, reference_name: str
         data_package_factory = NucleotideSnippySampleDataPackageFactory(ncores=ncores, index_unknown=index_unknown,
                                                                         preprocess_dir=preprocess_dir,
                                                                         snippy_dir=snippy_dir)
-        data_package = data_package_factory.create_data_package()
 
-        load_variants_common(data_index_connection=data_index_connection, ncores=ncores, data_package=data_package,
+        load_variants_common(data_index_connection=data_index_connection, ncores=ncores,
+                             data_package_factory=data_package_factory,
                              reference_file=reference_file,
                              reference_name=reference_name,
                              input=snippy_dir, build_tree=build_tree, align_type=align_type,
-                             extra_tree_params=extra_tree_params)
+                             extra_tree_params=extra_tree_params,
+                             sample_batch_size=sample_batch_size)
 
 
 @load.command(name='vcf')
@@ -215,13 +221,15 @@ def load_snippy(ctx, snippy_dir: Path, reference_file: Path, reference_name: str
               help='Enable/disable indexing unknown/missing positions. Indexing missing positions can significantly '
                    'slow down the indexing process.',
               required=False, default=True)
+@click.option('--sample-batch-size', help='Number of samples to process within a single batch.', default=100,
+              type=click.IntRange(min=1))
 @click.option('--build-tree/--no-build-tree', default=False, help='Builds tree of all samples after loading')
 @click.option('--align-type', help=f'The type of alignment to generate', default='core',
               type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
 @click.option('--extra-tree-params', help='Extra parameters to tree-building software',
               default=None)
 def load_vcf(ctx, vcf_fofns: str, reference_file: str, reference_name: str,
-             index_unknown: bool, build_tree: bool, align_type: str, extra_tree_params: str):
+             index_unknown: bool, sample_batch_size: int, build_tree: bool, align_type: str, extra_tree_params: str):
     ncores = ctx.obj['ncores']
     project = get_project_exit_on_error(ctx)
     vcf_fofns = Path(vcf_fofns)
@@ -242,13 +250,14 @@ def load_vcf(ctx, vcf_fofns: str, reference_file: str, reference_name: str,
         data_package_factory = NucleotideInputFilesSampleDataPackageFactory(ncores=ncores, index_unknown=index_unknown,
                                                                             preprocess_dir=preprocess_dir,
                                                                             input_files_file=vcf_fofns)
-        data_package = data_package_factory.create_data_package()
 
-        load_variants_common(data_index_connection=data_index_connection, ncores=ncores, data_package=data_package,
+        load_variants_common(data_index_connection=data_index_connection, ncores=ncores,
+                             data_package_factory=data_package_factory,
                              reference_file=reference_file,
                              reference_name=reference_name,
                              input=Path(vcf_fofns), build_tree=build_tree, align_type=align_type,
-                             extra_tree_params=extra_tree_params)
+                             extra_tree_params=extra_tree_params,
+                             sample_batch_size=sample_batch_size)
 
 
 @load.command(name='kmer')
