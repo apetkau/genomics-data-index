@@ -438,6 +438,11 @@ def input_command(absolute: bool, input_genomes_file: str, genomes: List[str]):
                                    'pipeline into batches. The number of jobs scheduled in each batch will be larger '
                                    'than this value.',
               default=2000, type=click.IntRange(min=1))
+@click.option('--sample-batch-size', help='The maximum samples to load into an index at once. Increasing this value'
+                                          ' may improve runtime at the expense of requiring more memory to construct '
+                                          'the index. This only applies if loading data into the index is being done '
+                                          'automatically (--load-data).', default=100,
+              type=click.IntRange(min=1))
 @click.option('--input-genomes-file',
               help='A file listing the genomes to process, one per line. This is an alternative'
                    ' to passing genomes as arguments on the command-line',
@@ -457,7 +462,7 @@ def analysis(ctx, reference_file: str, load_data: bool, index_unknown: bool, cle
              include_mlst: bool, include_kmer: bool, ignore_snpeff: bool,
              reads_mincov: int, reads_minqual: int,
              kmer_size: List[int], kmer_scaled: int,
-             batch_size: int,
+             batch_size: int, sample_batch_size: int,
              input_genomes_file: str, input_structured_genomes_file: str, genomes: List[str]):
     project = get_project_exit_on_error(ctx)
     data_index_connection = project.create_connection()
@@ -521,7 +526,7 @@ def analysis(ctx, reference_file: str, load_data: bool, index_unknown: bool, cle
             logger.info(f'Indexing processed VCF files defined in [{processed_files_fofn}]')
             ctx.invoke(load_vcf, index_unknown=index_unknown, vcf_fofns=str(processed_files_fofn),
                        reference_file=reference_file, build_tree=build_tree, align_type=align_type,
-                       extra_tree_params=extra_tree_params)
+                       extra_tree_params=extra_tree_params, sample_batch_size=sample_batch_size)
         except Exception as e:
             logger.exception(e)
             logger.error(f"Error while indexing. Please verify files in [{snakemake_directory}] are correct.")
