@@ -1,11 +1,11 @@
 import re
-from os import path, listdir
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import List, Dict, cast
+from typing import cast
 
 import pytest
 
+from genomics_data_index.test.integration.storage.io.mutation import vcf_and_mask_files
 from genomics_data_index.storage.io.mutation.NucleotideSampleData import NucleotideSampleData
 from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
 from genomics_data_index.storage.io.mutation.variants_processor.MultipleProcessVcfVariantsTableProcessor import \
@@ -15,35 +15,6 @@ from genomics_data_index.storage.io.mutation.variants_processor.SerialVcfVariant
 from genomics_data_index.storage.io.processor.MultipleProcessSampleFilesProcessor import \
     MultipleProcessSampleFilesProcessor
 from genomics_data_index.storage.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor
-from genomics_data_index.test.integration import data_dir
-from genomics_data_index.test.integration import data_dir_empty
-
-
-@pytest.fixture
-def sample_dirs() -> List[Path]:
-    return [data_dir / d for d in listdir(data_dir) if path.isdir(data_dir / d)]
-
-
-@pytest.fixture
-def sample_dirs_empty() -> List[Path]:
-    return [data_dir_empty / d for d in listdir(data_dir_empty) if path.isdir(data_dir_empty / d)]
-
-
-def vcf_and_mask_files(sample_dirs) -> Dict[str, Dict[str, Path]]:
-    sample_vcf_map = {}
-    sample_genomic_files_mask = {}
-    for d in sample_dirs:
-        sample_name = path.basename(d)
-        vcf_file = Path(d, 'snps.vcf.gz')
-        genomic_file_mask = Path(d, 'snps.aligned.fa')
-
-        sample_vcf_map[sample_name] = vcf_file
-        sample_genomic_files_mask[sample_name] = genomic_file_mask
-
-    return {
-        'vcfs': sample_vcf_map,
-        'masks': sample_genomic_files_mask
-    }
 
 
 def test_iter_sample_data(sample_dirs):

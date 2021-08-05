@@ -19,7 +19,7 @@ from genomics_data_index.storage.io.mutation.variants_processor.VcfVariantsTable
     VcfVariantsTableProcessorFactory
 from genomics_data_index.storage.io.processor.MultipleProcessSampleFilesProcessor import \
     MultipleProcessSampleFilesProcessor
-from genomics_data_index.storage.io.processor.NullSampleFilesProcessor import NullSampleFilesProcessor
+from genomics_data_index.storage.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor
 
 logger = logging.getLogger(__file__)
 
@@ -39,7 +39,7 @@ class NucleotideSampleDataPackageFactory(SampleDataPackageFactory, abc.ABC):
                                                                  processing_cores=self._ncores)
             variants_processor_factory = MultipleProcessVcfVariantsTableProcessorFactory(ncores=self._ncores)
         else:
-            file_processor = NullSampleFilesProcessor.instance()
+            file_processor = SerialSampleFilesProcessor(preprocess_dir=self._preprocess_dir)
             variants_processor_factory = SerialVcfVariantsTableProcessorFactory.instance()
 
         return file_processor, variants_processor_factory
