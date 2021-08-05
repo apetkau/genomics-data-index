@@ -4,6 +4,7 @@ from pathlib import Path
 from os import path, listdir
 import logging
 import pandas as pd
+from genomics_data_index.storage.util.SamplesProgressLogger import SamplesProgressLogger
 
 from genomics_data_index.storage.io.mutation.variants_processor.SerialVcfVariantsTableProcessor import \
     SerialVcfVariantsTableProcessorFactory
@@ -20,6 +21,7 @@ from genomics_data_index.storage.io.mutation.variants_processor.VcfVariantsTable
 from genomics_data_index.storage.io.processor.MultipleProcessSampleFilesProcessor import \
     MultipleProcessSampleFilesProcessor
 from genomics_data_index.storage.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor
+from genomics_data_index.storage.util.ListSliceIter import ListSliceIter
 
 logger = logging.getLogger(__file__)
 
@@ -49,8 +51,7 @@ class NucleotideSampleDataPackageFactory(SampleDataPackageFactory, abc.ABC):
         return file_processor, variants_processor_factory
 
     def create_data_package_iter(self, batch_size: int = 100) -> Generator[SampleDataPackage, None, None]:
-        return None
-
+        pass
 
 
 class NucleotideInputFilesSampleDataPackageFactory(NucleotideSampleDataPackageFactory):
@@ -106,11 +107,27 @@ class NucleotideSnippySampleDataPackageFactory(NucleotideSampleDataPackageFactor
     def number_samples(self) -> int:
         return len(self._sample_dirs)
 
-    def create_data_package(self) -> SampleDataPackage:
-        logger.debug(f'Found {len(self._sample_dirs)} directories in snippy_dir=[{self._snippy_dir}], loading files from '
-                     f'these directories.')
-        data_package = NucleotideSampleDataPackage.create_from_snippy(sample_dirs=self._sample_dirs,
+    def create_data_package_iter(self, batch_size: int = 100) -> Generator[SampleDataPackage, None, None]:
+        number_samples = self.number_samples()
+        progress_logger = SamplesProgressLogger(stage_name='Read Samples', stage_number=0, total_samples=number_samples)
+        progress_logger.update_progress(0)
+        sample_dirs_iter = ListSliceIter(self._sample_dirs, batch_size)
+        samples_processed = 0
+        for sample_dirs in sample_dirs_iter.islice():
+            yield self._create_data_package(sample_dirs=sample_dirs)
+            samples_processed = samples_processed + len(sample_dirs)
+            progress_logger.update_progress(samples_processed)
+        logger.debug(f'Finished creating data packages for all {number_samples} samples')
+
+    def _create_data_package(self, sample_dirs: List[Path]) -> SampleDataPackage:
+        data_package = NucleotideSampleDataPackage.create_from_snippy(sample_dirs=sample_dirs,
                                                                       sample_files_processor=self._sample_files_processor,
                                                                       variants_processor_factory=self._variants_processor_factory,
                                                                       index_unknown_missing=self._index_unknown)
         return data_package
+
+    def create_data_package(self) -> SampleDataPackage:
+        logger.debug(
+            f'Found {len(self._sample_dirs)} directories in snippy_dir=[{self._snippy_dir}], loading files from '
+            f'these directories.')
+        return self._create_data_package(sample_dirs=self._sample_dirs)
