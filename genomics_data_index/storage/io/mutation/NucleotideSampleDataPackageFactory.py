@@ -1,4 +1,4 @@
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Generator
 import abc
 from pathlib import Path
 from os import path, listdir
@@ -33,6 +33,10 @@ class NucleotideSampleDataPackageFactory(SampleDataPackageFactory, abc.ABC):
         self._index_unknown = index_unknown
         self._sample_files_processor, self._variants_processor_factory = self._create_file_processors()
 
+    @abc.abstractmethod
+    def number_samples(self) -> int:
+        pass
+
     def _create_file_processors(self) -> Tuple[SampleFilesProcessor, VcfVariantsTableProcessorFactory]:
         if self._ncores > 1:
             file_processor = MultipleProcessSampleFilesProcessor(preprocess_dir=Path(self._preprocess_dir),
@@ -44,6 +48,10 @@ class NucleotideSampleDataPackageFactory(SampleDataPackageFactory, abc.ABC):
 
         return file_processor, variants_processor_factory
 
+    def create_data_package_iter(self, batch_size: int = 100) -> Generator[SampleDataPackage, None, None]:
+        return None
+
+
 
 class NucleotideInputFilesSampleDataPackageFactory(NucleotideSampleDataPackageFactory):
 
@@ -51,6 +59,10 @@ class NucleotideInputFilesSampleDataPackageFactory(NucleotideSampleDataPackageFa
                  input_files_file: Path):
         super().__init__(ncores=ncores, index_unknown=index_unknown, preprocess_dir=preprocess_dir)
         self._input_files_file = input_files_file
+        self._sample_vcf, self._mask_files = self.create_sample_vcf_mask(input_files_file)
+
+    def number_samples(self) -> int:
+        return len(self._sample_vcf)
 
     def expected_input_columns(self) -> List[str]:
         return ['Sample', 'VCF', 'Mask File']
@@ -89,13 +101,15 @@ class NucleotideSnippySampleDataPackageFactory(NucleotideSampleDataPackageFactor
                  snippy_dir: Path):
         super().__init__(ncores=ncores, index_unknown=index_unknown, preprocess_dir=preprocess_dir)
         self._snippy_dir = snippy_dir
+        self._sample_dirs = [snippy_dir / d for d in listdir(snippy_dir) if path.isdir(snippy_dir / d)]
+
+    def number_samples(self) -> int:
+        return len(self._sample_dirs)
 
     def create_data_package(self) -> SampleDataPackage:
-        snippy_dir = Path(self._snippy_dir)
-        sample_dirs = [snippy_dir / d for d in listdir(snippy_dir) if path.isdir(snippy_dir / d)]
-        logger.debug(f'Found {len(sample_dirs)} directories in snippy_dir=[{snippy_dir}], loading files from '
+        logger.debug(f'Found {len(self._sample_dirs)} directories in snippy_dir=[{self._snippy_dir}], loading files from '
                      f'these directories.')
-        data_package = NucleotideSampleDataPackage.create_from_snippy(sample_dirs=sample_dirs,
+        data_package = NucleotideSampleDataPackage.create_from_snippy(sample_dirs=self._sample_dirs,
                                                                       sample_files_processor=self._sample_files_processor,
                                                                       variants_processor_factory=self._variants_processor_factory,
                                                                       index_unknown_missing=self._index_unknown)

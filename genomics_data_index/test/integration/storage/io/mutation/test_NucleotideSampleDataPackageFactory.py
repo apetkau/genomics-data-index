@@ -39,6 +39,8 @@ def test_snippy_data_package():
         data_package_factory = NucleotideSnippySampleDataPackageFactory(ncores=1, index_unknown=False,
                                                                         preprocess_dir=preprocess_dir,
                                                                         snippy_dir=snippy_dir)
+        assert 3 == data_package_factory.number_samples()
+
         data_package = data_package_factory.create_data_package()
         assert {'SampleA', 'SampleB', 'SampleC'} == data_package.sample_names()
 
@@ -60,6 +62,8 @@ def test_snippy_data_package():
         data_package_factory = NucleotideSnippySampleDataPackageFactory(ncores=1, index_unknown=True,
                                                                         preprocess_dir=preprocess_dir,
                                                                         snippy_dir=snippy_dir)
+        assert 3 == data_package_factory.number_samples()
+
         data_package = data_package_factory.create_data_package()
         assert {'SampleA', 'SampleB', 'SampleC'} == data_package.sample_names()
 
@@ -84,6 +88,8 @@ def test_vcf_mask_files_data_package(sample_dirs: List[Path]):
         data_package_factory = NucleotideInputFilesSampleDataPackageFactory(ncores=1, index_unknown=False,
                                                                             preprocess_dir=preprocess_dir,
                                                                             input_files_file=input_file)
+        assert 3 == data_package_factory.number_samples()
+
         data_package = data_package_factory.create_data_package()
         assert {'SampleA', 'SampleB', 'SampleC'} == data_package.sample_names()
 
@@ -106,6 +112,8 @@ def test_vcf_mask_files_data_package(sample_dirs: List[Path]):
         data_package_factory = NucleotideInputFilesSampleDataPackageFactory(ncores=1, index_unknown=True,
                                                                             preprocess_dir=preprocess_dir,
                                                                             input_files_file=input_file)
+        assert 3 == data_package_factory.number_samples()
+
         data_package = data_package_factory.create_data_package()
         assert {'SampleA', 'SampleB', 'SampleC'} == data_package.sample_names()
 
