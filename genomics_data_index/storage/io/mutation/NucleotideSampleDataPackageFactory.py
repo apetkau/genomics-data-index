@@ -50,9 +50,6 @@ class NucleotideSampleDataPackageFactory(SampleDataPackageFactory, abc.ABC):
 
         return file_processor, variants_processor_factory
 
-    def create_data_package_iter(self, batch_size: int = 100) -> Generator[SampleDataPackage, None, None]:
-        pass
-
 
 class NucleotideInputFilesSampleDataPackageFactory(NucleotideSampleDataPackageFactory):
 
@@ -85,15 +82,32 @@ class NucleotideInputFilesSampleDataPackageFactory(NucleotideSampleDataPackageFa
 
         return sample_vcf_map, mask_files_map
 
+    def create_data_package_iter(self, batch_size: int = 100) -> Generator[SampleDataPackage, None, None]:
+        number_samples = self.number_samples()
+        sample_names = list(self._sample_vcf.keys())
+        progress_logger = SamplesProgressLogger(stage_name='Read Samples', stage_number=0, total_samples=number_samples)
+        progress_logger.update_progress(0)
+        sample_names_iter = ListSliceIter(sample_names, batch_size)
+        samples_processed = 0
+        for sample_names_slice in sample_names_iter.islice():
+            sample_vcfs_slice = {s: self._sample_vcf[s] for s in sample_names_slice}
+            mask_files_slice = {s: self._mask_files[s] for s in sample_names_slice if s in self._mask_files}
+            yield self._create_data_package(sample_vcfs=sample_vcfs_slice, sample_mask_files=mask_files_slice)
+            samples_processed = samples_processed + len(sample_names_slice)
+            progress_logger.update_progress(samples_processed)
+        logger.debug(f'Finished creating data packages for all {number_samples} samples')
+
+    def _create_data_package(self, sample_vcfs: Dict[str, Path],
+                             sample_mask_files: Dict[str, Path]) -> SampleDataPackage:
+        return NucleotideSampleDataPackage.create_from_sequence_masks(sample_vcf_map=sample_vcfs,
+                                                                      masked_genomic_files_map=sample_mask_files,
+                                                                      sample_files_processor=self._sample_files_processor,
+                                                                      variants_processor_factory=self._variants_processor_factory,
+                                                                      index_unknown_missing=self._index_unknown)
+
     def create_data_package(self) -> SampleDataPackage:
         sample_vcf, mask_files = self.create_sample_vcf_mask(self._input_files_file)
-
-        data_package = NucleotideSampleDataPackage.create_from_sequence_masks(sample_vcf_map=sample_vcf,
-                                                                              masked_genomic_files_map=mask_files,
-                                                                              sample_files_processor=self._sample_files_processor,
-                                                                              variants_processor_factory=self._variants_processor_factory,
-                                                                              index_unknown_missing=self._index_unknown)
-        return data_package
+        return self._create_data_package(sample_vcfs=sample_vcf, sample_mask_files=mask_files)
 
 
 class NucleotideSnippySampleDataPackageFactory(NucleotideSampleDataPackageFactory):
