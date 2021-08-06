@@ -173,7 +173,7 @@ def load_variants_common(data_index_connection: DataIndexConnection, ncores: int
               help='Enable/disable indexing unknown/missing positions. Indexing missing positions can significantly '
                    'slow down the indexing process.',
               required=False, default=True)
-@click.option('--sample-batch-size', help='Number of samples to process within a single batch.', default=100,
+@click.option('--sample-batch-size', help='Number of samples to process within a single batch.', default=2000,
               type=click.IntRange(min=1))
 @click.option('--build-tree/--no-build-tree', default=False, help='Builds tree of all samples after loading')
 @click.option('--align-type', help=f'The type of alignment to generate', default='core',
@@ -220,7 +220,7 @@ def load_snippy(ctx, snippy_dir: str, reference_file: str, reference_name: str,
               help='Enable/disable indexing unknown/missing positions. Indexing missing positions can significantly '
                    'slow down the indexing process.',
               required=False, default=True)
-@click.option('--sample-batch-size', help='Number of samples to process within a single batch.', default=100,
+@click.option('--sample-batch-size', help='Number of samples to process within a single batch.', default=2000,
               type=click.IntRange(min=1))
 @click.option('--build-tree/--no-build-tree', default=False, help='Builds tree of all samples after loading')
 @click.option('--align-type', help=f'The type of alignment to generate', default='core',
@@ -441,7 +441,7 @@ def input_command(absolute: bool, input_genomes_file: str, genomes: List[str]):
 @click.option('--sample-batch-size', help='The maximum samples to load into an index at once. Increasing this value'
                                           ' may improve runtime at the expense of requiring more memory to construct '
                                           'the index. This only applies if loading data into the index is being done '
-                                          'automatically (--load-data).', default=100,
+                                          'automatically (--load-data).', default=2000,
               type=click.IntRange(min=1))
 @click.option('--input-genomes-file',
               help='A file listing the genomes to process, one per line. This is an alternative'
