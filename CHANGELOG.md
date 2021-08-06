@@ -17,6 +17,7 @@
 * [analysis]: Switched command-line interface to use my Python API for queries.
 * [api]: `features_summary()` now works with MLST results.
 * [api]: Improved performance/redesigned `features_summary()` for mutation results.
+* [analysis]: Added ability to batch up loading of samples into database.
 
 # 0.1.0
 

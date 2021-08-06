@@ -4,7 +4,7 @@ import shutil
 import sys
 import time
 from functools import partial
-from os import path, listdir, getcwd, mkdir
+from os import getcwd, mkdir
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import List, cast
@@ -23,19 +23,16 @@ from genomics_data_index.configuration.Project import Project, ProjectConfigurat
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
 from genomics_data_index.pipelines.SnakemakePipelineExecutor import SnakemakePipelineExecutor
 from genomics_data_index.storage.index.KmerIndexer import KmerIndexerSourmash, KmerIndexManager
+from genomics_data_index.storage.io.SampleDataPackageFactory import SampleDataPackageFactory
 from genomics_data_index.storage.io.mlst.MLSTChewbbacaReader import MLSTChewbbacaReader
 from genomics_data_index.storage.io.mlst.MLSTSampleDataPackage import MLSTSampleDataPackage
 from genomics_data_index.storage.io.mlst.MLSTSistrReader import MLSTSistrReader
 from genomics_data_index.storage.io.mlst.MLSTTSeemannFeaturesReader import MLSTTSeemannFeaturesReader
-from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
+from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackageFactory import \
+    NucleotideInputFilesSampleDataPackageFactory
+from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackageFactory import \
+    NucleotideSnippySampleDataPackageFactory
 from genomics_data_index.storage.io.mutation.SequenceFile import SequenceFile
-from genomics_data_index.storage.io.mutation.variants_processor.MultipleProcessVcfVariantsTableProcessor import \
-    MultipleProcessVcfVariantsTableProcessorFactory
-from genomics_data_index.storage.io.mutation.variants_processor.SerialVcfVariantsTableProcessor import \
-    SerialVcfVariantsTableProcessorFactory
-from genomics_data_index.storage.io.processor.MultipleProcessSampleFilesProcessor import \
-    MultipleProcessSampleFilesProcessor
-from genomics_data_index.storage.io.processor.NullSampleFilesProcessor import NullSampleFilesProcessor
 from genomics_data_index.storage.model.QueryFeature import QueryFeature
 from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
 from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
@@ -120,132 +117,146 @@ def load(ctx):
 
 
 def load_variants_common(data_index_connection: DataIndexConnection, ncores: int,
-                         data_package: NucleotideSampleDataPackage, reference_file, input, build_tree, align_type,
-                         extra_tree_params: str):
+                         data_package_factory: SampleDataPackageFactory,
+                         reference_file: Path, reference_name: str,
+                         input: Path, build_tree: bool,
+                         align_type: str, extra_tree_params: str,
+                         sample_batch_size: int):
     reference_service = data_index_connection.reference_service
     variation_service = cast(VariationService, data_index_connection.variation_service)
     sample_service = cast(SampleService, data_index_connection.sample_service)
     tree_service = data_index_connection.tree_service
 
-    try:
-        reference_service.add_reference_genome(reference_file)
-    except EntityExistsError as e:
-        logger.warning(f'Reference genome [{reference_file}] already exists, will not load')
-
-    samples_exist = sample_service.which_exists(list(data_package.sample_names()))
-    if len(samples_exist) > 0:
-        logger.error(f'Samples {samples_exist} already exist, will not load any variants')
+    if reference_name is not None and not reference_service.exists_reference_genome(reference_name):
+        logger.error(f'Reference genome [{reference_name}] does not exist in the system. Please try adding '
+                     f'a new reference genome by using the --reference-file parameter.')
+        sys.exit(1)
+    elif reference_name is not None:
+        logger.info(f'Using reference genome with name=[{reference_name}]')
     else:
+        try:
+            logger.info(f'Attempting to load reference genome=[{reference_file}]')
+            reference_service.add_reference_genome(reference_file)
+        except EntityExistsError as e:
+            logger.warning(f'Reference genome [{reference_file}] already exists, will not load')
         reference_name = SequenceFile(reference_file).get_genome_name()
 
-        variation_service.insert(feature_scope_name=reference_name,
-                                 data_package=data_package)
-        click.echo(f'Loaded variants from [{input}] into database')
+    for data_package in data_package_factory.create_data_package_iter(sample_batch_size):
+        samples_exist = sample_service.which_exists(list(data_package.sample_names()))
+        if len(samples_exist) > 0:
+            max_samples_to_print = 5
+            if len(samples_exist) > max_samples_to_print:
+                samples_to_print = '[' + ', '.join(samples_exist[0:max_samples_to_print]) + ', ...]'
+            else:
+                samples_to_print = str(samples_exist)
+            logger.error(f'There are {len(samples_exist)} samples which already exist: {samples_to_print}. '
+                         f'Will not load any samples.')
+        else:
+            variation_service.insert(feature_scope_name=reference_name,
+                                     data_package=data_package)
+        logger.info(f'Loaded variants from [{input}] into database')
 
         if build_tree:
             tree_service.rebuild_tree(reference_name=reference_name,
                                       align_type=align_type,
                                       num_cores=ncores,
                                       extra_params=extra_tree_params)
-            click.echo('Finished building tree of all samples')
+            logger.info('Finished building tree of all samples')
 
 
 @load.command(name='snippy')
 @click.pass_context
 @click.argument('snippy_dir', type=click.Path(exists=True))
-@click.option('--reference-file', help='Reference genome', required=True, type=click.Path(exists=True))
+@click.option('--reference-file', help='Reference genome file', required=False, type=click.Path(exists=True))
+@click.option('--reference-name', help='Reference genome name', required=False)
 @click.option('--index-unknown/--no-index-unknown',
               help='Enable/disable indexing unknown/missing positions. Indexing missing positions can significantly '
                    'slow down the indexing process.',
               required=False, default=True)
+@click.option('--sample-batch-size', help='Number of samples to process within a single batch.', default=2000,
+              type=click.IntRange(min=1))
 @click.option('--build-tree/--no-build-tree', default=False, help='Builds tree of all samples after loading')
 @click.option('--align-type', help=f'The type of alignment to generate', default='core',
               type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
 @click.option('--extra-tree-params', help='Extra parameters to tree-building software',
               default=None)
-def load_snippy(ctx, snippy_dir: Path, reference_file: Path, index_unknown: bool, build_tree: bool,
+def load_snippy(ctx, snippy_dir: str, reference_file: str, reference_name: str,
+                index_unknown: bool, sample_batch_size: int, build_tree: bool,
                 align_type: str, extra_tree_params: str):
     ncores = ctx.obj['ncores']
     project = get_project_exit_on_error(ctx)
     data_index_connection = project.create_connection()
 
-    snippy_dir = Path(snippy_dir)
-    reference_file = Path(reference_file)
-    click.echo(f'Loading {snippy_dir}')
-    sample_dirs = [snippy_dir / d for d in listdir(snippy_dir) if path.isdir(snippy_dir / d)]
+    if reference_name is None and reference_file is None:
+        logger.error(f'Neither --reference-file nor --reference-name are specified. Please define either '
+                     f'a new reference genome (--refrence-file [FILE]) or the name of an existing reference genome '
+                     f'(--reference-name [NAME]). You can view previously-loaded reference genomes with '
+                     f'"gdi --project-dir {project.get_root_dir()} list genomes"')
+        sys.exit(1)
+    elif reference_file is not None:
+        reference_file = Path(reference_file)
 
     with TemporaryDirectory() as preprocess_dir:
-        if ncores > 1:
-            file_processor = MultipleProcessSampleFilesProcessor(preprocess_dir=Path(preprocess_dir),
-                                                                 processing_cores=ncores)
-            variants_processor_factory = MultipleProcessVcfVariantsTableProcessorFactory(ncores=ncores)
-        else:
-            file_processor = NullSampleFilesProcessor.instance()
-            variants_processor_factory = SerialVcfVariantsTableProcessorFactory.instance()
+        preprocess_dir = Path(preprocess_dir)
+        data_package_factory = NucleotideSnippySampleDataPackageFactory(ncores=ncores, index_unknown=index_unknown,
+                                                                        preprocess_dir=preprocess_dir,
+                                                                        snippy_dir=Path(snippy_dir))
 
-        data_package = NucleotideSampleDataPackage.create_from_snippy(sample_dirs,
-                                                                      sample_files_processor=file_processor,
-                                                                      variants_processor_factory=variants_processor_factory,
-                                                                      index_unknown_missing=index_unknown)
-
-        load_variants_common(data_index_connection=data_index_connection, ncores=ncores, data_package=data_package,
+        load_variants_common(data_index_connection=data_index_connection, ncores=ncores,
+                             data_package_factory=data_package_factory,
                              reference_file=reference_file,
-                             input=snippy_dir, build_tree=build_tree, align_type=align_type,
-                             extra_tree_params=extra_tree_params)
+                             reference_name=reference_name,
+                             input=Path(snippy_dir), build_tree=build_tree, align_type=align_type,
+                             extra_tree_params=extra_tree_params,
+                             sample_batch_size=sample_batch_size)
 
 
 @load.command(name='vcf')
 @click.pass_context
 @click.argument('vcf_fofns', type=click.Path(exists=True))
-@click.option('--reference-file', help='Reference genome', required=True, type=click.Path(exists=True))
+@click.option('--reference-file', help='Reference genome file', required=False, type=click.Path(exists=True))
+@click.option('--reference-name', help='Reference genome name', required=False)
 @click.option('--index-unknown/--no-index-unknown',
               help='Enable/disable indexing unknown/missing positions. Indexing missing positions can significantly '
                    'slow down the indexing process.',
               required=False, default=True)
+@click.option('--sample-batch-size', help='Number of samples to process within a single batch.', default=2000,
+              type=click.IntRange(min=1))
 @click.option('--build-tree/--no-build-tree', default=False, help='Builds tree of all samples after loading')
 @click.option('--align-type', help=f'The type of alignment to generate', default='core',
               type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
 @click.option('--extra-tree-params', help='Extra parameters to tree-building software',
               default=None)
-def load_vcf(ctx, vcf_fofns: str, reference_file: str, index_unknown: bool, build_tree: bool,
-             align_type: str, extra_tree_params: str):
+def load_vcf(ctx, vcf_fofns: str, reference_file: str, reference_name: str,
+             index_unknown: bool, sample_batch_size: int, build_tree: bool, align_type: str, extra_tree_params: str):
     ncores = ctx.obj['ncores']
-    vcf_fofns = Path(vcf_fofns)
-    reference_file = Path(reference_file)
     project = get_project_exit_on_error(ctx)
+    vcf_fofns = Path(vcf_fofns)
+
+    if reference_name is None and reference_file is None:
+        logger.error(f'Neither --reference-file nor --reference-name are specified. Please define either '
+                     f'a new reference genome (--refrence-file [FILE]) or the name of an existing reference genome '
+                     f'(--reference-name [NAME]). You can view previously-loaded reference genomes with '
+                     f'"gdi --project-dir {project.get_root_dir()} list genomes"')
+        sys.exit(1)
+    elif reference_file is not None:
+        reference_file = Path(reference_file)
+
     data_index_connection = project.create_connection()
 
-    click.echo(f'Loading files listed in {vcf_fofns}')
-    sample_vcf_map = {}
-    mask_files_map = {}
-    files_df = pd.read_csv(vcf_fofns, sep='\t')
-    for index, row in files_df.iterrows():
-        if row['Sample'] in sample_vcf_map:
-            raise Exception(f'Error, duplicate samples {row["Sample"]} in file {vcf_fofns}')
-
-        sample_vcf_map[row['Sample']] = row['VCF']
-        if not pd.isna(row['Mask File']):
-            mask_files_map[row['Sample']] = row['Mask File']
-
     with TemporaryDirectory() as preprocess_dir:
-        if ncores > 1:
-            file_processor = MultipleProcessSampleFilesProcessor(preprocess_dir=Path(preprocess_dir),
-                                                                 processing_cores=ncores)
-            variants_processor_factory = MultipleProcessVcfVariantsTableProcessorFactory(ncores=ncores)
-        else:
-            file_processor = NullSampleFilesProcessor.instance()
-            variants_processor_factory = SerialVcfVariantsTableProcessorFactory.instance()
+        preprocess_dir = Path(preprocess_dir)
+        data_package_factory = NucleotideInputFilesSampleDataPackageFactory(ncores=ncores, index_unknown=index_unknown,
+                                                                            preprocess_dir=preprocess_dir,
+                                                                            input_files_file=vcf_fofns)
 
-        data_package = NucleotideSampleDataPackage.create_from_sequence_masks(sample_vcf_map=sample_vcf_map,
-                                                                              masked_genomic_files_map=mask_files_map,
-                                                                              sample_files_processor=file_processor,
-                                                                              variants_processor_factory=variants_processor_factory,
-                                                                              index_unknown_missing=index_unknown)
-
-        load_variants_common(data_index_connection=data_index_connection, ncores=ncores, data_package=data_package,
+        load_variants_common(data_index_connection=data_index_connection, ncores=ncores,
+                             data_package_factory=data_package_factory,
                              reference_file=reference_file,
+                             reference_name=reference_name,
                              input=Path(vcf_fofns), build_tree=build_tree, align_type=align_type,
-                             extra_tree_params=extra_tree_params)
+                             extra_tree_params=extra_tree_params,
+                             sample_batch_size=sample_batch_size)
 
 
 @load.command(name='kmer')
@@ -392,8 +403,9 @@ def input_command(absolute: bool, input_genomes_file: str, genomes: List[str]):
 @main.command()
 @click.pass_context
 @click.option('--reference-file', help='Reference genome', required=True, type=click.Path(exists=True))
-@click.option('--index/--no-index', help='Whether or not to load the processed files into the index or'
-                                         ' just produce the VCFs from assemblies. --no-index implies --no-clean.',
+@click.option('--load-data/--no-load-data', help='Whether or not to load the processed files into the index or'
+                                                 ' just produce the VCFs from assemblies. --no-load-data implies '
+                                                 '--no-clean.',
               default=True)
 @click.option('--index-unknown/--no-index-unknown',
               help='Enable/disable indexing unknown/missing positions. Indexing missing positions can significantly '
@@ -426,6 +438,11 @@ def input_command(absolute: bool, input_genomes_file: str, genomes: List[str]):
                                    'pipeline into batches. The number of jobs scheduled in each batch will be larger '
                                    'than this value.',
               default=2000, type=click.IntRange(min=1))
+@click.option('--sample-batch-size', help='The maximum samples to load into an index at once. Increasing this value'
+                                          ' may improve runtime at the expense of requiring more memory to construct '
+                                          'the index. This only applies if loading data into the index is being done '
+                                          'automatically (--load-data).', default=2000,
+              type=click.IntRange(min=1))
 @click.option('--input-genomes-file',
               help='A file listing the genomes to process, one per line. This is an alternative'
                    ' to passing genomes as arguments on the command-line',
@@ -439,18 +456,20 @@ def input_command(absolute: bool, input_genomes_file: str, genomes: List[str]):
               type=click.Path(exists=True),
               required=False)
 @click.argument('genomes', type=click.Path(exists=True), nargs=-1)
-def analysis(ctx, reference_file: str, index: bool, index_unknown: bool, clean: bool, build_tree: bool, align_type: str,
+def analysis(ctx, reference_file: str, load_data: bool, index_unknown: bool, clean: bool, build_tree: bool,
+             align_type: str,
              extra_tree_params: str, use_conda: bool,
              include_mlst: bool, include_kmer: bool, ignore_snpeff: bool,
              reads_mincov: int, reads_minqual: int,
              kmer_size: List[int], kmer_scaled: int,
-             batch_size: int,
+             batch_size: int, sample_batch_size: int,
              input_genomes_file: str, input_structured_genomes_file: str, genomes: List[str]):
-    data_index_connection = get_project_exit_on_error(ctx).create_connection()
+    project = get_project_exit_on_error(ctx)
+    data_index_connection = project.create_connection()
     kmer_service = data_index_connection.kmer_service
 
-    if not index:
-        logger.debug('--no-index is enabled so setting --no-clean')
+    if not load_data:
+        logger.debug('--no-load-data is enabled so setting --no-clean')
         clean = False
 
     if not index_unknown:
@@ -502,12 +521,12 @@ def analysis(ctx, reference_file: str, index: bool, index_unknown: bool, clean: 
 
     processed_files_fofn = results.get_file('gdi-fofn')
 
-    if index:
+    if load_data:
         try:
             logger.info(f'Indexing processed VCF files defined in [{processed_files_fofn}]')
             ctx.invoke(load_vcf, index_unknown=index_unknown, vcf_fofns=str(processed_files_fofn),
                        reference_file=reference_file, build_tree=build_tree, align_type=align_type,
-                       extra_tree_params=extra_tree_params)
+                       extra_tree_params=extra_tree_params, sample_batch_size=sample_batch_size)
         except Exception as e:
             logger.exception(e)
             logger.error(f"Error while indexing. Please verify files in [{snakemake_directory}] are correct.")
@@ -527,11 +546,16 @@ def analysis(ctx, reference_file: str, index: bool, index_unknown: bool, clean: 
             shutil.rmtree(snakemake_directory)
     else:
         logger.debug(f'Not indexing processed files defined in [{processed_files_fofn}]')
+        reference_name = SequenceFile(Path(reference_file)).get_genome_name()
         click.echo(f'Processed files found in: {processed_files_fofn}')
+        click.echo(f'Load with: "gdi --project-dir {project.get_root_dir()} load vcf '
+                   f'--reference-name {reference_name} {processed_files_fofn}"')
 
         if include_mlst:
             mlst_file = results.get_file('mlst')
             click.echo(f'MLST results found in: {mlst_file}')
+            click.echo(f'Load with: "gdi --project-dir {project.get_root_dir()} load mlst-tseemann '
+                       f'{mlst_file}"')
 
 
 @main.group()
