@@ -1,4 +1,5 @@
 import abc
+import math
 import logging
 from os import path, listdir
 from pathlib import Path
@@ -37,6 +38,9 @@ class NucleotideSampleDataPackageFactory(SampleDataPackageFactory, abc.ABC):
     @abc.abstractmethod
     def number_samples(self) -> int:
         pass
+
+    def number_batches(self, batch_size: int) -> int:
+        return (int)(math.ceil(self.number_samples()/batch_size))
 
     def _create_file_processors(self) -> Tuple[SampleFilesProcessor, VcfVariantsTableProcessorFactory]:
         if self._ncores > 1:
@@ -82,19 +86,21 @@ class NucleotideInputFilesSampleDataPackageFactory(NucleotideSampleDataPackageFa
         return sample_vcf_map, mask_files_map
 
     def create_data_package_iter(self, batch_size: int = 100) -> Generator[SampleDataPackage, None, None]:
-        number_samples = self.number_samples()
         sample_names = list(self._sample_vcf.keys())
-        progress_logger = SamplesProgressLogger(stage_name='Read Samples', stage_number=0, total_samples=number_samples)
-        progress_logger.update_progress(0)
+        number_batches = self.number_batches(batch_size)
+        SamplesProgressLogger.set_total_batches(number_batches)
         sample_names_iter = ListSliceIter(sample_names, batch_size)
-        samples_processed = 0
+        current_batch = 1
         for sample_names_slice in sample_names_iter.islice():
             sample_vcfs_slice = {s: self._sample_vcf[s] for s in sample_names_slice}
             mask_files_slice = {s: self._mask_files[s] for s in sample_names_slice if s in self._mask_files}
+            SamplesProgressLogger.set_current_batch(current_batch)
+            logger.info(f'Starting batch {current_batch}/{number_batches}')
             yield self._create_data_package(sample_vcfs=sample_vcfs_slice, sample_mask_files=mask_files_slice)
-            samples_processed = samples_processed + len(sample_names_slice)
-            progress_logger.update_progress(samples_processed)
-        logger.debug(f'Finished creating data packages for all {number_samples} samples')
+            logger.info(f'Finished batch {current_batch}/{number_batches}')
+            current_batch = current_batch + 1
+        SamplesProgressLogger.unset_batch_mode()
+        logger.debug(f'Finished creating data packages for all {self.number_samples()} samples')
 
     def _create_data_package(self, sample_vcfs: Dict[str, Path],
                              sample_mask_files: Dict[str, Path]) -> SampleDataPackage:
@@ -121,16 +127,18 @@ class NucleotideSnippySampleDataPackageFactory(NucleotideSampleDataPackageFactor
         return len(self._sample_dirs)
 
     def create_data_package_iter(self, batch_size: int = 100) -> Generator[SampleDataPackage, None, None]:
-        number_samples = self.number_samples()
-        progress_logger = SamplesProgressLogger(stage_name='Read Samples', stage_number=0, total_samples=number_samples)
-        progress_logger.update_progress(0)
+        number_batches = self.number_batches(batch_size)
+        SamplesProgressLogger.set_total_batches(number_batches)
         sample_dirs_iter = ListSliceIter(self._sample_dirs, batch_size)
-        samples_processed = 0
+        current_batch = 1
         for sample_dirs in sample_dirs_iter.islice():
+            SamplesProgressLogger.set_current_batch(current_batch)
+            logger.info(f'Starting batch {current_batch}/{number_batches}')
             yield self._create_data_package(sample_dirs=sample_dirs)
-            samples_processed = samples_processed + len(sample_dirs)
-            progress_logger.update_progress(samples_processed)
-        logger.debug(f'Finished creating data packages for all {number_samples} samples')
+            logger.info(f'Finished batch {current_batch}/{number_batches}')
+            current_batch = current_batch + 1
+        SamplesProgressLogger.unset_batch_mode()
+        logger.debug(f'Finished creating data packages for all {self.number_samples()} samples')
 
     def _create_data_package(self, sample_dirs: List[Path]) -> SampleDataPackage:
         data_package = NucleotideSampleDataPackage.create_from_snippy(sample_dirs=sample_dirs,
