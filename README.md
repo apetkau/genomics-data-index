@@ -14,8 +14,10 @@ direct from sequence data or loaded from existing intermediate files (e.g., VCF 
 # Analyze sequence data (reads/assemblies, compressed/uncompressed)
 gdi analysis --reference-file genome.gbk.gz *.fasta.gz *.fastq.gz
 
-# (Alternatively) Index features in previously computed VCF files listed in vcf-files.txt
-gdi load vcf vcf-files.txt
+# (Alternatively) Index features in previously computed files (VCF files, or MLST results)
+gdi load vcf --reference-file reference.gbk.gz vcf-files.txt
+gdi load mlst-tseemann mlst.tsv # Load from https://github.com/tseemann/mlst
+gdi load mlst-sistr sistr-profiles.csv # Load from https://github.com/phac-nml/sistr_cmd
 ```
 
 **Querying** provides both a *Python API* and *Command-line interface* to select sets of samples using this index
