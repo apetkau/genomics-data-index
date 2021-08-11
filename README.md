@@ -14,8 +14,10 @@ direct from sequence data or loaded from existing intermediate files (e.g., VCF 
 # Analyze sequence data (reads/assemblies, compressed/uncompressed)
 gdi analysis --reference-file genome.gbk.gz *.fasta.gz *.fastq.gz
 
-# (Alternatively) Index features in previously computed VCF files listed in vcf-files.txt
-gdi load vcf vcf-files.txt
+# (Alternatively) Index features in previously computed files (VCF files, or MLST results)
+gdi load vcf --reference-file reference.gbk.gz vcf-files.txt
+gdi load mlst-tseemann mlst.tsv # Load from https://github.com/tseemann/mlst
+gdi load mlst-sistr sistr-profiles.csv # Load from https://github.com/phac-nml/sistr_cmd
 ```
 
 **Querying** provides both a *Python API* and *Command-line interface* to select sets of samples using this index
@@ -141,7 +143,7 @@ This is still an ongoing project. A lot of background material is found in my [T
 To install this software, we will first, create a conda environment with the necessary dependencies as follows (a full conda package is not available yet https://github.com/apetkau/genomics-data-index/issues/51 ).
 
 ```bash
-conda create -c bioconda -c conda-forge -c defaults --name gdi python=3.8 pyqt bedtools iqtree bcftools htslib
+conda create -c bioconda -c conda-forge -c defaults --name gdi python=3.8 pyqt bedtools iqtree bcftools htslib snpeff
 
 # Activate environment. Needed to install additional Python dependencies below.
 conda activate gdi
