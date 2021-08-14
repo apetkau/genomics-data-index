@@ -2,7 +2,7 @@ from typing import List, Any, cast
 
 import pandas as pd
 
-from genomics_data_index.api.query.features.FeaturesFromIndexSummarizer import FeaturesFromIndexSummarizer
+from genomics_data_index.api.query.features.FeaturesFromIndexComparator import FeaturesFromIndexComparator
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
@@ -11,7 +11,7 @@ from genomics_data_index.storage.model.db import NucleotideVariantsSamples
 from genomics_data_index.storage.service.VariationService import VariationService
 
 
-class MutationFeaturesFromIndexSummarizer(FeaturesFromIndexSummarizer):
+class MutationFeaturesFromIndexComparator(FeaturesFromIndexComparator):
 
     def __init__(self, connection: DataIndexConnection, ignore_annotations: bool = False,
                  include_present: bool = True, include_unknown: bool = False,

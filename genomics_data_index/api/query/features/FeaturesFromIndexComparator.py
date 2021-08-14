@@ -3,13 +3,13 @@ from typing import Dict, List, Any
 
 import pandas as pd
 
-from genomics_data_index.api.query.features.FeaturesSummarizer import FeaturesSummarizer
+from genomics_data_index.api.query.features.FeaturesComparator import FeaturesComparator
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.db import FeatureSamples
 
 
-class FeaturesFromIndexSummarizer(FeaturesSummarizer, abc.ABC):
+class FeaturesFromIndexComparator(FeaturesComparator, abc.ABC):
 
     def __init__(self, connection: DataIndexConnection):
         super().__init__(connection=connection)

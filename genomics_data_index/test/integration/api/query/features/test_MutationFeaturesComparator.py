@@ -1,10 +1,7 @@
-import warnings
-
 import pandas as pd
 
 from genomics_data_index.api.query.GenomicsDataIndex import GenomicsDataIndex
-from genomics_data_index.api.query.features.MutationFeaturesFromIndexSummarizer import \
-    MutationFeaturesFromIndexSummarizer
+from genomics_data_index.api.query.features.MutationFeaturesComparator import MutationFeaturesComparator
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.db import Sample
 from genomics_data_index.test.integration import snippy_all_dataframes
@@ -28,13 +25,9 @@ def test_summary_all(loaded_database_genomic_data_store: GenomicsDataIndex):
     expected_df['Total'] = 9
     expected_df['Percent'] = 100 * (expected_df['Count'] / expected_df['Total'])
 
-    f = ['reference:461:AAAT:G']
-    warnings.warn(f'Removing {f} from expected until I can figure out how to properly handle these')
-    expected_df = expected_df.drop(f)
-
     present_set = SampleSet(all_sample_ids)
-    mutations_summarizer = MutationFeaturesFromIndexSummarizer(connection=loaded_database_genomic_data_store.connection,
-                                                               ignore_annotations=True)
+    mutations_summarizer = MutationFeaturesComparator(connection=loaded_database_genomic_data_store.connection,
+                                                      ignore_annotations=True)
 
     mutations_df = mutations_summarizer.summary(present_set)
     mutations_df['Percent'] = mutations_df['Percent'].astype(int)  # Convert to int for easier comparison
@@ -43,74 +36,9 @@ def test_summary_all(loaded_database_genomic_data_store: GenomicsDataIndex):
     assert len(expected_df) == len(mutations_df)
     assert list(expected_df.columns) == list(mutations_df.columns)
     assert list(expected_df.index) == list(mutations_df.index)
-    assert list(expected_df['Deletion']) == list(mutations_df['Deletion'])
     assert list(expected_df['Count']) == list(mutations_df['Count'])
     assert list(expected_df['Total']) == list(mutations_df['Total'])
     assert 22 == mutations_df.loc['reference:619:G:C', 'Percent']
-
-    # Test with unknown
-    mutations_summarizer = MutationFeaturesFromIndexSummarizer(connection=loaded_database_genomic_data_store.connection,
-                                                               ignore_annotations=True, include_unknown=True)
-    mutations_df = mutations_summarizer.summary(present_set)
-    mutations_df['Percent'] = mutations_df['Percent'].astype(int)  # Convert to int for easier comparison
-    mutations_df = mutations_df.sort_index()
-
-    assert 632 == len(mutations_df)
-    assert list(expected_df.columns) == list(mutations_df.columns)
-    assert 2 == mutations_df.loc['reference:619:G:C', 'Count']
-    assert 2 == mutations_df.loc['reference:3063:A:ATGCAGC', 'Count']
-    assert 1 == mutations_df.loc['reference:1984:GTGATTG:TTGA', 'Count']
-    assert 1 == mutations_df.loc['reference:866:GCCAGATCC:G', 'Count']
-    assert 3 == mutations_df.loc['reference:90:T:?', 'Count']
-    assert 2 == mutations_df.loc['reference:190:A:?', 'Count']
-    assert 1 == mutations_df.loc['reference:887:T:?', 'Count']
-
-    # Test only include unknown
-    mutations_summarizer = MutationFeaturesFromIndexSummarizer(connection=loaded_database_genomic_data_store.connection,
-                                                               ignore_annotations=True, include_unknown=True,
-                                                               include_present=False)
-    mutations_df = mutations_summarizer.summary(present_set)
-    mutations_df['Percent'] = mutations_df['Percent'].astype(int)  # Convert to int for easier comparison
-    mutations_df = mutations_df.sort_index()
-
-    assert 521 == len(mutations_df)
-    assert list(expected_df.columns) == list(mutations_df.columns)
-    assert 3 == mutations_df.loc['reference:90:T:?', 'Count']
-    assert 2 == mutations_df.loc['reference:190:A:?', 'Count']
-    assert 1 == mutations_df.loc['reference:887:T:?', 'Count']
-    assert 'reference:619:G:C' not in mutations_df
-
-    # Test with different id type where deletion is int instead of sequence
-    mutations_summarizer = MutationFeaturesFromIndexSummarizer(connection=loaded_database_genomic_data_store.connection,
-                                                               ignore_annotations=True, id_type='spdi')
-    mutations_df = mutations_summarizer.summary(present_set)
-    mutations_df['Percent'] = mutations_df['Percent'].astype(int)  # Convert to int for easier comparison
-    mutations_df = mutations_df.sort_index()
-
-    assert 112 - 1 == len(mutations_df)
-    assert list(expected_df.columns) == list(mutations_df.columns)
-    assert 2 == mutations_df.loc['reference:619:1:C', 'Count']
-    assert 2 == mutations_df.loc['reference:3063:1:ATGCAGC', 'Count']
-    assert 1 == mutations_df.loc['reference:1984:7:TTGA', 'Count']
-    assert 1 == mutations_df.loc['reference:866:9:G', 'Count']
-
-    # Test with different id type include unknown
-    mutations_summarizer = MutationFeaturesFromIndexSummarizer(connection=loaded_database_genomic_data_store.connection,
-                                                               ignore_annotations=True, id_type='spdi',
-                                                               include_unknown=True)
-    mutations_df = mutations_summarizer.summary(present_set)
-    mutations_df['Percent'] = mutations_df['Percent'].astype(int)  # Convert to int for easier comparison
-    mutations_df = mutations_df.sort_index()
-
-    assert 632 == len(mutations_df)
-    assert list(expected_df.columns) == list(mutations_df.columns)
-    assert 2 == mutations_df.loc['reference:619:1:C', 'Count']
-    assert 2 == mutations_df.loc['reference:3063:1:ATGCAGC', 'Count']
-    assert 1 == mutations_df.loc['reference:1984:7:TTGA', 'Count']
-    assert 1 == mutations_df.loc['reference:866:9:G', 'Count']
-    assert 3 == mutations_df.loc['reference:90:1:?', 'Count']
-    assert 2 == mutations_df.loc['reference:190:1:?', 'Count']
-    assert 1 == mutations_df.loc['reference:887:1:?', 'Count']
 
 
 def test_summary_unique(loaded_database_genomic_data_store: GenomicsDataIndex):
@@ -120,8 +48,8 @@ def test_summary_unique(loaded_database_genomic_data_store: GenomicsDataIndex):
     sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
     all_sample_ids = {s.id for s in db.get_session().query(Sample).all()}
 
-    mutations_summarizer = MutationFeaturesFromIndexSummarizer(connection=loaded_database_genomic_data_store.connection,
-                                                               ignore_annotations=True)
+    mutations_summarizer = MutationFeaturesComparator(connection=loaded_database_genomic_data_store.connection,
+                                                      ignore_annotations=True)
 
     dfA = pd.read_csv(snippy_all_dataframes['SampleA'], sep='\t')
     dfB = pd.read_csv(snippy_all_dataframes['SampleB'], sep='\t')
@@ -145,12 +73,8 @@ def test_summary_unique(loaded_database_genomic_data_store: GenomicsDataIndex):
 
     mutations_df['Percent'] = mutations_df['Percent'].astype(int)  # Convert to int for easier comparison
 
-    f = ['reference:461:AAAT:G']
-    warnings.warn(f'Removing {f} from expected until I can figure out how to properly handle these')
-    expected_df = expected_df.drop(f)
-
     assert len(expected_df) == len(mutations_df)
-    assert 45 == len(mutations_df)  # Check length against independently generated length
+    assert 46 == len(mutations_df)  # Check length against independently generated length
     assert list(expected_df.index) == list(mutations_df.index)
     assert list(expected_df['Count']) == list(mutations_df['Count'])
     assert list(expected_df['Total']) == list(mutations_df['Total'])
@@ -213,7 +137,7 @@ def test_summary_unique(loaded_database_genomic_data_store: GenomicsDataIndex):
 def test_summary_annotations(loaded_database_genomic_data_store_annotations: GenomicsDataIndex):
     db = loaded_database_genomic_data_store_annotations.connection.database
 
-    mutations_summarizer = MutationFeaturesFromIndexSummarizer(
+    mutations_summarizer = MutationFeaturesComparator(
         connection=loaded_database_genomic_data_store_annotations.connection,
         ignore_annotations=False)
 

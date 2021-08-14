@@ -1,5 +1,5 @@
 from genomics_data_index.api.query.GenomicsDataIndex import GenomicsDataIndex
-from genomics_data_index.api.query.features.MLSTFeaturesSummarizer import MLSTFeaturesSummarizer
+from genomics_data_index.api.query.features.MLSTFeaturesComparator import MLSTFeaturesComparator
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.db import Sample
 
@@ -9,7 +9,7 @@ def test_summary_all(loaded_database_genomic_data_store: GenomicsDataIndex):
     all_sample_ids = {s.id for s in db.get_session().query(Sample).all()}
     assert 9 == len(all_sample_ids)
 
-    mlst_summarizier = MLSTFeaturesSummarizer(connection=loaded_database_genomic_data_store.connection)
+    mlst_summarizier = MLSTFeaturesComparator(connection=loaded_database_genomic_data_store.connection)
 
     present_set = SampleSet(all_sample_ids)
 
@@ -38,7 +38,7 @@ def test_unique_summary(loaded_database_genomic_data_store: GenomicsDataIndex):
     sample_2014C_3599 = db.get_session().query(Sample).filter(Sample.name == '2014C-3599').one()
     assert 9 == len(all_sample_ids)
 
-    mlst_summarizier = MLSTFeaturesSummarizer(connection=loaded_database_genomic_data_store.connection)
+    mlst_summarizier = MLSTFeaturesComparator(connection=loaded_database_genomic_data_store.connection)
 
     # Test unique on all (should give me identical results to all since nothing is absent from the selection)
     present_set = SampleSet(all_sample_ids)
@@ -105,7 +105,7 @@ def test_unique_summary(loaded_database_genomic_data_store: GenomicsDataIndex):
     assert ['campylobacter', 'uncA', '6', 1, 2, 50] == summary_df.loc['mlst:campylobacter:uncA:6'].tolist()
 
     # Test unique only unknown
-    mlst_summarizier = MLSTFeaturesSummarizer(connection=loaded_database_genomic_data_store.connection,
+    mlst_summarizier = MLSTFeaturesComparator(connection=loaded_database_genomic_data_store.connection,
                                               include_present=False, include_unknown=True)
 
     present_set = SampleSet({sampleB.id, sample_2014D_0067.id})
@@ -120,7 +120,7 @@ def test_unique_summary(loaded_database_genomic_data_store: GenomicsDataIndex):
     assert ['campylobacter', 'uncA', '?', 1, 2, 50] == summary_df.loc['mlst:campylobacter:uncA:?'].tolist()
 
     # Test unique only unknown, restricted to specific scheme
-    mlst_summarizier = MLSTFeaturesSummarizer(connection=loaded_database_genomic_data_store.connection,
+    mlst_summarizier = MLSTFeaturesComparator(connection=loaded_database_genomic_data_store.connection,
                                               include_present=False, include_unknown=True,
                                               scheme='lmonocytogenes')
 
@@ -144,7 +144,7 @@ def test_summary_selections(loaded_database_genomic_data_store: GenomicsDataInde
     sample_CFSAN002349 = db.get_session().query(Sample).filter(Sample.name == 'CFSAN002349').one()
     sample_2014D_0067 = db.get_session().query(Sample).filter(Sample.name == '2014D-0067').one()
 
-    mlst_summarizer = MLSTFeaturesSummarizer(connection=loaded_database_genomic_data_store.connection)
+    mlst_summarizer = MLSTFeaturesComparator(connection=loaded_database_genomic_data_store.connection)
 
     # Test only single sample features
     present_set = SampleSet([sampleA.id])
@@ -210,7 +210,7 @@ def test_summary_selections(loaded_database_genomic_data_store: GenomicsDataInde
 
     # Test multiple schemes sample set but summarize for only a particular scheme
     present_set = SampleSet([sampleA.id, sampleB.id, sample_CFSAN002349.id, sample_2014D_0067.id])
-    mlst_summarizer = MLSTFeaturesSummarizer(connection=loaded_database_genomic_data_store.connection,
+    mlst_summarizer = MLSTFeaturesComparator(connection=loaded_database_genomic_data_store.connection,
                                              scheme='lmonocytogenes')
     summary_df = mlst_summarizer.summary(present_set)
 
@@ -228,7 +228,7 @@ def test_summary_selections(loaded_database_genomic_data_store: GenomicsDataInde
 
     # Test multiple schemes sample set but summarize for only a particular scheme/locus
     present_set = SampleSet([sampleA.id, sampleB.id, sample_CFSAN002349.id, sample_2014D_0067.id])
-    mlst_summarizer = MLSTFeaturesSummarizer(connection=loaded_database_genomic_data_store.connection,
+    mlst_summarizer = MLSTFeaturesComparator(connection=loaded_database_genomic_data_store.connection,
                                              scheme='lmonocytogenes', locus='bglA')
     summary_df = mlst_summarizer.summary(present_set)
 
@@ -242,7 +242,7 @@ def test_summary_selections(loaded_database_genomic_data_store: GenomicsDataInde
 
     # Test multiple schemes, include unknown
     present_set = SampleSet([sampleA.id, sampleB.id, sample_CFSAN002349.id, sample_2014D_0067.id])
-    mlst_summarizer = MLSTFeaturesSummarizer(connection=loaded_database_genomic_data_store.connection,
+    mlst_summarizer = MLSTFeaturesComparator(connection=loaded_database_genomic_data_store.connection,
                                              include_unknown=True)
     summary_df = mlst_summarizer.summary(present_set)
 
@@ -264,7 +264,7 @@ def test_summary_selections(loaded_database_genomic_data_store: GenomicsDataInde
 
     # Test multiple schemes, only unknown
     present_set = SampleSet([sampleA.id, sampleB.id, sample_CFSAN002349.id, sample_2014D_0067.id])
-    mlst_summarizer = MLSTFeaturesSummarizer(connection=loaded_database_genomic_data_store.connection,
+    mlst_summarizer = MLSTFeaturesComparator(connection=loaded_database_genomic_data_store.connection,
                                              include_present=False, include_unknown=True)
     summary_df = mlst_summarizer.summary(present_set)
 

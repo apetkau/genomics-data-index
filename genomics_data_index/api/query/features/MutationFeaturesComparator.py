@@ -2,12 +2,12 @@ from typing import List
 
 import pandas as pd
 
-from genomics_data_index.api.query.features.FeaturesSummarizer import FeaturesSummarizer
+from genomics_data_index.api.query.features.FeaturesComparator import FeaturesComparator
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
 from genomics_data_index.storage.SampleSet import SampleSet
 
 
-class MutationFeaturesSummarizer(FeaturesSummarizer):
+class MutationFeaturesComparator(FeaturesComparator):
 
     def __init__(self, connection: DataIndexConnection, ignore_annotations: bool = False,
                  ncores: int = 1, batch_size: int = 500, mutation_type: str = 'all'):

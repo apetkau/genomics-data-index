@@ -8,9 +8,9 @@ import pandas as pd
 from ete3 import Tree
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
-from genomics_data_index.api.query.features.MLSTFeaturesSummarizer import MLSTFeaturesSummarizer
-from genomics_data_index.api.query.features.MutationFeaturesFromIndexSummarizer import \
-    MutationFeaturesFromIndexSummarizer
+from genomics_data_index.api.query.features.MLSTFeaturesComparator import MLSTFeaturesComparator
+from genomics_data_index.api.query.features.MutationFeaturesFromIndexComparator import \
+    MutationFeaturesFromIndexComparator
 from genomics_data_index.api.query.impl.DataFrameSamplesQuery import DataFrameSamplesQuery
 from genomics_data_index.api.query.impl.QueriesCollection import QueriesCollection
 from genomics_data_index.api.query.impl.TreeSamplesQueryFactory import TreeSamplesQueryFactory
@@ -253,12 +253,12 @@ class SamplesQueryIndex(SamplesQuery):
                          include_present_features: bool = True, include_unknown_features: bool = False,
                          **kwargs) -> pd.DataFrame:
         if kind == 'mutations':
-            features_summarizier = MutationFeaturesFromIndexSummarizer(connection=self._query_connection,
+            features_summarizier = MutationFeaturesFromIndexComparator(connection=self._query_connection,
                                                                        include_unknown=include_unknown_features,
                                                                        include_present=include_present_features,
                                                                        **kwargs)
         elif kind == 'mlst':
-            features_summarizier = MLSTFeaturesSummarizer(connection=self._query_connection,
+            features_summarizier = MLSTFeaturesComparator(connection=self._query_connection,
                                                           include_unknown=include_unknown_features,
                                                           include_present=include_present_features,
                                                           **kwargs)

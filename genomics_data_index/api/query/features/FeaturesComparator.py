@@ -7,7 +7,7 @@ from genomics_data_index.configuration.connector.DataIndexConnection import Data
 from genomics_data_index.storage.SampleSet import SampleSet
 
 
-class FeaturesSummarizer(abc.ABC):
+class FeaturesComparator(abc.ABC):
     FEATURES_SELECTIONS = ['all', 'unique']
 
     def __init__(self, connection: DataIndexConnection):
