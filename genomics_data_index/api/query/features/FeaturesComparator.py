@@ -27,6 +27,30 @@ class FeaturesComparator(abc.ABC):
         return features_df
 
     @abc.abstractmethod
+    def features_comparison(self, selected_samples: SampleSet,
+                            sample_categories: List[SampleSet],
+                            category_names: List[str] = None,
+                            compare_kind: str = 'percent') -> pd.DataFrame:
+        """
+        Creates a dataframe which compares different categories of samples with each other with respect to features.
+
+        For example, if compare_kind == 'percent' and there are two sample_categories then
+        this will return dataframe like:
+
+        | Mutation     | Total | Category1 | Category2 |
+        | ref:100:A:T  | 10    | 50%       | 70%       |
+        | ref:200:CT:C | 10    | 100%      | 0%        |
+        | ...          | ...   | ...       | ...       |
+
+        :param selected_samples: The set of selected samples of which sample_categories will form subsets of.
+        :param sample_categories: The different categories to compare.
+        :param category_names: The names to use for the different categories (defaults to Category1, Category2, ...).
+        :param compare_kind: The type of data to compare in each category (either 'percent', or 'count').
+        :return: A dataframe comparing each category with respect to the differences in features.
+        """
+        pass
+
+    @abc.abstractmethod
     def summary(self, sample_set: SampleSet) -> pd.DataFrame:
         """
         Given a samples set, summarizes the features for all samples in this set.

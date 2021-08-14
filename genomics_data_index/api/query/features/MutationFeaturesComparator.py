@@ -25,6 +25,12 @@ class MutationFeaturesComparator(FeaturesComparator):
     def index_name(self) -> str:
         return 'Mutation'
 
+    def features_comparison(self, selected_samples: SampleSet,
+                            sample_categories: List[SampleSet],
+                            category_names: List[str] = None,
+                            compare_kind: str = 'percent') -> pd.DataFrame:
+        raise NotImplementedError()
+
     def summary(self, sample_set: SampleSet) -> pd.DataFrame:
         vs = self._connection.variation_service
         features_df = vs.count_mutations_in_sample_ids_dataframe(sample_ids=sample_set,
