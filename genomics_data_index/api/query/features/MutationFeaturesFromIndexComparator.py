@@ -3,6 +3,8 @@ from typing import List, Any, cast
 import pandas as pd
 
 from genomics_data_index.api.query.features.FeaturesFromIndexComparator import FeaturesFromIndexComparator
+from genomics_data_index.api.query.features.FeaturesFromIndexComparator import FeatureSamplesSummarizer
+from genomics_data_index.api.query.features.FeaturesFromIndexComparator import FeatureSamplesSingleCategorySummarizer
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
@@ -25,21 +27,23 @@ class MutationFeaturesFromIndexComparator(FeaturesFromIndexComparator):
 
     @property
     def summary_columns(self) -> List[str]:
-        return ['Sequence', 'Position', 'Deletion', 'Insertion', 'Count', 'Total', 'Percent']
+        return ['Sequence', 'Position', 'Deletion', 'Insertion'] + FeatureSamplesSingleCategorySummarizer.SUMMARY_NAMES
 
     @property
     def index_name(self) -> str:
         return 'Mutation'
 
     def _create_feature_sample_count_row(self, feature_id: str, feature: FeatureSamples,
-                                         sample_count: int, total: int) -> List[Any]:
+                                         feature_samples: SampleSet,
+                                         total: int,
+                                         feature_samples_summarizer: FeatureSamplesSummarizer) -> List[Any]:
         if isinstance(feature, NucleotideVariantsSamples):
             feature = cast(NucleotideVariantsSamples, feature)
-            percent = (sample_count / total) * 100
+            summary_data = feature_samples_summarizer.summary_data(samples=feature_samples, total=total)
             query_feature_id = QueryFeatureMutationSPDI(
                 feature_id)  # Use this since db deletion is an int (not sequence)
-            return [feature_id, feature.sequence, feature.position, query_feature_id.deletion, feature.insertion,
-                    sample_count, total, percent]
+            return [feature_id, feature.sequence, feature.position,
+                    query_feature_id.deletion, feature.insertion] + summary_data
         else:
             raise Exception(f'feature={feature} is not of type {NucleotideVariantsSamples.__name__}')
 
@@ -55,7 +59,9 @@ class MutationFeaturesFromIndexComparator(FeaturesFromIndexComparator):
                                                           include_unknown=self._include_unknown,
                                                           id_type=self._id_type)
 
-        features_df = self._create_summary_df(present_features, present_samples=sample_set)
+        samples_summarizier = FeatureSamplesSingleCategorySummarizer()
+        features_df = self._create_summary_df(present_features, present_samples=sample_set,
+                                              feature_samples_summarizer=samples_summarizier)
 
         return self._join_additional_columns(features_df)
 
