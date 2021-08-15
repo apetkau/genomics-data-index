@@ -1,3 +1,7 @@
+# 0.3.0
+
+* [api]: Added ability to generate a DataFrame of percents of features present in selected samples. To be used for comparing different categories of samples.
+
 # 0.2.0
 
 * [doc]: Updates to readme and other documentation.
