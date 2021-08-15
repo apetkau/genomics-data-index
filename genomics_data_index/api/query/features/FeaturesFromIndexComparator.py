@@ -47,7 +47,7 @@ class FeatureSamplesMultipleCategorySummarizer(FeatureSamplesSummarizer):
         self._sample_categories = sample_categories
 
         if category_names is None:
-            category_names = [f'Category{x}' for x in range(len(sample_categories))]
+            category_names = [f'Category{x + 1}' for x in range(len(sample_categories))]
         elif not isinstance(category_names, list):
             raise Exception(f'category_names={category_names} must be a list or None')
         elif len(category_names) != len(sample_categories):
