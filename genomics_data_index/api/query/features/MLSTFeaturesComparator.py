@@ -52,12 +52,11 @@ class MLSTFeaturesComparator(FeaturesFromIndexComparator):
         else:
             raise Exception(f'feature={feature} is not of type {MLSTAllelesSamples.__name__}')
 
-    def summary(self, sample_set: SampleSet) -> pd.DataFrame:
+    def _do_summary(self, sample_set: SampleSet, feature_samples_summarizer: FeatureSamplesSummarizer) -> pd.DataFrame:
         mlst_service: MLSTService = self._connection.mlst_service
         mlst_present_features = mlst_service.get_features(scheme=self._scheme,
                                                           locus=self._locus,
                                                           include_present=self._include_present,
                                                           include_unknown=self._include_unknown)
-        samples_summarizier = FeatureSamplesSingleCategorySummarizer()
         return self._create_summary_df(mlst_present_features, present_samples=sample_set,
-                                       feature_samples_summarizer=samples_summarizier)
+                                       feature_samples_summarizer=feature_samples_summarizer)

@@ -39,6 +39,47 @@ class FeatureSamplesSingleCategorySummarizer(FeatureSamplesSummarizer):
         return self.SUMMARY_NAMES
 
 
+class FeatureSamplesMultipleCategorySummarizer(FeatureSamplesSummarizer):
+
+    def __init__(self, sample_categories: List[SampleSet], category_names: List[str] = None,
+                 compare_kind: str = 'percent'):
+        super().__init__()
+        self._sample_categories = sample_categories
+
+        if category_names is None:
+            category_names = [f'Category{x}' for x in range(len(sample_categories))]
+        elif not isinstance(category_names, list):
+            raise Exception(f'category_names={category_names} must be a list or None')
+        elif len(category_names) != len(sample_categories):
+            raise Exception(f'sample_categories has {len(sample_categories)} elements but, '
+                            f'category_names has {len(category_names)} elements. These must be the same size.')
+
+        # I convert to string in case someone passes a list that's not composed of strings
+        self._summary_names = ['Total'] + [str(c) for c in category_names]
+
+        if compare_kind not in ['percent', 'count']:
+            raise Exception(f'compare_kind={compare_kind} must be one of "percent" or "count"')
+        elif compare_kind == 'percent':
+            self._use_percent = True
+        else:
+            self._use_percent = False
+
+    def summary_data(self, samples: SampleSet, total: int) -> List[Any]:
+        data = [total]
+        for sample_category in self._sample_categories:
+            samples_in_category = samples.intersection(sample_category)
+            category_count = len(samples_in_category)
+            if self._use_percent:
+                category_percent = (category_count / total) * 100
+                data.append(category_percent)
+            else:
+                data.append(category_count)
+        return data
+
+    def summary_names(self) -> List[str]:
+        return self._summary_names
+
+
 class FeaturesFromIndexComparator(FeaturesComparator, abc.ABC):
 
     def __init__(self, connection: DataIndexConnection):
@@ -63,28 +104,13 @@ class FeaturesFromIndexComparator(FeaturesComparator, abc.ABC):
                                   columns=[self.index_name] + self.feature_id_columns + feature_samples_summarizer.summary_names())
         return summary_df.set_index(self.index_name)
 
-    # def _create_summary_comparison_df(self, selected_samples: SampleSet,
-    #                                   sample_categories: List[SampleSet],
-    #                                   present_features: Dict[str, FeatureSamples],
-    #                                   category_names: List[str] = None,
-    #                                   compare_kind: str = 'percent') -> pd.DataFrame:
-    #     data = []
-    #     total = len(selected_samples)
-    #     for feature_id in present_features:
-    #         feature = present_features[feature_id]
-    #         samples_in_feature = selected_samples.intersection(feature.sample_ids)
-    #
-    #         for sample_category in sample_categories:
-    #             samples_in_feature_in_cateogory = samples_in_feature.intersection(sample_category)
-    #             sample_count = len(samples_in_feature_in_cateogory)
-    #             if sample_count > 0:
-    #                 data.append(self._create_feature_sample_count_row(feature_id,
-    #                                                                   feature=feature,
-    #                                                                   sample_count=sample_count,
-    #                                                                   total=total))
-    #     summary_df = pd.DataFrame(data,
-    #                               columns=[self.index_name] + self.summary_columns)
-    #     return summary_df.set_index(self.index_name)
+    def summary(self, sample_set: SampleSet) -> pd.DataFrame:
+        samples_summarizer = FeatureSamplesSingleCategorySummarizer()
+        return self._do_summary(sample_set=sample_set, feature_samples_summarizer=samples_summarizer)
+
+    @abc.abstractmethod
+    def _do_summary(self, sample_set: SampleSet, feature_samples_summarizer: FeatureSamplesSummarizer) -> pd.DataFrame:
+        pass
 
     @abc.abstractmethod
     def _create_feature_sample_count_row(self, feature_id: str, feature: FeatureSamples,

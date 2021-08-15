@@ -1,4 +1,4 @@
-from typing import List, Any, cast
+from typing import List, Dict, Any, cast
 
 import pandas as pd
 
@@ -57,15 +57,14 @@ class MutationFeaturesFromIndexComparator(FeaturesFromIndexComparator):
         else:
             return features_df
 
-    def summary(self, sample_set: SampleSet) -> pd.DataFrame:
+    def _do_summary(self, sample_set: SampleSet, feature_samples_summarizer: FeatureSamplesSummarizer) -> pd.DataFrame:
         variation_service: VariationService = self._connection.variation_service
         present_features = variation_service.get_features(include_present=self._include_present,
                                                           include_unknown=self._include_unknown,
                                                           id_type=self._id_type)
 
-        samples_summarizier = FeatureSamplesSingleCategorySummarizer()
         features_df = self._create_summary_df(present_features, present_samples=sample_set,
-                                              feature_samples_summarizer=samples_summarizier)
+                                              feature_samples_summarizer=feature_samples_summarizer)
 
         return self._join_additional_columns(features_df)
 
