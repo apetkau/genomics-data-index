@@ -273,6 +273,30 @@ class SamplesQueryIndex(SamplesQuery):
         else:
             raise Exception(f'selection=[{selection}] is unknown. Must be one of {self.FEATURES_SELECTIONS}')
 
+    def features_comparison(self, sample_categories: Union[List[SamplesQuery]],
+                            category_names: List[str] = None,
+                            kind: str = 'mutations',
+                            compare_kind: str = 'percent',
+                            **kwargs) -> pd.DataFrame:
+        if kind == 'mutations':
+            features_comparator = MutationFeaturesFromIndexComparator(connection=self._query_connection,
+                                                                      include_unknown=False,
+                                                                      include_present=True,
+                                                                      **kwargs)
+        elif kind == 'mlst':
+            features_comparator = MLSTFeaturesComparator(connection=self._query_connection,
+                                                         include_unknown=False,
+                                                         include_present=True,
+                                                         **kwargs)
+        else:
+            raise Exception(f'Unsupported value kind=[{kind}]. Must be one of {self.SUMMARY_FEATURES_KINDS}.')
+
+        sample_categories = [s.sample_set for s in sample_categories]
+        return features_comparator.features_comparison(selected_samples=self.sample_set,
+                                                       sample_categories=sample_categories,
+                                                       category_names=category_names,
+                                                       compare_kind=compare_kind)
+
     def tofeaturesset(self, kind: str = 'mutations', selection: str = 'all',
                       include_present_features: bool = True, include_unknown_features: bool = False) -> Set[str]:
         return set(self.features_summary(kind=kind, selection=selection, ignore_annotations=True,
