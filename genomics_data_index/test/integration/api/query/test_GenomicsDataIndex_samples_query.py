@@ -3629,9 +3629,10 @@ def test_summary_features_kindmlst(loaded_database_connection: DataIndexConnecti
 def test_features_comparison_kindmutations_annotations(loaded_database_connection_annotations: DataIndexConnection):
     q = query(loaded_database_connection_annotations)
 
-    # Test 2 categories counts
     category_10 = q.isin('SH10-014')
     category_14 = q.isin(['SH14-001', 'SH14-014'])
+
+    # Test 2 categories counts
     comparison_df = q.features_comparison(sample_categories=[category_10, category_14],
                                           category_names=['10_count', '14_count'],
                                           compare_kind='count')
@@ -3659,8 +3660,6 @@ def test_features_comparison_kindmutations_annotations(loaded_database_connectio
         'NC_011083:630556:G:A', 'ID_HGVS_GN.p']
 
     # Test 2 categories defaults
-    category_10 = q.isin('SH10-014')
-    category_14 = q.isin(['SH14-001', 'SH14-014'])
     comparison_df = q.features_comparison(sample_categories=[category_10, category_14])
     comparison_df = comparison_df.sort_index()
     comparison_df['Category1'] = comparison_df['Category1'].astype(int)  # Convert to int for easier comparison
@@ -3684,6 +3683,34 @@ def test_features_comparison_kindmutations_annotations(loaded_database_connectio
         'NC_011083:4555461:T:TC', 'ID_HGVS_GN.c']
     assert 0 == comparison_df.loc['NC_011083:630556:G:A', 'Category1']
     assert 66 == comparison_df.loc['NC_011083:630556:G:A', 'Category2']
+    assert 'hgvs_gn:NC_011083:SEHA_RS03545:p.Trp295*' == comparison_df.loc[
+        'NC_011083:630556:G:A', 'ID_HGVS_GN.p']
+
+    # Test 2 categories counts isin subset
+    comparison_df = q.isin(['SH14-001', 'SH14-014']).features_comparison(
+        sample_categories=[category_10, category_14])
+    comparison_df = comparison_df.sort_index()
+    comparison_df['Category1'] = comparison_df['Category1'].astype(int)  # Convert to int for easier comparison
+    comparison_df['Category2'] = comparison_df['Category2'].astype(int)  # Convert to int for easier comparison
+    assert comparison_df.index.name == 'Mutation'
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Total',
+            'Category1', 'Category2',
+            'Annotation', 'Annotation_Impact',
+            'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
+            'HGVS.c', 'HGVS.p', 'ID_HGVS.c', 'ID_HGVS.p', 'ID_HGVS_GN.c',
+            'ID_HGVS_GN.p'] == list(comparison_df.columns)
+    assert 117 == len(comparison_df)
+    assert {2} == set(comparison_df['Total'].tolist())
+    assert 0 == comparison_df.loc['NC_011083:140658:C:A', 'Category1']
+    assert 100 == comparison_df.loc['NC_011083:140658:C:A', 'Category2']
+    assert 'hgvs_gn:NC_011083:murF:p.Ala166Glu' == comparison_df.loc[
+        'NC_011083:140658:C:A', 'ID_HGVS_GN.p']
+    assert 0 == comparison_df.loc['NC_011083:4482211:C:A', 'Category1']
+    assert 50 == comparison_df.loc['NC_011083:4482211:C:A', 'Category2']
+    assert 'hgvs_gn:NC_011083:siiE:p.Arg1263Ser' == comparison_df.loc[
+        'NC_011083:4482211:C:A', 'ID_HGVS_GN.p']
+    assert 0 == comparison_df.loc['NC_011083:630556:G:A', 'Category1']
+    assert 100 == comparison_df.loc['NC_011083:630556:G:A', 'Category2']
     assert 'hgvs_gn:NC_011083:SEHA_RS03545:p.Trp295*' == comparison_df.loc[
         'NC_011083:630556:G:A', 'ID_HGVS_GN.p']
 
