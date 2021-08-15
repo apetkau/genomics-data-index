@@ -60,7 +60,7 @@ class FeaturesFromIndexComparator(FeaturesComparator, abc.ABC):
                                                                   total=total,
                                                                   feature_samples_summarizer=feature_samples_summarizer))
         summary_df = pd.DataFrame(data,
-                                  columns=[self.index_name] + self.summary_columns)
+                                  columns=[self.index_name] + self.feature_id_columns + feature_samples_summarizer.summary_names())
         return summary_df.set_index(self.index_name)
 
     # def _create_summary_comparison_df(self, selected_samples: SampleSet,
