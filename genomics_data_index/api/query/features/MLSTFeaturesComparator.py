@@ -26,7 +26,11 @@ class MLSTFeaturesComparator(FeaturesFromIndexComparator):
 
     @property
     def summary_columns(self) -> List[str]:
-        return ['Scheme', 'Locus', 'Allele'] + FeatureSamplesSingleCategorySummarizer.SUMMARY_NAMES
+        return self.feature_id_columns + FeatureSamplesSingleCategorySummarizer.SUMMARY_NAMES
+
+    @property
+    def feature_id_columns(self) -> List[str]:
+        return ['Scheme', 'Locus', 'Allele']
 
     @property
     def index_name(self) -> str:

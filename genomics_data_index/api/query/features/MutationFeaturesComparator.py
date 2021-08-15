@@ -19,7 +19,11 @@ class MutationFeaturesComparator(FeaturesComparator):
 
     @property
     def summary_columns(self) -> List[str]:
-        return ['Sequence', 'Position', 'Deletion', 'Insertion', 'Count', 'Total', 'Percent']
+        return self.feature_id_columns + ['Count', 'Total', 'Percent']
+
+    @property
+    def feature_id_columns(self) -> List[str]:
+        return ['Sequence', 'Position', 'Deletion', 'Insertion']
 
     @property
     def index_name(self) -> str:

@@ -15,6 +15,11 @@ class FeaturesComparator(abc.ABC):
 
     @property
     @abc.abstractmethod
+    def feature_id_columns(self) -> List[str]:
+        pass
+
+    @property
+    @abc.abstractmethod
     def summary_columns(self) -> List[str]:
         pass
 
