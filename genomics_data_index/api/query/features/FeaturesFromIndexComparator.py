@@ -108,6 +108,15 @@ class FeaturesFromIndexComparator(FeaturesComparator, abc.ABC):
         samples_summarizer = FeatureSamplesSingleCategorySummarizer()
         return self._do_summary(sample_set=sample_set, feature_samples_summarizer=samples_summarizer)
 
+    def features_comparison(self, selected_samples: SampleSet,
+                            sample_categories: List[SampleSet],
+                            category_names: List[str] = None,
+                            compare_kind: str = 'percent') -> pd.DataFrame:
+        samples_summarizer = FeatureSamplesMultipleCategorySummarizer(sample_categories=sample_categories,
+                                                                      category_names=category_names,
+                                                                      compare_kind=compare_kind)
+        return self._do_summary(sample_set=selected_samples, feature_samples_summarizer=samples_summarizer)
+
     @abc.abstractmethod
     def _do_summary(self, sample_set: SampleSet, feature_samples_summarizer: FeatureSamplesSummarizer) -> pd.DataFrame:
         pass

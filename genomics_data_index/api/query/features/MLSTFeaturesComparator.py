@@ -36,12 +36,6 @@ class MLSTFeaturesComparator(FeaturesFromIndexComparator):
     def index_name(self) -> str:
         return 'MLST Feature'
 
-    def features_comparison(self, selected_samples: SampleSet,
-                            sample_categories: List[SampleSet],
-                            category_names: List[str] = None,
-                            compare_kind: str = 'percent') -> pd.DataFrame:
-        raise NotImplementedError()
-
     def _create_feature_sample_count_row(self, feature_id: str, feature: FeatureSamples,
                                          feature_samples: SampleSet,
                                          total: int,

@@ -248,3 +248,49 @@ def test_summary_annotations(loaded_database_genomic_data_store_annotations: Gen
             'hgvs:NC_011083:n.4555461_4555462insC', 'NA',
             'hgvs_gn:NC_011083:n.4555461_4555462insC', 'NA'] == list(
         mutations_df.loc['NC_011083:4555461:T:TC'].fillna('NA'))
+
+
+def test_features_comparison(loaded_database_genomic_data_store: GenomicsDataIndex):
+        db = loaded_database_genomic_data_store.connection.database
+        sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+        sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+        sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+        all_sample_ids = {s.id for s in db.get_session().query(Sample).all()}
+
+        present_set = SampleSet(all_sample_ids)
+        mutations_summarizer = MutationFeaturesFromIndexComparator(
+            connection=loaded_database_genomic_data_store.connection,
+            ignore_annotations=True)
+
+        # Test single category of all
+        sample_categories = [present_set]
+        comparison_df = mutations_summarizer.features_comparison(selected_samples=present_set,
+                                                                 sample_categories=sample_categories,
+                                                                 category_names=['All_count'],
+                                                                 compare_kind='count')
+        comparison_df = comparison_df.sort_index()
+        assert comparison_df.index.name == 'Mutation'
+        assert ['Sequence', 'Position', 'Deletion', 'Insertion',
+                'Total', 'All_count'] == comparison_df.columns.tolist()
+        assert {9} == set(comparison_df['Total'].tolist())
+        assert 2 == comparison_df.loc['reference:619:G:C', 'All_count']
+        assert 1 == comparison_df.loc['reference:1708:ATGCTGTTCAATAC:A', 'All_count']
+        assert 2 == comparison_df.loc['reference:4693:C:CGA', 'All_count']
+
+        # Test two categories, one of A and one of BC
+        sample_categories = [SampleSet([sampleA.id]), SampleSet([sampleB.id, sampleC.id])]
+        comparison_df = mutations_summarizer.features_comparison(selected_samples=present_set,
+                                                                 sample_categories=sample_categories,
+                                                                 category_names=['A_count', 'BC_count'],
+                                                                 compare_kind='count')
+        comparison_df = comparison_df.sort_index()
+        assert comparison_df.index.name == 'Mutation'
+        assert ['Sequence', 'Position', 'Deletion', 'Insertion',
+                'Total', 'A_count', 'BC_count'] == comparison_df.columns.tolist()
+        assert {9} == set(comparison_df['Total'].tolist())
+        assert 0 == comparison_df.loc['reference:619:G:C', 'A_count']
+        assert 2 == comparison_df.loc['reference:619:G:C', 'BC_count']
+        assert 1 == comparison_df.loc['reference:1708:ATGCTGTTCAATAC:A', 'A_count']
+        assert 0 == comparison_df.loc['reference:1708:ATGCTGTTCAATAC:A', 'BC_count']
+        assert 0 == comparison_df.loc['reference:4693:C:CGA', 'A_count']
+        assert 2 == comparison_df.loc['reference:4693:C:CGA', 'BC_count']
