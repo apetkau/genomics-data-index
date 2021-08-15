@@ -444,3 +444,33 @@ def test_features_comparison_annotations(loaded_database_genomic_data_store_anno
     assert 'hgvs_gn:NC_011083:SEHA_RS03545:p.Trp295*' == comparison_df.loc[
         'NC_011083:630556:G:A', 'ID_HGVS_GN.p']
 
+
+    # Test 2 categories defaults: one of SH10-014 and one of SH14-001, SH14-014
+    sample_categories = [SampleSet([sample_sh10_014.id]), SampleSet([sample_sh14_001.id, sample_sh14_014.id])]
+    comparison_df = mutations_summarizer.features_comparison(selected_samples=present_set,
+                                                             sample_categories=sample_categories)
+    comparison_df = comparison_df.sort_index()
+    comparison_df['Category1'] = comparison_df['Category1'].astype(int)  # Convert to int for easier comparison
+    comparison_df['Category2'] = comparison_df['Category2'].astype(int)  # Convert to int for easier comparison
+    assert comparison_df.index.name == 'Mutation'
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Total',
+            'Category1', 'Category2',
+            'Annotation', 'Annotation_Impact',
+            'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
+            'HGVS.c', 'HGVS.p', 'ID_HGVS.c', 'ID_HGVS.p', 'ID_HGVS_GN.c',
+            'ID_HGVS_GN.p'] == list(comparison_df.columns)
+    assert 177 == len(comparison_df)
+    assert {3} == set(comparison_df['Total'].tolist())
+    assert 33 == comparison_df.loc['NC_011083:140658:C:A', 'Category1']
+    assert 66 == comparison_df.loc['NC_011083:140658:C:A', 'Category2']
+    assert 'hgvs_gn:NC_011083:murF:p.Ala166Glu' == comparison_df.loc[
+        'NC_011083:140658:C:A', 'ID_HGVS_GN.p']
+    assert 33 == comparison_df.loc['NC_011083:4555461:T:TC', 'Category1']
+    assert 0 == comparison_df.loc['NC_011083:4555461:T:TC', 'Category2']
+    assert 'hgvs_gn:NC_011083:n.4555461_4555462insC' == comparison_df.loc[
+        'NC_011083:4555461:T:TC', 'ID_HGVS_GN.c']
+    assert 0 == comparison_df.loc['NC_011083:630556:G:A', 'Category1']
+    assert 66 == comparison_df.loc['NC_011083:630556:G:A', 'Category2']
+    assert 'hgvs_gn:NC_011083:SEHA_RS03545:p.Trp295*' == comparison_df.loc[
+        'NC_011083:630556:G:A', 'ID_HGVS_GN.p']
+
