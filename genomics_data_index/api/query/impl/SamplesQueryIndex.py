@@ -274,7 +274,7 @@ class SamplesQueryIndex(SamplesQuery):
             raise Exception(f'selection=[{selection}] is unknown. Must be one of {self.FEATURES_SELECTIONS}')
 
     def features_comparison(self, sample_categories: Union[List[SamplesQuery]],
-                            category_prefixes: List[str] = None,
+                            category_names: List[str] = None,
                             kind: str = 'mutations',
                             compare_kind: str = 'percent',
                             **kwargs) -> pd.DataFrame:
@@ -294,7 +294,7 @@ class SamplesQueryIndex(SamplesQuery):
         sample_categories = [s.sample_set for s in sample_categories]
         return features_comparator.features_comparison(selected_samples=self.sample_set,
                                                        sample_categories=sample_categories,
-                                                       category_prefixes=category_prefixes,
+                                                       category_names=category_names,
                                                        compare_kind=compare_kind)
 
     def tofeaturesset(self, kind: str = 'mutations', selection: str = 'all',
