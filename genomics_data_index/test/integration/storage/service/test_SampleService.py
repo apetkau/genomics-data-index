@@ -46,9 +46,29 @@ def test_find_sample_name_ids(database, sample_service, variation_service):
     sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
     sampleC = database.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
 
-    sample_ids_list = sample_service.find_sample_name_ids(['SampleA', 'SampleB', 'SampleC'])
+    sample_ids_dict = sample_service.find_sample_name_ids(['SampleA', 'SampleB', 'SampleC'])
 
-    assert {sampleA.name: sampleA.id, sampleB.name: sampleB.id, sampleC.name: sampleC.id} == sample_ids_list
+    assert {sampleA.name: sampleA.id, sampleB.name: sampleB.id, sampleC.name: sampleC.id} == sample_ids_dict
+
+
+def test_find_sample_name_ids_select1(database, sample_service_select1, variation_service):
+    sampleA = database.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = database.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+
+    sample_ids_dict = sample_service_select1.find_sample_name_ids(['SampleA', 'SampleB', 'SampleC'])
+
+    assert {sampleA.name: sampleA.id, sampleB.name: sampleB.id, sampleC.name: sampleC.id} == sample_ids_dict
+
+
+def test_find_sample_name_ids_select2(database, sample_service_select2, variation_service):
+    sampleA = database.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = database.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+
+    sample_ids_dict = sample_service_select2.find_sample_name_ids(['SampleA', 'SampleB', 'SampleC'])
+
+    assert {sampleA.name: sampleA.id, sampleB.name: sampleB.id, sampleC.name: sampleC.id} == sample_ids_dict
 
 
 def test_count_samples_associated_with_reference(sample_service, variation_service):

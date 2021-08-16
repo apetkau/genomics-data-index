@@ -15,6 +15,7 @@ from genomics_data_index.storage.model.db import NucleotideVariantsSamples, Refe
     SampleMLSTAlleles, MLSTAllelesSamples, Sample
 from genomics_data_index.storage.model.db import SampleNucleotideVariation
 from genomics_data_index.storage.service import DatabaseConnection
+from genomics_data_index.storage.service import SQLQueryInBatcher
 
 logger = logging.getLogger(__name__)
 
@@ -27,8 +28,9 @@ class FeatureExplodeUnknownError(Exception):
 
 class SampleService:
 
-    def __init__(self, database_connection: DatabaseConnection):
+    def __init__(self, database_connection: DatabaseConnection, sql_select_limit: int):
         self._connection = database_connection
+        self._sql_select_limit = sql_select_limit
 
     def get_samples_with_variants(self, reference_name: str) -> List[Sample]:
         """
@@ -419,11 +421,15 @@ class SampleService:
         :param sample_names: The sample names to search.
         :return: A dictionary linking the sample names to IDs.
         """
-        sample_tuples = self._connection.get_session().query(Sample.name, Sample.id) \
-            .filter(Sample.name.in_(sample_names)) \
-            .all()
+        query_batcher = SQLQueryInBatcher(in_data=list(sample_names), batch_size=self._sql_select_limit)
 
-        return dict(sample_tuples)
+        def handle_batch(sample_names_batch: List[str]) -> Dict[str, int]:
+            sample_tuples = self._connection.get_session().query(Sample.name, Sample.id) \
+                .filter(Sample.name.in_(sample_names_batch)) \
+                .all()
+            return dict(sample_tuples)
+
+        return query_batcher.process(handle_batch)
 
     def get_sample_set_by_names(self, sample_names: Union[List[str], Set[str]],
                                 ignore_not_found: bool = False) -> SampleSet:

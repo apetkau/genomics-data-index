@@ -118,7 +118,7 @@ class DataIndexConnection:
         sql_select_limit = 500
 
         reference_service = ReferenceService(database, filesystem_storage.reference_dir)
-        sample_service = SampleService(database)
+        sample_service = SampleService(database, sql_select_limit=sql_select_limit)
         variation_service = VariationService(database_connection=database,
                                              variation_dir=filesystem_storage.variation_dir,
                                              reference_service=reference_service,

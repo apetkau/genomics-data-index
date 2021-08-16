@@ -141,7 +141,16 @@ def reference_service_with_snpeff_data(reference_service) -> ReferenceService:
 
 @pytest.fixture
 def sample_service(database):
-    return SampleService(database)
+    return SampleService(database, sql_select_limit=500)
+
+
+@pytest.fixture
+def sample_service_select1(database):
+    return SampleService(database, sql_select_limit=1)
+
+@pytest.fixture
+def sample_service_select2(database):
+    return SampleService(database, sql_select_limit=2)
 
 
 @pytest.fixture
