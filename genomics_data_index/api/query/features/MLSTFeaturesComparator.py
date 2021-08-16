@@ -2,9 +2,9 @@ from typing import List, Any
 
 import pandas as pd
 
-from genomics_data_index.api.query.features.FeaturesFromIndexComparator import FeaturesFromIndexComparator
-from genomics_data_index.api.query.features.FeaturesFromIndexComparator import FeatureSamplesSummarizer
 from genomics_data_index.api.query.features.FeaturesFromIndexComparator import FeatureSamplesSingleCategorySummarizer
+from genomics_data_index.api.query.features.FeaturesFromIndexComparator import FeatureSamplesSummarizer
+from genomics_data_index.api.query.features.FeaturesFromIndexComparator import FeaturesFromIndexComparator
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.db import FeatureSamples, MLSTAllelesSamples

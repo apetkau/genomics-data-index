@@ -324,8 +324,8 @@ def test_features_comparison(loaded_database_genomic_data_store: GenomicsDataInd
     assert {9} == set(comparison_df['Total'].tolist())
     assert {5} == set(comparison_df['lmonocytogenes_total'].tolist())
     assert {4} == set(comparison_df['other_total'].tolist())
-    assert 5 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1',  'lmonocytogenes_count']
-    assert 0 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1',  'other_count']
+    assert 5 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1', 'lmonocytogenes_count']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1', 'other_count']
     assert 3 == comparison_df.loc['mlst:lmonocytogenes:bglA:51', 'lmonocytogenes_count']
     assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:51', 'other_count']
     assert 2 == comparison_df.loc['mlst:lmonocytogenes:bglA:52', 'lmonocytogenes_count']
@@ -348,13 +348,14 @@ def test_features_comparison(loaded_database_genomic_data_store: GenomicsDataInd
     assert ['Scheme', 'Locus', 'Allele', 'Total',
             'lmonocytogenes_percent', 'other_percent',
             'lmonocytogenes_total', 'other_total'] == list(comparison_df.columns)
-    comparison_df['lmonocytogenes_percent'] = comparison_df['lmonocytogenes_percent'].astype(int)  # Convert to int for easier comparison
+    comparison_df['lmonocytogenes_percent'] = comparison_df['lmonocytogenes_percent'].astype(
+        int)  # Convert to int for easier comparison
     comparison_df['other_percent'] = comparison_df['other_percent'].astype(int)  # Convert to int for easier comparison
     assert {9} == set(comparison_df['Total'].tolist())
     assert {5} == set(comparison_df['lmonocytogenes_total'].tolist())
     assert {4} == set(comparison_df['other_total'].tolist())
-    assert 100 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1',  'lmonocytogenes_percent']
-    assert 0 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1',  'other_percent']
+    assert 100 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1', 'lmonocytogenes_percent']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1', 'other_percent']
     assert 60 == comparison_df.loc['mlst:lmonocytogenes:bglA:51', 'lmonocytogenes_percent']
     assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:51', 'other_percent']
     assert 40 == comparison_df.loc['mlst:lmonocytogenes:bglA:52', 'lmonocytogenes_percent']

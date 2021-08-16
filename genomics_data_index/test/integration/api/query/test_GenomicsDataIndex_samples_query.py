@@ -3665,8 +3665,10 @@ def test_features_comparison_kindmutations_annotations(loaded_database_connectio
     # Test 2 categories defaults
     comparison_df = q.features_comparison(sample_categories=[category_10, category_14])
     comparison_df = comparison_df.sort_index()
-    comparison_df['Category1_percent'] = comparison_df['Category1_percent'].astype(int)  # Convert to int for easier comparison
-    comparison_df['Category2_percent'] = comparison_df['Category2_percent'].astype(int)  # Convert to int for easier comparison
+    comparison_df['Category1_percent'] = comparison_df['Category1_percent'].astype(
+        int)  # Convert to int for easier comparison
+    comparison_df['Category2_percent'] = comparison_df['Category2_percent'].astype(
+        int)  # Convert to int for easier comparison
     assert comparison_df.index.name == 'Mutation'
     assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Total',
             'Category1_percent', 'Category2_percent',
@@ -3773,7 +3775,8 @@ def test_features_comparison_kindmlst(loaded_database_connection: DataIndexConne
     assert ['Scheme', 'Locus', 'Allele', 'Total',
             'lmonocytogenes_percent', 'other_percent',
             'lmonocytogenes_total', 'other_total'] == list(comparison_df.columns)
-    comparison_df['lmonocytogenes_percent'] = comparison_df['lmonocytogenes_percent'].astype(int)  # Convert to int for easier comparison
+    comparison_df['lmonocytogenes_percent'] = comparison_df['lmonocytogenes_percent'].astype(
+        int)  # Convert to int for easier comparison
     comparison_df['other_percent'] = comparison_df['other_percent'].astype(int)  # Convert to int for easier comparison
     assert {5} == set(comparison_df['Total'].tolist())
     assert {3} == set(comparison_df['lmonocytogenes_total'].tolist())
