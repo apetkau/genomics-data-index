@@ -74,7 +74,10 @@ class FeatureSamplesMultipleCategorySummarizer(FeatureSamplesSummarizer):
             samples_in_category = samples.intersection(sample_category)
             category_count = len(samples_in_category)
             if self._use_percent:
-                category_percent = (category_count / sample_category_total) * 100
+                if sample_category_total > 0:
+                    category_percent = (category_count / sample_category_total) * 100
+                else:
+                    category_percent = pd.NA
                 data.append(category_percent)
             else:
                 data.append(category_count)
