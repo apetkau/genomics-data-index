@@ -279,6 +279,7 @@ class SamplesQueryIndex(SamplesQuery):
                             categories_kind: str = 'samples',
                             kind: str = 'mutations',
                             unit: str = 'percent',
+                            category_samples_threshold: int = None,
                             **kwargs) -> pd.DataFrame:
         if kind == 'mutations':
             features_comparator = MutationFeaturesFromIndexComparator(connection=self._query_connection,

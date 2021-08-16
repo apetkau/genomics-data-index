@@ -188,6 +188,7 @@ class SamplesQuery(abc.ABC):
                             categories_kind: str = 'samples',
                             kind: str = 'mutations',
                             unit: str = 'percent',
+                            category_samples_threshold: int = None,
                             **kwargs) -> pd.DataFrame:
         """
         Creates a dataframe which compares different categories of samples with each other with respect to features.
@@ -217,6 +218,7 @@ class SamplesQuery(abc.ABC):
         :param categories_kind: The kind of category to use ("sample_set", or "dataframe").
         :param category_prefixes: The prefixes to use for the different categories (defaults to 1, 2, 3, ...).
         :param unit: The type of data to compare in each category (either 'percent', 'proportion', or 'count').
+        :param category_samples_threshold: A threshold on the number of samples in a category for it to be considered.
         :param **kwargs: Additional keyword arguments. Please see the documentation for the underlying implementation.
         :return: A dataframe comparing each category with respect to the differences in features.
         """

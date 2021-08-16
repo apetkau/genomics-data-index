@@ -86,6 +86,7 @@ class DataFrameSamplesQuery(WrappedSamplesQuery):
                             categories_kind: str = 'samples',
                             kind: str = 'mutations',
                             unit: str = 'percent',
+                            category_samples_threshold: int = None,
                             **kwargs) -> pd.DataFrame:
         if categories_kind == 'dataframe':
             if not isinstance(sample_categories, str):
@@ -109,6 +110,7 @@ class DataFrameSamplesQuery(WrappedSamplesQuery):
                                                            categories_kind='samples',
                                                            kind=kind,
                                                            unit=unit,
+                                                           category_samples_threshold=category_samples_threshold,
                                                            **kwargs)
         else:
             return super().features_comparison(sample_categories=sample_categories,
@@ -116,6 +118,7 @@ class DataFrameSamplesQuery(WrappedSamplesQuery):
                                                categories_kind=categories_kind,
                                                kind=kind,
                                                unit=unit,
+                                               category_samples_threshold=category_samples_threshold,
                                                **kwargs)
 
     def _isa_internal(self, data: Union[str, List[str], pd.Series, SamplesQuery, SampleSet], kind: str,
