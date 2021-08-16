@@ -317,6 +317,7 @@ class SamplesQueryIndex(SamplesQuery):
             return features_comparator.features_comparison(selected_samples=self.sample_set,
                                                            sample_categories=categories,
                                                            category_prefixes=category_prefixes,
+                                                           category_samples_threshold=category_samples_threshold,
                                                            unit=unit)
 
     def tofeaturesset(self, kind: str = 'mutations', selection: str = 'all',

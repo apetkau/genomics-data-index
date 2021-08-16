@@ -3901,6 +3901,91 @@ def test_features_comparison_kindmutations_with_dataframe(loaded_database_connec
     assert 'hgvs_gn:NC_011083:SEHA_RS03545:p.Trp295*' == comparison_df.loc[
         'NC_011083:630556:G:A', 'ID_HGVS_GN.p']
 
+    # Test 2 categories counts on dataframe query: dataframe column groupby, lower threshold
+    comparison_df = q.features_comparison(sample_categories='Color',
+                                          categories_kind='dataframe',
+                                          category_samples_threshold=1,
+                                          unit='count')
+    comparison_df = comparison_df.sort_index()
+    assert comparison_df.index.name == 'Mutation'
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Total',
+            'blue_count', 'red_count',
+            'blue_total', 'red_total',
+            'Annotation', 'Annotation_Impact',
+            'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
+            'HGVS.c', 'HGVS.p', 'ID_HGVS.c', 'ID_HGVS.p', 'ID_HGVS_GN.c',
+            'ID_HGVS_GN.p'] == list(comparison_df.columns)
+    assert 177 == len(comparison_df)
+    assert {3} == set(comparison_df['Total'].tolist())
+    assert {2} == set(comparison_df['red_total'].tolist())
+    assert {1} == set(comparison_df['blue_total'].tolist())
+    assert 1 == comparison_df.loc['NC_011083:140658:C:A', 'blue_count']
+    assert 2 == comparison_df.loc['NC_011083:140658:C:A', 'red_count']
+    assert 'hgvs_gn:NC_011083:murF:p.Ala166Glu' == comparison_df.loc[
+        'NC_011083:140658:C:A', 'ID_HGVS_GN.p']
+    assert 1 == comparison_df.loc['NC_011083:4555461:T:TC', 'blue_count']
+    assert 0 == comparison_df.loc['NC_011083:4555461:T:TC', 'red_count']
+    assert 'hgvs_gn:NC_011083:n.4555461_4555462insC' == comparison_df.loc[
+        'NC_011083:4555461:T:TC', 'ID_HGVS_GN.c']
+    assert 0 == comparison_df.loc['NC_011083:630556:G:A', 'blue_count']
+    assert 2 == comparison_df.loc['NC_011083:630556:G:A', 'red_count']
+    assert 'hgvs_gn:NC_011083:SEHA_RS03545:p.Trp295*' == comparison_df.loc[
+        'NC_011083:630556:G:A', 'ID_HGVS_GN.p']
+
+    # Test 2 categories counts on dataframe query: dataframe column groupby, higher threshold
+    comparison_df = q.features_comparison(sample_categories='Color',
+                                          categories_kind='dataframe',
+                                          category_samples_threshold=2,
+                                          unit='count')
+    comparison_df = comparison_df.sort_index()
+    assert comparison_df.index.name == 'Mutation'
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Total',
+            'red_count',
+            'red_total',
+            'Annotation', 'Annotation_Impact',
+            'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
+            'HGVS.c', 'HGVS.p', 'ID_HGVS.c', 'ID_HGVS.p', 'ID_HGVS_GN.c',
+            'ID_HGVS_GN.p'] == list(comparison_df.columns)
+    assert 177 == len(comparison_df)
+    assert {3} == set(comparison_df['Total'].tolist())
+    assert {2} == set(comparison_df['red_total'].tolist())
+    assert 2 == comparison_df.loc['NC_011083:140658:C:A', 'red_count']
+    assert 'hgvs_gn:NC_011083:murF:p.Ala166Glu' == comparison_df.loc[
+        'NC_011083:140658:C:A', 'ID_HGVS_GN.p']
+    assert 0 == comparison_df.loc['NC_011083:4555461:T:TC', 'red_count']
+    assert 'hgvs_gn:NC_011083:n.4555461_4555462insC' == comparison_df.loc[
+        'NC_011083:4555461:T:TC', 'ID_HGVS_GN.c']
+    assert 2 == comparison_df.loc['NC_011083:630556:G:A', 'red_count']
+    assert 'hgvs_gn:NC_011083:SEHA_RS03545:p.Trp295*' == comparison_df.loc[
+        'NC_011083:630556:G:A', 'ID_HGVS_GN.p']
+
+    # Test 2 categories counts on dataframe query: sample_query with threshold
+    comparison_df = q.features_comparison(sample_categories=[category_10, category_14],
+                                          category_prefixes=['10', '14'],
+                                          category_samples_threshold=2,
+                                          unit='count')
+    comparison_df = comparison_df.sort_index()
+    assert comparison_df.index.name == 'Mutation'
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Total',
+            '14_count',
+            '14_total',
+            'Annotation', 'Annotation_Impact',
+            'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
+            'HGVS.c', 'HGVS.p', 'ID_HGVS.c', 'ID_HGVS.p', 'ID_HGVS_GN.c',
+            'ID_HGVS_GN.p'] == list(comparison_df.columns)
+    assert 177 == len(comparison_df)
+    assert {3} == set(comparison_df['Total'].tolist())
+    assert {2} == set(comparison_df['14_total'].tolist())
+    assert 2 == comparison_df.loc['NC_011083:140658:C:A', '14_count']
+    assert 'hgvs_gn:NC_011083:murF:p.Ala166Glu' == comparison_df.loc[
+        'NC_011083:140658:C:A', 'ID_HGVS_GN.p']
+    assert 0 == comparison_df.loc['NC_011083:4555461:T:TC', '14_count']
+    assert 'hgvs_gn:NC_011083:n.4555461_4555462insC' == comparison_df.loc[
+        'NC_011083:4555461:T:TC', 'ID_HGVS_GN.c']
+    assert 2 == comparison_df.loc['NC_011083:630556:G:A', '14_count']
+    assert 'hgvs_gn:NC_011083:SEHA_RS03545:p.Trp295*' == comparison_df.loc[
+        'NC_011083:630556:G:A', 'ID_HGVS_GN.p']
+
     # Test 3 categories counts on dataframe query: dataframe column groupby
     df = pd.DataFrame([
         [sample_sh14_001.id, 'green'],
