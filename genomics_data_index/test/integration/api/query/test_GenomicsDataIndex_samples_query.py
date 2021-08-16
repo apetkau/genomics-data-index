@@ -3856,8 +3856,8 @@ def test_features_comparison_kindmutations_with_dataframe(loaded_database_connec
             'ID_HGVS_GN.p'] == list(comparison_df.columns)
     assert 177 == len(comparison_df)
     assert {3} == set(comparison_df['Total'].tolist())
-    assert {1} == set(comparison_df['red_total'].tolist())
-    assert {2} == set(comparison_df['blue_total'].tolist())
+    assert {2} == set(comparison_df['red_total'].tolist())
+    assert {1} == set(comparison_df['blue_total'].tolist())
     assert 1 == comparison_df.loc['NC_011083:140658:C:A', 'blue_count']
     assert 2 == comparison_df.loc['NC_011083:140658:C:A', 'red_count']
     assert 'hgvs_gn:NC_011083:murF:p.Ala166Glu' == comparison_df.loc[

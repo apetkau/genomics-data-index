@@ -100,12 +100,9 @@ class DataFrameSamplesQuery(WrappedSamplesQuery):
             aggregated_df = self._data_frame.groupby(sample_categories).agg({
                 'Sample ID': SampleSet,
             })
-            print(aggregated_df)
             aggregated_df = aggregated_df.sort_index()
             categories = aggregated_df['Sample ID'].tolist()  # list of SampleSets
             category_prefixes = aggregated_df.index.tolist() # List of category prefixes
-            print(category_prefixes)
-            print(categories)
 
             return self._wrapped_query.features_comparison(sample_categories=categories,
                                                            category_prefixes=category_prefixes,
