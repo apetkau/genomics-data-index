@@ -1,5 +1,6 @@
 import logging
 from pathlib import Path
+from typing import List, Callable, Dict, Any
 
 import pandas as pd
 from sqlalchemy import create_engine
@@ -8,6 +9,8 @@ from sqlalchemy.orm import sessionmaker
 import genomics_data_index.storage.model.db
 from genomics_data_index.storage.model.db import Base
 from genomics_data_index.storage.model.db.DatabasePathTranslator import DatabasePathTranslator
+from genomics_data_index.storage.util.ListSliceIter import ListSliceIter
+from genomics_data_index.storage.util import TRACE_LEVEL
 
 logger = logging.getLogger(__name__)
 
@@ -87,3 +90,25 @@ class EntityExistsError(Exception):
 
     def __init__(self, msg):
         super().__init__(msg)
+
+
+class SQLQueryInBatcher:
+
+    def __init__(self, in_data: List[str], batch_size: int):
+        self._batch_size = batch_size
+        self._in_data_size = len(in_data)
+        self._in_data_slicer = ListSliceIter(in_data, slice_size=batch_size)
+
+    def process(self, batch_func: Callable[[List[str]], Dict[Any, Any]]) -> Dict[Any, Any]:
+        processed_data = {}
+        slice_number = 0
+        logger.debug(f'Dividing up SQL query with IN statement for {self._in_data_size} data elements '
+                     f'into a maximum of {self._batch_size} elements per SQL query')
+        for in_slice in self._in_data_slicer.islice():
+            logger.log(TRACE_LEVEL, f'Processing slice={slice_number}')
+            slice_processed_data = batch_func(in_slice)
+            processed_data.update(slice_processed_data)
+            slice_number = slice_number + 1
+        logger.debug(f'Finished SQL query with IN statement for {self._in_data_size} data elements.')
+
+        return processed_data
