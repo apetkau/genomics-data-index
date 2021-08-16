@@ -24,7 +24,6 @@ class FeatureSamplesSummarizer(abc.ABC):
 
 
 class FeatureSamplesSingleCategorySummarizer(FeatureSamplesSummarizer):
-
     SUMMARY_NAMES = ['Count', 'Total', 'Percent']
 
     def __init__(self):
@@ -47,6 +46,13 @@ class FeatureSamplesMultipleCategorySummarizer(FeatureSamplesSummarizer):
         sample_categories_totals = [len(c) for c in sample_categories]
         self._sample_categories_and_totals = list(zip(sample_categories, sample_categories_totals))
 
+        if compare_kind not in ['percent', 'count']:
+            raise Exception(f'compare_kind={compare_kind} must be one of "percent" or "count"')
+        elif compare_kind == 'percent':
+            self._use_percent = True
+        else:
+            self._use_percent = False
+
         if category_prefixes is None:
             category_prefixes = [f'Category{x + 1}' for x in range(len(sample_categories))]
         elif not isinstance(category_prefixes, list):
@@ -54,16 +60,13 @@ class FeatureSamplesMultipleCategorySummarizer(FeatureSamplesSummarizer):
         elif len(category_prefixes) != len(sample_categories):
             raise Exception(f'sample_categories has {len(sample_categories)} elements but, '
                             f'category_names has {len(category_prefixes)} elements. These must be the same size.')
-
-        # I convert to string in case someone passes a list that's not composed of strings
-        self._summary_names = ['Total'] + [str(c) for c in category_prefixes]
-
-        if compare_kind not in ['percent', 'count']:
-            raise Exception(f'compare_kind={compare_kind} must be one of "percent" or "count"')
-        elif compare_kind == 'percent':
-            self._use_percent = True
         else:
-            self._use_percent = False
+            # I convert to string in case someone passes a list that's not composed of strings
+            category_prefixes = [str(c) for c in category_prefixes]
+
+        self._summary_names = ['Total'] \
+                              + [f'{c}_{compare_kind}' for c in category_prefixes] \
+                              + [f'{c}_total' for c in category_prefixes]
 
     def summary_data(self, samples: SampleSet, total: int) -> List[Any]:
         data = [total]
@@ -75,6 +78,11 @@ class FeatureSamplesMultipleCategorySummarizer(FeatureSamplesSummarizer):
                 data.append(category_percent)
             else:
                 data.append(category_count)
+
+        # Append totals for each category to end
+        for sample_category, sample_category_total in self._sample_categories_and_totals:
+            data.append(sample_category_total)
+
         return data
 
     def summary_names(self) -> List[str]:
@@ -102,7 +110,8 @@ class FeaturesFromIndexComparator(FeaturesComparator, abc.ABC):
                                                                   total=total,
                                                                   feature_samples_summarizer=feature_samples_summarizer))
         summary_df = pd.DataFrame(data,
-                                  columns=[self.index_name] + self.feature_id_columns + feature_samples_summarizer.summary_names())
+                                  columns=[
+                                              self.index_name] + self.feature_id_columns + feature_samples_summarizer.summary_names())
         return summary_df.set_index(self.index_name)
 
     def summary(self, sample_set: SampleSet) -> pd.DataFrame:
