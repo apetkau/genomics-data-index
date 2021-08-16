@@ -23,7 +23,7 @@ from genomics_data_index.storage.service.FeatureService import FeatureService
 from genomics_data_index.storage.service.ReferenceService import ReferenceService
 from genomics_data_index.storage.service.SampleService import SampleService
 from genomics_data_index.storage.util import TRACE_LEVEL
-from genomics_data_index.storage.util.ListSliceIter import ListSliceIter
+from genomics_data_index.storage.service import SQLQueryInBatcher
 from genomics_data_index.storage.util.SamplesProgressLogger import SamplesProgressLogger
 
 logger = logging.getLogger(__name__)
@@ -321,22 +321,12 @@ class VariationService(FeatureService):
         if isinstance(feature_ids, set):
             feature_ids = list(feature_ids)
 
-        feature_ids_slicer = ListSliceIter(feature_ids, slice_size=self._sql_select_limit)
+        query_batcher = SQLQueryInBatcher(in_data=feature_ids, batch_size=self._sql_select_limit)
 
-        feature_ids_to_feature_samples_dict = {}
-        logger.debug(f'Reading nucleotide/variation index for {len(feature_ids)} feature ids '
-                     f'dividing up into a maximum of {self._sql_select_limit} feature ids per SQL query')
-        slice_number = 0
-        for feature_ids_slice in feature_ids_slicer.islice():
-            logger.log(TRACE_LEVEL, f'Reading feature ids slice={slice_number}')
+        def handle_batch(feature_ids_batch: List[str]) -> Dict[str, FeatureSamples]:
             feature_samples = self._connection.get_session().query(NucleotideVariantsSamples) \
-                .filter(NucleotideVariantsSamples._spdi.in_(feature_ids_slice)) \
+                .filter(NucleotideVariantsSamples._spdi.in_(feature_ids_batch)) \
                 .all()
-            feature_ids_samples_subdict = {f.id: f for f in feature_samples}
-            feature_ids_to_feature_samples_dict.update(feature_ids_samples_subdict)
+            return {f.id: f for f in feature_samples}
 
-            slice_number = slice_number + 1
-        logger.debug(f'Finished reading nucleotide/variation index for {len(feature_ids)} feature ids,'
-                     f' found a total of {len(feature_ids_to_feature_samples_dict)} already in the database')
-
-        return feature_ids_to_feature_samples_dict
+        return query_batcher.process(handle_batch)
