@@ -297,7 +297,7 @@ def test_features_comparison(loaded_database_genomic_data_store: GenomicsDataInd
     comparison_df = mlst_summarizer.features_comparison(selected_samples=present_set,
                                                         sample_categories=sample_categories,
                                                         category_prefixes=['All'],
-                                                        compare_kind='count')
+                                                        unit='count')
     assert 24 == len(comparison_df)
     assert 'MLST Feature' == comparison_df.index.name
     assert ['Scheme', 'Locus', 'Allele', 'Total', 'All_count', 'All_total'] == list(comparison_df.columns)
@@ -315,7 +315,7 @@ def test_features_comparison(loaded_database_genomic_data_store: GenomicsDataInd
     comparison_df = mlst_summarizer.features_comparison(selected_samples=present_set,
                                                         sample_categories=sample_categories,
                                                         category_prefixes=['lmonocytogenes', 'other'],
-                                                        compare_kind='count')
+                                                        unit='count')
     assert 24 == len(comparison_df)
     assert 'MLST Feature' == comparison_df.index.name
     assert ['Scheme', 'Locus', 'Allele', 'Total',
@@ -342,7 +342,7 @@ def test_features_comparison(loaded_database_genomic_data_store: GenomicsDataInd
     comparison_df = mlst_summarizer.features_comparison(selected_samples=present_set,
                                                         sample_categories=sample_categories,
                                                         category_prefixes=['lmonocytogenes', 'other'],
-                                                        compare_kind='percent')
+                                                        unit='percent')
     assert 24 == len(comparison_df)
     assert 'MLST Feature' == comparison_df.index.name
     assert ['Scheme', 'Locus', 'Allele', 'Total',

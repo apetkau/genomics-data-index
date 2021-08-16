@@ -267,7 +267,7 @@ def test_features_comparison(loaded_database_genomic_data_store: GenomicsDataInd
     comparison_df = mutations_summarizer.features_comparison(selected_samples=present_set,
                                                              sample_categories=sample_categories,
                                                              category_prefixes=['All'],
-                                                             compare_kind='count')
+                                                             unit='count')
     comparison_df = comparison_df.sort_index()
     assert comparison_df.index.name == 'Mutation'
     assert ['Sequence', 'Position', 'Deletion', 'Insertion',
@@ -283,7 +283,7 @@ def test_features_comparison(loaded_database_genomic_data_store: GenomicsDataInd
     comparison_df = mutations_summarizer.features_comparison(selected_samples=present_set,
                                                              sample_categories=sample_categories,
                                                              category_prefixes=['A', 'BC'],
-                                                             compare_kind='count')
+                                                             unit='count')
     comparison_df = comparison_df.sort_index()
     assert comparison_df.index.name == 'Mutation'
     assert ['Sequence', 'Position', 'Deletion', 'Insertion',
@@ -303,7 +303,7 @@ def test_features_comparison(loaded_database_genomic_data_store: GenomicsDataInd
     comparison_df = mutations_summarizer.features_comparison(selected_samples=present_set,
                                                              sample_categories=sample_categories,
                                                              category_prefixes=['AB', 'C'],
-                                                             compare_kind='count')
+                                                             unit='count')
     comparison_df = comparison_df.sort_index()
     assert comparison_df.index.name == 'Mutation'
     assert ['Sequence', 'Position', 'Deletion', 'Insertion',
@@ -326,7 +326,7 @@ def test_features_comparison(loaded_database_genomic_data_store: GenomicsDataInd
     comparison_df = mutations_summarizer.features_comparison(selected_samples=selected_samples,
                                                              sample_categories=sample_categories,
                                                              category_prefixes=['A', 'B', 'C'],
-                                                             compare_kind='count')
+                                                             unit='count')
     comparison_df = comparison_df.sort_index()
     assert comparison_df.index.name == 'Mutation'
     assert ['Sequence', 'Position', 'Deletion', 'Insertion',
@@ -355,7 +355,7 @@ def test_features_comparison(loaded_database_genomic_data_store: GenomicsDataInd
     comparison_df = mutations_summarizer.features_comparison(selected_samples=present_set,
                                                              sample_categories=sample_categories,
                                                              category_prefixes=['A', 'BC'],
-                                                             compare_kind='percent')
+                                                             unit='percent')
     comparison_df = comparison_df.sort_index()
     comparison_df['A_percent'] = comparison_df['A_percent'].astype(int)  # Convert to int for easier comparison
     comparison_df['BC_percent'] = comparison_df['BC_percent'].astype(int)  # Convert to int for easier comparison
@@ -415,7 +415,7 @@ def test_features_comparison_annotations(loaded_database_genomic_data_store_anno
     comparison_df = mutations_summarizer.features_comparison(selected_samples=present_set,
                                                              sample_categories=sample_categories,
                                                              category_prefixes=['All'],
-                                                             compare_kind='count')
+                                                             unit='count')
     comparison_df = comparison_df.sort_index()
     assert comparison_df.index.name == 'Mutation'
     assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Total',
@@ -440,7 +440,7 @@ def test_features_comparison_annotations(loaded_database_genomic_data_store_anno
     comparison_df = mutations_summarizer.features_comparison(selected_samples=present_set,
                                                              sample_categories=sample_categories,
                                                              category_prefixes=['10', '14'],
-                                                             compare_kind='count')
+                                                             unit='count')
     comparison_df = comparison_df.sort_index()
     assert comparison_df.index.name == 'Mutation'
     assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Total',

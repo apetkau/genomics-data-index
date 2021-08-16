@@ -3635,7 +3635,7 @@ def test_features_comparison_kindmutations_annotations(loaded_database_connectio
     # Test 2 categories counts
     comparison_df = q.features_comparison(sample_categories=[category_10, category_14],
                                           category_prefixes=['10', '14'],
-                                          compare_kind='count')
+                                          unit='count')
     comparison_df = comparison_df.sort_index()
     assert comparison_df.index.name == 'Mutation'
     assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Total',
@@ -3698,7 +3698,7 @@ def test_features_comparison_kindmutations_annotations(loaded_database_connectio
     comparison_df = q.isin(['SH14-001', 'SH14-014']).features_comparison(
         sample_categories=[category_10, category_14],
         category_prefixes=['10', '14'],
-        compare_kind='percent'
+        unit='percent'
     )
     comparison_df = comparison_df.sort_index()
     comparison_df['14_percent'] = comparison_df['14_percent'].astype(int)  # Convert to int for easier comparison
@@ -3738,7 +3738,7 @@ def test_features_comparison_kindmlst(loaded_database_connection: DataIndexConne
     # Test two categories percent: one of lmonocytogenes and one of the rest
     comparison_df = q.features_comparison(sample_categories=[category_lmonocytogenes, category_other],
                                           category_prefixes=['lmonocytogenes', 'other'],
-                                          compare_kind='percent',
+                                          unit='percent',
                                           kind='mlst')
     assert 24 == len(comparison_df)
     assert 'MLST Feature' == comparison_df.index.name
@@ -3768,7 +3768,7 @@ def test_features_comparison_kindmlst(loaded_database_connection: DataIndexConne
     q_subset = q.isin(['SampleA', 'SampleB', 'SampleC', '2014C-3598', '2014C-3599'])
     comparison_df = q_subset.features_comparison(sample_categories=[category_lmonocytogenes, category_other],
                                                  category_prefixes=['lmonocytogenes', 'other'],
-                                                 compare_kind='percent',
+                                                 unit='percent',
                                                  kind='mlst')
     assert 16 == len(comparison_df)
     assert 'MLST Feature' == comparison_df.index.name

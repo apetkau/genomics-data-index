@@ -186,7 +186,7 @@ class SamplesQuery(abc.ABC):
     def features_comparison(self, sample_categories: Union[List[SamplesQuery]],
                             category_prefixes: List[str] = None,
                             kind: str = 'mutations',
-                            compare_kind: str = 'percent',
+                            unit: str = 'percent',
                             **kwargs) -> pd.DataFrame:
         """
         Creates a dataframe which compares different categories of samples with each other with respect to features.
@@ -213,7 +213,7 @@ class SamplesQuery(abc.ABC):
         :param sample_categories: The different categories to compare.
         :param kind: The kind of features to compare.
         :param category_prefixes: The prefixes to use for the different categories (defaults to 1, 2, 3, ...).
-        :param compare_kind: The type of data to compare in each category (either 'percent', or 'count').
+        :param unit: The type of data to compare in each category (either 'percent', or 'count').
         :param **kwargs: Additional keyword arguments. Please see the documentation for the underlying implementation.
         :return: A dataframe comparing each category with respect to the differences in features.
         """

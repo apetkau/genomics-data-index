@@ -35,7 +35,7 @@ class FeaturesComparator(abc.ABC):
     def features_comparison(self, selected_samples: SampleSet,
                             sample_categories: List[SampleSet],
                             category_prefixes: List[str] = None,
-                            compare_kind: str = 'percent') -> pd.DataFrame:
+                            unit: str = 'percent') -> pd.DataFrame:
         """
         Creates a dataframe which compares different categories of samples with each other with respect to features.
 
@@ -61,7 +61,7 @@ class FeaturesComparator(abc.ABC):
         :param selected_samples: The set of selected samples of which sample_categories will form subsets of.
         :param sample_categories: The different categories to compare.
         :param category_prefixes: The prefixes to use for the different categories (defaults to Category1, Category2, ...).
-        :param compare_kind: The type of data to compare in each category (either 'percent', or 'count').
+        :param unit: The type of data to compare in each category (either 'percent', or 'count').
         :return: A dataframe comparing each category with respect to the differences in features.
         """
         pass

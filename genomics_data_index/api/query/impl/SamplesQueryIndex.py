@@ -276,7 +276,7 @@ class SamplesQueryIndex(SamplesQuery):
     def features_comparison(self, sample_categories: Union[List[SamplesQuery]],
                             category_prefixes: List[str] = None,
                             kind: str = 'mutations',
-                            compare_kind: str = 'percent',
+                            unit: str = 'percent',
                             **kwargs) -> pd.DataFrame:
         if kind == 'mutations':
             features_comparator = MutationFeaturesFromIndexComparator(connection=self._query_connection,
@@ -295,7 +295,7 @@ class SamplesQueryIndex(SamplesQuery):
         return features_comparator.features_comparison(selected_samples=self.sample_set,
                                                        sample_categories=sample_categories,
                                                        category_prefixes=category_prefixes,
-                                                       compare_kind=compare_kind)
+                                                       unit=unit)
 
     def tofeaturesset(self, kind: str = 'mutations', selection: str = 'all',
                       include_present_features: bool = True, include_unknown_features: bool = False) -> Set[str]:
