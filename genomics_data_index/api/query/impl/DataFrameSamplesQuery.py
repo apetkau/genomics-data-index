@@ -102,7 +102,7 @@ class DataFrameSamplesQuery(WrappedSamplesQuery):
             })
             aggregated_df = aggregated_df.sort_index()
             categories = aggregated_df['Sample ID'].tolist()  # list of SampleSets
-            category_prefixes = aggregated_df.index.tolist() # List of category prefixes
+            category_prefixes = aggregated_df.index.tolist()  # List of category prefixes
 
             return self._wrapped_query.features_comparison(sample_categories=categories,
                                                            category_prefixes=category_prefixes,

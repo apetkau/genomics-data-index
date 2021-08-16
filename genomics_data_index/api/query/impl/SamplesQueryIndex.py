@@ -298,7 +298,8 @@ class SamplesQueryIndex(SamplesQuery):
                             f'Are you sure you have the correct instance of the query class: {self.__class__}?')
 
         if not isinstance(sample_categories, list):
-            raise Exception(f'sample_categories={sample_categories} must be a list (to iterate in a well-defined order)')
+            raise Exception(
+                f'sample_categories={sample_categories} must be a list (to iterate in a well-defined order)')
         else:
             categories = []
             for sample_category in sample_categories:
