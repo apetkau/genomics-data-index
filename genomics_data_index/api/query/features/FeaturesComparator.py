@@ -39,13 +39,24 @@ class FeaturesComparator(abc.ABC):
         """
         Creates a dataframe which compares different categories of samples with each other with respect to features.
 
-        For example, if compare_kind == 'percent' and there are two sample_categories then
+        For example, if kind=='mutations', compare_kind == 'percent' and there are two sample_categories then
         this will return dataframe like:
 
-        | Mutation     | Total | Category1 | Category2 |
-        | ref:100:A:T  | 10    | 50%       | 70%       |
-        | ref:200:CT:C | 10    | 100%      | 0%        |
-        | ...          | ...   | ...       | ...       |
+        | Mutation     | Total | Category1_percent | Category2_percent | Category1_total | Category2_total |
+        | ref:100:A:T  | 10    | 50%               | 100%              | 8               | 2               |
+        | ref:200:CT:C | 10    | 100%              | 0%                | 8               | 2               |
+        | ...          | ...   | ...               | ...               | 8               | 2               |
+
+        Here, "Category1_percent" is the percent of samples in Category1 that have this mutation/feature
+        (50% or 4 out of 8 samples in Category1). "Category2_percent" is the percent of samples in Category2 with the
+        feature (100% or 2 out of 2 samples in Category2).
+
+        "Category1_total" and "Category2_total" are the total samples in each category. "Total" is the total
+        samples in the overall query that form the universe from which we are defining "Category1" and "Category2".
+
+        Note: since categories are defined based on sample sets, there is no enforcement that categories are
+        mutually exclusive (that is, "Category1_total" + "Category2_total" will not always equal "Total"). This
+        is done on purpose in case the categories you wish to compare are not mutually exclusive.
 
         :param selected_samples: The set of selected samples of which sample_categories will form subsets of.
         :param sample_categories: The different categories to compare.
