@@ -101,7 +101,7 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
                             compare_kind: str = 'percent',
                             **kwargs) -> pd.DataFrame:
         return self._wrapped_query.features_comparison(sample_categories=sample_categories,
-                                                       category_names=category_prefixes,
+                                                       category_prefixes=category_prefixes,
                                                        kind=kind,
                                                        compare_kind=compare_kind,
                                                        **kwargs)
