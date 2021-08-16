@@ -46,12 +46,16 @@ class FeatureSamplesMultipleCategorySummarizer(FeatureSamplesSummarizer):
         sample_categories_totals = [len(c) for c in sample_categories]
         self._sample_categories_and_totals = list(zip(sample_categories, sample_categories_totals))
 
-        if compare_kind not in ['percent', 'count']:
-            raise Exception(f'compare_kind={compare_kind} must be one of "percent" or "count"')
+        self._use_count = False
+        self._factor = None
+        if compare_kind not in ['proportion', 'percent', 'count']:
+            raise Exception(f'compare_kind={compare_kind} must be one of "percent", "proportion", or "count"')
+        elif compare_kind == 'proportion':
+            self._factor = 1
         elif compare_kind == 'percent':
-            self._use_percent = True
+            self._factor = 100
         else:
-            self._use_percent = False
+            self._use_count = True
 
         if category_prefixes is None:
             category_prefixes = [f'Category{x + 1}' for x in range(len(sample_categories))]
@@ -73,14 +77,14 @@ class FeatureSamplesMultipleCategorySummarizer(FeatureSamplesSummarizer):
         for sample_category, sample_category_total in self._sample_categories_and_totals:
             samples_in_category = samples.intersection(sample_category)
             category_count = len(samples_in_category)
-            if self._use_percent:
+            if self._use_count:
+                data.append(category_count)
+            else:
                 if sample_category_total > 0:
-                    category_percent = (category_count / sample_category_total) * 100
+                    category_percent = (category_count / sample_category_total) * self._factor
                 else:
                     category_percent = pd.NA
                 data.append(category_percent)
-            else:
-                data.append(category_count)
 
         # Append totals for each category to end
         for sample_category, sample_category_total in self._sample_categories_and_totals:

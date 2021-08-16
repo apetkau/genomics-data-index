@@ -61,7 +61,7 @@ class FeaturesComparator(abc.ABC):
         :param selected_samples: The set of selected samples of which sample_categories will form subsets of.
         :param sample_categories: The different categories to compare.
         :param category_prefixes: The prefixes to use for the different categories (defaults to Category1, Category2, ...).
-        :param unit: The type of data to compare in each category (either 'percent', or 'count').
+        :param unit: The type of data to compare in each category (either 'percent', 'proportion', or 'count').
         :return: A dataframe comparing each category with respect to the differences in features.
         """
         pass
