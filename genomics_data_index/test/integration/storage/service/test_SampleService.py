@@ -175,6 +175,24 @@ def test_find_samples_by_ids_3_samples(sample_service, variation_service):
     assert {'SampleA', 'SampleB', 'SampleC'} == {s.name for s in samples}
 
 
+def test_find_samples_by_ids_3_samples_select1(sample_service_select1, variation_service):
+    sample_name_ids = sample_service_select1.find_sample_name_ids(['SampleA', 'SampleB', 'SampleC'])
+    sample_set = SampleSet(sample_ids=[sample_name_ids['SampleA'], sample_name_ids['SampleB'],
+                                       sample_name_ids['SampleC']])
+
+    samples = sample_service_select1.find_samples_by_ids(sample_set)
+    assert {'SampleA', 'SampleB', 'SampleC'} == {s.name for s in samples}
+
+
+def test_find_samples_by_ids_3_samples_select2(sample_service_select2, variation_service):
+    sample_name_ids = sample_service_select2.find_sample_name_ids(['SampleA', 'SampleB', 'SampleC'])
+    sample_set = SampleSet(sample_ids=[sample_name_ids['SampleA'], sample_name_ids['SampleB'],
+                                       sample_name_ids['SampleC']])
+
+    samples = sample_service_select2.find_samples_by_ids(sample_set)
+    assert {'SampleA', 'SampleB', 'SampleC'} == {s.name for s in samples}
+
+
 def test_find_samples_by_features_variations(database, sample_service, variation_service):
     sampleB = database.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
 

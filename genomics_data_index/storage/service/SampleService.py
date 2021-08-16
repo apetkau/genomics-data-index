@@ -222,9 +222,14 @@ class SampleService:
         if isinstance(sample_ids, SampleSet):
             sample_ids = list(sample_ids)
 
-        return self._connection.get_session().query(Sample) \
-            .filter(Sample.id.in_(sample_ids)) \
-            .all()
+        query_batcher = SQLQueryInBatcherList(in_data=sample_ids, batch_size=self._sql_select_limit)
+
+        def handle_batch(sample_ids_batch: List[int]) -> List[Sample]:
+            return self._connection.get_session().query(Sample) \
+                .filter(Sample.id.in_(sample_ids_batch)) \
+                .all()
+
+        return query_batcher.process(handle_batch)
 
     def get_variants_samples_by_variation_features(self, features: List[QueryFeatureMutation]) -> Dict[
         str, NucleotideVariantsSamples]:
