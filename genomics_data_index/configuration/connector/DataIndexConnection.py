@@ -115,7 +115,10 @@ class DataIndexConnection:
         database = DatabaseConnection(connection_string=database_connection,
                                       database_path_translator=dpt)
 
-        sql_select_limit = 500
+        # According to <https://www.sqlite.org/limits.html> (**Maximum Number Of Host Parameters In A Single
+        #  SQL Statement**), the maximum number of parameters is 32766 (for SQLite, but depends on version).
+        # TODO: Make this configurable
+        sql_select_limit = 32766
 
         reference_service = ReferenceService(database, filesystem_storage.reference_dir)
         sample_service = SampleService(database, sql_select_limit=sql_select_limit)
