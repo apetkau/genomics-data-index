@@ -3871,7 +3871,7 @@ def test_features_comparison_kindmutations_with_dataframe(loaded_database_connec
     assert 'hgvs_gn:NC_011083:SEHA_RS03545:p.Trp295*' == comparison_df.loc[
         'NC_011083:630556:G:A', 'ID_HGVS_GN.p']
 
-    # Test 2 categories counts on dataframe query: sample_set
+    # Test 2 categories counts on dataframe query: sample_query
     comparison_df = q.features_comparison(sample_categories=[category_10, category_14],
                                           category_prefixes=['10', '14'],
                                           unit='count')

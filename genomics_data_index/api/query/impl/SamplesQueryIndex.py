@@ -35,7 +35,7 @@ class SamplesQueryIndex(SamplesQuery):
     ISIN_TYPES = ['sample', 'samples', 'distance', 'distances']
     ISA_TYPES = ['sample', 'samples']
     DISTANCES_UNITS = ['kmer_jaccard']
-    CATEGORY_KINDS = ['sample_set']
+    CATEGORY_KINDS = ['samples']
 
     def __init__(self, connection: DataIndexConnection,
                  universe_set: SampleSet,
@@ -276,7 +276,7 @@ class SamplesQueryIndex(SamplesQuery):
 
     def features_comparison(self, sample_categories: Union[List[SamplesQuery], List[SampleSet], str],
                             category_prefixes: List[str] = None,
-                            categories_kind: str = 'sample_set',
+                            categories_kind: str = 'samples',
                             kind: str = 'mutations',
                             unit: str = 'percent',
                             **kwargs) -> pd.DataFrame:

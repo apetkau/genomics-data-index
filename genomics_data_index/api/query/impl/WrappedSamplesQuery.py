@@ -97,7 +97,7 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
 
     def features_comparison(self, sample_categories: Union[List[SamplesQuery], List[SampleSet], str],
                             category_prefixes: List[str] = None,
-                            categories_kind: str = 'sample_set',
+                            categories_kind: str = 'samples',
                             kind: str = 'mutations',
                             unit: str = 'percent',
                             **kwargs) -> pd.DataFrame:
