@@ -1,6 +1,6 @@
 import abc
-import math
 import logging
+import math
 from os import path, listdir
 from pathlib import Path
 from typing import List, Dict, Tuple, Generator
@@ -40,7 +40,7 @@ class NucleotideSampleDataPackageFactory(SampleDataPackageFactory, abc.ABC):
         pass
 
     def number_batches(self, batch_size: int) -> int:
-        return (int)(math.ceil(self.number_samples()/batch_size))
+        return (int)(math.ceil(self.number_samples() / batch_size))
 
     def _create_file_processors(self) -> Tuple[SampleFilesProcessor, VcfVariantsTableProcessorFactory]:
         if self._ncores > 1:

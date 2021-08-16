@@ -8,9 +8,9 @@ import pandas as pd
 from ete3 import Tree
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
-from genomics_data_index.api.query.features.MLSTFeaturesSummarizer import MLSTFeaturesSummarizer
-from genomics_data_index.api.query.features.MutationFeaturesFromIndexSummarizer import \
-    MutationFeaturesFromIndexSummarizer
+from genomics_data_index.api.query.features.MLSTFeaturesComparator import MLSTFeaturesComparator
+from genomics_data_index.api.query.features.MutationFeaturesFromIndexComparator import \
+    MutationFeaturesFromIndexComparator
 from genomics_data_index.api.query.impl.DataFrameSamplesQuery import DataFrameSamplesQuery
 from genomics_data_index.api.query.impl.QueriesCollection import QueriesCollection
 from genomics_data_index.api.query.impl.TreeSamplesQueryFactory import TreeSamplesQueryFactory
@@ -35,6 +35,7 @@ class SamplesQueryIndex(SamplesQuery):
     ISIN_TYPES = ['sample', 'samples', 'distance', 'distances']
     ISA_TYPES = ['sample', 'samples']
     DISTANCES_UNITS = ['kmer_jaccard']
+    CATEGORY_KINDS = ['samples']
 
     def __init__(self, connection: DataIndexConnection,
                  universe_set: SampleSet,
@@ -253,12 +254,12 @@ class SamplesQueryIndex(SamplesQuery):
                          include_present_features: bool = True, include_unknown_features: bool = False,
                          **kwargs) -> pd.DataFrame:
         if kind == 'mutations':
-            features_summarizier = MutationFeaturesFromIndexSummarizer(connection=self._query_connection,
+            features_summarizier = MutationFeaturesFromIndexComparator(connection=self._query_connection,
                                                                        include_unknown=include_unknown_features,
                                                                        include_present=include_present_features,
                                                                        **kwargs)
         elif kind == 'mlst':
-            features_summarizier = MLSTFeaturesSummarizer(connection=self._query_connection,
+            features_summarizier = MLSTFeaturesComparator(connection=self._query_connection,
                                                           include_unknown=include_unknown_features,
                                                           include_present=include_present_features,
                                                           **kwargs)
@@ -272,6 +273,52 @@ class SamplesQueryIndex(SamplesQuery):
                                                        other_set=self.universe_set.minus(self.sample_set))
         else:
             raise Exception(f'selection=[{selection}] is unknown. Must be one of {self.FEATURES_SELECTIONS}')
+
+    def features_comparison(self, sample_categories: Union[List[SamplesQuery], List[SampleSet], str],
+                            category_prefixes: List[str] = None,
+                            categories_kind: str = 'samples',
+                            kind: str = 'mutations',
+                            unit: str = 'percent',
+                            category_samples_threshold: int = None,
+                            **kwargs) -> pd.DataFrame:
+        if kind == 'mutations':
+            features_comparator = MutationFeaturesFromIndexComparator(connection=self._query_connection,
+                                                                      include_unknown=False,
+                                                                      include_present=True,
+                                                                      **kwargs)
+        elif kind == 'mlst':
+            features_comparator = MLSTFeaturesComparator(connection=self._query_connection,
+                                                         include_unknown=False,
+                                                         include_present=True,
+                                                         **kwargs)
+        else:
+            raise Exception(f'Unsupported value kind=[{kind}]. Must be one of {self.SUMMARY_FEATURES_KINDS}.')
+
+        if categories_kind not in self.CATEGORY_KINDS:
+            raise Exception(f'Unknown categories_kind={categories_kind}. Must be one of {self.CATEGORY_KINDS}. '
+                            f'Are you sure you have the correct instance of the query class: {self.__class__}?')
+
+        if not isinstance(sample_categories, list):
+            raise Exception(
+                f'sample_categories={sample_categories} must be a list (to iterate in a well-defined order)')
+        else:
+            categories = []
+            for sample_category in sample_categories:
+                if isinstance(sample_category, SamplesQuery):
+                    sample_set = sample_category.sample_set
+                elif isinstance(sample_category, SampleSet):
+                    sample_set = sample_category
+                else:
+                    raise Exception(f'Unknown type={type(sample_category)} in sample_cateogires={sample_categories}. '
+                                    f'Type must be either {SamplesQuery.__name__} or {SampleSet.__name__}')
+
+                categories.append(sample_set)
+
+            return features_comparator.features_comparison(selected_samples=self.sample_set,
+                                                           sample_categories=categories,
+                                                           category_prefixes=category_prefixes,
+                                                           category_samples_threshold=category_samples_threshold,
+                                                           unit=unit)
 
     def tofeaturesset(self, kind: str = 'mutations', selection: str = 'all',
                       include_present_features: bool = True, include_unknown_features: bool = False) -> Set[str]:
