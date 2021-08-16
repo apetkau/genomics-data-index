@@ -81,7 +81,7 @@ class DataFrameSamplesQuery(WrappedSamplesQuery):
 
         return super().isa(data=data, kind=kind, **kwargs)
 
-    def features_comparison(self, sample_categories: Union[List[SamplesQuery], str],
+    def features_comparison(self, sample_categories: Union[List[SamplesQuery], List[SampleSet], str],
                             category_prefixes: List[str] = None,
                             categories_kind: str = 'sample_set',
                             kind: str = 'mutations',

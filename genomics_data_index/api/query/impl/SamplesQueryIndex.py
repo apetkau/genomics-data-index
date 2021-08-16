@@ -274,7 +274,7 @@ class SamplesQueryIndex(SamplesQuery):
         else:
             raise Exception(f'selection=[{selection}] is unknown. Must be one of {self.FEATURES_SELECTIONS}')
 
-    def features_comparison(self, sample_categories: Union[List[SamplesQuery]],
+    def features_comparison(self, sample_categories: Union[List[SamplesQuery], List[SampleSet], str],
                             category_prefixes: List[str] = None,
                             categories_kind: str = 'sample_set',
                             kind: str = 'mutations',
@@ -297,11 +297,25 @@ class SamplesQueryIndex(SamplesQuery):
             raise Exception(f'Unknown categories_kind={categories_kind}. Must be one of {self.CATEGORY_KINDS}. '
                             f'Are you sure you have the correct instance of the query class: {self.__class__}?')
 
-        sample_categories = [s.sample_set for s in sample_categories]
-        return features_comparator.features_comparison(selected_samples=self.sample_set,
-                                                       sample_categories=sample_categories,
-                                                       category_prefixes=category_prefixes,
-                                                       unit=unit)
+        if not isinstance(sample_categories, list):
+            raise Exception(f'sample_categories={sample_categories} must be a list (to iterate in a well-defined order)')
+        else:
+            categories = []
+            for sample_category in sample_categories:
+                if isinstance(sample_category, SamplesQuery):
+                    sample_set = sample_category.sample_set
+                elif isinstance(sample_category, SampleSet):
+                    sample_set = sample_category
+                else:
+                    raise Exception(f'Unknown type={type(sample_category)} in sample_cateogires={sample_categories}. '
+                                    f'Type must be either {SamplesQuery.__name__} or {SampleSet.__name__}')
+
+                categories.append(sample_set)
+
+            return features_comparator.features_comparison(selected_samples=self.sample_set,
+                                                           sample_categories=categories,
+                                                           category_prefixes=category_prefixes,
+                                                           unit=unit)
 
     def tofeaturesset(self, kind: str = 'mutations', selection: str = 'all',
                       include_present_features: bool = True, include_unknown_features: bool = False) -> Set[str]:

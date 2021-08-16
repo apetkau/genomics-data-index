@@ -95,7 +95,7 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
                                                     include_unknown_features=include_unknown_features,
                                                     **kwargs)
 
-    def features_comparison(self, sample_categories: Union[List[SamplesQuery], str],
+    def features_comparison(self, sample_categories: Union[List[SamplesQuery], List[SampleSet], str],
                             category_prefixes: List[str] = None,
                             categories_kind: str = 'sample_set',
                             kind: str = 'mutations',
