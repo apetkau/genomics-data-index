@@ -9,8 +9,8 @@ from sqlalchemy.orm import sessionmaker
 import genomics_data_index.storage.model.db
 from genomics_data_index.storage.model.db import Base
 from genomics_data_index.storage.model.db.DatabasePathTranslator import DatabasePathTranslator
-from genomics_data_index.storage.util.ListSliceIter import ListSliceIter
 from genomics_data_index.storage.util import TRACE_LEVEL
+from genomics_data_index.storage.util.ListSliceIter import ListSliceIter
 
 logger = logging.getLogger(__name__)
 

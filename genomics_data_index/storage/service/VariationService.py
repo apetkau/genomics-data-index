@@ -19,10 +19,10 @@ from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeat
 from genomics_data_index.storage.model.db import NucleotideVariantsSamples, SampleNucleotideVariation, Sample, \
     FeatureSamples
 from genomics_data_index.storage.service import DatabaseConnection
+from genomics_data_index.storage.service import SQLQueryInBatcher
 from genomics_data_index.storage.service.FeatureService import FeatureService
 from genomics_data_index.storage.service.ReferenceService import ReferenceService
 from genomics_data_index.storage.service.SampleService import SampleService
-from genomics_data_index.storage.service import SQLQueryInBatcher
 from genomics_data_index.storage.util.SamplesProgressLogger import SamplesProgressLogger
 
 logger = logging.getLogger(__name__)

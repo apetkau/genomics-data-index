@@ -148,6 +148,7 @@ def sample_service(database):
 def sample_service_select1(database):
     return SampleService(database, sql_select_limit=1)
 
+
 @pytest.fixture
 def sample_service_select2(database):
     return SampleService(database, sql_select_limit=2)
