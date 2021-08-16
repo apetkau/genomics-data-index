@@ -21,7 +21,7 @@ def setup_services(root_dir: Path, database_file: Path) -> Dict[str, Any]:
     dpt = DatabasePathTranslator(filesystem_storage.root_dir)
     db_connection = DatabaseConnection(f'sqlite:///{database_file}', dpt)
     reference_service = ReferenceService(db_connection, filesystem_storage.reference_dir)
-    sample_service = SampleService(db_connection)
+    sample_service = SampleService(db_connection, sql_select_limit=500)
     variation_service = VariationService(database_connection=db_connection,
                                          reference_service=reference_service,
                                          sample_service=sample_service,
