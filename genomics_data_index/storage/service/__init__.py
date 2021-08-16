@@ -1,7 +1,7 @@
 import abc
 import logging
 from pathlib import Path
-from typing import List, Callable, Dict, Any, Union
+from typing import List, Callable, Any, Union
 
 import pandas as pd
 from sqlalchemy import create_engine
