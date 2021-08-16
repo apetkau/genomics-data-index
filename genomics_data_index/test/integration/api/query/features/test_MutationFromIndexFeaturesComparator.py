@@ -508,3 +508,72 @@ def test_features_comparison_annotations(loaded_database_genomic_data_store_anno
     assert 100 == comparison_df.loc['NC_011083:630556:G:A', 'Category2_percent']
     assert 'hgvs_gn:NC_011083:SEHA_RS03545:p.Trp295*' == comparison_df.loc[
         'NC_011083:630556:G:A', 'ID_HGVS_GN.p']
+
+    # Test 2 categories: one of SH10-014 and one of SH14-001, SH14-014, threshold below
+    sample_categories = [SampleSet([sample_sh10_014.id]), SampleSet([sample_sh14_001.id, sample_sh14_014.id])]
+    comparison_df = mutations_summarizer.features_comparison(selected_samples=present_set,
+                                                             sample_categories=sample_categories,
+                                                             category_prefixes=['10', '14'],
+                                                             category_samples_threshold=1,
+                                                             unit='count')
+    comparison_df = comparison_df.sort_index()
+    assert comparison_df.index.name == 'Mutation'
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Total',
+            '10_count', '14_count',
+            '10_total', '14_total',
+            'Annotation', 'Annotation_Impact',
+            'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
+            'HGVS.c', 'HGVS.p', 'ID_HGVS.c', 'ID_HGVS.p', 'ID_HGVS_GN.c',
+            'ID_HGVS_GN.p'] == list(comparison_df.columns)
+    assert 177 == len(comparison_df)
+    assert {3} == set(comparison_df['Total'].tolist())
+    assert {1} == set(comparison_df['10_total'].tolist())
+    assert {2} == set(comparison_df['14_total'].tolist())
+    assert 1 == comparison_df.loc['NC_011083:140658:C:A', '10_count']
+    assert 2 == comparison_df.loc['NC_011083:140658:C:A', '14_count']
+    assert 'hgvs_gn:NC_011083:murF:p.Ala166Glu' == comparison_df.loc[
+        'NC_011083:140658:C:A', 'ID_HGVS_GN.p']
+    assert 1 == comparison_df.loc['NC_011083:4555461:T:TC', '10_count']
+    assert 0 == comparison_df.loc['NC_011083:4555461:T:TC', '14_count']
+    assert 'hgvs_gn:NC_011083:n.4555461_4555462insC' == comparison_df.loc[
+        'NC_011083:4555461:T:TC', 'ID_HGVS_GN.c']
+    assert 0 == comparison_df.loc['NC_011083:4482211:C:A', '10_count']
+    assert 1 == comparison_df.loc['NC_011083:4482211:C:A', '14_count']
+    assert 'hgvs_gn:NC_011083:siiE:p.Arg1263Ser' == comparison_df.loc[
+        'NC_011083:4482211:C:A', 'ID_HGVS_GN.p']
+    assert 0 == comparison_df.loc['NC_011083:630556:G:A', '10_count']
+    assert 2 == comparison_df.loc['NC_011083:630556:G:A', '14_count']
+    assert 'hgvs_gn:NC_011083:SEHA_RS03545:p.Trp295*' == comparison_df.loc[
+        'NC_011083:630556:G:A', 'ID_HGVS_GN.p']
+
+    # Test 2 categories: one of SH10-014 and one of SH14-001, SH14-014, threshold above
+    sample_categories = [SampleSet([sample_sh10_014.id]), SampleSet([sample_sh14_001.id, sample_sh14_014.id])]
+    comparison_df = mutations_summarizer.features_comparison(selected_samples=present_set,
+                                                             sample_categories=sample_categories,
+                                                             category_prefixes=['10', '14'],
+                                                             category_samples_threshold=2,
+                                                             unit='count')
+    comparison_df = comparison_df.sort_index()
+    assert comparison_df.index.name == 'Mutation'
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Total',
+            '14_count',
+            '14_total',
+            'Annotation', 'Annotation_Impact',
+            'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
+            'HGVS.c', 'HGVS.p', 'ID_HGVS.c', 'ID_HGVS.p', 'ID_HGVS_GN.c',
+            'ID_HGVS_GN.p'] == list(comparison_df.columns)
+    assert 177 == len(comparison_df)
+    assert {3} == set(comparison_df['Total'].tolist())
+    assert {2} == set(comparison_df['14_total'].tolist())
+    assert 2 == comparison_df.loc['NC_011083:140658:C:A', '14_count']
+    assert 'hgvs_gn:NC_011083:murF:p.Ala166Glu' == comparison_df.loc[
+        'NC_011083:140658:C:A', 'ID_HGVS_GN.p']
+    assert 0 == comparison_df.loc['NC_011083:4555461:T:TC', '14_count']
+    assert 'hgvs_gn:NC_011083:n.4555461_4555462insC' == comparison_df.loc[
+        'NC_011083:4555461:T:TC', 'ID_HGVS_GN.c']
+    assert 1 == comparison_df.loc['NC_011083:4482211:C:A', '14_count']
+    assert 'hgvs_gn:NC_011083:siiE:p.Arg1263Ser' == comparison_df.loc[
+        'NC_011083:4482211:C:A', 'ID_HGVS_GN.p']
+    assert 2 == comparison_df.loc['NC_011083:630556:G:A', '14_count']
+    assert 'hgvs_gn:NC_011083:SEHA_RS03545:p.Trp295*' == comparison_df.loc[
+        'NC_011083:630556:G:A', 'ID_HGVS_GN.p']

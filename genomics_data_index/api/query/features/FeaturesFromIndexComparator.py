@@ -128,10 +128,23 @@ class FeaturesFromIndexComparator(FeaturesComparator, abc.ABC):
     def features_comparison(self, selected_samples: SampleSet,
                             sample_categories: List[SampleSet],
                             category_prefixes: List[str] = None,
+                            category_samples_threshold: int = None,
                             unit: str = 'percent') -> pd.DataFrame:
         sample_categories_in_selected = [c.intersection(selected_samples) for c in sample_categories]
-        samples_summarizer = FeatureSamplesMultipleCategorySummarizer(sample_categories=sample_categories_in_selected,
-                                                                      category_prefixes=category_prefixes,
+
+        if category_samples_threshold is not None:
+            filtered_categories = []
+            filtered_category_prefixes = []
+            for sample_category, prefix in zip(sample_categories_in_selected, category_prefixes):
+                if len(sample_category) >= category_samples_threshold:
+                    filtered_categories.append(sample_category)
+                    filtered_category_prefixes.append(prefix)
+        else:
+            filtered_categories = sample_categories_in_selected
+            filtered_category_prefixes = category_prefixes
+
+        samples_summarizer = FeatureSamplesMultipleCategorySummarizer(sample_categories=filtered_categories,
+                                                                      category_prefixes=filtered_category_prefixes,
                                                                       compare_kind=unit)
         return self._do_summary(sample_set=selected_samples, feature_samples_summarizer=samples_summarizer)
 
