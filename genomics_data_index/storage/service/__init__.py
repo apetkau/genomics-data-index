@@ -1,6 +1,7 @@
+import abc
 import logging
 from pathlib import Path
-from typing import List, Callable, Dict, Any
+from typing import List, Callable, Dict, Any, Union
 
 import pandas as pd
 from sqlalchemy import create_engine
@@ -92,23 +93,56 @@ class EntityExistsError(Exception):
         super().__init__(msg)
 
 
-class SQLQueryInBatcher:
+class SQLQueryInBatcher(abc.ABC):
 
-    def __init__(self, in_data: List[str], batch_size: int):
+    def __init__(self, in_data: Union[List[str], List[int]], batch_size: int):
         self._batch_size = batch_size
         self._in_data_size = len(in_data)
         self._in_data_slicer = ListSliceIter(in_data, slice_size=batch_size)
 
-    def process(self, batch_func: Callable[[List[str]], Dict[Any, Any]]) -> Dict[Any, Any]:
-        processed_data = {}
+    @abc.abstractmethod
+    def _do_update(self, processed_data: Any, slice_processed_data: Any) -> None:
+        pass
+
+    @abc.abstractmethod
+    def _initialize_processed_data(self) -> Any:
+        pass
+
+    def process(self, batch_func: Callable[[Union[List[str], List[int]]], Any]) -> Any:
+        processed_data = self._initialize_processed_data()
         slice_number = 0
         logger.debug(f'Dividing up SQL query with IN statement for {self._in_data_size} data elements '
                      f'into a maximum of {self._batch_size} elements per SQL query')
         for in_slice in self._in_data_slicer.islice():
             logger.log(TRACE_LEVEL, f'Processing slice={slice_number}')
             slice_processed_data = batch_func(in_slice)
-            processed_data.update(slice_processed_data)
+            self._do_update(processed_data=processed_data,
+                            slice_processed_data=slice_processed_data)
             slice_number = slice_number + 1
         logger.debug(f'Finished SQL query with IN statement for {self._in_data_size} data elements.')
 
         return processed_data
+
+
+class SQLQueryInBatcherDict(SQLQueryInBatcher):
+
+    def __init__(self, in_data: Union[List[str], List[int]], batch_size: int):
+        super().__init__(in_data=in_data, batch_size=batch_size)
+
+    def _initialize_processed_data(self) -> Any:
+        return {}
+
+    def _do_update(self, processed_data: Any, slice_processed_data: Any) -> None:
+        processed_data.update(slice_processed_data)
+
+
+class SQLQueryInBatcherList(SQLQueryInBatcher):
+
+    def __init__(self, in_data: Union[List[str], List[int]], batch_size: int):
+        super().__init__(in_data=in_data, batch_size=batch_size)
+
+    def _initialize_processed_data(self) -> Any:
+        return []
+
+    def _do_update(self, processed_data: Any, slice_processed_data: Any) -> None:
+        processed_data.extend(slice_processed_data)

@@ -15,7 +15,7 @@ from genomics_data_index.storage.model.db import NucleotideVariantsSamples, Refe
     SampleMLSTAlleles, MLSTAllelesSamples, Sample
 from genomics_data_index.storage.model.db import SampleNucleotideVariation
 from genomics_data_index.storage.service import DatabaseConnection
-from genomics_data_index.storage.service import SQLQueryInBatcher
+from genomics_data_index.storage.service import SQLQueryInBatcherDict, SQLQueryInBatcherList
 
 logger = logging.getLogger(__name__)
 
@@ -421,7 +421,7 @@ class SampleService:
         :param sample_names: The sample names to search.
         :return: A dictionary linking the sample names to IDs.
         """
-        query_batcher = SQLQueryInBatcher(in_data=list(sample_names), batch_size=self._sql_select_limit)
+        query_batcher = SQLQueryInBatcherDict(in_data=list(sample_names), batch_size=self._sql_select_limit)
 
         def handle_batch(sample_names_batch: List[str]) -> Dict[str, int]:
             sample_tuples = self._connection.get_session().query(Sample.name, Sample.id) \

@@ -19,7 +19,7 @@ from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeat
 from genomics_data_index.storage.model.db import NucleotideVariantsSamples, SampleNucleotideVariation, Sample, \
     FeatureSamples
 from genomics_data_index.storage.service import DatabaseConnection
-from genomics_data_index.storage.service import SQLQueryInBatcher
+from genomics_data_index.storage.service import SQLQueryInBatcherDict
 from genomics_data_index.storage.service.FeatureService import FeatureService
 from genomics_data_index.storage.service.ReferenceService import ReferenceService
 from genomics_data_index.storage.service.SampleService import SampleService
@@ -320,7 +320,7 @@ class VariationService(FeatureService):
         if isinstance(feature_ids, set):
             feature_ids = list(feature_ids)
 
-        query_batcher = SQLQueryInBatcher(in_data=feature_ids, batch_size=self._sql_select_limit)
+        query_batcher = SQLQueryInBatcherDict(in_data=feature_ids, batch_size=self._sql_select_limit)
 
         def handle_batch(feature_ids_batch: List[str]) -> Dict[str, FeatureSamples]:
             feature_samples = self._connection.get_session().query(NucleotideVariantsSamples) \
