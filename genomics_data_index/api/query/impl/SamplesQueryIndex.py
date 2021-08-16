@@ -35,6 +35,7 @@ class SamplesQueryIndex(SamplesQuery):
     ISIN_TYPES = ['sample', 'samples', 'distance', 'distances']
     ISA_TYPES = ['sample', 'samples']
     DISTANCES_UNITS = ['kmer_jaccard']
+    CATEGORY_KINDS = ['sample_set']
 
     def __init__(self, connection: DataIndexConnection,
                  universe_set: SampleSet,
@@ -291,6 +292,10 @@ class SamplesQueryIndex(SamplesQuery):
                                                          **kwargs)
         else:
             raise Exception(f'Unsupported value kind=[{kind}]. Must be one of {self.SUMMARY_FEATURES_KINDS}.')
+
+        if categories_kind not in self.CATEGORY_KINDS:
+            raise Exception(f'Unknown categories_kind={categories_kind}. Must be one of {self.CATEGORY_KINDS}. '
+                            f'Are you sure you have the correct instance of the query class: {self.__class__}?')
 
         sample_categories = [s.sample_set for s in sample_categories]
         return features_comparator.features_comparison(selected_samples=self.sample_set,
