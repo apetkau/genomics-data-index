@@ -346,15 +346,15 @@ def test_features_comparison(loaded_database_genomic_data_store: GenomicsDataInd
     comparison_df['lmonocytogenes_percent'] = comparison_df['lmonocytogenes_percent'].astype(int)  # Convert to int for easier comparison
     comparison_df['other_percent'] = comparison_df['other_percent'].astype(int)  # Convert to int for easier comparison
     assert {9} == set(comparison_df['Total'].tolist())
-    assert 55 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1',  'lmonocytogenes_percent']
+    assert 100 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1',  'lmonocytogenes_percent']
     assert 0 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1',  'other_percent']
-    assert 33 == comparison_df.loc['mlst:lmonocytogenes:bglA:51', 'lmonocytogenes_percent']
+    assert 60 == comparison_df.loc['mlst:lmonocytogenes:bglA:51', 'lmonocytogenes_percent']
     assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:51', 'other_percent']
-    assert 22 == comparison_df.loc['mlst:lmonocytogenes:bglA:52', 'lmonocytogenes_percent']
+    assert 40 == comparison_df.loc['mlst:lmonocytogenes:bglA:52', 'lmonocytogenes_percent']
     assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:52', 'other_percent']
     assert 0 == comparison_df.loc['mlst:ecoli:adk:100', 'lmonocytogenes_percent']
-    assert 22 == comparison_df.loc['mlst:ecoli:adk:100', 'other_percent']
+    assert 50 == comparison_df.loc['mlst:ecoli:adk:100', 'other_percent']
     assert 0 == comparison_df.loc['mlst:ecoli:recA:7', 'lmonocytogenes_percent']
-    assert 22 == comparison_df.loc['mlst:ecoli:recA:7', 'other_percent']
+    assert 50 == comparison_df.loc['mlst:ecoli:recA:7', 'other_percent']
     assert 0 == comparison_df.loc['mlst:campylobacter:uncA:6', 'lmonocytogenes_percent']
-    assert 11 == comparison_df.loc['mlst:campylobacter:uncA:6', 'other_percent']
+    assert 25 == comparison_df.loc['mlst:campylobacter:uncA:6', 'other_percent']

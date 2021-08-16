@@ -44,7 +44,8 @@ class FeatureSamplesMultipleCategorySummarizer(FeatureSamplesSummarizer):
     def __init__(self, sample_categories: List[SampleSet], category_prefixes: List[str] = None,
                  compare_kind: str = 'percent'):
         super().__init__()
-        self._sample_categories = sample_categories
+        sample_categories_totals = [len(c) for c in sample_categories]
+        self._sample_categories_and_totals = list(zip(sample_categories, sample_categories_totals))
 
         if category_prefixes is None:
             category_prefixes = [f'Category{x + 1}' for x in range(len(sample_categories))]
@@ -66,11 +67,11 @@ class FeatureSamplesMultipleCategorySummarizer(FeatureSamplesSummarizer):
 
     def summary_data(self, samples: SampleSet, total: int) -> List[Any]:
         data = [total]
-        for sample_category in self._sample_categories:
+        for sample_category, sample_category_total in self._sample_categories_and_totals:
             samples_in_category = samples.intersection(sample_category)
             category_count = len(samples_in_category)
             if self._use_percent:
-                category_percent = (category_count / total) * 100
+                category_percent = (category_count / sample_category_total) * 100
                 data.append(category_percent)
             else:
                 data.append(category_count)
@@ -112,7 +113,8 @@ class FeaturesFromIndexComparator(FeaturesComparator, abc.ABC):
                             sample_categories: List[SampleSet],
                             category_prefixes: List[str] = None,
                             compare_kind: str = 'percent') -> pd.DataFrame:
-        samples_summarizer = FeatureSamplesMultipleCategorySummarizer(sample_categories=sample_categories,
+        sample_categories_in_selected = [c.intersection(selected_samples) for c in sample_categories]
+        samples_summarizer = FeatureSamplesMultipleCategorySummarizer(sample_categories=sample_categories_in_selected,
                                                                       category_prefixes=category_prefixes,
                                                                       compare_kind=compare_kind)
         return self._do_summary(sample_set=selected_samples, feature_samples_summarizer=samples_summarizer)
