@@ -41,21 +41,21 @@ class FeatureSamplesSingleCategorySummarizer(FeatureSamplesSummarizer):
 
 class FeatureSamplesMultipleCategorySummarizer(FeatureSamplesSummarizer):
 
-    def __init__(self, sample_categories: List[SampleSet], category_names: List[str] = None,
+    def __init__(self, sample_categories: List[SampleSet], category_prefixes: List[str] = None,
                  compare_kind: str = 'percent'):
         super().__init__()
         self._sample_categories = sample_categories
 
-        if category_names is None:
-            category_names = [f'Category{x + 1}' for x in range(len(sample_categories))]
-        elif not isinstance(category_names, list):
-            raise Exception(f'category_names={category_names} must be a list or None')
-        elif len(category_names) != len(sample_categories):
+        if category_prefixes is None:
+            category_prefixes = [f'Category{x + 1}' for x in range(len(sample_categories))]
+        elif not isinstance(category_prefixes, list):
+            raise Exception(f'category_names={category_prefixes} must be a list or None')
+        elif len(category_prefixes) != len(sample_categories):
             raise Exception(f'sample_categories has {len(sample_categories)} elements but, '
-                            f'category_names has {len(category_names)} elements. These must be the same size.')
+                            f'category_names has {len(category_prefixes)} elements. These must be the same size.')
 
         # I convert to string in case someone passes a list that's not composed of strings
-        self._summary_names = ['Total'] + [str(c) for c in category_names]
+        self._summary_names = ['Total'] + [str(c) for c in category_prefixes]
 
         if compare_kind not in ['percent', 'count']:
             raise Exception(f'compare_kind={compare_kind} must be one of "percent" or "count"')
@@ -110,10 +110,10 @@ class FeaturesFromIndexComparator(FeaturesComparator, abc.ABC):
 
     def features_comparison(self, selected_samples: SampleSet,
                             sample_categories: List[SampleSet],
-                            category_names: List[str] = None,
+                            category_prefixes: List[str] = None,
                             compare_kind: str = 'percent') -> pd.DataFrame:
         samples_summarizer = FeatureSamplesMultipleCategorySummarizer(sample_categories=sample_categories,
-                                                                      category_names=category_names,
+                                                                      category_prefixes=category_prefixes,
                                                                       compare_kind=compare_kind)
         return self._do_summary(sample_set=selected_samples, feature_samples_summarizer=samples_summarizer)
 

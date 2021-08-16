@@ -296,7 +296,7 @@ def test_features_comparison(loaded_database_genomic_data_store: GenomicsDataInd
     sample_categories = [present_set]
     comparison_df = mlst_summarizer.features_comparison(selected_samples=present_set,
                                                         sample_categories=sample_categories,
-                                                        category_names=['All_count'],
+                                                        category_prefixes=['All_count'],
                                                         compare_kind='count')
     assert 24 == len(comparison_df)
     assert 'MLST Feature' == comparison_df.index.name
@@ -313,7 +313,7 @@ def test_features_comparison(loaded_database_genomic_data_store: GenomicsDataInd
     sample_categories = [SampleSet(lmonocytogenes), SampleSet(all_sample_ids - lmonocytogenes)]
     comparison_df = mlst_summarizer.features_comparison(selected_samples=present_set,
                                                         sample_categories=sample_categories,
-                                                        category_names=['lmonocytogenes_count', 'other_count'],
+                                                        category_prefixes=['lmonocytogenes_count', 'other_count'],
                                                         compare_kind='count')
     assert 24 == len(comparison_df)
     assert 'MLST Feature' == comparison_df.index.name
@@ -337,7 +337,7 @@ def test_features_comparison(loaded_database_genomic_data_store: GenomicsDataInd
     sample_categories = [SampleSet(lmonocytogenes), SampleSet(all_sample_ids - lmonocytogenes)]
     comparison_df = mlst_summarizer.features_comparison(selected_samples=present_set,
                                                         sample_categories=sample_categories,
-                                                        category_names=['lmonocytogenes_percent', 'other_percent'],
+                                                        category_prefixes=['lmonocytogenes_percent', 'other_percent'],
                                                         compare_kind='percent')
     assert 24 == len(comparison_df)
     assert 'MLST Feature' == comparison_df.index.name

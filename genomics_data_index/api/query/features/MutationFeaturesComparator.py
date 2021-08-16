@@ -31,7 +31,7 @@ class MutationFeaturesComparator(FeaturesComparator):
 
     def features_comparison(self, selected_samples: SampleSet,
                             sample_categories: List[SampleSet],
-                            category_names: List[str] = None,
+                            category_prefixes: List[str] = None,
                             compare_kind: str = 'percent') -> pd.DataFrame:
         raise NotImplementedError()
 
