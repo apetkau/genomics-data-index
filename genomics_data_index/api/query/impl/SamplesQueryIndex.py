@@ -275,6 +275,7 @@ class SamplesQueryIndex(SamplesQuery):
 
     def features_comparison(self, sample_categories: Union[List[SamplesQuery]],
                             category_prefixes: List[str] = None,
+                            categories_kind: str = 'sample_set',
                             kind: str = 'mutations',
                             unit: str = 'percent',
                             **kwargs) -> pd.DataFrame:

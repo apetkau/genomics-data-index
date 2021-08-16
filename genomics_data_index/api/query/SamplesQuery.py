@@ -185,6 +185,7 @@ class SamplesQuery(abc.ABC):
     @abc.abstractmethod
     def features_comparison(self, sample_categories: Union[List[SamplesQuery]],
                             category_prefixes: List[str] = None,
+                            categories_kind: str = 'sample_set',
                             kind: str = 'mutations',
                             unit: str = 'percent',
                             **kwargs) -> pd.DataFrame:
@@ -212,6 +213,7 @@ class SamplesQuery(abc.ABC):
 
         :param sample_categories: The different categories to compare.
         :param kind: The kind of features to compare.
+        :param categories_kind: The kind of category to use ("sample_set", or "dataframe").
         :param category_prefixes: The prefixes to use for the different categories (defaults to 1, 2, 3, ...).
         :param unit: The type of data to compare in each category (either 'percent', 'proportion', or 'count').
         :param **kwargs: Additional keyword arguments. Please see the documentation for the underlying implementation.
