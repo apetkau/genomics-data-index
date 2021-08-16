@@ -81,6 +81,46 @@ class DataFrameSamplesQuery(WrappedSamplesQuery):
 
         return super().isa(data=data, kind=kind, **kwargs)
 
+    def features_comparison(self, sample_categories: Union[List[SamplesQuery], str],
+                            category_prefixes: List[str] = None,
+                            categories_kind: str = 'sample_set',
+                            kind: str = 'mutations',
+                            unit: str = 'percent',
+                            **kwargs) -> pd.DataFrame:
+        if categories_kind == 'dataframe':
+            if not isinstance(sample_categories, str):
+                raise Exception(f'sample_categories={sample_categories} is type {type(sample_categories)}. '
+                                f'For category_kind={categories_kind}, sample_categories={sample_categories} '
+                                f'must be a string')
+            elif sample_categories not in self._data_frame:
+                raise Exception(f'sample_categories={sample_categories} is not one of the columns of the dataframe. '
+                                f'For category_kind={categories_kind}, sample_categories refers to a column in the '
+                                f'dataframe')
+
+            aggregated_df = self._data_frame.groupby(sample_categories).agg({
+                'Sample ID': SampleSet,
+            })
+            print(aggregated_df)
+            aggregated_df = aggregated_df.sort_index()
+            categories = aggregated_df['Sample ID'].tolist()  # list of SampleSets
+            category_prefixes = aggregated_df.index.tolist() # List of category prefixes
+            print(category_prefixes)
+            print(categories)
+
+            return self._wrapped_query.features_comparison(sample_categories=categories,
+                                                           category_prefixes=category_prefixes,
+                                                           categories_kind='sample_set',
+                                                           kind=kind,
+                                                           unit=unit,
+                                                           **kwargs)
+        else:
+            return super().features_comparison(sample_categories=sample_categories,
+                                               category_prefixes=category_prefixes,
+                                               categories_kind=categories_kind,
+                                               kind=kind,
+                                               unit=unit,
+                                               **kwargs)
+
     def _isa_internal(self, data: Union[str, List[str], pd.Series, SamplesQuery, SampleSet], kind: str,
                       isa_column: str = None,
                       regex: bool = False) -> SamplesQuery:

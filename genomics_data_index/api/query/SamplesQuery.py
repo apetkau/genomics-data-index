@@ -183,7 +183,7 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def features_comparison(self, sample_categories: Union[List[SamplesQuery]],
+    def features_comparison(self, sample_categories: Union[List[SamplesQuery], str],
                             category_prefixes: List[str] = None,
                             categories_kind: str = 'sample_set',
                             kind: str = 'mutations',
@@ -211,7 +211,8 @@ class SamplesQuery(abc.ABC):
         mutually exclusive (that is, "Category1_total" + "Category2_total" will not always equal "Total"). This
         is done on purpose in case the categories you wish to compare are not mutually exclusive.
 
-        :param sample_categories: The different categories to compare.
+        :param sample_categories: The different categories to compare. Either specify as lists of SampleQuery
+                                  or a string.
         :param kind: The kind of features to compare.
         :param categories_kind: The kind of category to use ("sample_set", or "dataframe").
         :param category_prefixes: The prefixes to use for the different categories (defaults to 1, 2, 3, ...).
