@@ -90,12 +90,12 @@ class DataFrameSamplesQuery(WrappedSamplesQuery):
         if categories_kind == 'dataframe':
             if not isinstance(sample_categories, str):
                 raise Exception(f'sample_categories={sample_categories} is type {type(sample_categories)}. '
-                                f'For category_kind={categories_kind}, sample_categories={sample_categories} '
+                                f'For categories_kind={categories_kind}, sample_categories={sample_categories} '
                                 f'must be a string')
             elif sample_categories not in self._data_frame:
                 raise Exception(f'sample_categories={sample_categories} is not one of the columns of the dataframe. '
-                                f'For category_kind={categories_kind}, sample_categories refers to a column in the '
-                                f'dataframe')
+                                f'For categories_kind={categories_kind}, sample_categories refers to a column in the '
+                                f'dataframe, which must be one of {self._data_frame.columns.tolist()}')
 
             aggregated_df = self._data_frame.groupby(sample_categories).agg({
                 'Sample ID': SampleSet,

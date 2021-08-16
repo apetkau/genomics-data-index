@@ -103,6 +103,7 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
                             **kwargs) -> pd.DataFrame:
         return self._wrapped_query.features_comparison(sample_categories=sample_categories,
                                                        category_prefixes=category_prefixes,
+                                                       categories_kind=categories_kind,
                                                        kind=kind,
                                                        unit=unit,
                                                        **kwargs)
