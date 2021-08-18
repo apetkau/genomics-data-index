@@ -3865,7 +3865,7 @@ def test_features_comparison_kindmutations_with_dataframe(loaded_database_connec
                                           unit='count')
     comparison_df = comparison_df.sort_index()
     assert comparison_df.index.name == 'Mutation'
-    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Total',
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type', 'Total',
             'blue_count', 'red_count',
             'blue_total', 'red_total',
             'Annotation', 'Annotation_Impact',
@@ -3880,14 +3880,17 @@ def test_features_comparison_kindmutations_with_dataframe(loaded_database_connec
     assert 2 == comparison_df.loc['NC_011083:140658:C:A', 'red_count']
     assert 'hgvs_gn:NC_011083:murF:p.Ala166Glu' == comparison_df.loc[
         'NC_011083:140658:C:A', 'ID_HGVS_GN.p']
+    assert 'SNP' == comparison_df.loc['NC_011083:140658:C:A', 'Type']
     assert 1 == comparison_df.loc['NC_011083:4555461:T:TC', 'blue_count']
     assert 0 == comparison_df.loc['NC_011083:4555461:T:TC', 'red_count']
     assert 'hgvs_gn:NC_011083:n.4555461_4555462insC' == comparison_df.loc[
         'NC_011083:4555461:T:TC', 'ID_HGVS_GN.c']
+    assert 'INDEL' == comparison_df.loc['NC_011083:4555461:T:TC', 'Type']
     assert 0 == comparison_df.loc['NC_011083:630556:G:A', 'blue_count']
     assert 2 == comparison_df.loc['NC_011083:630556:G:A', 'red_count']
     assert 'hgvs_gn:NC_011083:SEHA_RS03545:p.Trp295*' == comparison_df.loc[
         'NC_011083:630556:G:A', 'ID_HGVS_GN.p']
+    assert 'SNP' == comparison_df.loc['NC_011083:630556:G:A', 'Type']
 
     # Test 2 categories counts on dataframe query: sample_query
     comparison_df = q.features_comparison(sample_categories=[category_10, category_14],
@@ -3895,7 +3898,7 @@ def test_features_comparison_kindmutations_with_dataframe(loaded_database_connec
                                           unit='count')
     comparison_df = comparison_df.sort_index()
     assert comparison_df.index.name == 'Mutation'
-    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Total',
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type', 'Total',
             '10_count', '14_count',
             '10_total', '14_total',
             'Annotation', 'Annotation_Impact',
@@ -3926,7 +3929,7 @@ def test_features_comparison_kindmutations_with_dataframe(loaded_database_connec
                                           unit='count')
     comparison_df = comparison_df.sort_index()
     assert comparison_df.index.name == 'Mutation'
-    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Total',
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type', 'Total',
             'blue_count', 'red_count',
             'blue_total', 'red_total',
             'Annotation', 'Annotation_Impact',
@@ -3957,7 +3960,7 @@ def test_features_comparison_kindmutations_with_dataframe(loaded_database_connec
                                           unit='count')
     comparison_df = comparison_df.sort_index()
     assert comparison_df.index.name == 'Mutation'
-    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Total',
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type', 'Total',
             'red_count',
             'red_total',
             'Annotation', 'Annotation_Impact',
@@ -3984,7 +3987,7 @@ def test_features_comparison_kindmutations_with_dataframe(loaded_database_connec
                                           unit='count')
     comparison_df = comparison_df.sort_index()
     assert comparison_df.index.name == 'Mutation'
-    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Total',
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type', 'Total',
             '14_count',
             '14_total',
             'Annotation', 'Annotation_Impact',
@@ -4017,7 +4020,7 @@ def test_features_comparison_kindmutations_with_dataframe(loaded_database_connec
                                           unit='count')
     comparison_df = comparison_df.sort_index()
     assert comparison_df.index.name == 'Mutation'
-    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Total',
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type', 'Total',
             'blue_count', 'green_count', 'red_count',
             'blue_total', 'green_total', 'red_total',
             'Annotation', 'Annotation_Impact',
@@ -4058,7 +4061,7 @@ def test_features_comparison_kindmutations_with_dataframe(loaded_database_connec
                                           unit='count')
     comparison_df = comparison_df.sort_index()
     assert comparison_df.index.name == 'Mutation'
-    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Total',
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type', 'Total',
             'green_count', 'red_count',
             'green_total', 'red_total',
             'Annotation', 'Annotation_Impact',
