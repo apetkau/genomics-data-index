@@ -120,13 +120,12 @@ class CoreAlignmentService:
             raise Exception(f'align_type={align_type} and include_variants={include_variants}. Currently'
                             f' align_type=core only works with include_variants=["SNP"]')
         else:
-            include_expression = ''
             for variant in include_variants:
                 if variant not in self.INCLUDE_VARIANT_TYPES:
                     raise Exception(f'variant={variant} found in include_variants={include_variants}. '
                                     f'Only {self.INCLUDE_VARIANT_TYPES} are supported')
-                else:
-                    include_expression += f'(TYPE=="{variant}")'
+
+        include_expression = ' | '.join(f'(TYPE=="{variant}")' for variant in include_variants)
 
         sample_nucleotide_variants = self._variation_service.get_sample_nucleotide_variation(samples)
 
@@ -135,6 +134,7 @@ class CoreAlignmentService:
 
         start_time = time.time()
         logger.info(f'Started building alignment for {len(samples)} samples with include_variants={include_variants}')
+        logger.debug(f'Alignment include_expression={include_expression}')
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             # Write reference genome to file for creating consensus sequences
