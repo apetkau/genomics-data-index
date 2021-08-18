@@ -3,7 +3,7 @@ import logging
 import tempfile
 import time
 from pathlib import Path
-from typing import List, Dict, Generator, Tuple
+from typing import List, Dict, Generator
 
 from Bio import SeqIO
 from Bio.Align import MultipleSeqAlignment
@@ -208,6 +208,6 @@ class CoreAlignmentService:
 
         end_time = time.time()
         logger.info(f'Finished building alignment for {len(samples)} samples. '
-                     f'Took {end_time - start_time:0.2f} seconds')
+                    f'Took {end_time - start_time:0.2f} seconds')
 
         return snv_align
