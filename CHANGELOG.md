@@ -3,6 +3,7 @@
 * [api]: Added ability to generate a DataFrame of percents of features present in selected samples. To be used for comparing different categories of samples (0.3.0.dev1).
 * [api]: Added ability to handle joining larger dataframes to sets of samples by batching SQL queries (0.3.0.dev2).
 * [api]: Added mutation "Type" to the output of summaries/comparison table (0.3.0.dev3).
+* [analysis]: Added ability to select to include MNP as well as SNPs when building an alignment/tree (0.3.0.dev2).
 
 # 0.2.0
 
