@@ -149,7 +149,7 @@ def test_snippy_full_align_with_invalid_include_variants(core_alignment_service:
                                                    samples=['SampleA', 'SampleB', 'SampleC'],
                                                    align_type='full',
                                                    include_variants=['invalid'])
-    assert f"Only {['SNP', 'MNP', 'INDEL', 'OTHER']} are supported" in str(execinfo.value)
+    assert f"Only {['SNP', 'MNP']} are supported" in str(execinfo.value)
 
 
 def test_snippy_full_align(core_alignment_service, expected_alignment_full):
