@@ -44,9 +44,9 @@ class CoreAlignmentService:
         return MaskedGenomicRegions.union_all(masked_regions)
 
     def _get_core_positions(self, sample_variations: List[SampleNucleotideVariation],
-                            core_mask: MaskedGenomicRegions) -> Dict[str, List[int]]:
+                            core_mask: MaskedGenomicRegions, include_expression: str) -> Dict[str, List[int]]:
         variation_files = [v.nucleotide_variants_file for v in sample_variations]
-        union_df = VariationFile.union_all_files(variation_files, include_expression='TYPE="SNP"')
+        union_df = VariationFile.union_all_files(variation_files, include_expression=include_expression)
         union_df = union_df.sort_values(['CHROM', 'POS'])
         core_positions = {}
         for index, row in union_df.iterrows():
@@ -69,13 +69,14 @@ class CoreAlignmentService:
         return Seq(sequence_string)
 
     def _core_alignment_sequence_generator(self, reference_file: Path, core_positions: Dict[str, List[int]],
-                                           sample_variations: List[SampleNucleotideVariation]) -> Generator[
+                                           sample_variations: List[SampleNucleotideVariation],
+                                           include_expression: str) -> Generator[
         Dict[str, SeqRecord], None, None]:
         for sample_variation in sample_variations:
             seq_records = {}
 
             consensus_records = VariationFile(sample_variation.nucleotide_variants_file).consensus(
-                reference_file, include_expression='TYPE="SNP"')
+                reference_file, include_expression=include_expression)
             for record in consensus_records:
                 sequence_name = record.id
                 record.id = sample_variation.sample.name
@@ -87,14 +88,15 @@ class CoreAlignmentService:
             yield seq_records
 
     def _full_alignment_sequence_generator(self, reference_file: Path,
-                                           sample_variations: List[SampleNucleotideVariation]) -> Generator[
+                                           sample_variations: List[SampleNucleotideVariation],
+                                           include_expression: str) -> Generator[
         Dict[str, SeqRecord], None, None]:
         for sample_variation in sample_variations:
             seq_records = {}
 
             consensus_records = VariationFile(sample_variation.nucleotide_variants_file).consensus(
                 reference_file=reference_file,
-                include_expression='TYPE="SNP"',
+                include_expression=include_expression,
                 mask_file=sample_variation.masked_regions_file
             )
             for record in consensus_records:
@@ -104,9 +106,14 @@ class CoreAlignmentService:
             yield seq_records
 
     def construct_alignment(self, reference_name: str, samples: List[str] = None,
-                            include_reference: bool = True, align_type: str = 'core') -> MultipleSeqAlignment:
+                            include_reference: bool = True, align_type: str = 'core',
+                            include_expression: str = 'TYPE="SNP"') -> MultipleSeqAlignment:
         if samples is None or len(samples) == 0:
             samples = self._all_sample_names(reference_name)
+
+        if align_type == 'core' and include_expression != 'TYPE="SNP"':
+            raise Exception(f'align_type={align_type} and include_expression={include_expression}. Currently'
+                            f' align_type=core only works with include_expression=\'TYPE="SNP"\'')
 
         sample_nucleotide_variants = self._variation_service.get_sample_nucleotide_variation(samples)
 
@@ -126,12 +133,14 @@ class CoreAlignmentService:
             if align_type == 'core':
                 core_mask = self._create_core_mask(sample_nucleotide_variants)
                 core_positions = self._get_core_positions(sample_variations=sample_nucleotide_variants,
-                                                          core_mask=core_mask)
+                                                          core_mask=core_mask,
+                                                          include_expression=include_expression)
 
                 alignment_generator = self._core_alignment_sequence_generator(
                     reference_file=reference_file,
                     sample_variations=sample_nucleotide_variants,
-                    core_positions=core_positions
+                    core_positions=core_positions,
+                    include_expression=include_expression
                 )
 
                 if include_reference:
@@ -147,7 +156,8 @@ class CoreAlignmentService:
             elif align_type == 'full':
                 alignment_generator = self._full_alignment_sequence_generator(
                     reference_file=reference_file,
-                    sample_variations=sample_nucleotide_variants
+                    sample_variations=sample_nucleotide_variants,
+                    include_expression=include_expression
                 )
 
                 if include_reference:
