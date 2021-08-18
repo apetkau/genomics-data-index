@@ -135,6 +135,14 @@ def test_snippy_core_align(core_alignment_service: CoreAlignmentService, expecte
     compare_alignments(expected_alignment_core, actual_alignment)
 
 
+def test_snippy_core_align_with_other_include(core_alignment_service: CoreAlignmentService):
+    with pytest.raises(Exception) as execinfo:
+        core_alignment_service.construct_alignment(reference_name='genome',
+                                                                      samples=['SampleA', 'SampleB', 'SampleC'],
+                                                                      include_expression='TYPE="INDEL"')
+    assert 'Currently align_type=core only works with include_expression=\'TYPE="SNP"\'' in str(execinfo.value)
+
+
 def test_snippy_full_align(core_alignment_service, expected_alignment_full):
     actual_alignment = core_alignment_service.construct_alignment(reference_name='genome',
                                                                   samples=['SampleA', 'SampleB', 'SampleC'],
