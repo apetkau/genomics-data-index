@@ -134,7 +134,7 @@ class CoreAlignmentService:
 
         start_time = time.time()
         logger.info(f'Started building alignment for {len(samples)} samples with include_variants={include_variants}')
-        logger.debug(f'Alignment include_expression={include_expression}')
+        logger.debug(f'Alignment include_expression=\'{include_expression}\'')
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             # Write reference genome to file for creating consensus sequences

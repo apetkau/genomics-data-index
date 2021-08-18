@@ -7,7 +7,7 @@ from functools import partial
 from os import getcwd, mkdir
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import List, cast
+from typing import List, cast, Tuple
 
 import click
 import click_config_file
@@ -187,10 +187,11 @@ def load_variants_common(data_index_connection: DataIndexConnection, ncores: int
               default=None)
 def load_snippy(ctx, snippy_dir: str, reference_file: str, reference_name: str,
                 index_unknown: bool, sample_batch_size: int, build_tree: bool,
-                align_type: str, include_variants: List[str], extra_tree_params: str):
+                align_type: str, include_variants: Tuple[str], extra_tree_params: str):
     ncores = ctx.obj['ncores']
     project = get_project_exit_on_error(ctx)
     data_index_connection = project.create_connection()
+    include_variants = [v for v in include_variants]
 
     if reference_name is None and reference_file is None:
         logger.error(f'Neither --reference-file nor --reference-name are specified. Please define either '
@@ -237,10 +238,11 @@ def load_snippy(ctx, snippy_dir: str, reference_file: str, reference_name: str,
               default=None)
 def load_vcf(ctx, vcf_fofns: str, reference_file: str, reference_name: str,
              index_unknown: bool, sample_batch_size: int, build_tree: bool, align_type: str,
-             include_variants: List[str], extra_tree_params: str):
+             include_variants: Tuple[str], extra_tree_params: str):
     ncores = ctx.obj['ncores']
     project = get_project_exit_on_error(ctx)
     vcf_fofns = Path(vcf_fofns)
+    include_variants = [v for v in include_variants]
 
     if reference_name is None and reference_file is None:
         logger.error(f'Neither --reference-file nor --reference-name are specified. Please define either '
@@ -470,7 +472,7 @@ def input_command(absolute: bool, input_genomes_file: str, genomes: List[str]):
 @click.argument('genomes', type=click.Path(exists=True), nargs=-1)
 def analysis(ctx, reference_file: str, load_data: bool, index_unknown: bool, clean: bool, build_tree: bool,
              align_type: str,
-             include_variants: List[str],
+             include_variants: Tuple[str],
              extra_tree_params: str, use_conda: bool,
              include_mlst: bool, include_kmer: bool, ignore_snpeff: bool,
              reads_mincov: int, reads_minqual: int,
@@ -615,10 +617,11 @@ def build(ctx):
 @click.option('--sample', help='Sample to include in alignment (can list more than one).',
               multiple=True, type=str)
 def alignment(ctx, output_file: Path, reference_name: str, align_type: str,
-              include_variants: List[str], sample: List[str]):
+              include_variants: Tuple[str], sample: List[str]):
     genomics_index = get_genomics_index(ctx)
     references = genomics_index.reference_names()
     alignment_service = genomics_index.connection.alignment_service
+    include_variants = [v for v in include_variants]
 
     if reference_name not in references:
         logger.error(f'Reference genome [{reference_name}] does not exist')
@@ -659,11 +662,12 @@ supported_tree_build_types = ['iqtree']
               multiple=True, type=str)
 @click.option('--extra-params', help='Extra parameters to tree-building software',
               default=None)
-def tree(ctx, output_file: Path, reference_name: str, align_type: str, include_variants: List[str],
+def tree(ctx, output_file: Path, reference_name: str, align_type: str, include_variants: Tuple[str],
          tree_build_type: str, sample: List[str], extra_params: str):
     genomics_index = get_genomics_index(ctx)
     references = genomics_index.reference_names()
     ncores = ctx.obj['ncores']
+    include_variants = [v for v in include_variants]
 
     if reference_name not in references:
         logger.error(f'Reference genome [{reference_name}] does not exist')
@@ -710,11 +714,12 @@ def rebuild(ctx):
               type=click.Choice(CoreAlignmentService.INCLUDE_VARIANT_TYPES), multiple=True)
 @click.option('--extra-params', help='Extra parameters to tree-building software',
               default=None)
-def rebuild_tree(ctx, reference: List[str], align_type: str, include_variants: List[str], extra_params: str):
+def rebuild_tree(ctx, reference: List[str], align_type: str, include_variants: Tuple[str], extra_params: str):
     data_index_connection = get_project_exit_on_error(ctx).create_connection()
     tree_service = data_index_connection.tree_service
     reference_service = data_index_connection.reference_service
     ncores = ctx.obj['ncores']
+    include_variants = [v for v in include_variants]
 
     if len(reference) == 0:
         logger.error('Must define name of reference genome to use. '
