@@ -1,27 +1,27 @@
-Mutation	Sequence	Position	Deletion	Insertion
-reference:293:C:T	reference	293	C	T
-reference:506:G:C	reference	506	G	C
-reference:641:A:G	reference	641	A	G
-reference:674:A:T	reference	674	A	T
-reference:744:A:G	reference	744	A	G
-reference:1048:C:G	reference	1048	C	G
-reference:1120:G:C	reference	1120	G	C
-reference:1223:G:C	reference	1223	G	C
-reference:1330:G:T	reference	1330	G	T
-reference:1368:C:A	reference	1368	C	A
-reference:1684:A:C	reference	1684	A	C
-reference:1825:G:C	reference	1825	G	C
-reference:2030:C:G	reference	2030	C	G
-reference:2057:T:A	reference	2057	T	A
-reference:2076:A:T	reference	2076	A	T
-reference:2435:T:A	reference	2435	T	A
-reference:2552:A:G	reference	2552	A	G
-reference:2583:C:T	reference	2583	C	T
-reference:2887:C:A	reference	2887	C	A
-reference:2953:A:T	reference	2953	A	T
-reference:3326:G:C	reference	3326	G	C
-reference:4265:G:C	reference	4265	G	C
-reference:4382:A:C	reference	4382	A	C
-reference:4562:G:A	reference	4562	G	A
-reference:4588:C:A	reference	4588	C	A
-reference:4929:C:G	reference	4929	C	G
+Mutation	Sequence	Position	Deletion	Insertion	Type
+reference:293:C:T	reference	293	C	T	SNP
+reference:506:G:C	reference	506	G	C	SNP
+reference:641:A:G	reference	641	A	G	SNP
+reference:674:A:T	reference	674	A	T	SNP
+reference:744:A:G	reference	744	A	G	SNP
+reference:1048:C:G	reference	1048	C	G	SNP
+reference:1120:G:C	reference	1120	G	C	SNP
+reference:1223:G:C	reference	1223	G	C	SNP
+reference:1330:G:T	reference	1330	G	T	SNP
+reference:1368:C:A	reference	1368	C	A	SNP
+reference:1684:A:C	reference	1684	A	C	SNP
+reference:1825:G:C	reference	1825	G	C	SNP
+reference:2030:C:G	reference	2030	C	G	SNP
+reference:2057:T:A	reference	2057	T	A	SNP
+reference:2076:A:T	reference	2076	A	T	SNP
+reference:2435:T:A	reference	2435	T	A	SNP
+reference:2552:A:G	reference	2552	A	G	SNP
+reference:2583:C:T	reference	2583	C	T	SNP
+reference:2887:C:A	reference	2887	C	A	SNP
+reference:2953:A:T	reference	2953	A	T	SNP
+reference:3326:G:C	reference	3326	G	C	SNP
+reference:4265:G:C	reference	4265	G	C	SNP
+reference:4382:A:C	reference	4382	A	C	SNP
+reference:4562:G:A	reference	4562	G	A	SNP
+reference:4588:C:A	reference	4588	C	A	SNP
+reference:4929:C:G	reference	4929	C	G	SNP

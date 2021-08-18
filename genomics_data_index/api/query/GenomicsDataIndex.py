@@ -237,12 +237,13 @@ class GenomicsDataIndex:
         for mutation in mutations:
             seq, pos, deletion, insertion = NucleotideMutationTranslater.from_spdi(mutation,
                                                                                    convert_deletion=convert_deletion)
-            count = len(mutations[mutation].sample_ids)
-            data.append([mutation, seq, pos, deletion, insertion, count, total_samples])
+            mutation_obj = mutations[mutation]
+            count = len(mutation_obj.sample_ids)
+            data.append([mutation, seq, pos, deletion, insertion, mutation_obj.var_type, count, total_samples])
 
         features_df = pd.DataFrame(data,
                                    columns=['Mutation', 'Sequence', 'Position',
-                                            'Deletion', 'Insertion', 'Count', 'Total']).set_index('Mutation')
+                                            'Deletion', 'Insertion', 'Type', 'Count', 'Total']).set_index('Mutation')
 
         features_df['Percent'] = 100 * (features_df['Count'] / features_df['Total'])
 

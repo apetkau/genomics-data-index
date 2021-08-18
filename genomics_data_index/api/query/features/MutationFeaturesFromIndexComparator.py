@@ -31,7 +31,7 @@ class MutationFeaturesFromIndexComparator(FeaturesFromIndexComparator):
 
     @property
     def feature_id_columns(self) -> List[str]:
-        return ['Sequence', 'Position', 'Deletion', 'Insertion']
+        return ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type']
 
     @property
     def index_name(self) -> str:
@@ -47,7 +47,7 @@ class MutationFeaturesFromIndexComparator(FeaturesFromIndexComparator):
             query_feature_id = QueryFeatureMutationSPDI(
                 feature_id)  # Use this since db deletion is an int (not sequence)
             return [feature_id, feature.sequence, feature.position,
-                    query_feature_id.deletion, feature.insertion] + summary_data
+                    query_feature_id.deletion, feature.insertion, feature.var_type] + summary_data
         else:
             raise Exception(f'feature={feature} is not of type {NucleotideVariantsSamples.__name__}')
 

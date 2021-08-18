@@ -3259,6 +3259,7 @@ def test_summary_features_kindmutations(loaded_database_connection: DataIndexCon
         'Position': 'first',
         'Deletion': 'first',
         'Insertion': 'first',
+        'Type': 'first',
         'Mutation': 'count',
     }).rename(columns={'Mutation': 'Count'}).sort_index()
     expected_df['Total'] = 9
@@ -3276,6 +3277,7 @@ def test_summary_features_kindmutations(loaded_database_connection: DataIndexCon
     assert list(expected_df.index) == list(mutations_df.index)
     assert list(expected_df['Count']) == list(mutations_df['Count'])
     assert list(expected_df['Total']) == list(mutations_df['Total'])
+    assert list(expected_df['Type']) == list(mutations_df['Type'])
     assert math.isclose(100 * (2 / 9), mutations_df.loc['reference:619:G:C', 'Percent'])
 
     # Test including unknowns
@@ -3287,10 +3289,12 @@ def test_summary_features_kindmutations(loaded_database_connection: DataIndexCon
     assert 632 == len(mutations_df)
     assert list(expected_df.columns) == list(mutations_df.columns)
     assert 2 == mutations_df.loc['reference:619:G:C', 'Count']
+    assert 'SNP' == mutations_df.loc['reference:619:G:C', 'Type']
     assert 2 == mutations_df.loc['reference:3063:A:ATGCAGC', 'Count']
     assert 1 == mutations_df.loc['reference:1984:GTGATTG:TTGA', 'Count']
     assert 1 == mutations_df.loc['reference:866:GCCAGATCC:G', 'Count']
     assert 3 == mutations_df.loc['reference:90:T:?', 'Count']
+    assert 'UNKNOWN_MISSING' == mutations_df.loc['reference:90:T:?', 'Type']
     assert 2 == mutations_df.loc['reference:190:A:?', 'Count']
     assert 1 == mutations_df.loc['reference:887:T:?', 'Count']
 
@@ -3304,6 +3308,7 @@ def test_summary_features_kindmutations(loaded_database_connection: DataIndexCon
     assert 521 == len(mutations_df)
     assert list(expected_df.columns) == list(mutations_df.columns)
     assert 3 == mutations_df.loc['reference:90:T:?', 'Count']
+    assert 'UNKNOWN_MISSING' == mutations_df.loc['reference:90:T:?', 'Type']
     assert 2 == mutations_df.loc['reference:190:A:?', 'Count']
     assert 1 == mutations_df.loc['reference:887:T:?', 'Count']
     assert 'reference:619:G:C' not in mutations_df
@@ -3321,6 +3326,7 @@ def test_summary_features_kindmutations_unique(loaded_database_connection: DataI
         'Position': 'first',
         'Deletion': 'first',
         'Insertion': 'first',
+        'Type': 'first',
         'Mutation': 'count',
     }).rename(columns={'Mutation': 'Count'}).sort_index()
     expected_df['Total'] = 1
@@ -3340,6 +3346,7 @@ def test_summary_features_kindmutations_unique(loaded_database_connection: DataI
     assert list(expected_df.index) == list(mutations_df.index)
     assert list(expected_df['Count']) == list(mutations_df['Count'])
     assert list(expected_df['Total']) == list(mutations_df['Total'])
+    assert list(expected_df['Type']) == list(mutations_df['Type'])
     assert math.isclose(100 * (1 / 1), mutations_df.loc['reference:3656:CATT:C', 'Percent'])
 
     # Unique to B
@@ -3350,6 +3357,7 @@ def test_summary_features_kindmutations_unique(loaded_database_connection: DataI
         'Position': 'first',
         'Deletion': 'first',
         'Insertion': 'first',
+        'Type': 'first',
         'Mutation': 'count',
     }).rename(columns={'Mutation': 'Count'}).sort_index()
     expected_df['Total'] = 1
@@ -3361,6 +3369,7 @@ def test_summary_features_kindmutations_unique(loaded_database_connection: DataI
     assert len(expected_df) == len(mutations_df)
     assert list(expected_df.index) == list(mutations_df.index)
     assert list(expected_df['Count']) == list(mutations_df['Count'])
+    assert list(expected_df['Type']) == list(mutations_df['Type'])
     assert list(expected_df['Total']) == list(mutations_df['Total'])
     assert math.isclose(100 * (1 / 1), mutations_df.loc['reference:349:AAGT:A', 'Percent'])
 
@@ -3372,6 +3381,7 @@ def test_summary_features_kindmutations_unique(loaded_database_connection: DataI
         'Position': 'first',
         'Deletion': 'first',
         'Insertion': 'first',
+        'Type': 'first',
         'Mutation': 'count',
     }).rename(columns={'Mutation': 'Count'}).sort_index()
     expected_df['Total'] = 1
@@ -3384,6 +3394,7 @@ def test_summary_features_kindmutations_unique(loaded_database_connection: DataI
     assert list(expected_df.index) == list(mutations_df.index)
     assert list(expected_df['Count']) == list(mutations_df['Count'])
     assert list(expected_df['Total']) == list(mutations_df['Total'])
+    assert list(expected_df['Type']) == list(mutations_df['Type'])
     assert math.isclose(100 * (1 / 1), mutations_df.loc['reference:866:GCCAGATCC:G', 'Percent'])
 
     # Unique to BC
@@ -3394,6 +3405,7 @@ def test_summary_features_kindmutations_unique(loaded_database_connection: DataI
         'Position': 'first',
         'Deletion': 'first',
         'Insertion': 'first',
+        'Type': 'first',
         'Mutation': 'count',
     }).rename(columns={'Mutation': 'Count'}).sort_index()
     expected_df['Total'] = 2
@@ -3407,6 +3419,7 @@ def test_summary_features_kindmutations_unique(loaded_database_connection: DataI
     assert list(expected_df.index) == list(mutations_df.index)
     assert list(expected_df['Count']) == list(mutations_df['Count'])
     assert list(expected_df['Total']) == list(mutations_df['Total'])
+    assert list(expected_df['Type']) == list(mutations_df['Type'])
     assert math.isclose(100 * (2 / 2), mutations_df.loc['reference:619:G:C', 'Percent'])
     assert math.isclose(100 * (1 / 2), mutations_df.loc['reference:866:GCCAGATCC:G', 'Percent'])
     assert math.isclose(100 * (1 / 2), mutations_df.loc['reference:349:AAGT:A', 'Percent'])
@@ -3419,6 +3432,7 @@ def test_summary_features_kindmutations_unique(loaded_database_connection: DataI
         'Position': 'first',
         'Deletion': 'first',
         'Insertion': 'first',
+        'Type': 'first',
         'Mutation': 'count',
     }).rename(columns={'Mutation': 'Count'}).sort_index()
     expected_df['Total'] = 3
@@ -3436,6 +3450,7 @@ def test_summary_features_kindmutations_unique(loaded_database_connection: DataI
     assert 111 == len(mutations_df)  # Check length against independently generated length
     assert list(expected_df.index) == list(mutations_df.index)
     assert list(expected_df['Count']) == list(mutations_df['Count'])
+    assert list(expected_df['Type']) == list(mutations_df['Type'])
     assert list(expected_df['Total']) == list(mutations_df['Total'])
     assert math.isclose(100 * (2 / 3), mutations_df.loc['reference:619:G:C', 'Percent'])
     assert math.isclose(100 * (1 / 3), mutations_df.loc['reference:866:GCCAGATCC:G', 'Percent'])
@@ -3447,7 +3462,7 @@ def test_summary_features_kindmutations_unique(loaded_database_connection: DataI
     mutations_df = mutations_df.sort_index()
 
     assert 0 == len(mutations_df)
-    assert ['Sequence', 'Position', 'Deletion', 'Insertion',
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type',
             'Count', 'Total', 'Percent'] == list(mutations_df.columns)
 
 
@@ -3457,7 +3472,7 @@ def test_summary_features_kindmutations_annotations(loaded_database_connection_a
     # 1 sample
     mutations_df = q.isa('SH10-014').features_summary(ignore_annotations=False)
 
-    assert ['Sequence', 'Position', 'Deletion', 'Insertion',
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type',
             'Count', 'Total', 'Percent', 'Annotation', 'Annotation_Impact',
             'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
             'HGVS.c', 'HGVS.p', 'ID_HGVS.c', 'ID_HGVS.p', 'ID_HGVS_GN.c', 'ID_HGVS_GN.p'] == list(mutations_df.columns)
@@ -3467,7 +3482,7 @@ def test_summary_features_kindmutations_annotations(loaded_database_connection_a
     mutations_df['Percent'] = mutations_df['Percent'].astype(int)
 
     ## missense variant
-    assert ['NC_011083', 140658, 'C', 'A', 1, 1, 100,
+    assert ['NC_011083', 140658, 'C', 'A', 'SNP', 1, 1, 100,
             'missense_variant', 'MODERATE', 'murF', 'SEHA_RS01180', 'transcript', 'protein_coding',
             'c.497C>A', 'p.Ala166Glu',
             'hgvs:NC_011083:SEHA_RS01180:c.497C>A', 'hgvs:NC_011083:SEHA_RS01180:p.Ala166Glu',
@@ -3475,7 +3490,7 @@ def test_summary_features_kindmutations_annotations(loaded_database_connection_a
         mutations_df.loc['NC_011083:140658:C:A'])
 
     ## inframe deletion
-    assert ['NC_011083', 4465400, 'GGCCGAA', 'G', 1, 1, 100,
+    assert ['NC_011083', 4465400, 'GGCCGAA', 'G', 'INDEL', 1, 1, 100,
             'conservative_inframe_deletion', 'MODERATE', 'tyrB', 'SEHA_RS22180', 'transcript', 'protein_coding',
             'c.157_162delGAAGCC', 'p.Glu53_Ala54del',
             'hgvs:NC_011083:SEHA_RS22180:c.157_162delGAAGCC', 'hgvs:NC_011083:SEHA_RS22180:p.Glu53_Ala54del',
@@ -3483,7 +3498,7 @@ def test_summary_features_kindmutations_annotations(loaded_database_connection_a
         mutations_df.loc['NC_011083:4465400:GGCCGAA:G'])
 
     ## Intergenic variant (with some NA values in fields)
-    assert ['NC_011083', 4555461, 'T', 'TC', 1, 1, 100,
+    assert ['NC_011083', 4555461, 'T', 'TC', 'INDEL', 1, 1, 100,
             'intergenic_region', 'MODIFIER', 'SEHA_RS22510-SEHA_RS26685', 'SEHA_RS22510-SEHA_RS26685',
             'intergenic_region', 'NA',
             'n.4555461_4555462insC', 'NA',
@@ -3497,14 +3512,14 @@ def test_summary_features_kindmutations_annotations(loaded_database_connection_a
     ## Convert percent to int to make it easier to compare in assert statements
     mutations_df['Percent'] = mutations_df['Percent'].astype(int)
 
-    assert ['Sequence', 'Position', 'Deletion', 'Insertion',
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type',
             'Count', 'Total', 'Percent', 'Annotation', 'Annotation_Impact',
             'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
             'HGVS.c', 'HGVS.p', 'ID_HGVS.c', 'ID_HGVS.p', 'ID_HGVS_GN.c', 'ID_HGVS_GN.p'] == list(mutations_df.columns)
     assert 177 == len(mutations_df)
 
     ## missense variant (3/3)
-    assert ['NC_011083', 140658, 'C', 'A', 3, 3, 100,
+    assert ['NC_011083', 140658, 'C', 'A', 'SNP', 3, 3, 100,
             'missense_variant', 'MODERATE', 'murF', 'SEHA_RS01180', 'transcript', 'protein_coding',
             'c.497C>A', 'p.Ala166Glu',
             'hgvs:NC_011083:SEHA_RS01180:c.497C>A', 'hgvs:NC_011083:SEHA_RS01180:p.Ala166Glu',
@@ -3512,7 +3527,7 @@ def test_summary_features_kindmutations_annotations(loaded_database_connection_a
         mutations_df.loc['NC_011083:140658:C:A'])
 
     ## Intergenic variant (1/3)
-    assert ['NC_011083', 4555461, 'T', 'TC', 1, 3, 33,
+    assert ['NC_011083', 4555461, 'T', 'TC', 'INDEL', 1, 3, 33,
             'intergenic_region', 'MODIFIER', 'SEHA_RS22510-SEHA_RS26685', 'SEHA_RS22510-SEHA_RS26685',
             'intergenic_region', 'NA',
             'n.4555461_4555462insC', 'NA',
@@ -3523,7 +3538,7 @@ def test_summary_features_kindmutations_annotations(loaded_database_connection_a
     # Test ignore annotations
     mutations_df = q.isin(['SH10-014', 'SH14-001', 'SH14-014']).features_summary(ignore_annotations=True)
 
-    assert ['Sequence', 'Position', 'Deletion', 'Insertion',
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type',
             'Count', 'Total', 'Percent'] == list(mutations_df.columns)
     assert 177 == len(mutations_df)
 
@@ -3533,14 +3548,14 @@ def test_summary_features_kindmutations_annotations(loaded_database_connection_a
     ## Convert percent to int to make it easier to compare in assert statements
     mutations_df['Percent'] = mutations_df['Percent'].astype(int)
 
-    assert ['Sequence', 'Position', 'Deletion', 'Insertion',
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type',
             'Count', 'Total', 'Percent', 'Annotation', 'Annotation_Impact',
             'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
             'HGVS.c', 'HGVS.p', 'ID_HGVS.c', 'ID_HGVS.p', 'ID_HGVS_GN.c', 'ID_HGVS_GN.p'] == list(mutations_df.columns)
     assert 60 == len(mutations_df)
 
     ## missense variant
-    assert ['NC_011083', 2049576, 'A', 'C', 1, 1, 100,
+    assert ['NC_011083', 2049576, 'A', 'C', 'SNP', 1, 1, 100,
             'missense_variant', 'MODERATE', 'cutC', 'SEHA_RS10675', 'transcript', 'protein_coding',
             'c.536T>G', 'p.Val179Gly',
             'hgvs:NC_011083:SEHA_RS10675:c.536T>G', 'hgvs:NC_011083:SEHA_RS10675:p.Val179Gly',
@@ -3557,6 +3572,7 @@ def test_summary_features_two(loaded_database_connection: DataIndexConnection):
         'Position': 'first',
         'Deletion': 'first',
         'Insertion': 'first',
+        'Type': 'first',
         'Mutation': 'count',
     }).rename(columns={'Mutation': 'Count'}).sort_index()
     expected_df['Total'] = 2
@@ -3569,6 +3585,7 @@ def test_summary_features_two(loaded_database_connection: DataIndexConnection):
     assert len(expected_df) == len(mutations_df)
     assert list(expected_df.index) == list(mutations_df.index)
     assert list(expected_df['Count']) == list(mutations_df['Count'])
+    assert list(expected_df['Type']) == list(mutations_df['Type'])
     assert list(expected_df['Total']) == list(mutations_df['Total'])
     assert math.isclose(100 * (2 / 2), mutations_df.loc['reference:839:C:G', 'Percent'])
 
@@ -3638,7 +3655,7 @@ def test_features_comparison_kindmutations_annotations(loaded_database_connectio
                                           unit='count')
     comparison_df = comparison_df.sort_index()
     assert comparison_df.index.name == 'Mutation'
-    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Total',
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type', 'Total',
             '10_count', '14_count',
             '10_total', '14_total',
             'Annotation', 'Annotation_Impact',
@@ -3650,6 +3667,7 @@ def test_features_comparison_kindmutations_annotations(loaded_database_connectio
     assert {1} == set(comparison_df['10_total'].tolist())
     assert {2} == set(comparison_df['14_total'].tolist())
     assert 1 == comparison_df.loc['NC_011083:140658:C:A', '10_count']
+    assert 'SNP' == comparison_df.loc['NC_011083:140658:C:A', 'Type']
     assert 2 == comparison_df.loc['NC_011083:140658:C:A', '14_count']
     assert 'hgvs_gn:NC_011083:murF:p.Ala166Glu' == comparison_df.loc[
         'NC_011083:140658:C:A', 'ID_HGVS_GN.p']
@@ -3670,7 +3688,7 @@ def test_features_comparison_kindmutations_annotations(loaded_database_connectio
     comparison_df['Category2_percent'] = comparison_df['Category2_percent'].astype(
         int)  # Convert to int for easier comparison
     assert comparison_df.index.name == 'Mutation'
-    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Total',
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type', 'Total',
             'Category1_percent', 'Category2_percent',
             'Category1_total', 'Category2_total',
             'Annotation', 'Annotation_Impact',
@@ -3703,7 +3721,7 @@ def test_features_comparison_kindmutations_annotations(loaded_database_connectio
     comparison_df = comparison_df.sort_index()
     comparison_df['14_percent'] = comparison_df['14_percent'].astype(int)  # Convert to int for easier comparison
     assert comparison_df.index.name == 'Mutation'
-    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Total',
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type', 'Total',
             '10_percent', '14_percent',
             '10_total', '14_total',
             'Annotation', 'Annotation_Impact',
@@ -3847,7 +3865,7 @@ def test_features_comparison_kindmutations_with_dataframe(loaded_database_connec
                                           unit='count')
     comparison_df = comparison_df.sort_index()
     assert comparison_df.index.name == 'Mutation'
-    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Total',
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type', 'Total',
             'blue_count', 'red_count',
             'blue_total', 'red_total',
             'Annotation', 'Annotation_Impact',
@@ -3862,14 +3880,17 @@ def test_features_comparison_kindmutations_with_dataframe(loaded_database_connec
     assert 2 == comparison_df.loc['NC_011083:140658:C:A', 'red_count']
     assert 'hgvs_gn:NC_011083:murF:p.Ala166Glu' == comparison_df.loc[
         'NC_011083:140658:C:A', 'ID_HGVS_GN.p']
+    assert 'SNP' == comparison_df.loc['NC_011083:140658:C:A', 'Type']
     assert 1 == comparison_df.loc['NC_011083:4555461:T:TC', 'blue_count']
     assert 0 == comparison_df.loc['NC_011083:4555461:T:TC', 'red_count']
     assert 'hgvs_gn:NC_011083:n.4555461_4555462insC' == comparison_df.loc[
         'NC_011083:4555461:T:TC', 'ID_HGVS_GN.c']
+    assert 'INDEL' == comparison_df.loc['NC_011083:4555461:T:TC', 'Type']
     assert 0 == comparison_df.loc['NC_011083:630556:G:A', 'blue_count']
     assert 2 == comparison_df.loc['NC_011083:630556:G:A', 'red_count']
     assert 'hgvs_gn:NC_011083:SEHA_RS03545:p.Trp295*' == comparison_df.loc[
         'NC_011083:630556:G:A', 'ID_HGVS_GN.p']
+    assert 'SNP' == comparison_df.loc['NC_011083:630556:G:A', 'Type']
 
     # Test 2 categories counts on dataframe query: sample_query
     comparison_df = q.features_comparison(sample_categories=[category_10, category_14],
@@ -3877,7 +3898,7 @@ def test_features_comparison_kindmutations_with_dataframe(loaded_database_connec
                                           unit='count')
     comparison_df = comparison_df.sort_index()
     assert comparison_df.index.name == 'Mutation'
-    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Total',
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type', 'Total',
             '10_count', '14_count',
             '10_total', '14_total',
             'Annotation', 'Annotation_Impact',
@@ -3908,7 +3929,7 @@ def test_features_comparison_kindmutations_with_dataframe(loaded_database_connec
                                           unit='count')
     comparison_df = comparison_df.sort_index()
     assert comparison_df.index.name == 'Mutation'
-    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Total',
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type', 'Total',
             'blue_count', 'red_count',
             'blue_total', 'red_total',
             'Annotation', 'Annotation_Impact',
@@ -3939,7 +3960,7 @@ def test_features_comparison_kindmutations_with_dataframe(loaded_database_connec
                                           unit='count')
     comparison_df = comparison_df.sort_index()
     assert comparison_df.index.name == 'Mutation'
-    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Total',
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type', 'Total',
             'red_count',
             'red_total',
             'Annotation', 'Annotation_Impact',
@@ -3966,7 +3987,7 @@ def test_features_comparison_kindmutations_with_dataframe(loaded_database_connec
                                           unit='count')
     comparison_df = comparison_df.sort_index()
     assert comparison_df.index.name == 'Mutation'
-    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Total',
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type', 'Total',
             '14_count',
             '14_total',
             'Annotation', 'Annotation_Impact',
@@ -3999,7 +4020,7 @@ def test_features_comparison_kindmutations_with_dataframe(loaded_database_connec
                                           unit='count')
     comparison_df = comparison_df.sort_index()
     assert comparison_df.index.name == 'Mutation'
-    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Total',
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type', 'Total',
             'blue_count', 'green_count', 'red_count',
             'blue_total', 'green_total', 'red_total',
             'Annotation', 'Annotation_Impact',
@@ -4040,7 +4061,7 @@ def test_features_comparison_kindmutations_with_dataframe(loaded_database_connec
                                           unit='count')
     comparison_df = comparison_df.sort_index()
     assert comparison_df.index.name == 'Mutation'
-    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Total',
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type', 'Total',
             'green_count', 'red_count',
             'green_total', 'red_total',
             'Annotation', 'Annotation_Impact',

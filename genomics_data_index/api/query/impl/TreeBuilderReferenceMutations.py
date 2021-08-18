@@ -1,5 +1,5 @@
 import logging
-from typing import Union, Iterable, Tuple
+from typing import Union, Iterable, Tuple, List
 
 from ete3 import Tree
 
@@ -32,6 +32,7 @@ class TreeBuilderReferenceMutations(TreeBuilder):
     def _build_iqtree(self, samples_set: Union[SampleSet, Iterable[str]],
                       ncores: int = 1,
                       align_type: str = 'full',
+                      include_variants: List[str] = None,
                       include_reference: bool = True,
                       extra_params: str = None) -> Tuple[Tree, int, SampleSet]:
         sample_service = self._database_connection.sample_service
@@ -56,6 +57,7 @@ class TreeBuilderReferenceMutations(TreeBuilder):
         alignment_data = alignment_service.construct_alignment(reference_name=self._reference_name,
                                                                samples=samples_names,
                                                                align_type=align_type,
+                                                               include_variants=include_variants,
                                                                include_reference=include_reference)
         tree_data, out = tree_service.build_tree(alignment_data, tree_build_type='iqtree',
                                                  num_cores=ncores, align_type=align_type,
