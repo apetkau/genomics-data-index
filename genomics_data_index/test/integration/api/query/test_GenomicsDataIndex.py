@@ -87,7 +87,8 @@ def test_summaries_loaded_data(loaded_database_genomic_data_store: GenomicsDataI
     ms['Percent'] = ms['Percent'].astype(int)
 
     assert ['reference', 839, 'C', 'G', 'SNP', 2, 3, 66] == ms.loc['reference:839:C:G'].values.tolist()
-    assert ['reference', 866, 'GCCAGATCC', 'G', 'INDEL', 1, 3, 33] == ms.loc['reference:866:GCCAGATCC:G'].values.tolist()
+    assert ['reference', 866, 'GCCAGATCC', 'G', 'INDEL', 1, 3, 33] == ms.loc[
+        'reference:866:GCCAGATCC:G'].values.tolist()
     assert ['reference', 1048, 'C', 'G', 'SNP', 1, 3, 33] == ms.loc['reference:1048:C:G'].values.tolist()
     assert ['reference', 3897, 'GCGCA', 'G', 'INDEL', 2, 3, 66] == ms.loc['reference:3897:GCGCA:G'].values.tolist()
 
@@ -101,7 +102,8 @@ def test_summaries_loaded_data(loaded_database_genomic_data_store: GenomicsDataI
     ms['Percent'] = ms['Percent'].astype(int)
 
     assert ['reference', 839, 'C', 'G', 'SNP', 2, 3, 66] == ms.loc['reference:839:C:G'].values.tolist()
-    assert ['reference', 866, 'GCCAGATCC', 'G', 'INDEL', 1, 3, 33] == ms.loc['reference:866:GCCAGATCC:G'].values.tolist()
+    assert ['reference', 866, 'GCCAGATCC', 'G', 'INDEL', 1, 3, 33] == ms.loc[
+        'reference:866:GCCAGATCC:G'].values.tolist()
     assert ['reference', 1048, 'C', 'G', 'SNP', 1, 3, 33] == ms.loc['reference:1048:C:G'].values.tolist()
     assert ['reference', 3897, 'GCGCA', 'G', 'INDEL', 2, 3, 66] == ms.loc['reference:3897:GCGCA:G'].values.tolist()
     assert ['reference', 89, 'A', '?', 'UNKNOWN_MISSING', 3, 3, 100] == ms.loc['reference:89:A:?'].values.tolist()
