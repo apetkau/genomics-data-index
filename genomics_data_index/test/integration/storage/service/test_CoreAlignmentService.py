@@ -138,9 +138,18 @@ def test_snippy_core_align(core_alignment_service: CoreAlignmentService, expecte
 def test_snippy_core_align_with_other_include(core_alignment_service: CoreAlignmentService):
     with pytest.raises(Exception) as execinfo:
         core_alignment_service.construct_alignment(reference_name='genome',
-                                                                      samples=['SampleA', 'SampleB', 'SampleC'],
-                                                                      include_expression='TYPE="INDEL"')
-    assert 'Currently align_type=core only works with include_expression=\'TYPE="SNP"\'' in str(execinfo.value)
+                                                   samples=['SampleA', 'SampleB', 'SampleC'],
+                                                   include_variants=['MNP'])
+    assert 'Currently align_type=core only works with include_variants=["SNP"]' in str(execinfo.value)
+
+
+def test_snippy_full_align_with_invalid_include_variants(core_alignment_service: CoreAlignmentService):
+    with pytest.raises(Exception) as execinfo:
+        core_alignment_service.construct_alignment(reference_name='genome',
+                                                   samples=['SampleA', 'SampleB', 'SampleC'],
+                                                   align_type='full',
+                                                   include_variants=['invalid'])
+    assert f"Only {['SNP', 'MNP', 'INDEL', 'OTHER']} are supported" in str(execinfo.value)
 
 
 def test_snippy_full_align(core_alignment_service, expected_alignment_full):

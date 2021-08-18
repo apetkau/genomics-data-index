@@ -3,7 +3,7 @@ import logging
 import tempfile
 import time
 from pathlib import Path
-from typing import List, Dict, Generator
+from typing import List, Dict, Generator, Tuple
 
 from Bio import SeqIO
 from Bio.Align import MultipleSeqAlignment
@@ -23,6 +23,8 @@ logger = logging.getLogger(__name__)
 
 class CoreAlignmentService:
     ALIGN_TYPES = ['core', 'full']
+    INCLUDE_VARIANT_TYPES = ['SNP', 'MNP', 'INDEL', 'OTHER']
+    INCLUDE_VARIANT_DEFAULT = ['SNP']
 
     # Mask generated sequence with this character (which should not appear anywhere else) so I can remove
     # all positions with this character later (when generating core alignment)
@@ -107,13 +109,24 @@ class CoreAlignmentService:
 
     def construct_alignment(self, reference_name: str, samples: List[str] = None,
                             include_reference: bool = True, align_type: str = 'core',
-                            include_expression: str = 'TYPE="SNP"') -> MultipleSeqAlignment:
+                            include_variants: List[str] = None) -> MultipleSeqAlignment:
         if samples is None or len(samples) == 0:
             samples = self._all_sample_names(reference_name)
 
-        if align_type == 'core' and include_expression != 'TYPE="SNP"':
-            raise Exception(f'align_type={align_type} and include_expression={include_expression}. Currently'
-                            f' align_type=core only works with include_expression=\'TYPE="SNP"\'')
+        if include_variants is None:
+            include_variants = self.INCLUDE_VARIANT_DEFAULT
+
+        if align_type == 'core' and include_variants != ['SNP']:
+            raise Exception(f'align_type={align_type} and include_variants={include_variants}. Currently'
+                            f' align_type=core only works with include_variants=["SNP"]')
+        else:
+            include_expression = ''
+            for variant in include_variants:
+                if variant not in self.INCLUDE_VARIANT_TYPES:
+                    raise Exception(f'variant={variant} found in include_variants={include_variants}. '
+                                    f'Only {self.INCLUDE_VARIANT_TYPES} are supported')
+                else:
+                    include_expression += f'(TYPE=="{variant}")'
 
         sample_nucleotide_variants = self._variation_service.get_sample_nucleotide_variation(samples)
 
