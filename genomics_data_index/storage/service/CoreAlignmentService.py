@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 class CoreAlignmentService:
     ALIGN_TYPES = ['core', 'full']
-    INCLUDE_VARIANT_TYPES = ['SNP', 'MNP', 'INDEL', 'OTHER']
+    INCLUDE_VARIANT_TYPES = ['SNP', 'MNP']
     INCLUDE_VARIANT_DEFAULT = ['SNP']
 
     # Mask generated sequence with this character (which should not appear anywhere else) so I can remove
