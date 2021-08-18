@@ -120,7 +120,9 @@ def load_variants_common(data_index_connection: DataIndexConnection, ncores: int
                          data_package_factory: SampleDataPackageFactory,
                          reference_file: Path, reference_name: str,
                          input: Path, build_tree: bool,
-                         align_type: str, extra_tree_params: str,
+                         align_type: str,
+                         include_variants: List[str],
+                         extra_tree_params: str,
                          sample_batch_size: int):
     reference_service = data_index_connection.reference_service
     variation_service = cast(VariationService, data_index_connection.variation_service)
@@ -159,6 +161,7 @@ def load_variants_common(data_index_connection: DataIndexConnection, ncores: int
         if build_tree:
             tree_service.rebuild_tree(reference_name=reference_name,
                                       align_type=align_type,
+                                      include_variants=include_variants,
                                       num_cores=ncores,
                                       extra_params=extra_tree_params)
             logger.info('Finished building tree of all samples')
@@ -178,11 +181,13 @@ def load_variants_common(data_index_connection: DataIndexConnection, ncores: int
 @click.option('--build-tree/--no-build-tree', default=False, help='Builds tree of all samples after loading')
 @click.option('--align-type', help=f'The type of alignment to generate', default='core',
               type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
+@click.option('--include-variants', help=f'Which type of variant to include in tree.', default=['SNP'],
+              type=click.Choice(CoreAlignmentService.INCLUDE_VARIANT_TYPES), multiple=True)
 @click.option('--extra-tree-params', help='Extra parameters to tree-building software',
               default=None)
 def load_snippy(ctx, snippy_dir: str, reference_file: str, reference_name: str,
                 index_unknown: bool, sample_batch_size: int, build_tree: bool,
-                align_type: str, extra_tree_params: str):
+                align_type: str, include_variants: List[str], extra_tree_params: str):
     ncores = ctx.obj['ncores']
     project = get_project_exit_on_error(ctx)
     data_index_connection = project.create_connection()
@@ -207,6 +212,7 @@ def load_snippy(ctx, snippy_dir: str, reference_file: str, reference_name: str,
                              reference_file=reference_file,
                              reference_name=reference_name,
                              input=Path(snippy_dir), build_tree=build_tree, align_type=align_type,
+                             include_variants=include_variants,
                              extra_tree_params=extra_tree_params,
                              sample_batch_size=sample_batch_size)
 
@@ -225,10 +231,13 @@ def load_snippy(ctx, snippy_dir: str, reference_file: str, reference_name: str,
 @click.option('--build-tree/--no-build-tree', default=False, help='Builds tree of all samples after loading')
 @click.option('--align-type', help=f'The type of alignment to generate', default='core',
               type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
+@click.option('--include-variants', help=f'Which type of variant to include in tree.', default=['SNP'],
+              type=click.Choice(CoreAlignmentService.INCLUDE_VARIANT_TYPES), multiple=True)
 @click.option('--extra-tree-params', help='Extra parameters to tree-building software',
               default=None)
 def load_vcf(ctx, vcf_fofns: str, reference_file: str, reference_name: str,
-             index_unknown: bool, sample_batch_size: int, build_tree: bool, align_type: str, extra_tree_params: str):
+             index_unknown: bool, sample_batch_size: int, build_tree: bool, align_type: str,
+             include_variants: List[str], extra_tree_params: str):
     ncores = ctx.obj['ncores']
     project = get_project_exit_on_error(ctx)
     vcf_fofns = Path(vcf_fofns)
@@ -255,6 +264,7 @@ def load_vcf(ctx, vcf_fofns: str, reference_file: str, reference_name: str,
                              reference_file=reference_file,
                              reference_name=reference_name,
                              input=Path(vcf_fofns), build_tree=build_tree, align_type=align_type,
+                             include_variants=include_variants,
                              extra_tree_params=extra_tree_params,
                              sample_batch_size=sample_batch_size)
 
@@ -415,6 +425,8 @@ def input_command(absolute: bool, input_genomes_file: str, genomes: List[str]):
 @click.option('--build-tree/--no-build-tree', default=False, help='Builds tree of all samples after loading')
 @click.option('--align-type', help=f'The type of alignment to generate', default='core',
               type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
+@click.option('--include-variants', help=f'Which type of variant to include in tree.', default=['SNP'],
+              type=click.Choice(CoreAlignmentService.INCLUDE_VARIANT_TYPES), multiple=True)
 @click.option('--extra-tree-params', help='Extra parameters to tree-building software',
               default=None)
 @click.option('--use-conda/--no-use-conda', help="Use (or don't use) conda for dependency management for pipeline.",
@@ -458,6 +470,7 @@ def input_command(absolute: bool, input_genomes_file: str, genomes: List[str]):
 @click.argument('genomes', type=click.Path(exists=True), nargs=-1)
 def analysis(ctx, reference_file: str, load_data: bool, index_unknown: bool, clean: bool, build_tree: bool,
              align_type: str,
+             include_variants: List[str],
              extra_tree_params: str, use_conda: bool,
              include_mlst: bool, include_kmer: bool, ignore_snpeff: bool,
              reads_mincov: int, reads_minqual: int,
@@ -526,6 +539,7 @@ def analysis(ctx, reference_file: str, load_data: bool, index_unknown: bool, cle
             logger.info(f'Indexing processed VCF files defined in [{processed_files_fofn}]')
             ctx.invoke(load_vcf, index_unknown=index_unknown, vcf_fofns=str(processed_files_fofn),
                        reference_file=reference_file, build_tree=build_tree, align_type=align_type,
+                       include_variants=include_variants,
                        extra_tree_params=extra_tree_params, sample_batch_size=sample_batch_size)
         except Exception as e:
             logger.exception(e)
@@ -596,9 +610,12 @@ def build(ctx):
 @click.option('--reference-name', help='Reference genome name', required=True, type=str)
 @click.option('--align-type', help=f'The type of alignment to generate', default='core',
               type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
+@click.option('--include-variants', help=f'Which type of variant to include.', default=['SNP'],
+              type=click.Choice(CoreAlignmentService.INCLUDE_VARIANT_TYPES), multiple=True)
 @click.option('--sample', help='Sample to include in alignment (can list more than one).',
               multiple=True, type=str)
-def alignment(ctx, output_file: Path, reference_name: str, align_type: str, sample: List[str]):
+def alignment(ctx, output_file: Path, reference_name: str, align_type: str,
+              include_variants: List[str], sample: List[str]):
     genomics_index = get_genomics_index(ctx)
     references = genomics_index.reference_names()
     alignment_service = genomics_index.connection.alignment_service
@@ -617,6 +634,7 @@ def alignment(ctx, output_file: Path, reference_name: str, align_type: str, samp
     alignment_data = alignment_service.construct_alignment(reference_name=reference_name,
                                                            samples=query.tolist(names=True),
                                                            align_type=align_type,
+                                                           include_variants=include_variants,
                                                            include_reference=True)
 
     with open(output_file, 'w') as f:
@@ -635,11 +653,13 @@ supported_tree_build_types = ['iqtree']
               type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
 @click.option('--tree-build-type', help=f'The type of tree building software', default='iqtree',
               type=click.Choice(supported_tree_build_types))
+@click.option('--include-variants', help=f'Which type of variant to include.', default=['SNP'],
+              type=click.Choice(CoreAlignmentService.INCLUDE_VARIANT_TYPES), multiple=True)
 @click.option('--sample', help='Sample to include in tree (can list more than one).',
               multiple=True, type=str)
 @click.option('--extra-params', help='Extra parameters to tree-building software',
               default=None)
-def tree(ctx, output_file: Path, reference_name: str, align_type: str,
+def tree(ctx, output_file: Path, reference_name: str, align_type: str, include_variants: List[str],
          tree_build_type: str, sample: List[str], extra_params: str):
     genomics_index = get_genomics_index(ctx)
     references = genomics_index.reference_names()
@@ -667,6 +687,7 @@ def tree(ctx, output_file: Path, reference_name: str, align_type: str,
                                   align_type=align_type,
                                   scope=reference_name,
                                   include_reference=True,
+                                  include_variants=include_variants,
                                   ncores=ncores,
                                   extra_params=extra_params)
 
@@ -685,9 +706,11 @@ def rebuild(ctx):
 @click.argument('reference', type=str, nargs=-1)
 @click.option('--align-type', help=f'The type of alignment to use for generating the tree', default='core',
               type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
+@click.option('--include-variants', help=f'Which type of variant to include.', default=['SNP'],
+              type=click.Choice(CoreAlignmentService.INCLUDE_VARIANT_TYPES), multiple=True)
 @click.option('--extra-params', help='Extra parameters to tree-building software',
               default=None)
-def rebuild_tree(ctx, reference: List[str], align_type: str, extra_params: str):
+def rebuild_tree(ctx, reference: List[str], align_type: str, include_variants: List[str], extra_params: str):
     data_index_connection = get_project_exit_on_error(ctx).create_connection()
     tree_service = data_index_connection.tree_service
     reference_service = data_index_connection.reference_service
@@ -707,6 +730,7 @@ def rebuild_tree(ctx, reference: List[str], align_type: str, extra_params: str):
         logger.info(f'Started rebuilding tree for reference genome [{reference_name}]')
         tree_service.rebuild_tree(reference_name=reference_name,
                                   align_type=align_type,
+                                  include_variants=include_variants,
                                   num_cores=ncores,
                                   extra_params=extra_params)
         logger.info(f'Finished rebuilding tree')

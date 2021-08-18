@@ -134,7 +134,7 @@ class CoreAlignmentService:
         alignments = {}
 
         start_time = time.time()
-        logger.debug(f'Started building alignment for {len(samples)} samples')
+        logger.info(f'Started building alignment for {len(samples)} samples with include_variants={include_variants}')
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             # Write reference genome to file for creating consensus sequences
@@ -207,7 +207,7 @@ class CoreAlignmentService:
             snv_align += alignments[sequence_name]
 
         end_time = time.time()
-        logger.debug(f'Finished building alignment for {len(samples)} samples. '
+        logger.info(f'Finished building alignment for {len(samples)} samples. '
                      f'Took {end_time - start_time:0.2f} seconds')
 
         return snv_align
