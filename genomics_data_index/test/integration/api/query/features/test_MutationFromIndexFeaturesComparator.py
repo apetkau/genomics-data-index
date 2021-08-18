@@ -275,6 +275,15 @@ def test_summary_annotations(loaded_database_genomic_data_store_annotations: Gen
             'hgvs_gn:NC_011083:n.4555461_4555462insC', 'NA'] == list(
         mutations_df.loc['NC_011083:4555461:T:TC'].fillna('NA'))
 
+    # MNP variant (1/3)
+    assert ['NC_011083', 3535698, 'GCC', 'CAT', 'MNP', 2, 3, 66,
+            'missense_variant', 'MODERATE', 'oadA', 'SEHA_RS17780',
+            'transcript', 'protein_coding',
+            'c.544_546delGGCinsATG', 'p.Gly182Met',
+            'hgvs:NC_011083:SEHA_RS17780:c.544_546delGGCinsATG', 'hgvs:NC_011083:SEHA_RS17780:p.Gly182Met',
+            'hgvs_gn:NC_011083:oadA:c.544_546delGGCinsATG', 'hgvs_gn:NC_011083:oadA:p.Gly182Met'] == list(
+        mutations_df.loc['NC_011083:3535698:GCC:CAT'])
+
 
 def test_features_comparison(loaded_database_genomic_data_store: GenomicsDataIndex):
     db = loaded_database_genomic_data_store.connection.database
