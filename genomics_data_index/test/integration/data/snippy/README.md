@@ -10,13 +10,13 @@ bcftools index snps.fill-tags.vcf.gz
 Generated `Sample*/mutations-dataframe.snps.tsv` with:
 
 ```
-echo -e "Mutation\tSequence\tPosition\tDeletion\tInsertion" > mutations-dataframe.snps.tsv
-zgrep -v '^#' snps.fill-tags.vcf.gz | grep SNP | cut -f 1,2,4,5 | tr '\t' ':' | perl -ne 'chomp;@a=split(/:/, $_);print($_, "\t", $a[0], "\t", $a[1], "\t", $a[2], "\t", $a[3], "\n");' >> mutations-dataframe.snps.tsv
+echo -e "Mutation\tSequence\tPosition\tDeletion\tInsertion\tType" > mutations-dataframe.snps.tsv
+zgrep -v '^#' snps.fill-tags.vcf.gz | cut -f 1,2,4,5,8 | sed -e 's/[^\t]*TYPE=\(.*\)$/\1/' | perl -ne 'chomp;@a=split(/\t/, $_);print("$a[0]:$a[1]:$a[2]:$a[3]", "\t", $a[0], "\t", $a[1], "\t", $a[2], "\t", $a[3], "\t", $a[4], "\n");' | grep SNP >> mutations-dataframe.snps.tsv
 ```
 
 Generated `Sample*/mutations-dataframe.all.tsv` with:
 
 ```
-echo -e "Mutation\tSequence\tPosition\tDeletion\tInsertion" > mutations-dataframe.all.tsv
-zgrep -v '^#' snps.fill-tags.vcf.gz | cut -f 1,2,4,5 | tr '\t' ':' | perl -ne 'chomp;@a=split(/:/, $_);print($_, "\t", $a[0], "\t", $a[1], "\t", $a[2], "\t", $a[3], "\n");' >> mutations-dataframe.all.tsv
+echo -e "Mutation\tSequence\tPosition\tDeletion\tInsertion\tType" > mutations-dataframe.all.tsv
+zgrep -v '^#' snps.fill-tags.vcf.gz | cut -f 1,2,4,5,8 | sed -e 's/[^\t]*TYPE=\(.*\)$/\1/' | perl -ne 'chomp;@a=split(/\t/, $_);print("$a[0]:$a[1]:$a[2]:$a[3]", "\t", $a[0], "\t", $a[1], "\t", $a[2], "\t", $a[3], "\t", $a[4], "\n");' >> mutations-dataframe.all.tsv
 ```

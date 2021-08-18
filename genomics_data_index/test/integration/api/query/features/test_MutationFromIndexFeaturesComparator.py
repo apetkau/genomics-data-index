@@ -23,6 +23,7 @@ def test_summary_all(loaded_database_genomic_data_store: GenomicsDataIndex):
         'Position': 'first',
         'Deletion': 'first',
         'Insertion': 'first',
+        'Type': 'first',
         'Mutation': 'count',
     }).rename(columns={'Mutation': 'Count'}).sort_index()
     expected_df['Total'] = 9
@@ -46,6 +47,7 @@ def test_summary_all(loaded_database_genomic_data_store: GenomicsDataIndex):
     assert list(expected_df['Deletion']) == list(mutations_df['Deletion'])
     assert list(expected_df['Count']) == list(mutations_df['Count'])
     assert list(expected_df['Total']) == list(mutations_df['Total'])
+    assert list(expected_df['Type']) == list(mutations_df['Type'])
     assert 22 == mutations_df.loc['reference:619:G:C', 'Percent']
 
     # Test with unknown
@@ -58,12 +60,19 @@ def test_summary_all(loaded_database_genomic_data_store: GenomicsDataIndex):
     assert 632 == len(mutations_df)
     assert list(expected_df.columns) == list(mutations_df.columns)
     assert 2 == mutations_df.loc['reference:619:G:C', 'Count']
+    assert 'SNP' == mutations_df.loc['reference:619:G:C', 'Type']
     assert 2 == mutations_df.loc['reference:3063:A:ATGCAGC', 'Count']
+    assert 'INDEL' == mutations_df.loc['reference:3063:A:ATGCAGC', 'Type']
     assert 1 == mutations_df.loc['reference:1984:GTGATTG:TTGA', 'Count']
+    assert 'OTHER' == mutations_df.loc['reference:1984:GTGATTG:TTGA', 'Type']
     assert 1 == mutations_df.loc['reference:866:GCCAGATCC:G', 'Count']
+    assert 'INDEL' == mutations_df.loc['reference:866:GCCAGATCC:G', 'Type']
     assert 3 == mutations_df.loc['reference:90:T:?', 'Count']
+    assert 'UNKNOWN_MISSING' == mutations_df.loc['reference:90:T:?', 'Type']
     assert 2 == mutations_df.loc['reference:190:A:?', 'Count']
+    assert 'UNKNOWN_MISSING' == mutations_df.loc['reference:190:A:?', 'Type']
     assert 1 == mutations_df.loc['reference:887:T:?', 'Count']
+    assert 'UNKNOWN_MISSING' == mutations_df.loc['reference:887:T:?', 'Type']
 
     # Test only include unknown
     mutations_summarizer = MutationFeaturesFromIndexComparator(connection=loaded_database_genomic_data_store.connection,
@@ -76,8 +85,11 @@ def test_summary_all(loaded_database_genomic_data_store: GenomicsDataIndex):
     assert 521 == len(mutations_df)
     assert list(expected_df.columns) == list(mutations_df.columns)
     assert 3 == mutations_df.loc['reference:90:T:?', 'Count']
+    assert 'UNKNOWN_MISSING' == mutations_df.loc['reference:90:T:?', 'Type']
     assert 2 == mutations_df.loc['reference:190:A:?', 'Count']
+    assert 'UNKNOWN_MISSING' == mutations_df.loc['reference:190:A:?', 'Type']
     assert 1 == mutations_df.loc['reference:887:T:?', 'Count']
+    assert 'UNKNOWN_MISSING' == mutations_df.loc['reference:887:T:?', 'Type']
     assert 'reference:619:G:C' not in mutations_df
 
     # Test with different id type where deletion is int instead of sequence
@@ -90,9 +102,13 @@ def test_summary_all(loaded_database_genomic_data_store: GenomicsDataIndex):
     assert 112 - 1 == len(mutations_df)
     assert list(expected_df.columns) == list(mutations_df.columns)
     assert 2 == mutations_df.loc['reference:619:1:C', 'Count']
+    assert 'SNP' == mutations_df.loc['reference:619:1:C', 'Type']
     assert 2 == mutations_df.loc['reference:3063:1:ATGCAGC', 'Count']
+    assert 'INDEL' == mutations_df.loc['reference:3063:1:ATGCAGC', 'Type']
     assert 1 == mutations_df.loc['reference:1984:7:TTGA', 'Count']
+    assert 'OTHER' == mutations_df.loc['reference:1984:7:TTGA', 'Type']
     assert 1 == mutations_df.loc['reference:866:9:G', 'Count']
+    assert 'INDEL' == mutations_df.loc['reference:866:9:G', 'Type']
 
     # Test with different id type include unknown
     mutations_summarizer = MutationFeaturesFromIndexComparator(connection=loaded_database_genomic_data_store.connection,
@@ -105,12 +121,19 @@ def test_summary_all(loaded_database_genomic_data_store: GenomicsDataIndex):
     assert 632 == len(mutations_df)
     assert list(expected_df.columns) == list(mutations_df.columns)
     assert 2 == mutations_df.loc['reference:619:1:C', 'Count']
+    assert 'SNP' == mutations_df.loc['reference:619:1:C', 'Type']
     assert 2 == mutations_df.loc['reference:3063:1:ATGCAGC', 'Count']
+    assert 'INDEL' == mutations_df.loc['reference:3063:1:ATGCAGC', 'Type']
     assert 1 == mutations_df.loc['reference:1984:7:TTGA', 'Count']
+    assert 'OTHER' == mutations_df.loc['reference:1984:7:TTGA', 'Type']
     assert 1 == mutations_df.loc['reference:866:9:G', 'Count']
+    assert 'INDEL' == mutations_df.loc['reference:866:9:G', 'Type']
     assert 3 == mutations_df.loc['reference:90:1:?', 'Count']
+    assert 'UNKNOWN_MISSING' == mutations_df.loc['reference:90:1:?', 'Type']
     assert 2 == mutations_df.loc['reference:190:1:?', 'Count']
+    assert 'UNKNOWN_MISSING' == mutations_df.loc['reference:190:1:?', 'Type']
     assert 1 == mutations_df.loc['reference:887:1:?', 'Count']
+    assert 'UNKNOWN_MISSING' == mutations_df.loc['reference:887:1:?', 'Type']
 
 
 def test_summary_unique(loaded_database_genomic_data_store: GenomicsDataIndex):
@@ -138,6 +161,7 @@ def test_summary_unique(loaded_database_genomic_data_store: GenomicsDataIndex):
         'Position': 'first',
         'Deletion': 'first',
         'Insertion': 'first',
+        'Type': 'first',
         'Mutation': 'count',
     }).rename(columns={'Mutation': 'Count'}).sort_index()
     expected_df['Total'] = 1
@@ -168,6 +192,7 @@ def test_summary_unique(loaded_database_genomic_data_store: GenomicsDataIndex):
         'Position': 'first',
         'Deletion': 'first',
         'Insertion': 'first',
+        'Type': 'first',
         'Mutation': 'count',
     }).rename(columns={'Mutation': 'Count'}).sort_index()
     expected_df['Total'] = 1
@@ -193,6 +218,7 @@ def test_summary_unique(loaded_database_genomic_data_store: GenomicsDataIndex):
         'Position': 'first',
         'Deletion': 'first',
         'Insertion': 'first',
+        'Type': 'first',
         'Mutation': 'count',
     }).rename(columns={'Mutation': 'Count'}).sort_index()
     expected_df['Total'] = 2
@@ -225,7 +251,7 @@ def test_summary_annotations(loaded_database_genomic_data_store_annotations: Gen
     present_set = SampleSet(three_samples)
     mutations_df = mutations_summarizer.summary(present_set)
 
-    assert ['Sequence', 'Position', 'Deletion', 'Insertion',
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type',
             'Count', 'Total', 'Percent', 'Annotation', 'Annotation_Impact',
             'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
             'HGVS.c', 'HGVS.p', 'ID_HGVS.c', 'ID_HGVS.p', 'ID_HGVS_GN.c', 'ID_HGVS_GN.p'] == list(mutations_df.columns)
@@ -233,7 +259,7 @@ def test_summary_annotations(loaded_database_genomic_data_store_annotations: Gen
     mutations_df['Percent'] = mutations_df['Percent'].astype(int)  # easier to compare percents in assert
 
     # missense variant (3/3)
-    assert ['NC_011083', 140658, 'C', 'A', 3, 3, 100,
+    assert ['NC_011083', 140658, 'C', 'A', 'SNP', 3, 3, 100,
             'missense_variant', 'MODERATE', 'murF', 'SEHA_RS01180', 'transcript', 'protein_coding',
             'c.497C>A', 'p.Ala166Glu',
             'hgvs:NC_011083:SEHA_RS01180:c.497C>A', 'hgvs:NC_011083:SEHA_RS01180:p.Ala166Glu',
@@ -241,7 +267,7 @@ def test_summary_annotations(loaded_database_genomic_data_store_annotations: Gen
         mutations_df.loc['NC_011083:140658:C:A'])
 
     # Intergenic variant (1/3)
-    assert ['NC_011083', 4555461, 'T', 'TC', 1, 3, 33,
+    assert ['NC_011083', 4555461, 'T', 'TC', 'INDEL', 1, 3, 33,
             'intergenic_region', 'MODIFIER', 'SEHA_RS22510-SEHA_RS26685', 'SEHA_RS22510-SEHA_RS26685',
             'intergenic_region', 'NA',
             'n.4555461_4555462insC', 'NA',
@@ -270,13 +296,16 @@ def test_features_comparison(loaded_database_genomic_data_store: GenomicsDataInd
                                                              unit='count')
     comparison_df = comparison_df.sort_index()
     assert comparison_df.index.name == 'Mutation'
-    assert ['Sequence', 'Position', 'Deletion', 'Insertion',
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type',
             'Total', 'All_count', 'All_total'] == comparison_df.columns.tolist()
     assert {9} == set(comparison_df['Total'].tolist())
     assert {9} == set(comparison_df['All_total'].tolist())
     assert 2 == comparison_df.loc['reference:619:G:C', 'All_count']
+    assert 'SNP' == comparison_df.loc['reference:619:G:C', 'Type']
     assert 1 == comparison_df.loc['reference:1708:ATGCTGTTCAATAC:A', 'All_count']
+    assert 'INDEL' == comparison_df.loc['reference:1708:ATGCTGTTCAATAC:A', 'Type']
     assert 2 == comparison_df.loc['reference:4693:C:CGA', 'All_count']
+    assert 'INDEL' == comparison_df.loc['reference:4693:C:CGA', 'Type']
 
     # Test two categories, one of A and one of BC
     sample_categories = [SampleSet([sampleA.id]), SampleSet([sampleB.id, sampleC.id])]
@@ -286,7 +315,7 @@ def test_features_comparison(loaded_database_genomic_data_store: GenomicsDataInd
                                                              unit='count')
     comparison_df = comparison_df.sort_index()
     assert comparison_df.index.name == 'Mutation'
-    assert ['Sequence', 'Position', 'Deletion', 'Insertion',
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type',
             'Total', 'A_count', 'BC_count', 'A_total', 'BC_total'] == comparison_df.columns.tolist()
     assert {9} == set(comparison_df['Total'].tolist())
     assert {1} == set(comparison_df['A_total'].tolist())
@@ -306,7 +335,7 @@ def test_features_comparison(loaded_database_genomic_data_store: GenomicsDataInd
                                                              unit='count')
     comparison_df = comparison_df.sort_index()
     assert comparison_df.index.name == 'Mutation'
-    assert ['Sequence', 'Position', 'Deletion', 'Insertion',
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type',
             'Total', 'AB_count', 'C_count', 'AB_total', 'C_total'] == comparison_df.columns.tolist()
     assert {9} == set(comparison_df['Total'].tolist())
     assert {2} == set(comparison_df['AB_total'].tolist())
@@ -329,7 +358,7 @@ def test_features_comparison(loaded_database_genomic_data_store: GenomicsDataInd
                                                              unit='count')
     comparison_df = comparison_df.sort_index()
     assert comparison_df.index.name == 'Mutation'
-    assert ['Sequence', 'Position', 'Deletion', 'Insertion',
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type',
             'Total',
             'A_count', 'B_count', 'C_count',
             'A_total', 'B_total', 'C_total'] == comparison_df.columns.tolist()
@@ -360,7 +389,7 @@ def test_features_comparison(loaded_database_genomic_data_store: GenomicsDataInd
     comparison_df['A_percent'] = comparison_df['A_percent'].astype(int)  # Convert to int for easier comparison
     comparison_df['BC_percent'] = comparison_df['BC_percent'].astype(int)  # Convert to int for easier comparison
     assert comparison_df.index.name == 'Mutation'
-    assert ['Sequence', 'Position', 'Deletion', 'Insertion',
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type',
             'Total', 'A_percent', 'BC_percent', 'A_total', 'BC_total'] == comparison_df.columns.tolist()
     assert {9} == set(comparison_df['Total'].tolist())
     assert {1} == set(comparison_df['A_total'].tolist())
@@ -382,7 +411,7 @@ def test_features_comparison(loaded_database_genomic_data_store: GenomicsDataInd
     comparison_df['Category2_percent'] = comparison_df['Category2_percent'].astype(
         int)  # Convert to int for easier comparison
     assert comparison_df.index.name == 'Mutation'
-    assert ['Sequence', 'Position', 'Deletion', 'Insertion',
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type',
             'Total',
             'Category1_percent', 'Category2_percent',
             'Category1_total', 'Category2_total'] == comparison_df.columns.tolist()
@@ -418,7 +447,7 @@ def test_features_comparison_annotations(loaded_database_genomic_data_store_anno
                                                              unit='count')
     comparison_df = comparison_df.sort_index()
     assert comparison_df.index.name == 'Mutation'
-    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Total',
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type', 'Total',
             'All_count',
             'All_total',
             'Annotation', 'Annotation_Impact',
@@ -443,7 +472,7 @@ def test_features_comparison_annotations(loaded_database_genomic_data_store_anno
                                                              unit='count')
     comparison_df = comparison_df.sort_index()
     assert comparison_df.index.name == 'Mutation'
-    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Total',
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type', 'Total',
             '10_count', '14_count',
             '10_total', '14_total',
             'Annotation', 'Annotation_Impact',
@@ -481,7 +510,7 @@ def test_features_comparison_annotations(loaded_database_genomic_data_store_anno
     comparison_df['Category2_percent'] = comparison_df['Category2_percent'].astype(
         int)  # Convert to int for easier comparison
     assert comparison_df.index.name == 'Mutation'
-    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Total',
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type', 'Total',
             'Category1_percent', 'Category2_percent',
             'Category1_total', 'Category2_total',
             'Annotation', 'Annotation_Impact',
@@ -518,7 +547,7 @@ def test_features_comparison_annotations(loaded_database_genomic_data_store_anno
                                                              unit='count')
     comparison_df = comparison_df.sort_index()
     assert comparison_df.index.name == 'Mutation'
-    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Total',
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type', 'Total',
             '10_count', '14_count',
             '10_total', '14_total',
             'Annotation', 'Annotation_Impact',
@@ -555,7 +584,7 @@ def test_features_comparison_annotations(loaded_database_genomic_data_store_anno
                                                              unit='count')
     comparison_df = comparison_df.sort_index()
     assert comparison_df.index.name == 'Mutation'
-    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Total',
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type', 'Total',
             '14_count',
             '14_total',
             'Annotation', 'Annotation_Impact',

@@ -1,18 +1,18 @@
-Mutation	Sequence	Position	Deletion	Insertion
-reference:619:G:C	reference	619	G	C
-reference:839:C:G	reference	839	C	G
-reference:1184:A:G	reference	1184	A	G
-reference:1347:C:A	reference	1347	C	A
-reference:3263:A:G	reference	3263	A	G
-reference:3337:C:G	reference	3337	C	G
-reference:3522:G:A	reference	3522	G	A
-reference:3642:A:G	reference	3642	A	G
-reference:3762:A:G	reference	3762	A	G
-reference:3846:T:A	reference	3846	T	A
-reference:4036:T:A	reference	4036	T	A
-reference:4245:G:A	reference	4245	G	A
-reference:4585:T:C	reference	4585	T	C
-reference:4628:A:G	reference	4628	A	G
-reference:4644:G:A	reference	4644	G	A
-reference:4765:A:G	reference	4765	A	G
-reference:4975:T:C	reference	4975	T	C
+Mutation	Sequence	Position	Deletion	Insertion	Type
+reference:619:G:C	reference	619	G	C	SNP
+reference:839:C:G	reference	839	C	G	SNP
+reference:1184:A:G	reference	1184	A	G	SNP
+reference:1347:C:A	reference	1347	C	A	SNP
+reference:3263:A:G	reference	3263	A	G	SNP
+reference:3337:C:G	reference	3337	C	G	SNP
+reference:3522:G:A	reference	3522	G	A	SNP
+reference:3642:A:G	reference	3642	A	G	SNP
+reference:3762:A:G	reference	3762	A	G	SNP
+reference:3846:T:A	reference	3846	T	A	SNP
+reference:4036:T:A	reference	4036	T	A	SNP
+reference:4245:G:A	reference	4245	G	A	SNP
+reference:4585:T:C	reference	4585	T	C	SNP
+reference:4628:A:G	reference	4628	A	G	SNP
+reference:4644:G:A	reference	4644	G	A	SNP
+reference:4765:A:G	reference	4765	A	G	SNP
+reference:4975:T:C	reference	4975	T	C	SNP
