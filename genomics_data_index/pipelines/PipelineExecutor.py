@@ -4,6 +4,8 @@ import logging
 import sys
 from pathlib import Path
 from typing import List, Union, Tuple, Optional
+import gzip
+from Bio import SeqIO
 
 import pandas as pd
 from pathvalidate import sanitize_filename
@@ -189,6 +191,37 @@ class PipelineExecutor(abc.ABC):
             else:
                 input_sample_files[col] = input_sample_files[col].apply(lambda x: str(x) if not pd.isna(x) else pd.NA)
         input_sample_files.to_csv(output_file, sep='\t', index=False)
+
+    def split_input_sequence_files(self, input_sequence_files: List[Path], output_dir: Path) -> pd.DataFrame:
+        sample_data = []
+        print_on = 200
+        for input_sequence_file in input_sequence_files:
+            count = 0
+            sequence_file = SequenceFile(input_sequence_file)
+
+            if sequence_file.is_fasta():
+                extension = '.fasta.gz'
+                filetype = 'fasta'
+            elif sequence_file.is_genbank():
+                extension = '.gbk.gz'
+                filetype = 'genbank'
+            else:
+                raise Exception(f'Unknown filetype for {input_sequence_file}, must be either fasta or genbank')
+
+            for record in sequence_file.records():
+                if count % print_on == 0:
+                    logger.debug(f'Processed {count} sequences from {input_sequence_file}')
+
+                sample_name = record.id
+                sample_filename = sanitize_filename(sample_name, replacement_text='_')
+                sample_path = output_dir / (sample_filename + extension)
+                with gzip.open(sample_path, "wt") as oh:
+                    SeqIO.write(record, oh, filetype)
+
+                sample_data.append([sample_name, sample_path, pd.NA, pd.NA])
+
+                count += 1
+        return pd.DataFrame(sample_data, columns=self.INPUT_SAMPLE_FILE_COLUMNS)
 
     def read_input_sample_files(self, input_file: Path) -> pd.DataFrame:
         df = pd.read_csv(input_file, sep='\t')

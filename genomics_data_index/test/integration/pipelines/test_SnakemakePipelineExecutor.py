@@ -8,6 +8,7 @@ from Bio.SeqRecord import SeqRecord
 
 from genomics_data_index.pipelines.SnakemakePipelineExecutor import SnakemakePipelineExecutor
 from genomics_data_index.storage.io.mutation.SequenceFile import SequenceFile
+from genomics_data_index.test.integration import reference_file
 from genomics_data_index.test.integration.pipelines import assemblies_samples, assemblies_reference, expected_mutations
 from genomics_data_index.test.integration.pipelines import snpeff_input_sampleA, snpeff_reference_genome
 from genomics_data_index.test.integration.pipelines import snpeff_reads_paired, snpeff_reads_single
@@ -513,3 +514,26 @@ def test_create_fofn_file_snpeff_reads_with_conda():
 
         reader = vcf.Reader(filename=str(actual_mutations_snpeff_file_single))
         assert 'ANN' in reader.infos
+
+
+def test_split_input_sequence_files_single_record():
+    with TemporaryDirectory() as tmp_dir_str:
+        tmp_dir = Path(tmp_dir_str)
+
+        pipeline_executor = SnakemakePipelineExecutor(working_directory=tmp_dir)
+        sample_data = pipeline_executor.split_input_sequence_files([reference_file], output_dir=tmp_dir)
+
+        expected_out1 = tmp_dir / 'reference.fasta.gz'
+
+        assert ['Sample', 'Assemblies', 'Reads1', 'Reads2'] == sample_data.columns.tolist()
+        assert 1 == len(sample_data)
+        assert ['reference'] == sample_data['Sample'].tolist()
+        assert [expected_out1] == sample_data['Assemblies'].tolist()
+        assert sample_data['Reads1'].isna().all()
+        assert sample_data['Reads2'].isna().all()
+
+        assert expected_out1.exists()
+
+        sf = SequenceFile(expected_out1)
+        name, records = sf.parse_sequence_file()
+        assert 5180 == len(records[0])
