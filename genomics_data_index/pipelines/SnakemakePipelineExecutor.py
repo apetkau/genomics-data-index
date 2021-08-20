@@ -142,9 +142,12 @@ class SnakemakePipelineExecutor(PipelineExecutor):
         execute_commands([command])
         logger.info('Finished running snakemake.')
 
-        logger.debug('Restoring original sample names')
-        self._restore_and_write_sample_names(snakemake_output_fofn, sample_column='Sample',
-                                             samples_original_fixed=sample_names_original_fixed)
+        if sample_names_original_fixed is not None:
+            logger.debug(f'Restoring original sample names for {len(sample_files)} samples')
+            self._restore_and_write_sample_names(snakemake_output_fofn, sample_column='Sample',
+                                                 samples_original_fixed=sample_names_original_fixed)
+        else:
+            logger.debug('Original sample names were unmodified so no need to restore them')
 
         logger.debug(f'Output file [{snakemake_output_fofn}]. '
                      f'MLST file [{snakemake_output_mlst}]')

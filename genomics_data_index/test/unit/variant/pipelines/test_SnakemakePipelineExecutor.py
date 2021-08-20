@@ -199,6 +199,7 @@ def test_fix_sample_names_no_change():
     executor = SnakemakePipelineExecutor()
 
     input_samples_fixed, original_fixed_names = executor.fix_sample_names(input_samples)
+    assert original_fixed_names is None
 
     assert ['Sample', 'Assemblies', 'Reads1', 'Reads2'] == input_samples_fixed.columns.tolist()
     assert 2 == len(input_samples_fixed)
@@ -209,22 +210,23 @@ def test_fix_sample_names_no_change():
 def test_fix_sample_names_with_change():
     input_samples = pd.DataFrame([
         ['A/1', Path('file1.fasta'), pd.NA, pd.NA],
-        ['B/2', Path('file2.fasta'), pd.NA, pd.NA]
+        ['B2', Path('file2.fasta'), pd.NA, pd.NA]
     ], columns=['Sample', 'Assemblies', 'Reads1', 'Reads2'])
 
     executor = SnakemakePipelineExecutor()
 
     input_samples_fixed, original_fixed_names = executor.fix_sample_names(input_samples)
+    assert original_fixed_names is not None
 
     assert ['Sample', 'Assemblies', 'Reads1', 'Reads2'] == input_samples_fixed.columns.tolist()
     assert 2 == len(input_samples_fixed)
-    assert ['A__1', 'B__2'] == input_samples_fixed['Sample'].tolist()
+    assert ['A__1', 'B2'] == input_samples_fixed['Sample'].tolist()
     assert [Path('file1.fasta'), Path('file2.fasta')] == input_samples_fixed['Assemblies'].tolist()
 
     assert ['Sample_original', 'Sample_fixed'] == original_fixed_names.columns.tolist()
     assert 2 == len(original_fixed_names)
-    assert ['A/1', 'B/2'] == original_fixed_names['Sample_original'].tolist()
-    assert ['A__1', 'B__2'] == original_fixed_names['Sample_fixed'].tolist()
+    assert ['A/1', 'B2'] == original_fixed_names['Sample_original'].tolist()
+    assert ['A__1', 'B2'] == original_fixed_names['Sample_fixed'].tolist()
 
 
 def test_fix_sample_names_with_change2():

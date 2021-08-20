@@ -3,7 +3,7 @@ import io
 import logging
 import sys
 from pathlib import Path
-from typing import List, Union, Tuple
+from typing import List, Union, Tuple, Optional
 
 import pandas as pd
 
@@ -41,26 +41,37 @@ class PipelineExecutor(abc.ABC):
                 raise Exception(
                     f'column=[{col}] in input_sample_files={input_sample_files} does not contain Path or NA')
 
-    def fix_sample_names(self, sample_files: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    def fix_sample_names(self, sample_files: pd.DataFrame) -> Tuple[pd.DataFrame, Optional[pd.DataFrame]]:
         invalid_chars = ['/']
-        sample_files['Sample_fixed'] = sample_files['Sample']
+        fixed_sample_files = sample_files.copy()
+
+        fixed_sample_files['Sample_fixed'] = fixed_sample_files['Sample']
         for invalid_char in invalid_chars:
-            sample_files['Sample_fixed'] = sample_files['Sample_fixed'].str.replace(invalid_char, '__')
+            fixed_sample_files['Sample_fixed'] = fixed_sample_files['Sample_fixed'].str.replace(invalid_char, '__')
 
-        agg_samples_fixed = sample_files.groupby('Sample_fixed').agg({'Sample_fixed': 'count', 'Sample': 'first'})
-        duplicate_names_fixed = agg_samples_fixed[agg_samples_fixed['Sample_fixed'] > 1]
-        if len(duplicate_names_fixed) > 0:
-            duplicate_samples = duplicate_names_fixed['Sample'].tolist()
-            raise Exception(f'Fixing sample names to remove characters {invalid_chars} leads to duplicates for the '
-                            f'following samples: {duplicate_samples}. Please rename these samples and try'
-                            f' executing again.')
+        samples_changed = (fixed_sample_files['Sample'] != fixed_sample_files['Sample_fixed'])
+        if not samples_changed.any():
+            return sample_files, None
         else:
-            sample_files = sample_files.rename({'Sample': 'Sample_original'}, axis='columns')
-            sample_sample_fixed_df = sample_files[['Sample_original', 'Sample_fixed']]
-            sample_files = sample_files.rename({'Sample_fixed': 'Sample'}, axis='columns')
+            logger.debug(f'Modified {samples_changed.sum()} sample names so they are valid file names for '
+                         f'analysis. These will be restored when the analysis is complete.')
+            agg_samples_fixed = fixed_sample_files.groupby('Sample_fixed').agg({
+                'Sample_fixed': 'count',
+                'Sample': 'first'
+            })
+            duplicate_names_fixed = agg_samples_fixed[agg_samples_fixed['Sample_fixed'] > 1]
+            if len(duplicate_names_fixed) > 0:
+                duplicate_samples = duplicate_names_fixed['Sample'].tolist()
+                raise Exception(f'Fixing sample names to remove characters {invalid_chars} leads to duplicates for the '
+                                f'following samples: {duplicate_samples}. Please rename these samples and try'
+                                f' executing again.')
+            else:
+                fixed_sample_files = fixed_sample_files.rename({'Sample': 'Sample_original'}, axis='columns')
+                sample_sample_fixed_df = fixed_sample_files[['Sample_original', 'Sample_fixed']]
+                fixed_sample_files = fixed_sample_files.rename({'Sample_fixed': 'Sample'}, axis='columns')
 
-            return sample_files[['Sample', 'Assemblies', 'Reads1', 'Reads2']],\
-                   sample_sample_fixed_df
+                return fixed_sample_files[['Sample', 'Assemblies', 'Reads1', 'Reads2']], \
+                       sample_sample_fixed_df
 
     def restore_sample_names(self, data: pd.DataFrame, sample_column: str,
                              samples_original_fixed: pd.DataFrame) -> pd.DataFrame:
