@@ -247,3 +247,27 @@ def test_fix_sample_names_with_change2():
     assert 3 == len(original_fixed_names)
     assert ['new/A/1/', 'new/B/2', 'new/C//2'] == original_fixed_names['Sample_original'].tolist()
     assert ['new__A__1__', 'new__B__2', 'new__C____2'] == original_fixed_names['Sample_fixed'].tolist()
+
+
+def test_restore_sample_names():
+    original_new_names = pd.DataFrame([
+        ['new/A/1/', 'new__A__1__'],
+        ['new/B/2', 'new__B__2'],
+        ['new/C//2', 'new__C__2'],
+    ], columns=['Sample_original', 'Sample_fixed'])
+
+    data = pd.DataFrame([
+        ['new__A__1__', Path('file1.vcf'), Path('file1.fasta')],
+        ['new__B__2', Path('file2.vcf'), Path('file2.fasta')],
+        ['new__C__2', Path('file3.vcf'), Path('file3.fasta')]
+    ], columns=['Sample', 'VCF', 'Mask'])
+
+    executor = SnakemakePipelineExecutor()
+
+    actual_df = executor.restore_sample_names(data, sample_column='Sample', samples_original_fixed=original_new_names)
+
+    assert ['Sample', 'VCF', 'Mask'] == actual_df.columns.tolist()
+    assert 3 == len(actual_df)
+    assert ['new/A/1/', 'new/B/2', 'new/C//2'] == actual_df['Sample'].tolist()
+    assert [Path('file1.vcf'), Path('file2.vcf'), Path('file3.vcf')] == actual_df['VCF'].tolist()
+    assert [Path('file1.fasta'), Path('file2.fasta'), Path('file3.fasta')] == actual_df['Mask'].tolist()
