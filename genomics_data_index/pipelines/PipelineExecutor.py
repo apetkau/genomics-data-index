@@ -74,13 +74,10 @@ class PipelineExecutor(abc.ABC):
         else:
             original_sample_column = 'Sample_original'
 
-        logger.debug(f'Original dataframe: {data}')
-        logger.debug(f'Restoring sample names from dataframe: {samples_original_fixed}')
         restored_data = data.merge(samples_original_fixed, left_on=sample_column, right_on='Sample_fixed')
         restored_data = restored_data.drop(sample_column, axis='columns')  # Remove sample names I don't want
         restored_data = restored_data.rename({original_sample_column: sample_column}, axis='columns')
         restored_data = restored_data[data_columns_to_keep]
-        logger.debug(f'Restored dataframe: {restored_data}')
         return restored_data
 
     def create_input_sample_files(self, input_files: List[Path]) -> pd.DataFrame:

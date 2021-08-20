@@ -148,6 +148,7 @@ def test_create_fofn_file_multiple_samples_with_slashes_in_name():
         # Modify sample names so they contain extra characters that can't be used for a file name
         # (in this case, a slash '/')
         sample_files['Sample'] = sample_files['Sample'] + '/extra/1'
+        expected_mutations_local = {s + '/extra/1': expected_mutations[s] for s in expected_mutations}
 
         results = pipeline_executor.execute(sample_files=sample_files,
                                             reference_file=assemblies_reference,
@@ -167,17 +168,17 @@ def test_create_fofn_file_multiple_samples_with_slashes_in_name():
 
         actual_mutations_A = Path(fofn_df[fofn_df['Sample'] == 'SampleA/extra/1']['VCF'].tolist()[0])
         actual_consensus_A = Path(fofn_df[fofn_df['Sample'] == 'SampleA/extra/1']['Mask File'].tolist()[0])
-        assert_vcf(actual_mutations_A, expected_mutations['SampleA/extra/1'])
+        assert_vcf(actual_mutations_A, expected_mutations_local['SampleA/extra/1'])
         assert_consensus(actual_consensus_A, expected_length=5180, expected_Ns=0, expected_gaps=0)
 
         actual_mutations_B = Path(fofn_df[fofn_df['Sample'] == 'SampleB/extra/1']['VCF'].tolist()[0])
         actual_consensus_B = Path(fofn_df[fofn_df['Sample'] == 'SampleB/extra/1']['Mask File'].tolist()[0])
-        assert_vcf(actual_mutations_B, expected_mutations['SampleB/extra/1'])
+        assert_vcf(actual_mutations_B, expected_mutations_local['SampleB/extra/1'])
         assert_consensus(actual_consensus_B, expected_length=5180, expected_Ns=0, expected_gaps=0)
 
         actual_mutations_C = Path(fofn_df[fofn_df['Sample'] == 'SampleC/extra/1']['VCF'].tolist()[0])
         actual_consensus_C = Path(fofn_df[fofn_df['Sample'] == 'SampleC/extra/1']['Mask File'].tolist()[0])
-        assert_vcf(actual_mutations_C, expected_mutations['SampleC/extra/1'])
+        assert_vcf(actual_mutations_C, expected_mutations_local['SampleC/extra/1'])
         assert_consensus(actual_consensus_C, expected_length=5180, expected_Ns=0, expected_gaps=0)
 
 
