@@ -3,7 +3,7 @@ import io
 import logging
 import sys
 from pathlib import Path
-from typing import List, Union
+from typing import List, Union, Tuple
 
 import pandas as pd
 
@@ -40,6 +40,48 @@ class PipelineExecutor(abc.ABC):
             if not all(are_paths):
                 raise Exception(
                     f'column=[{col}] in input_sample_files={input_sample_files} does not contain Path or NA')
+
+    def fix_sample_names(self, sample_files: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
+        invalid_chars = ['/']
+        sample_files['Sample_fixed'] = sample_files['Sample']
+        for invalid_char in invalid_chars:
+            sample_files['Sample_fixed'] = sample_files['Sample_fixed'].str.replace(invalid_char, '__')
+
+        agg_samples_fixed = sample_files.groupby('Sample_fixed').agg({'Sample_fixed': 'count', 'Sample': 'first'})
+        duplicate_names_fixed = agg_samples_fixed[agg_samples_fixed['Sample_fixed'] > 1]
+        if len(duplicate_names_fixed) > 0:
+            duplicate_samples = duplicate_names_fixed['Sample'].tolist()
+            raise Exception(f'Fixing sample names to remove characters {invalid_chars} leads to duplicates for the '
+                            f'following samples: {duplicate_samples}. Please rename these samples and try'
+                            f' executing again.')
+        else:
+            sample_files = sample_files.rename({'Sample': 'Sample_original'}, axis='columns')
+            sample_sample_fixed_df = sample_files[['Sample_original', 'Sample_fixed']]
+            sample_files = sample_files.rename({'Sample_fixed': 'Sample'}, axis='columns')
+
+            return sample_files[['Sample', 'Assemblies', 'Reads1', 'Reads2']],\
+                   sample_sample_fixed_df
+
+    def restore_sample_names(self, data: pd.DataFrame, sample_column: str,
+                             samples_original_fixed: pd.DataFrame) -> pd.DataFrame:
+        data_columns_to_keep = data.columns.tolist()
+
+        # Rename column so I know which is the original set of sample names after merging
+        if sample_column == 'Sample_original':
+            original_sample_column = 'Sample_original_renamed'
+            samples_original_fixed = samples_original_fixed.rename({'Sample_original': original_sample_column},
+                                                                   axis='columns')
+        else:
+            original_sample_column = 'Sample_original'
+
+        logger.debug(f'Original dataframe: {data}')
+        logger.debug(f'Restoring sample names from dataframe: {samples_original_fixed}')
+        restored_data = data.merge(samples_original_fixed, left_on=sample_column, right_on='Sample_fixed')
+        restored_data = restored_data.drop(sample_column, axis='columns')  # Remove sample names I don't want
+        restored_data = restored_data.rename({original_sample_column: sample_column}, axis='columns')
+        restored_data = restored_data[data_columns_to_keep]
+        logger.debug(f'Restored dataframe: {restored_data}')
+        return restored_data
 
     def create_input_sample_files(self, input_files: List[Path]) -> pd.DataFrame:
         """
