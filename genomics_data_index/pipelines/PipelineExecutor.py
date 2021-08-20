@@ -6,10 +6,10 @@ from pathlib import Path
 from typing import List, Union, Tuple, Optional
 
 import pandas as pd
+from pathvalidate import sanitize_filename
 
 from genomics_data_index.pipelines.ExecutorResults import ExecutorResults
 from genomics_data_index.storage.io.mutation.SequenceFile import SequenceFile
-from pathvalidate import sanitize_filename
 
 logger = logging.getLogger(__name__)
 
