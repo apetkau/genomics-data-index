@@ -251,6 +251,20 @@ def test_fix_sample_names_with_change2():
     assert ['new_A_1_', 'new_B_2', 'new_C__2'] == original_fixed_names['Sample_fixed'].tolist()
 
 
+def test_fix_sample_names_with_duplicates():
+    input_samples = pd.DataFrame([
+        ['A/1', Path('file1.fasta'), pd.NA, pd.NA],
+        ['A_1', Path('file2.fasta'), pd.NA, pd.NA],
+    ], columns=['Sample', 'Assemblies', 'Reads1', 'Reads2'])
+
+    executor = SnakemakePipelineExecutor()
+
+    with pytest.raises(Exception) as execinfo:
+        executor.fix_sample_names(input_samples)
+
+    assert "Sanitizing sample names to use as file names leads to duplicates" in str(execinfo.value)
+
+
 def test_restore_sample_names():
     original_new_names = pd.DataFrame([
         ['new/A/1/', 'new_A_1_'],
