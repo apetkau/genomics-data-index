@@ -188,3 +188,62 @@ def test_write_read_input_sample_files():
         assert 2 == len(df)
         assert ['A', Path('file.fasta'), pd.NA, pd.NA] == df.iloc[0].tolist()
         assert ['B', pd.NA, Path('file.fastq'), pd.NA] == df.iloc[1].tolist()
+
+
+def test_fix_sample_names_no_change():
+    input_samples = pd.DataFrame([
+        ['A', Path('file1.fasta'), pd.NA, pd.NA],
+        ['B', Path('file2.fasta'), pd.NA, pd.NA]
+    ], columns=['Sample', 'Assemblies', 'Reads1', 'Reads2'])
+
+    executor = SnakemakePipelineExecutor()
+
+    input_samples_fixed, original_fixed_names = executor.fix_sample_names(input_samples)
+
+    assert ['Sample', 'Assemblies', 'Reads1', 'Reads2'] == input_samples_fixed.columns.tolist()
+    assert 2 == len(input_samples_fixed)
+    assert ['A', 'B'] == input_samples_fixed['Sample'].tolist()
+    assert [Path('file1.fasta'), Path('file2.fasta')] == input_samples_fixed['Assemblies'].tolist()
+
+
+def test_fix_sample_names_with_change():
+    input_samples = pd.DataFrame([
+        ['A/1', Path('file1.fasta'), pd.NA, pd.NA],
+        ['B/2', Path('file2.fasta'), pd.NA, pd.NA]
+    ], columns=['Sample', 'Assemblies', 'Reads1', 'Reads2'])
+
+    executor = SnakemakePipelineExecutor()
+
+    input_samples_fixed, original_fixed_names = executor.fix_sample_names(input_samples)
+
+    assert ['Sample', 'Assemblies', 'Reads1', 'Reads2'] == input_samples_fixed.columns.tolist()
+    assert 2 == len(input_samples_fixed)
+    assert ['A__1', 'B__2'] == input_samples_fixed['Sample'].tolist()
+    assert [Path('file1.fasta'), Path('file2.fasta')] == input_samples_fixed['Assemblies'].tolist()
+
+    assert ['Sample_original', 'Sample_fixed'] == original_fixed_names.columns.tolist()
+    assert 2 == len(original_fixed_names)
+    assert ['A/1', 'B/2'] == original_fixed_names['Sample_original'].tolist()
+    assert ['A__1', 'B__2'] == original_fixed_names['Sample_fixed'].tolist()
+
+
+def test_fix_sample_names_with_change2():
+    input_samples = pd.DataFrame([
+        ['new/A/1/', Path('file1.fasta'), pd.NA, pd.NA],
+        ['new/B/2', Path('file2.fasta'), pd.NA, pd.NA],
+        ['new/C//2', Path('file3.fasta'), pd.NA, pd.NA]
+    ], columns=['Sample', 'Assemblies', 'Reads1', 'Reads2'])
+
+    executor = SnakemakePipelineExecutor()
+
+    input_samples_fixed, original_fixed_names = executor.fix_sample_names(input_samples)
+
+    assert ['Sample', 'Assemblies', 'Reads1', 'Reads2'] == input_samples_fixed.columns.tolist()
+    assert 3 == len(input_samples_fixed)
+    assert ['new__A__1__', 'new__B__2', 'new__C____2'] == input_samples_fixed['Sample'].tolist()
+    assert [Path('file1.fasta'), Path('file2.fasta'), Path('file3.fasta')] == input_samples_fixed['Assemblies'].tolist()
+
+    assert ['Sample_original', 'Sample_fixed'] == original_fixed_names.columns.tolist()
+    assert 3 == len(original_fixed_names)
+    assert ['new/A/1/', 'new/B/2', 'new/C//2'] == original_fixed_names['Sample_original'].tolist()
+    assert ['new__A__1__', 'new__B__2', 'new__C____2'] == original_fixed_names['Sample_fixed'].tolist()
