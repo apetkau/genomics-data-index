@@ -9,6 +9,7 @@ import pandas as pd
 
 from genomics_data_index.pipelines.ExecutorResults import ExecutorResults
 from genomics_data_index.storage.io.mutation.SequenceFile import SequenceFile
+from pathvalidate import sanitize_filename
 
 logger = logging.getLogger(__name__)
 
@@ -42,12 +43,10 @@ class PipelineExecutor(abc.ABC):
                     f'column=[{col}] in input_sample_files={input_sample_files} does not contain Path or NA')
 
     def fix_sample_names(self, sample_files: pd.DataFrame) -> Tuple[pd.DataFrame, Optional[pd.DataFrame]]:
-        invalid_chars = ['/']
         fixed_sample_files = sample_files.copy()
 
-        fixed_sample_files['Sample_fixed'] = fixed_sample_files['Sample']
-        for invalid_char in invalid_chars:
-            fixed_sample_files['Sample_fixed'] = fixed_sample_files['Sample_fixed'].str.replace(invalid_char, '__')
+        fixed_sample_files['Sample_fixed'] = fixed_sample_files['Sample'].apply(
+            lambda x: sanitize_filename(x, replacement_text='_'))
 
         samples_changed = (fixed_sample_files['Sample'] != fixed_sample_files['Sample_fixed'])
         if not samples_changed.any():
@@ -62,7 +61,7 @@ class PipelineExecutor(abc.ABC):
             duplicate_names_fixed = agg_samples_fixed[agg_samples_fixed['Sample_fixed'] > 1]
             if len(duplicate_names_fixed) > 0:
                 duplicate_samples = duplicate_names_fixed['Sample'].tolist()
-                raise Exception(f'Fixing sample names to remove characters {invalid_chars} leads to duplicates for the '
+                raise Exception(f'Sanitizing sample names to use as file names leads to duplicates for the '
                                 f'following samples: {duplicate_samples}. Please rename these samples and try'
                                 f' executing again.')
             else:
