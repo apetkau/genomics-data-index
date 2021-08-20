@@ -7,7 +7,7 @@ from mimetypes import guess_type
 from os import mkdir, symlink, path
 from os.path import basename, splitext
 from pathlib import Path
-from typing import Tuple, List
+from typing import Tuple, List, Generator
 
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
@@ -32,7 +32,7 @@ class SequenceFile:
         self._file = file
 
     @property
-    def file(self):
+    def file(self) -> Path:
         return self._file
 
     def parse_sequence_file(self) -> Tuple[str, List[SeqRecord]]:
@@ -50,6 +50,21 @@ class SequenceFile:
                 sequences = list(SeqIO.parse(f, 'fasta'))
 
             return ref_name, sequences
+
+    def records(self) -> Generator[SeqRecord, None, None]:
+        _open = partial(gzip.open, mode='rt') if self.is_gzip() else open
+
+        if self.is_fasta():
+            format = 'fasta'
+        elif self.is_genbank():
+            format = 'genbank'
+        else:
+            raise Exception(f'sequence_file={self.file} is neither genbank nor fasta')
+
+        with _open(self._file) as f:
+            logger.debug(f'Parsing sequence file [{self._file}]')
+            yield from SeqIO.parse(f, format)
+        logger.debug(f'Finished parsing sequence file [{self._file}]')
 
     def write(self, output_file: Path, format: str) -> None:
         ref_name, sequences = self.parse_sequence_file()
