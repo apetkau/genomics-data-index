@@ -414,6 +414,40 @@ def input_command(absolute: bool, input_genomes_file: str, genomes: List[str]):
     pipeline_executor.write_input_sample_files(input_sample_files=sample_files, abolute_paths=absolute)
 
 
+@main.command(name='input-split-file')
+@click.option('--absolute/--no-absolute', help='Convert paths to absolute paths', required=False)
+@click.option('--output-dir',
+              help='The directory where individual output sequence files should be written into.',
+              type=click.Path(),
+              default=Path(f'split-files.{time.time()}'),
+              required=False)
+@click.option('--output-samples-file',
+              help='The file listing all the samples and linking them back to the individual sequence files. '
+                   'Defaults to STDOUT.',
+              type=click.Path(),
+              required=False
+              )
+@click.argument('input-files', type=click.Path(exists=True), nargs=-1)
+def input_split_file(absolute: bool, output_dir: str, output_samples_file: str, input_files: Tuple[str]):
+    output_dir = Path(output_dir)
+    if not output_dir.exists():
+        mkdir(output_dir)
+
+    if output_samples_file is None:
+        output_samples_file = sys.stdout
+    else:
+        output_samples_file = Path(output_samples_file)
+
+    input_files = [Path(f) for f in input_files]
+
+    pipeline_executor = SnakemakePipelineExecutor()
+    sample_data_df = pipeline_executor.split_input_sequence_files(input_files, output_dir=output_dir)
+
+    pipeline_executor.write_input_sample_files(input_sample_files=sample_data_df,
+                                               output_file=output_samples_file,
+                                               abolute_paths=absolute)
+
+
 @main.command()
 @click.pass_context
 @click.option('--reference-file', help='Reference genome', required=True, type=click.Path(exists=True))
