@@ -98,6 +98,23 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
         else:
             raise Exception(f'Build tree is not of type {TreeSamplesQuery.__class__}')
 
+    def _tree_copy(self) -> Tree:
+        return self._tree.copy(method='newick')
+
+    def set_outgroup(self, sample_name: str) -> SamplesQuery:
+        """
+        Sets the outgroup of the tree to the specified sample name.
+        :param sample_name: The name to set as an outgroup. Must exist as a leaf in the tree.
+        :return: A new TreeSamplesQuery with the defined outgroup set.
+        """
+        tree = self._tree_copy()
+        tree.set_outgroup(sample_name)
+        return self._create_from_tree_internal(tree)
+
+    @abc.abstractmethod
+    def _create_from_tree_internal(self, tree: Tree) -> SamplesQuery:
+        pass
+
     def _within_distance(self, data: Union[str, List[str], SamplesQuery, SampleSet], distance: float,
                          units: str, **kwargs) -> SamplesQuery:
         if self._can_handle_distance_units(units):
