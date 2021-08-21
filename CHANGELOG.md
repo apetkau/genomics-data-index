@@ -9,6 +9,7 @@
 * [analysis]: Added ability to handle lzma and bzip2 compressed sequence files (0.3.0.dev4).
 * [api]: Added a method to select a random subsample of a query (0.3.0.dev4).
 * [api]: Set outgroup of tree query (0.3.0.dev5).
+* [api]: Added experimental class to cluster samples within different categories (e.g., lineages) by distances between the proportion of samples having particular features (0.3.0.dev5).
 
 # 0.2.0
 
