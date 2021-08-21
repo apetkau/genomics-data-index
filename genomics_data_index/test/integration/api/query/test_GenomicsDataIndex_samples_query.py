@@ -4199,3 +4199,53 @@ def test_tofeaturesset_unique_two_samples(loaded_database_only_snippy: DataIndex
     unique_mutations_BC = query_BC.tofeaturesset(selection='unique', include_unknown_features=True,
                                                  include_present_features=False)
     assert 84 == len(unique_mutations_BC)
+
+
+def test_subsample(loaded_database_connection: DataIndexConnection):
+    q = query(loaded_database_connection)
+    assert len(q) == 9
+
+    # Test cases with no unknowns
+    sub = q.subsample(1)
+    assert 1 == len(sub)
+    assert set(sub.sample_set) < set(q.sample_set)
+
+    sub = q.subsample(2)
+    assert 2 == len(sub)
+    assert set(sub.sample_set) < set(q.sample_set)
+
+    sub = q.subsample(3)
+    assert 3 == len(sub)
+    assert set(sub.sample_set) < set(q.sample_set)
+
+    sub = q.subsample(0.11)
+    assert 1 == len(sub)
+    assert set(sub.sample_set) < set(q.sample_set)
+
+    sub = q.subsample(0.55)
+    assert 5 == len(sub)
+    assert set(sub.sample_set) < set(q.sample_set)
+
+    # Test cases with 1 unknown
+    q = query(loaded_database_connection).hasa('reference:5061:G:A')
+    assert 1 == len(q)
+    assert 1 == len(q.unknown_set)
+
+    sub = q.subsample(1, include_unknown=False)
+    assert 1 == len(sub)
+    assert 0 == len(sub.unknown_set)
+
+    sub = q.subsample(1, include_unknown=True)
+    sub_all = sub.select_present() | sub.select_unknown()
+    assert 1 == len(sub_all)
+
+    sub = q.subsample(0.5, include_unknown=True)
+    sub_all = sub.select_present() | sub.select_unknown()
+    assert 1 == len(sub_all)
+    assert set(sub_all.sample_set) < set(q.sample_set) | set(q.unknown_set)
+
+    sub = q.subsample(2, include_unknown=True)
+    assert 1 == len(sub)
+    assert 1 == len(sub.unknown_set)
+    assert set(sub.sample_set) == set(q.sample_set)
+    assert set(sub.unknown_set) == set(q.unknown_set)

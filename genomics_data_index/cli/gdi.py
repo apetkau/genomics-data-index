@@ -414,6 +414,70 @@ def input_command(absolute: bool, input_genomes_file: str, genomes: List[str]):
     pipeline_executor.write_input_sample_files(input_sample_files=sample_files, abolute_paths=absolute)
 
 
+@main.command(name='input-split-file')
+@click.option('--absolute/--no-absolute', help='Convert paths to absolute paths', required=False)
+@click.option('--output-dir',
+              help='The directory where individual output sequence files should be written into.',
+              type=click.Path(),
+              default=Path(f'split-files.{time.time()}'),
+              required=False)
+@click.option('--output-samples-file',
+              help='The file listing all the samples and linking them back to the individual sequence files. '
+                   'Defaults to STDOUT.',
+              type=click.Path(),
+              required=False
+              )
+@click.option('--subsample-file',
+              help='Subsample the input files to contain only those samples listed in the passed file '
+                   '(one sample per line).',
+              type=click.Path(exists=True),
+              required=False
+              )
+@click.option('--subsample',
+              help='Subsample the input files to contain only the give number of samples. If >= 1 this is '
+                   'the number of samples to select. If < 1 this is the proportion of samples out of all '
+                   'sequences in the input files (e.g., 0.5 means subsample to 50% of the original sequences).',
+              type=click.FloatRange(min=0),
+              required=False
+              )
+@click.option('--seed', help='Seed for random number generator when subsampling.',
+              type=int, required=False, default=None)
+@click.argument('input-files', type=click.Path(exists=True), nargs=-1)
+def input_split_file(absolute: bool, output_dir: str, output_samples_file: str, subsample_file: str,
+                     subsample: float,
+                     seed: int,
+                     input_files: Tuple[str]):
+    if output_samples_file is None:
+        output_samples_file = sys.stdout
+    else:
+        output_samples_file = Path(output_samples_file)
+
+    input_files = [Path(f) for f in input_files]
+
+    pipeline_executor = SnakemakePipelineExecutor()
+
+    samples = None
+    if subsample_file is not None:
+        with open(subsample_file, 'r') as fh:
+            samples = {x.strip() for x in fh.readlines()}
+    elif subsample is not None:
+        samples = pipeline_executor.select_random_samples(input_files,
+                                                          number_samples=subsample,
+                                                          random_seed=seed)
+
+    output_dir = Path(output_dir)
+    if not output_dir.exists():
+        mkdir(output_dir)
+
+    sample_data_df = pipeline_executor.split_input_sequence_files(input_files,
+                                                                  samples=samples,
+                                                                  output_dir=output_dir)
+
+    pipeline_executor.write_input_sample_files(input_sample_files=sample_data_df,
+                                               output_file=output_samples_file,
+                                               abolute_paths=absolute)
+
+
 @main.command()
 @click.pass_context
 @click.option('--reference-file', help='Reference genome', required=True, type=click.Path(exists=True))

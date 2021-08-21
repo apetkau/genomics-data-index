@@ -122,6 +122,10 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
     def or_(self, other: SamplesQuery) -> SamplesQuery:
         return self._wrap_create(self._wrapped_query.or_(other))
 
+    def subsample(self, k: Union[int, float], include_unknown: bool = False, seed: int = None) -> SamplesQuery:
+        return self._wrap_create(self._wrapped_query.subsample(k=k, include_unknown=include_unknown,
+                                                               seed=seed))
+
     def hasa(self, property: Union[QueryFeature, str, pd.Series], kind='mutation') -> SamplesQuery:
         return self._wrap_create(self._wrapped_query.hasa(property=property, kind=kind))
 

@@ -8,6 +8,7 @@ from Bio.SeqRecord import SeqRecord
 
 from genomics_data_index.pipelines.SnakemakePipelineExecutor import SnakemakePipelineExecutor
 from genomics_data_index.storage.io.mutation.SequenceFile import SequenceFile
+from genomics_data_index.test.integration import reference_file, reference_file_5000_snpeff_2
 from genomics_data_index.test.integration.pipelines import assemblies_samples, assemblies_reference, expected_mutations
 from genomics_data_index.test.integration.pipelines import snpeff_input_sampleA, snpeff_reference_genome
 from genomics_data_index.test.integration.pipelines import snpeff_reads_paired, snpeff_reads_single
@@ -513,3 +514,139 @@ def test_create_fofn_file_snpeff_reads_with_conda():
 
         reader = vcf.Reader(filename=str(actual_mutations_snpeff_file_single))
         assert 'ANN' in reader.infos
+
+
+def test_split_input_sequence_files_single_record():
+    with TemporaryDirectory() as tmp_dir_str:
+        tmp_dir = Path(tmp_dir_str)
+
+        pipeline_executor = SnakemakePipelineExecutor(working_directory=tmp_dir)
+        sample_data = pipeline_executor.split_input_sequence_files([reference_file], output_dir=tmp_dir)
+
+        expected_out1 = tmp_dir / 'reference.fasta.gz'
+
+        assert ['Sample', 'Assemblies', 'Reads1', 'Reads2'] == sample_data.columns.tolist()
+        assert 1 == len(sample_data)
+        assert ['reference'] == sample_data['Sample'].tolist()
+        assert [expected_out1] == sample_data['Assemblies'].tolist()
+        assert sample_data['Reads1'].isna().all()
+        assert sample_data['Reads2'].isna().all()
+
+        assert expected_out1.exists()
+
+        sf = SequenceFile(expected_out1)
+        name, records = sf.parse_sequence_file()
+        assert 5180 == len(records[0])
+
+
+def test_split_input_sequence_files_multiple_records():
+    with TemporaryDirectory() as tmp_dir_str:
+        tmp_dir = Path(tmp_dir_str)
+
+        pipeline_executor = SnakemakePipelineExecutor(working_directory=tmp_dir)
+        sample_data = pipeline_executor.split_input_sequence_files([reference_file,
+                                                                    reference_file_5000_snpeff_2], output_dir=tmp_dir)
+        sample_data = sample_data.sort_values('Sample')
+
+        expected_out1 = tmp_dir / 'CP001602.2.gbk.gz'
+        expected_out2 = tmp_dir / 'NC_011083.1.gbk.gz'
+        expected_out3 = tmp_dir / 'reference.fasta.gz'
+
+        assert ['Sample', 'Assemblies', 'Reads1', 'Reads2'] == sample_data.columns.tolist()
+        assert 3 == len(sample_data)
+        assert ['CP001602.2', 'NC_011083.1', 'reference'] == sample_data['Sample'].tolist()
+        assert [expected_out1, expected_out2, expected_out3] == sample_data['Assemblies'].tolist()
+        assert sample_data['Reads1'].isna().all()
+        assert sample_data['Reads2'].isna().all()
+
+        assert expected_out1.exists()
+        assert expected_out2.exists()
+        assert expected_out3.exists()
+
+        sf1 = SequenceFile(expected_out1)
+        name, records = sf1.parse_sequence_file()
+        assert 5000 == len(records[0])
+
+        sf2 = SequenceFile(expected_out1)
+        name, records = sf2.parse_sequence_file()
+        assert 5000 == len(records[0])
+
+        sf3 = SequenceFile(expected_out3)
+        name, records = sf3.parse_sequence_file()
+        assert 5180 == len(records[0])
+
+
+def test_split_input_sequence_files_multiple_records_subsample():
+    with TemporaryDirectory() as tmp_dir_str:
+        tmp_dir = Path(tmp_dir_str)
+
+        samples = {'CP001602.2', 'reference'}
+
+        pipeline_executor = SnakemakePipelineExecutor(working_directory=tmp_dir)
+        sample_data = pipeline_executor.split_input_sequence_files([reference_file,
+                                                                    reference_file_5000_snpeff_2],
+                                                                   output_dir=tmp_dir,
+                                                                   samples=samples)
+        sample_data = sample_data.sort_values('Sample')
+
+        expected_out1 = tmp_dir / 'CP001602.2.gbk.gz'
+        unexpected_out2 = tmp_dir / 'NC_011083.1.gbk.gz'
+        expected_out3 = tmp_dir / 'reference.fasta.gz'
+
+        assert ['Sample', 'Assemblies', 'Reads1', 'Reads2'] == sample_data.columns.tolist()
+        assert 2 == len(sample_data)
+        assert ['CP001602.2', 'reference'] == sample_data['Sample'].tolist()
+        assert [expected_out1, expected_out3] == sample_data['Assemblies'].tolist()
+        assert sample_data['Reads1'].isna().all()
+        assert sample_data['Reads2'].isna().all()
+
+        assert expected_out1.exists()
+        assert not unexpected_out2.exists()
+        assert expected_out3.exists()
+
+        sf1 = SequenceFile(expected_out1)
+        name, records = sf1.parse_sequence_file()
+        assert 5000 == len(records[0])
+
+        sf3 = SequenceFile(expected_out3)
+        name, records = sf3.parse_sequence_file()
+        assert 5180 == len(records[0])
+
+
+def test_select_random_samples():
+    with TemporaryDirectory() as tmp_dir_str:
+        tmp_dir = Path(tmp_dir_str)
+
+        samples = {'CP001602.2', 'reference', 'NC_011083.1'}
+
+        pipeline_executor = SnakemakePipelineExecutor(working_directory=tmp_dir)
+
+        # Test select 1 sample
+        subsamples = pipeline_executor.select_random_samples([reference_file, reference_file_5000_snpeff_2],
+                                                             number_samples=1)
+        assert 1 == len(subsamples)
+        assert subsamples.issubset(samples)
+
+        # Test select 2 samples
+        subsamples = pipeline_executor.select_random_samples([reference_file, reference_file_5000_snpeff_2],
+                                                             number_samples=2)
+        assert 2 == len(subsamples)
+        assert subsamples.issubset(samples)
+
+        # Test select 3 samples
+        subsamples = pipeline_executor.select_random_samples([reference_file, reference_file_5000_snpeff_2],
+                                                             number_samples=3)
+        assert 3 == len(subsamples)
+        assert subsamples.issubset(samples)
+
+        # Test select 33% of samples
+        subsamples = pipeline_executor.select_random_samples([reference_file, reference_file_5000_snpeff_2],
+                                                             number_samples=0.33)
+        assert 1 == len(subsamples)
+        assert subsamples.issubset(samples)
+
+        # Test select 66% of samples
+        subsamples = pipeline_executor.select_random_samples([reference_file, reference_file_5000_snpeff_2],
+                                                             number_samples=0.66)
+        assert 2 == len(subsamples)
+        assert subsamples.issubset(samples)
