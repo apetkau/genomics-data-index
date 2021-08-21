@@ -6,6 +6,7 @@
 * [analysis]: Added ability to select to include MNP as well as SNPs when building an alignment/tree (0.3.0.dev2).
 * [analysis]: Santizing sample names for analysis and restoring afterwards. This way a greater variety of sample names is possible (0.3.0.dev3).
 * [analysis]: Automatically split a single multi-FASTA file into separate files per sequence (used primarily for SARS-CoV-2 data) (0.3.0.dev4).
+* [analysis]: Added ability to handle lzma and bzip2 compressed sequence files (0.3.0.dev4).
 
 # 0.2.0
 

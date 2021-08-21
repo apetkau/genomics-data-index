@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import gzip
+import lzma
+import bz2
 import logging
 from functools import partial
 from mimetypes import guess_type
@@ -36,9 +38,7 @@ class SequenceFile:
         return self._file
 
     def parse_sequence_file(self) -> Tuple[str, List[SeqRecord]]:
-        # Code for handling gzipped/non-gzipped from https://stackoverflow.com/a/52839332
-        _open = partial(gzip.open, mode='rt') if self.is_gzip() else open
-
+        _open = self._get_open_partial()
         ref_name = self.get_genome_name()
 
         with _open(self._file) as f:
@@ -51,8 +51,19 @@ class SequenceFile:
 
             return ref_name, sequences
 
+    def _get_open_partial(self):
+        # Code for handling gzipped/non-gzipped derived https://stackoverflow.com/a/52839332
+        if self.is_gzip():
+            return partial(gzip.open, mode='rt')
+        elif self.is_lzma():
+            return partial(lzma.open, mode='rt')
+        elif self.is_bzip2():
+            return partial(bz2.open, mode='rt')
+        else:
+            return open
+
     def records(self) -> Generator[SeqRecord, None, None]:
-        _open = partial(gzip.open, mode='rt') if self.is_gzip() else open
+        _open = self._get_open_partial()
 
         if self.is_fasta():
             format = 'fasta'
@@ -74,6 +85,10 @@ class SequenceFile:
     def get_genome_extension_minus_compression(self):
         if self.is_gzip():
             ref_extension = splitext(basename(self._file).rstrip('.gz'))[1]
+        elif self.is_lzma():
+            ref_extension = splitext(basename(self._file).rstrip('.xz'))[1]
+        elif self.is_bzip2():
+            ref_extension = splitext(basename(self._file).rstrip('.bz2'))[1]
         else:
             ref_extension = splitext(basename(self._file))[1]
 
@@ -84,6 +99,14 @@ class SequenceFile:
     def is_gzip(self) -> bool:
         encoding = guess_type(str(self._file))[1]  # uses file extension
         return encoding == 'gzip'
+
+    def is_lzma(self) -> bool:
+        encoding = guess_type(str(self._file))[1]  # uses file extension
+        return encoding == 'xz'
+
+    def is_bzip2(self) -> bool:
+        encoding = guess_type(str(self._file))[1]  # uses file extension
+        return encoding == 'bzip2'
 
     def is_genbank(self) -> bool:
         ref_extension = self.get_genome_extension_minus_compression().lower()
@@ -151,7 +174,7 @@ class SequenceFile:
 
     def get_genome_name(self, exclude_paired_end_indicators: bool = False) -> str:
         """
-        Gets the genome name (filename minus extension). Accounts for gzipped/non-gzipped files.
+        Gets the genome name (filename minus extension). Accounts for compressed files.
         :param file: The file.
         :param exclude_paired_end_indicators: Exclude paired-end indicators when getting genome name (e.g., _R1, _1, etc).
                                               this only applies if the sequence file is a reads file.
@@ -159,6 +182,10 @@ class SequenceFile:
         """
         if self.is_gzip():
             name_minus_extension = splitext(basename(self._file).rstrip('.gz'))[0]
+        elif self.is_lzma():
+            name_minus_extension = splitext(basename(self._file).rstrip('.xz'))[0]
+        elif self.is_bzip2():
+            name_minus_extension = splitext(basename(self._file).rstrip('.bz2'))[0]
         else:
             name_minus_extension = splitext(basename(self._file))[0]
 
