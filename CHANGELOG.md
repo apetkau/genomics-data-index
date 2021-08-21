@@ -10,6 +10,7 @@
 * [api]: Added a method to select a random subsample of a query (0.3.0.dev4).
 * [api]: Set outgroup of tree query (0.3.0.dev5).
 * [api]: Added experimental class to cluster samples within different categories (e.g., lineages) by distances between the proportion of samples having particular features (0.3.0.dev5).
+* [analysis]: All stages of the Snakemake workflow now have assigned conda environments (0.3.0.dev5).
 
 # 0.2.0
 
