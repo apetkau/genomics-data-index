@@ -29,6 +29,7 @@ class SampleCategoriesClustererExperimental:
         :param comparison_df: The dataframe produced as output from "SamplesQuery.features_comparison(..., unit='proportion')"
         :return: An ete3.ClusterTree which stores the hierarchical cluster of each of the sample categories.
         """
+        comparison_df = comparison_df.filter(like='_proportion')
         categories = [c[:-len('_proportion')] for c in comparison_df]
 
         # Create 2d-array of distances
