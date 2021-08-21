@@ -282,6 +282,19 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
+    def subsample(self, k: Union[int, float], include_unknown: bool = False, seed: int = None) -> SamplesQuery:
+        """
+        Select a random subsample of genomic samples from this query.
+        :param k: If k >= 1, select this number of samples. If k < 1, select this proportion of samples
+                  (e.g., 0.5 means select 50% of the samples in the query).
+        :param include_unknown: Whether unknown samples should be included in the subsample. If True,
+                                then the value given by n will apply to both unknown and present samples.
+        :param seed: The seed for the random number generator (defaults to picking a random seed).
+        :return: A new SamplesQuery that selects a random subsample of the genomic samples in the current query.
+        """
+        pass
+
+    @abc.abstractmethod
     def build_tree(self, kind: str, **kwargs) -> SamplesQuery:
         """
         Builds a tree from the samples contained in this query using the passed *kind* of features.

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from typing import Union, List, Set, Tuple, Dict
+import random
 
 import numpy as np
 import pandas as pd
@@ -350,6 +351,39 @@ class SamplesQueryIndex(SamplesQuery):
                                      queries_collection=queries_collection)
         else:
             raise Exception(f'Cannot perform an "or" on object {other}')
+
+    def subsample(self, k: Union[int, float], include_unknown: bool = False, seed: int = None) -> SamplesQuery:
+        if k is None:
+            raise Exception(f'k={k} must not be None')
+        elif k < 0:
+            raise Exception(f'k={k} must not be negative')
+
+        # I set a random seed here using random.randint so that I can display the seed used
+        # As part of the query string text. That way, someone could, later on, reproduce the same
+        # subsample even if they didn't explicity set the seed.
+        if seed is None:
+            seed = random.randint(0, 10**10)
+
+        initial_sample_set = self.sample_set
+        if include_unknown:
+            initial_sample_set = initial_sample_set.union(self.unknown_set)
+
+        if k < 1:
+            k = round(k * len(initial_sample_set))
+        elif k > len(initial_sample_set):
+            raise Exception(f'k={k} is greater than number of samples in query={len(initial_sample_set)}')
+        else:
+            k = round(k)
+
+        # There might be a more efficient way to select a random subsample directly from a roaring bitmap
+        # instead of converting to a list and back, but I wasn't able to find one.
+        initial_samples_list = list(initial_sample_set)
+        random.seed(seed)
+        subsamples_list = random.sample(initial_samples_list, k=k)
+        subsamples = SampleSet(subsamples_list)
+
+        return self.intersect(subsamples, f'subsample(k={k}, seed={seed})')
+
 
     def is_empty(self, include_unknown=False) -> bool:
         if include_unknown:
