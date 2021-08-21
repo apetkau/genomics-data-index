@@ -17,7 +17,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setup(name='genomics-data-index',
-      version='0.3.0.dev4',
+      version='0.3.0.dev5',
       description='Indexes genomics data (mutations, kmers, MLST) for fast querying of features.',
       long_description=long_description,
       long_description_content_type="text/markdown",
@@ -31,6 +31,7 @@ setup(name='genomics-data-index',
           'pandas>=1.0.0',
           'numpy',
           'scikit-bio',
+          'scipy',
           'pyvcf',
           'sqlalchemy',
           'pymysql',

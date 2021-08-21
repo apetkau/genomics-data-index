@@ -56,6 +56,14 @@ class MutationTreeSamplesQuery(TreeSamplesQuery):
         """
         return self._reference_included
 
+    def _create_from_tree_internal(self, tree: Tree) -> SamplesQuery:
+        return MutationTreeSamplesQuery(connection=self._query_connection,
+                                        wrapped_query=self._wrapped_query,
+                                        tree=tree,
+                                        alignment_length=self._alignment_length,
+                                        reference_name=self.reference_name,
+                                        reference_included=self.reference_included)
+
     def _wrap_create(self, wrapped_query: SamplesQuery, universe_set: SampleSet = None) -> WrappedSamplesQuery:
         return MutationTreeSamplesQuery(connection=self._query_connection,
                                         wrapped_query=wrapped_query,

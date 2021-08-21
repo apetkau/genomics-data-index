@@ -77,16 +77,6 @@ class ExperimentalTreeSamplesQuery(MutationTreeSamplesQuery):
         tree.prune(nodes_to_keep, preserve_branch_length=preserve_branch_length)
         return tree
 
-    def set_outgroup(self, sample_name: str) -> SamplesQuery:
-        """
-        Sets the outgroup of the tree to the specified sample name.
-        :param sample_name: The name to set as an outgroup. Must exist as a leaf in the tree.
-        :return: A new ExperimentalTreeSamplesQuery with the defined outgroup set.
-        """
-        tree = self._tree_copy()
-        tree.set_outgroup(sample_name)
-        return self._create_from_tree_internal(tree)
-
     def relabel_samples(self, rename_func: Callable[[str], str]) -> SamplesQuery:
         """
         Relabels samples/leaves in the tree based on the passed function.

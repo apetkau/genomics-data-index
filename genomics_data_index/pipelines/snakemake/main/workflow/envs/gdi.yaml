@@ -1,0 +1,11 @@
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python=3.8
+  - pip
+  - pip:
+    # I install a separate copy of my software here so that I have access to classes I've written
+    # In my project, but within a conda environment for the Snakemake pipeline.
+    - genomics-data-index==0.2.0
