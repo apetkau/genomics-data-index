@@ -427,8 +427,15 @@ def input_command(absolute: bool, input_genomes_file: str, genomes: List[str]):
               type=click.Path(),
               required=False
               )
+@click.option('--subsample-file',
+              help='Subsample the input files to contain only those samples listed in the passed file '
+                   '(one sample per line).',
+              type=click.Path(exists=True),
+              required=False
+              )
 @click.argument('input-files', type=click.Path(exists=True), nargs=-1)
-def input_split_file(absolute: bool, output_dir: str, output_samples_file: str, input_files: Tuple[str]):
+def input_split_file(absolute: bool, output_dir: str, output_samples_file: str, subsample_file: str,
+                     input_files: Tuple[str]):
     output_dir = Path(output_dir)
     if not output_dir.exists():
         mkdir(output_dir)
@@ -440,8 +447,15 @@ def input_split_file(absolute: bool, output_dir: str, output_samples_file: str, 
 
     input_files = [Path(f) for f in input_files]
 
+    samples = None
+    if subsample_file is not None:
+        with open(subsample_file, 'r') as fh:
+            samples = {x.strip() for x in fh.readlines()}
+
     pipeline_executor = SnakemakePipelineExecutor()
-    sample_data_df = pipeline_executor.split_input_sequence_files(input_files, output_dir=output_dir)
+    sample_data_df = pipeline_executor.split_input_sequence_files(input_files,
+                                                                  samples=samples,
+                                                                  output_dir=output_dir)
 
     pipeline_executor.write_input_sample_files(input_sample_files=sample_data_df,
                                                output_file=output_samples_file,
