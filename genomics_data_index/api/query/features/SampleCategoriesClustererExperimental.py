@@ -1,12 +1,12 @@
-from scipy.spatial.distance import jensenshannon
-import skbio
-import numpy as np
 import ete3
+import numpy as np
+import pandas as pd
 import scipy.cluster.hierarchy as sch
+import skbio
 import skbio.tree
 from ete3 import Tree
+from scipy.spatial.distance import jensenshannon
 from scipy.spatial.distance import squareform
-import pandas as pd
 
 
 class SampleCategoriesClustererExperimental:
