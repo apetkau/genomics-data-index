@@ -4249,4 +4249,3 @@ def test_subsample(loaded_database_connection: DataIndexConnection):
     assert 1 == len(sub.unknown_set)
     assert set(sub.sample_set) == set(q.sample_set)
     assert set(sub.unknown_set) == set(q.unknown_set)
-

@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import gzip
-import lzma
 import bz2
+import gzip
 import logging
+import lzma
 from functools import partial
 from mimetypes import guess_type
 from os import mkdir, symlink, path

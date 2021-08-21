@@ -1,14 +1,14 @@
 import abc
+import gzip
 import io
 import logging
+import random
 import sys
 from pathlib import Path
 from typing import List, Union, Tuple, Optional, Set
-import gzip
-from Bio import SeqIO
-import random
 
 import pandas as pd
+from Bio import SeqIO
 from pathvalidate import sanitize_filename
 
 from genomics_data_index.pipelines.ExecutorResults import ExecutorResults

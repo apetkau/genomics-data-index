@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import logging
-from typing import Union, List, Set, Tuple, Dict
 import random
+from typing import Union, List, Set, Tuple, Dict
 
 import numpy as np
 import pandas as pd
@@ -362,7 +362,7 @@ class SamplesQueryIndex(SamplesQuery):
         # As part of the query string text. That way, someone could, later on, reproduce the same
         # subsample even if they didn't explicity set the seed.
         if seed is None:
-            seed = random.randint(0, 10**10)
+            seed = random.randint(0, 10 ** 10)
 
         initial_sample_set = self.sample_set
         if include_unknown:
@@ -383,7 +383,6 @@ class SamplesQueryIndex(SamplesQuery):
         subsamples = SampleSet(subsamples_list)
 
         return self.intersect(subsamples, f'subsample(k={k}, seed={seed})')
-
 
     def is_empty(self, include_unknown=False) -> bool:
         if include_unknown:
