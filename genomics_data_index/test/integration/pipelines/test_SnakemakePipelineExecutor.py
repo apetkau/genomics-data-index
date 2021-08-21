@@ -612,3 +612,41 @@ def test_split_input_sequence_files_multiple_records_subsample():
         name, records = sf3.parse_sequence_file()
         assert 5180 == len(records[0])
 
+
+def test_select_random_samples():
+    with TemporaryDirectory() as tmp_dir_str:
+        tmp_dir = Path(tmp_dir_str)
+
+        samples = {'CP001602.2', 'reference', 'NC_011083.1'}
+
+        pipeline_executor = SnakemakePipelineExecutor(working_directory=tmp_dir)
+
+        # Test select 1 sample
+        subsamples = pipeline_executor.select_random_samples([reference_file, reference_file_5000_snpeff_2],
+                                                             number_samples=1)
+        assert 1 == len(subsamples)
+        assert subsamples.issubset(samples)
+
+        # Test select 2 samples
+        subsamples = pipeline_executor.select_random_samples([reference_file, reference_file_5000_snpeff_2],
+                                                             number_samples=2)
+        assert 2 == len(subsamples)
+        assert subsamples.issubset(samples)
+
+        # Test select 3 samples
+        subsamples = pipeline_executor.select_random_samples([reference_file, reference_file_5000_snpeff_2],
+                                                             number_samples=3)
+        assert 3 == len(subsamples)
+        assert subsamples.issubset(samples)
+
+        # Test select 33% of samples
+        subsamples = pipeline_executor.select_random_samples([reference_file, reference_file_5000_snpeff_2],
+                                                             number_samples=0.33)
+        assert 1 == len(subsamples)
+        assert subsamples.issubset(samples)
+
+        # Test select 66% of samples
+        subsamples = pipeline_executor.select_random_samples([reference_file, reference_file_5000_snpeff_2],
+                                                             number_samples=0.66)
+        assert 2 == len(subsamples)
+        assert subsamples.issubset(samples)

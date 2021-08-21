@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import List, Union, Tuple, Optional, Set
 import gzip
 from Bio import SeqIO
+import random
 
 import pandas as pd
 from pathvalidate import sanitize_filename
@@ -191,6 +192,34 @@ class PipelineExecutor(abc.ABC):
             else:
                 input_sample_files[col] = input_sample_files[col].apply(lambda x: str(x) if not pd.isna(x) else pd.NA)
         input_sample_files.to_csv(output_file, sep='\t', index=False)
+
+    def select_random_samples(self, input_sequence_files: List[Path],
+                              number_samples: float, random_seed: int = None) -> Set[str]:
+        """
+        Selects a random set of samples from the passed sequence files (assumes one sample is one sequence record).
+        :param input_sequence_files: The list of sequence files to select samples from.
+        :param number_samples: If >= 1, then represents the number of samples to select (e.g., 5 for 5 samples).
+                               If < 1, then represents the proportion of samples in all files to select
+                               (e.g., 0.5 means 50% of samples across all files).
+        :param random_seed: The random seed. If None uses the default Python random seed
+                            (system time or some other method, see Python documentation on random.seed()).
+        :return: A randomly selected set of sample names from the passed sequence files (no check is performed
+                 for duplicate sequences across files).
+        """
+        if number_samples < 0:
+            raise Exception(f'number_samples={number_samples} must be non-negative')
+
+        samples = []
+        for input_sequence_file in input_sequence_files:
+            sequence_file = SequenceFile(input_sequence_file)
+            for record in sequence_file.records():
+                samples.append(record.id)
+
+        if number_samples < 1:
+            number_samples = round(number_samples * len(samples))
+
+        random.seed(random_seed)
+        return set(random.sample(samples, k=number_samples))
 
     def split_input_sequence_files(self, input_sequence_files: List[Path], output_dir: Path,
                                    samples: Set[str] = None) -> pd.DataFrame:
