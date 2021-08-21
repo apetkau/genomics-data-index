@@ -3,7 +3,7 @@ import io
 import logging
 import sys
 from pathlib import Path
-from typing import List, Union, Tuple, Optional
+from typing import List, Union, Tuple, Optional, Set
 import gzip
 from Bio import SeqIO
 
@@ -192,7 +192,11 @@ class PipelineExecutor(abc.ABC):
                 input_sample_files[col] = input_sample_files[col].apply(lambda x: str(x) if not pd.isna(x) else pd.NA)
         input_sample_files.to_csv(output_file, sep='\t', index=False)
 
-    def split_input_sequence_files(self, input_sequence_files: List[Path], output_dir: Path) -> pd.DataFrame:
+    def split_input_sequence_files(self, input_sequence_files: List[Path], output_dir: Path,
+                                   samples: Set[str] = None) -> pd.DataFrame:
+        if samples is not None and isinstance(samples, list):
+            samples = set(samples)
+
         sample_data = []
         print_on = 200
         for input_sequence_file in input_sequence_files:
@@ -213,12 +217,14 @@ class PipelineExecutor(abc.ABC):
                     logger.debug(f'Processed {count} sequences from {input_sequence_file}')
 
                 sample_name = record.id
-                sample_filename = sanitize_filename(sample_name, replacement_text='_')
-                sample_path = output_dir / (sample_filename + extension)
-                with gzip.open(sample_path, "wt") as oh:
-                    SeqIO.write(record, oh, filetype)
 
-                sample_data.append([sample_name, sample_path, pd.NA, pd.NA])
+                if samples is None or sample_name in samples:
+                    sample_filename = sanitize_filename(sample_name, replacement_text='_')
+                    sample_path = output_dir / (sample_filename + extension)
+                    with gzip.open(sample_path, "wt") as oh:
+                        SeqIO.write(record, oh, filetype)
+
+                    sample_data.append([sample_name, sample_path, pd.NA, pd.NA])
 
                 count += 1
         return pd.DataFrame(sample_data, columns=self.INPUT_SAMPLE_FILE_COLUMNS)

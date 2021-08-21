@@ -575,3 +575,40 @@ def test_split_input_sequence_files_multiple_records():
         name, records = sf3.parse_sequence_file()
         assert 5180 == len(records[0])
 
+
+def test_split_input_sequence_files_multiple_records_subsample():
+    with TemporaryDirectory() as tmp_dir_str:
+        tmp_dir = Path(tmp_dir_str)
+
+        samples = {'CP001602.2', 'reference'}
+
+        pipeline_executor = SnakemakePipelineExecutor(working_directory=tmp_dir)
+        sample_data = pipeline_executor.split_input_sequence_files([reference_file,
+                                                                    reference_file_5000_snpeff_2],
+                                                                   output_dir=tmp_dir,
+                                                                   samples=samples)
+        sample_data = sample_data.sort_values('Sample')
+
+        expected_out1 = tmp_dir / 'CP001602.2.gbk.gz'
+        unexpected_out2 = tmp_dir / 'NC_011083.1.gbk.gz'
+        expected_out3 = tmp_dir / 'reference.fasta.gz'
+
+        assert ['Sample', 'Assemblies', 'Reads1', 'Reads2'] == sample_data.columns.tolist()
+        assert 2 == len(sample_data)
+        assert ['CP001602.2', 'reference'] == sample_data['Sample'].tolist()
+        assert [expected_out1, expected_out3] == sample_data['Assemblies'].tolist()
+        assert sample_data['Reads1'].isna().all()
+        assert sample_data['Reads2'].isna().all()
+
+        assert expected_out1.exists()
+        assert not unexpected_out2.exists()
+        assert expected_out3.exists()
+
+        sf1 = SequenceFile(expected_out1)
+        name, records = sf1.parse_sequence_file()
+        assert 5000 == len(records[0])
+
+        sf3 = SequenceFile(expected_out3)
+        name, records = sf3.parse_sequence_file()
+        assert 5180 == len(records[0])
+
