@@ -433,13 +433,20 @@ def input_command(absolute: bool, input_genomes_file: str, genomes: List[str]):
               type=click.Path(exists=True),
               required=False
               )
+@click.option('--subsample',
+              help='Subsample the input files to contain only the give number of samples. If >= 1 this is '
+                   'the number of samples to select. If < 1 this is the proportion of samples out of all '
+                   'sequences in the input files (e.g., 0.5 means subsample to 50% of the original sequences).',
+              type=click.FloatRange(min=0),
+              required=False
+              )
+@click.option('--seed', help='Seed for random number generator when subsampling.',
+              type=int, required=False, default=None)
 @click.argument('input-files', type=click.Path(exists=True), nargs=-1)
 def input_split_file(absolute: bool, output_dir: str, output_samples_file: str, subsample_file: str,
+                     subsample: float,
+                     seed: int,
                      input_files: Tuple[str]):
-    output_dir = Path(output_dir)
-    if not output_dir.exists():
-        mkdir(output_dir)
-
     if output_samples_file is None:
         output_samples_file = sys.stdout
     else:
@@ -447,12 +454,21 @@ def input_split_file(absolute: bool, output_dir: str, output_samples_file: str, 
 
     input_files = [Path(f) for f in input_files]
 
+    pipeline_executor = SnakemakePipelineExecutor()
+
     samples = None
     if subsample_file is not None:
         with open(subsample_file, 'r') as fh:
             samples = {x.strip() for x in fh.readlines()}
+    elif subsample is not None:
+        samples = pipeline_executor.select_random_samples(input_files,
+                                                          number_samples=subsample,
+                                                          random_seed=seed)
 
-    pipeline_executor = SnakemakePipelineExecutor()
+    output_dir = Path(output_dir)
+    if not output_dir.exists():
+        mkdir(output_dir)
+
     sample_data_df = pipeline_executor.split_input_sequence_files(input_files,
                                                                   samples=samples,
                                                                   output_dir=output_dir)

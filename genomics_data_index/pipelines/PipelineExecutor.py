@@ -217,6 +217,8 @@ class PipelineExecutor(abc.ABC):
 
         if number_samples < 1:
             number_samples = round(number_samples * len(samples))
+        else:
+            number_samples = round(number_samples)
 
         random.seed(random_seed)
         return set(random.sample(samples, k=number_samples))
