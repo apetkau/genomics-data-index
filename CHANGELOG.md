@@ -11,6 +11,7 @@
 * [api]: Set outgroup of tree query (0.3.0.dev5).
 * [api]: Added experimental class to cluster samples within different categories (e.g., lineages) by distances between the proportion of samples having particular features (0.3.0.dev5).
 * [analysis]: All stages of the Snakemake workflow now have assigned conda environments (0.3.0.dev5).
+* [api]: Added method to define custom `q.isa()` methods and implemented a method to type SARS-CoV-2 genomes using [constellations](https://github.com/cov-lineages/constellations) of mutations (0.3.0.dev6).
 
 # 0.2.0
 
