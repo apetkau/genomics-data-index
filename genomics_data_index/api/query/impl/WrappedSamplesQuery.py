@@ -208,7 +208,7 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
     def _can_handle_isa_kind(self, kind: str) -> bool:
         return False
 
-    def isa(self, data: Union[str, List[str], SamplesQuery, SampleSet], kind: Union[IsaKind, str] = None,
+    def isa(self, data: Union[str, List[str], SamplesQuery, SampleSet], kind: Union[IsaKind, str] = 'sample',
             **kwargs) -> SamplesQuery:
         if self._can_handle_isa_kind(kind):
             return self._isa_internal(data=data, kind=kind, **kwargs)

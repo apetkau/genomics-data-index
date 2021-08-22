@@ -398,7 +398,7 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def isa(self, data: Union[str, List[str], SamplesQuery, SampleSet], kind: Union[IsaKind, str] = None,
+    def isa(self, data: Union[str, List[str], SamplesQuery, SampleSet], kind: Union[IsaKind, str] = 'sample',
             **kwargs) -> SamplesQuery:
         """
         Queries for samples which are a particular type/belong to a particular category.

@@ -623,7 +623,7 @@ class SamplesQueryIndex(SamplesQuery):
     def _can_handle_distance_units(self, units: str) -> bool:
         return units in self.DISTANCES_UNITS
 
-    def isa(self, data: Union[str, List[str], SamplesQuery, SampleSet], kind: Union[IsaKind, str] = None,
+    def isa(self, data: Union[str, List[str], SamplesQuery, SampleSet], kind: Union[IsaKind, str] = 'sample',
             **kwargs) -> SamplesQuery:
         if kind == 'sample' or kind == 'samples':
             return self._isin_samples(data=data, query_message_prefix='isa_sample')
