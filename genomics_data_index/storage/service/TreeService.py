@@ -2,7 +2,7 @@ import logging
 import subprocess
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Tuple
+from typing import Tuple, List
 
 from Bio import AlignIO
 from Bio.Align import MultipleSeqAlignment
@@ -88,10 +88,11 @@ class TreeService:
                 raise Exception(f'tree_type=[{tree_build_type}] is invalid')
 
     def rebuild_tree(self, reference_name: str, num_cores: int = 1, tree_build_type='iqtree',
-                     align_type='core', extra_params=None):
+                     align_type='core', include_variants: List[str] = None, extra_params=None):
         logger.debug('Building alignment')
         alignment = self._core_alignment_service.construct_alignment(reference_name=reference_name,
                                                                      include_reference=True,
+                                                                     include_variants=include_variants,
                                                                      align_type=align_type)
 
         logger.debug('Building tree')

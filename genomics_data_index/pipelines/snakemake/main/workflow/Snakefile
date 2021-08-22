@@ -35,6 +35,8 @@ rule prepare_reference:
         reference=reference_abs,
     output:
         reference="reference/reference.fasta",
+    conda:
+        "envs/gdi.yaml"
     threads: 1
     log:
         "logs/prepare-reference.log"
@@ -63,6 +65,8 @@ rule prepare_snpeff_database:
         reference=reference_abs,
     output:
         snpeff_db_conf="snpeff_db/db.conf",
+    conda:
+        "envs/snpeff.yaml"
     threads: 1
     log:
         "logs/prepare-snpeff-database.log"
@@ -163,6 +167,8 @@ rule assembly_variant_snpeff:
         vcf="assemblies/variant/{sample}.vcf.gz",
     output:
         snpeff_vcf="assemblies/variant-snpeff/{sample}.vcf.gz",
+    conda:
+        "envs/snpeff.yaml"
     threads: 1
     log:
         "logs/assembly_variant_snpeff.{sample}.log",

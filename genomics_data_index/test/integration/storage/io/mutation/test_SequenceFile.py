@@ -7,7 +7,7 @@ from Bio import SeqIO
 
 from genomics_data_index.storage.io.mutation.SequenceFile import SequenceFile
 from genomics_data_index.test.integration import reference_file_5000_snpeff, reference_file_5000_snpeff_2, \
-    reference_file
+    reference_file, reference_file_lzma, reference_file_bzip2
 
 
 def parse_snpeff_config(config_file: Path) -> Dict[str, str]:
@@ -35,6 +35,28 @@ def test_read_fasta_file():
     assert 5180 == len(record)
 
 
+def test_read_fasta_file_lzma():
+    sequence_file = SequenceFile(reference_file_lzma)
+    name, records = sequence_file.parse_sequence_file()
+
+    assert 'genome' == name
+    assert 1 == len(records)
+    record = records[0]
+    assert 'reference' == record.id
+    assert 5180 == len(record)
+
+
+def test_read_fasta_file_bzip2():
+    sequence_file = SequenceFile(reference_file_bzip2)
+    name, records = sequence_file.parse_sequence_file()
+
+    assert 'genome' == name
+    assert 1 == len(records)
+    record = records[0]
+    assert 'reference' == record.id
+    assert 5180 == len(record)
+
+
 def test_read_genbank_file():
     sequence_file = SequenceFile(reference_file_5000_snpeff)
     name, records = sequence_file.parse_sequence_file()
@@ -46,11 +68,46 @@ def test_read_genbank_file():
     assert 5000 == len(record)
 
 
+def test_records_fasta():
+    sequence_file = SequenceFile(reference_file)
+    records = list(sequence_file.records())
+
+    assert 1 == len(records)
+    record = records[0]
+    assert 'reference' == record.id
+    assert 5180 == len(record)
+
+
+def test_records_genbank():
+    sequence_file = SequenceFile(reference_file_5000_snpeff)
+    records = list(sequence_file.records())
+
+    assert 1 == len(records)
+    record = records[0]
+    assert 'NC_011083.1' == record.id
+    assert 5000 == len(record)
+
+
 def test_read_genbank_file_multiple_sequences():
     sequence_file = SequenceFile(reference_file_5000_snpeff_2)
     name, records = sequence_file.parse_sequence_file()
 
     assert 'NC_011083_CP001602-5000' == name
+    assert 2 == len(records)
+
+    record = records[0]
+    assert 'NC_011083.1' == record.id
+    assert 5000 == len(record)
+
+    record = records[1]
+    assert 'CP001602.2' == record.id
+    assert 5000 == len(record)
+
+
+def test_records_genbank_multiple_sequences():
+    sequence_file = SequenceFile(reference_file_5000_snpeff_2)
+    records = list(sequence_file.records())
+
     assert 2 == len(records)
 
     record = records[0]

@@ -1,11 +1,15 @@
 import abc
+import gzip
 import io
 import logging
+import random
 import sys
 from pathlib import Path
-from typing import List, Union
+from typing import List, Union, Tuple, Optional, Set
 
 import pandas as pd
+from Bio import SeqIO
+from pathvalidate import sanitize_filename
 
 from genomics_data_index.pipelines.ExecutorResults import ExecutorResults
 from genomics_data_index.storage.io.mutation.SequenceFile import SequenceFile
@@ -40,6 +44,54 @@ class PipelineExecutor(abc.ABC):
             if not all(are_paths):
                 raise Exception(
                     f'column=[{col}] in input_sample_files={input_sample_files} does not contain Path or NA')
+
+    def fix_sample_names(self, sample_files: pd.DataFrame) -> Tuple[pd.DataFrame, Optional[pd.DataFrame]]:
+        fixed_sample_files = sample_files.copy()
+
+        fixed_sample_files['Sample_fixed'] = fixed_sample_files['Sample'].apply(
+            lambda x: sanitize_filename(x, replacement_text='_'))
+
+        samples_changed = (fixed_sample_files['Sample'] != fixed_sample_files['Sample_fixed'])
+        if not samples_changed.any():
+            return sample_files, None
+        else:
+            logger.debug(f'Modified {samples_changed.sum()} sample names so they are valid file names for '
+                         f'analysis. These will be restored when the analysis is complete.')
+            agg_samples_fixed = fixed_sample_files.groupby('Sample_fixed').agg({
+                'Sample_fixed': 'count',
+                'Sample': 'first'
+            })
+            duplicate_names_fixed = agg_samples_fixed[agg_samples_fixed['Sample_fixed'] > 1]
+            if len(duplicate_names_fixed) > 0:
+                duplicate_samples = duplicate_names_fixed['Sample'].tolist()
+                raise Exception(f'Sanitizing sample names to use as file names leads to duplicates for the '
+                                f'following samples: {duplicate_samples}. Please rename these samples and try'
+                                f' executing again.')
+            else:
+                fixed_sample_files = fixed_sample_files.rename({'Sample': 'Sample_original'}, axis='columns')
+                sample_sample_fixed_df = fixed_sample_files[['Sample_original', 'Sample_fixed']]
+                fixed_sample_files = fixed_sample_files.rename({'Sample_fixed': 'Sample'}, axis='columns')
+
+                return fixed_sample_files[['Sample', 'Assemblies', 'Reads1', 'Reads2']], \
+                       sample_sample_fixed_df
+
+    def restore_sample_names(self, data: pd.DataFrame, sample_column: str,
+                             samples_original_fixed: pd.DataFrame) -> pd.DataFrame:
+        data_columns_to_keep = data.columns.tolist()
+
+        # Rename column so I know which is the original set of sample names after merging
+        if sample_column == 'Sample_original':
+            original_sample_column = 'Sample_original_renamed'
+            samples_original_fixed = samples_original_fixed.rename({'Sample_original': original_sample_column},
+                                                                   axis='columns')
+        else:
+            original_sample_column = 'Sample_original'
+
+        restored_data = data.merge(samples_original_fixed, left_on=sample_column, right_on='Sample_fixed')
+        restored_data = restored_data.drop(sample_column, axis='columns')  # Remove sample names I don't want
+        restored_data = restored_data.rename({original_sample_column: sample_column}, axis='columns')
+        restored_data = restored_data[data_columns_to_keep]
+        return restored_data
 
     def create_input_sample_files(self, input_files: List[Path]) -> pd.DataFrame:
         """
@@ -140,6 +192,73 @@ class PipelineExecutor(abc.ABC):
             else:
                 input_sample_files[col] = input_sample_files[col].apply(lambda x: str(x) if not pd.isna(x) else pd.NA)
         input_sample_files.to_csv(output_file, sep='\t', index=False)
+
+    def select_random_samples(self, input_sequence_files: List[Path],
+                              number_samples: float, random_seed: int = None) -> Set[str]:
+        """
+        Selects a random set of samples from the passed sequence files (assumes one sample is one sequence record).
+        :param input_sequence_files: The list of sequence files to select samples from.
+        :param number_samples: If >= 1, then represents the number of samples to select (e.g., 5 for 5 samples).
+                               If < 1, then represents the proportion of samples in all files to select
+                               (e.g., 0.5 means 50% of samples across all files).
+        :param random_seed: The random seed. If None uses the default Python random seed
+                            (system time or some other method, see Python documentation on random.seed()).
+        :return: A randomly selected set of sample names from the passed sequence files (no check is performed
+                 for duplicate sequences across files).
+        """
+        if number_samples < 0:
+            raise Exception(f'number_samples={number_samples} must be non-negative')
+
+        samples = []
+        for input_sequence_file in input_sequence_files:
+            sequence_file = SequenceFile(input_sequence_file)
+            for record in sequence_file.records():
+                samples.append(record.id)
+
+        if number_samples < 1:
+            number_samples = round(number_samples * len(samples))
+        else:
+            number_samples = round(number_samples)
+
+        random.seed(random_seed)
+        return set(random.sample(samples, k=number_samples))
+
+    def split_input_sequence_files(self, input_sequence_files: List[Path], output_dir: Path,
+                                   samples: Set[str] = None) -> pd.DataFrame:
+        if samples is not None and isinstance(samples, list):
+            samples = set(samples)
+
+        sample_data = []
+        print_on = 200
+        for input_sequence_file in input_sequence_files:
+            count = 0
+            sequence_file = SequenceFile(input_sequence_file)
+
+            if sequence_file.is_fasta():
+                extension = '.fasta.gz'
+                filetype = 'fasta'
+            elif sequence_file.is_genbank():
+                extension = '.gbk.gz'
+                filetype = 'genbank'
+            else:
+                raise Exception(f'Unknown filetype for {input_sequence_file}, must be either fasta or genbank')
+
+            for record in sequence_file.records():
+                if count % print_on == 0:
+                    logger.debug(f'Processed {count} sequences from {input_sequence_file}')
+
+                sample_name = record.id
+
+                if samples is None or sample_name in samples:
+                    sample_filename = sanitize_filename(sample_name, replacement_text='_')
+                    sample_path = output_dir / (sample_filename + extension)
+                    with gzip.open(sample_path, "wt") as oh:
+                        SeqIO.write(record, oh, filetype)
+
+                    sample_data.append([sample_name, sample_path, pd.NA, pd.NA])
+
+                count += 1
+        return pd.DataFrame(sample_data, columns=self.INPUT_SAMPLE_FILE_COLUMNS)
 
     def read_input_sample_files(self, input_file: Path) -> pd.DataFrame:
         df = pd.read_csv(input_file, sep='\t')

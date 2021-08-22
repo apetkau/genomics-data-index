@@ -1,4 +1,5 @@
 recursive-include genomics_data_index/test/integration/data *
+recursive-include genomics_data_index/test/integration/pipelines/data *
 recursive-include genomics_data_index/pipelines/snakemake/ *
 recursive-include genomics_data_index/storage/io/mutation/templates/ *
 include README.md

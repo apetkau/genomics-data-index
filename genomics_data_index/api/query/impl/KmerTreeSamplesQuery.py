@@ -1,6 +1,6 @@
 from typing import cast, List, Union
 
-from ete3 import ClusterTree
+from ete3 import ClusterTree, Tree
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.api.query.impl.TreeSamplesQuery import TreeSamplesQuery
@@ -36,6 +36,16 @@ class KmerTreeSamplesQuery(TreeSamplesQuery):
 
         return KmerTreeSamplesQuery(connection=self._query_connection,
                                     wrapped_query=wrapped_query,
+                                    tree=tree)
+
+    def _create_from_tree_internal(self, tree: Tree) -> SamplesQuery:
+        if isinstance(tree, ClusterTree):
+            tree = cast(ClusterTree, tree)
+        else:
+            raise Exception(f'Incorrect type of tree [{tree}]. Expected [{ClusterTree.__class__}], got [{type(tree)}].')
+
+        return KmerTreeSamplesQuery(connection=self._query_connection,
+                                    wrapped_query=self._wrapped_query,
                                     tree=tree)
 
     # Override primarily to specify a default value for 'units'

@@ -216,36 +216,38 @@ class FeatureService(abc.ABC):
                      f'inplace out of a total of {len(feature_objects_dict_source)} supplied source feature objects.')
 
     def index_features(self, features_reader: FeaturesReader, feature_scope_name: str) -> None:
-        logger.info('Indexing features from all samples')
+        logger.info(f'Reading features from {len(features_reader.samples_list())} samples')
         features_df = features_reader.get_features_table()
         features_df = self._update_scope(features_df, feature_scope_name)
         sample_names = features_reader.samples_set()
 
         # Create new features and merge with existing features if they exist
+        logger.info(f'Aggregating {len(features_df)} features found in {len(sample_names)} samples')
         created_feature_objects = self._create_feature_objects(features_df, sample_names)
         created_feature_objects_dict = {f.id: f for f in created_feature_objects}
-        logger.debug(f'Indexing a total of {len(created_feature_objects_dict)} features')
+        logger.info(f'A total of {len(created_feature_objects_dict)} unique features across {len(sample_names)} '
+                    f'samples will be updated. Searching for existing features in the database.')
         db_feature_objects_dict = self.read_index(list(created_feature_objects_dict.keys()))
-        logger.debug(f'Found {len(db_feature_objects_dict)}/{len(created_feature_objects_dict)} new features to '
-                     f'index which already exist. These will be updated to map to the new samples.')
+        logger.info(f'Found {len(db_feature_objects_dict)}/{len(created_feature_objects_dict)} features in database '
+                    f'which already exist. These features will be updated to map to the new samples.')
         self.update_feature_objects_inplace(db_feature_objects_dict, created_feature_objects_dict)
 
         # Subtract out existing feature objects in database
         new_feature_object_ids = set(created_feature_objects_dict.keys()) - set(db_feature_objects_dict.keys())
         new_feature_objects = [created_feature_objects_dict[fid] for fid in new_feature_object_ids]
 
-        # bulk save new feature objects
-        logger.debug(
-            f'Creating {len(new_feature_objects)}/{len(created_feature_objects_dict)} new features in database')
-        self._connection.get_session().bulk_save_objects(new_feature_objects)
-
         # bulk update existing feature objects
-        logger.debug(
+        logger.info(
             f'Updating {len(db_feature_objects_dict)}/{len(created_feature_objects_dict)} existing features in database')
         self._connection.get_session().bulk_save_objects(db_feature_objects_dict.values())
 
+        # bulk save new feature objects
+        logger.info(
+            f'Saving {len(new_feature_objects)}/{len(created_feature_objects_dict)} new features in database')
+        self._connection.get_session().bulk_save_objects(new_feature_objects)
+
         self._connection.get_session().commit()
-        logger.info('Finished indexing features from all samples')
+        logger.info(f'Finished indexing features from {len(sample_names)} samples')
 
     @abc.abstractmethod
     def build_sample_feature_object(self, sample: Sample, sample_data: SampleData, feature_scope_name: str) -> Any:

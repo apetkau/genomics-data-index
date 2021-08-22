@@ -1,51 +1,51 @@
-Mutation	Sequence	Position	Deletion	Insertion
-reference:190:A:G	reference	190	A	G
-reference:349:AAGT:A	reference	349	AAGT	A
-reference:488:T:G	reference	488	T	G
-reference:514:G:C	reference	514	G	C
-reference:528:C:CAG	reference	528	C	CAG
-reference:619:G:C	reference	619	G	C
-reference:839:C:G	reference	839	C	G
-reference:883:CACATG:C	reference	883	CACATG	C
-reference:1070:TG:T	reference	1070	TG	T
-reference:1135:CCT:C	reference	1135	CCT	C
-reference:1184:A:G	reference	1184	A	G
-reference:1258:G:GGGGA	reference	1258	G	GGGGA
-reference:1270:CTT:C	reference	1270	CTT	C
-reference:1304:C:T	reference	1304	C	T
-reference:1325:G:TGA	reference	1325	G	TGA
-reference:1392:C:T	reference	1392	C	T
-reference:1440:G:GCCAC	reference	1440	G	GCCAC
-reference:1483:AAAGAGGGGCTGCTGGAGCCG:A	reference	1483	AAAGAGGGGCTGCTGGAGCCG	A
-reference:1640:C:A	reference	1640	C	A
-reference:2002:T:TAG	reference	2002	T	TAG
-reference:2016:G:A	reference	2016	G	A
-reference:2083:A:T	reference	2083	A	T
-reference:2140:A:T	reference	2140	A	T
-reference:2199:C:CTT	reference	2199	C	CTT
-reference:2227:A:AG	reference	2227	A	AG
-reference:2480:TG:T	reference	2480	TG	T
-reference:2785:A:C	reference	2785	A	C
-reference:2926:C:CG	reference	2926	C	CG
-reference:3047:G:GTGCGCT	reference	3047	G	GTGCGCT
-reference:3063:A:ATGCAGC	reference	3063	A	ATGCAGC
-reference:3136:G:C	reference	3136	G	C
-reference:3263:A:G	reference	3263	A	G
-reference:3276:GC:G	reference	3276	GC	G
-reference:3513:T:G	reference	3513	T	G
-reference:3522:G:A	reference	3522	G	A
-reference:3576:TTTC:T	reference	3576	TTTC	T
-reference:3642:A:G	reference	3642	A	G
-reference:3676:A:C	reference	3676	A	C
-reference:3693:G:GC	reference	3693	G	GC
-reference:3709:G:T	reference	3709	G	T
-reference:3846:T:A	reference	3846	T	A
-reference:3897:GCGCA:G	reference	3897	GCGCA	G
-reference:4245:G:A	reference	4245	G	A
-reference:4491:T:C	reference	4491	T	C
-reference:4539:T:A	reference	4539	T	A
-reference:4585:T:C	reference	4585	T	C
-reference:4693:C:CGA	reference	4693	C	CGA
-reference:4750:G:GA	reference	4750	G	GA
-reference:4975:T:C	reference	4975	T	C
-reference:5061:G:A	reference	5061	G	A
+Mutation	Sequence	Position	Deletion	Insertion	Type
+reference:190:A:G	reference	190	A	G	SNP
+reference:349:AAGT:A	reference	349	AAGT	A	INDEL
+reference:488:T:G	reference	488	T	G	SNP
+reference:514:G:C	reference	514	G	C	SNP
+reference:528:C:CAG	reference	528	C	CAG	INDEL
+reference:619:G:C	reference	619	G	C	SNP
+reference:839:C:G	reference	839	C	G	SNP
+reference:883:CACATG:C	reference	883	CACATG	C	INDEL
+reference:1070:TG:T	reference	1070	TG	T	INDEL
+reference:1135:CCT:C	reference	1135	CCT	C	INDEL
+reference:1184:A:G	reference	1184	A	G	SNP
+reference:1258:G:GGGGA	reference	1258	G	GGGGA	INDEL
+reference:1270:CTT:C	reference	1270	CTT	C	INDEL
+reference:1304:C:T	reference	1304	C	T	SNP
+reference:1325:G:TGA	reference	1325	G	TGA	OTHER
+reference:1392:C:T	reference	1392	C	T	SNP
+reference:1440:G:GCCAC	reference	1440	G	GCCAC	INDEL
+reference:1483:AAAGAGGGGCTGCTGGAGCCG:A	reference	1483	AAAGAGGGGCTGCTGGAGCCG	A	INDEL
+reference:1640:C:A	reference	1640	C	A	SNP
+reference:2002:T:TAG	reference	2002	T	TAG	INDEL
+reference:2016:G:A	reference	2016	G	A	SNP
+reference:2083:A:T	reference	2083	A	T	SNP
+reference:2140:A:T	reference	2140	A	T	SNP
+reference:2199:C:CTT	reference	2199	C	CTT	INDEL
+reference:2227:A:AG	reference	2227	A	AG	INDEL
+reference:2480:TG:T	reference	2480	TG	T	INDEL
+reference:2785:A:C	reference	2785	A	C	SNP
+reference:2926:C:CG	reference	2926	C	CG	INDEL
+reference:3047:G:GTGCGCT	reference	3047	G	GTGCGCT	INDEL
+reference:3063:A:ATGCAGC	reference	3063	A	ATGCAGC	INDEL
+reference:3136:G:C	reference	3136	G	C	SNP
+reference:3263:A:G	reference	3263	A	G	SNP
+reference:3276:GC:G	reference	3276	GC	G	INDEL
+reference:3513:T:G	reference	3513	T	G	SNP
+reference:3522:G:A	reference	3522	G	A	SNP
+reference:3576:TTTC:T	reference	3576	TTTC	T	INDEL
+reference:3642:A:G	reference	3642	A	G	SNP
+reference:3676:A:C	reference	3676	A	C	SNP
+reference:3693:G:GC	reference	3693	G	GC	INDEL
+reference:3709:G:T	reference	3709	G	T	SNP
+reference:3846:T:A	reference	3846	T	A	SNP
+reference:3897:GCGCA:G	reference	3897	GCGCA	G	INDEL
+reference:4245:G:A	reference	4245	G	A	SNP
+reference:4491:T:C	reference	4491	T	C	SNP
+reference:4539:T:A	reference	4539	T	A	SNP
+reference:4585:T:C	reference	4585	T	C	SNP
+reference:4693:C:CGA	reference	4693	C	CGA	INDEL
+reference:4750:G:GA	reference	4750	G	GA	INDEL
+reference:4975:T:C	reference	4975	T	C	SNP
+reference:5061:G:A	reference	5061	G	A	SNP

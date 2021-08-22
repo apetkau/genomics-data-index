@@ -1,7 +1,7 @@
 import pandas as pd
 
 from genomics_data_index.api.query.GenomicsDataIndex import GenomicsDataIndex
-from genomics_data_index.api.query.features.MutationFeaturesSummarizer import MutationFeaturesSummarizer
+from genomics_data_index.api.query.features.MutationFeaturesComparator import MutationFeaturesComparator
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.db import Sample
 from genomics_data_index.test.integration import snippy_all_dataframes
@@ -26,7 +26,7 @@ def test_summary_all(loaded_database_genomic_data_store: GenomicsDataIndex):
     expected_df['Percent'] = 100 * (expected_df['Count'] / expected_df['Total'])
 
     present_set = SampleSet(all_sample_ids)
-    mutations_summarizer = MutationFeaturesSummarizer(connection=loaded_database_genomic_data_store.connection,
+    mutations_summarizer = MutationFeaturesComparator(connection=loaded_database_genomic_data_store.connection,
                                                       ignore_annotations=True)
 
     mutations_df = mutations_summarizer.summary(present_set)
@@ -48,7 +48,7 @@ def test_summary_unique(loaded_database_genomic_data_store: GenomicsDataIndex):
     sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
     all_sample_ids = {s.id for s in db.get_session().query(Sample).all()}
 
-    mutations_summarizer = MutationFeaturesSummarizer(connection=loaded_database_genomic_data_store.connection,
+    mutations_summarizer = MutationFeaturesComparator(connection=loaded_database_genomic_data_store.connection,
                                                       ignore_annotations=True)
 
     dfA = pd.read_csv(snippy_all_dataframes['SampleA'], sep='\t')
@@ -137,7 +137,7 @@ def test_summary_unique(loaded_database_genomic_data_store: GenomicsDataIndex):
 def test_summary_annotations(loaded_database_genomic_data_store_annotations: GenomicsDataIndex):
     db = loaded_database_genomic_data_store_annotations.connection.database
 
-    mutations_summarizer = MutationFeaturesSummarizer(
+    mutations_summarizer = MutationFeaturesComparator(
         connection=loaded_database_genomic_data_store_annotations.connection,
         ignore_annotations=False)
 

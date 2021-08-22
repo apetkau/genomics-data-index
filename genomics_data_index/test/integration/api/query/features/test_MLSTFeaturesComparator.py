@@ -1,5 +1,5 @@
 from genomics_data_index.api.query.GenomicsDataIndex import GenomicsDataIndex
-from genomics_data_index.api.query.features.MLSTFeaturesSummarizer import MLSTFeaturesSummarizer
+from genomics_data_index.api.query.features.MLSTFeaturesComparator import MLSTFeaturesComparator
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.db import Sample
 
@@ -9,7 +9,7 @@ def test_summary_all(loaded_database_genomic_data_store: GenomicsDataIndex):
     all_sample_ids = {s.id for s in db.get_session().query(Sample).all()}
     assert 9 == len(all_sample_ids)
 
-    mlst_summarizier = MLSTFeaturesSummarizer(connection=loaded_database_genomic_data_store.connection)
+    mlst_summarizier = MLSTFeaturesComparator(connection=loaded_database_genomic_data_store.connection)
 
     present_set = SampleSet(all_sample_ids)
 
@@ -38,7 +38,7 @@ def test_unique_summary(loaded_database_genomic_data_store: GenomicsDataIndex):
     sample_2014C_3599 = db.get_session().query(Sample).filter(Sample.name == '2014C-3599').one()
     assert 9 == len(all_sample_ids)
 
-    mlst_summarizier = MLSTFeaturesSummarizer(connection=loaded_database_genomic_data_store.connection)
+    mlst_summarizier = MLSTFeaturesComparator(connection=loaded_database_genomic_data_store.connection)
 
     # Test unique on all (should give me identical results to all since nothing is absent from the selection)
     present_set = SampleSet(all_sample_ids)
@@ -105,7 +105,7 @@ def test_unique_summary(loaded_database_genomic_data_store: GenomicsDataIndex):
     assert ['campylobacter', 'uncA', '6', 1, 2, 50] == summary_df.loc['mlst:campylobacter:uncA:6'].tolist()
 
     # Test unique only unknown
-    mlst_summarizier = MLSTFeaturesSummarizer(connection=loaded_database_genomic_data_store.connection,
+    mlst_summarizier = MLSTFeaturesComparator(connection=loaded_database_genomic_data_store.connection,
                                               include_present=False, include_unknown=True)
 
     present_set = SampleSet({sampleB.id, sample_2014D_0067.id})
@@ -120,7 +120,7 @@ def test_unique_summary(loaded_database_genomic_data_store: GenomicsDataIndex):
     assert ['campylobacter', 'uncA', '?', 1, 2, 50] == summary_df.loc['mlst:campylobacter:uncA:?'].tolist()
 
     # Test unique only unknown, restricted to specific scheme
-    mlst_summarizier = MLSTFeaturesSummarizer(connection=loaded_database_genomic_data_store.connection,
+    mlst_summarizier = MLSTFeaturesComparator(connection=loaded_database_genomic_data_store.connection,
                                               include_present=False, include_unknown=True,
                                               scheme='lmonocytogenes')
 
@@ -144,7 +144,7 @@ def test_summary_selections(loaded_database_genomic_data_store: GenomicsDataInde
     sample_CFSAN002349 = db.get_session().query(Sample).filter(Sample.name == 'CFSAN002349').one()
     sample_2014D_0067 = db.get_session().query(Sample).filter(Sample.name == '2014D-0067').one()
 
-    mlst_summarizer = MLSTFeaturesSummarizer(connection=loaded_database_genomic_data_store.connection)
+    mlst_summarizer = MLSTFeaturesComparator(connection=loaded_database_genomic_data_store.connection)
 
     # Test only single sample features
     present_set = SampleSet([sampleA.id])
@@ -210,7 +210,7 @@ def test_summary_selections(loaded_database_genomic_data_store: GenomicsDataInde
 
     # Test multiple schemes sample set but summarize for only a particular scheme
     present_set = SampleSet([sampleA.id, sampleB.id, sample_CFSAN002349.id, sample_2014D_0067.id])
-    mlst_summarizer = MLSTFeaturesSummarizer(connection=loaded_database_genomic_data_store.connection,
+    mlst_summarizer = MLSTFeaturesComparator(connection=loaded_database_genomic_data_store.connection,
                                              scheme='lmonocytogenes')
     summary_df = mlst_summarizer.summary(present_set)
 
@@ -228,7 +228,7 @@ def test_summary_selections(loaded_database_genomic_data_store: GenomicsDataInde
 
     # Test multiple schemes sample set but summarize for only a particular scheme/locus
     present_set = SampleSet([sampleA.id, sampleB.id, sample_CFSAN002349.id, sample_2014D_0067.id])
-    mlst_summarizer = MLSTFeaturesSummarizer(connection=loaded_database_genomic_data_store.connection,
+    mlst_summarizer = MLSTFeaturesComparator(connection=loaded_database_genomic_data_store.connection,
                                              scheme='lmonocytogenes', locus='bglA')
     summary_df = mlst_summarizer.summary(present_set)
 
@@ -242,7 +242,7 @@ def test_summary_selections(loaded_database_genomic_data_store: GenomicsDataInde
 
     # Test multiple schemes, include unknown
     present_set = SampleSet([sampleA.id, sampleB.id, sample_CFSAN002349.id, sample_2014D_0067.id])
-    mlst_summarizer = MLSTFeaturesSummarizer(connection=loaded_database_genomic_data_store.connection,
+    mlst_summarizer = MLSTFeaturesComparator(connection=loaded_database_genomic_data_store.connection,
                                              include_unknown=True)
     summary_df = mlst_summarizer.summary(present_set)
 
@@ -264,7 +264,7 @@ def test_summary_selections(loaded_database_genomic_data_store: GenomicsDataInde
 
     # Test multiple schemes, only unknown
     present_set = SampleSet([sampleA.id, sampleB.id, sample_CFSAN002349.id, sample_2014D_0067.id])
-    mlst_summarizer = MLSTFeaturesSummarizer(connection=loaded_database_genomic_data_store.connection,
+    mlst_summarizer = MLSTFeaturesComparator(connection=loaded_database_genomic_data_store.connection,
                                              include_present=False, include_unknown=True)
     summary_df = mlst_summarizer.summary(present_set)
 
@@ -275,3 +275,173 @@ def test_summary_selections(loaded_database_genomic_data_store: GenomicsDataInde
     assert ['Scheme', 'Locus', 'Allele', 'Count', 'Total', 'Percent'] == list(summary_df.columns)
     assert ['lmonocytogenes', 'ldh', '?', 1, 4, 25] == summary_df.loc['mlst:lmonocytogenes:ldh:?'].tolist()
     assert ['campylobacter', 'uncA', '?', 1, 4, 25] == summary_df.loc['mlst:campylobacter:uncA:?'].tolist()
+
+
+def test_features_comparison(loaded_database_genomic_data_store: GenomicsDataIndex):
+    db = loaded_database_genomic_data_store.connection.database
+    all_sample_ids = {s.id for s in db.get_session().query(Sample).all()}
+    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
+    sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
+    sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
+    sample_CFSAN002349 = db.get_session().query(Sample).filter(Sample.name == 'CFSAN002349').one()
+    sample_CFSAN023463 = db.get_session().query(Sample).filter(Sample.name == 'CFSAN023463').one()
+    lmonocytogenes = {sampleA.id, sampleB.id, sampleC.id, sample_CFSAN002349.id, sample_CFSAN023463.id}
+    assert 9 == len(all_sample_ids)
+
+    present_set = SampleSet(all_sample_ids)
+    mlst_summarizer = MLSTFeaturesComparator(
+        connection=loaded_database_genomic_data_store.connection)
+
+    # Test single category of all
+    sample_categories = [present_set]
+    comparison_df = mlst_summarizer.features_comparison(selected_samples=present_set,
+                                                        sample_categories=sample_categories,
+                                                        category_prefixes=['All'],
+                                                        unit='count')
+    assert 24 == len(comparison_df)
+    assert 'MLST Feature' == comparison_df.index.name
+    assert ['Scheme', 'Locus', 'Allele', 'Total', 'All_count', 'All_total'] == list(comparison_df.columns)
+    assert {9} == set(comparison_df['Total'].tolist())
+    assert {9} == set(comparison_df['All_total'].tolist())
+    assert 5 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1', 'All_count']
+    assert 3 == comparison_df.loc['mlst:lmonocytogenes:bglA:51', 'All_count']
+    assert 2 == comparison_df.loc['mlst:lmonocytogenes:bglA:52', 'All_count']
+    assert 2 == comparison_df.loc['mlst:ecoli:adk:100', 'All_count']
+    assert 2 == comparison_df.loc['mlst:ecoli:recA:7', 'All_count']
+    assert 1 == comparison_df.loc['mlst:campylobacter:uncA:6', 'All_count']
+
+    # Test two categories: one of lmonocytogenes and one of the rest
+    sample_categories = [SampleSet(lmonocytogenes), SampleSet(all_sample_ids - lmonocytogenes)]
+    comparison_df = mlst_summarizer.features_comparison(selected_samples=present_set,
+                                                        sample_categories=sample_categories,
+                                                        category_prefixes=['lmonocytogenes', 'other'],
+                                                        unit='count')
+    assert 24 == len(comparison_df)
+    assert 'MLST Feature' == comparison_df.index.name
+    assert ['Scheme', 'Locus', 'Allele', 'Total',
+            'lmonocytogenes_count', 'other_count',
+            'lmonocytogenes_total', 'other_total'] == list(comparison_df.columns)
+    assert {9} == set(comparison_df['Total'].tolist())
+    assert {5} == set(comparison_df['lmonocytogenes_total'].tolist())
+    assert {4} == set(comparison_df['other_total'].tolist())
+    assert 5 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1', 'lmonocytogenes_count']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1', 'other_count']
+    assert 3 == comparison_df.loc['mlst:lmonocytogenes:bglA:51', 'lmonocytogenes_count']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:51', 'other_count']
+    assert 2 == comparison_df.loc['mlst:lmonocytogenes:bglA:52', 'lmonocytogenes_count']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:52', 'other_count']
+    assert 0 == comparison_df.loc['mlst:ecoli:adk:100', 'lmonocytogenes_count']
+    assert 2 == comparison_df.loc['mlst:ecoli:adk:100', 'other_count']
+    assert 0 == comparison_df.loc['mlst:ecoli:recA:7', 'lmonocytogenes_count']
+    assert 2 == comparison_df.loc['mlst:ecoli:recA:7', 'other_count']
+    assert 0 == comparison_df.loc['mlst:campylobacter:uncA:6', 'lmonocytogenes_count']
+    assert 1 == comparison_df.loc['mlst:campylobacter:uncA:6', 'other_count']
+
+    # Test two categories percent: one of lmonocytogenes and one of the rest
+    sample_categories = [SampleSet(lmonocytogenes), SampleSet(all_sample_ids - lmonocytogenes)]
+    comparison_df = mlst_summarizer.features_comparison(selected_samples=present_set,
+                                                        sample_categories=sample_categories,
+                                                        category_prefixes=['lmonocytogenes', 'other'],
+                                                        unit='percent')
+    assert 24 == len(comparison_df)
+    assert 'MLST Feature' == comparison_df.index.name
+    assert ['Scheme', 'Locus', 'Allele', 'Total',
+            'lmonocytogenes_percent', 'other_percent',
+            'lmonocytogenes_total', 'other_total'] == list(comparison_df.columns)
+    comparison_df['lmonocytogenes_percent'] = comparison_df['lmonocytogenes_percent'].astype(
+        int)  # Convert to int for easier comparison
+    comparison_df['other_percent'] = comparison_df['other_percent'].astype(int)  # Convert to int for easier comparison
+    assert {9} == set(comparison_df['Total'].tolist())
+    assert {5} == set(comparison_df['lmonocytogenes_total'].tolist())
+    assert {4} == set(comparison_df['other_total'].tolist())
+    assert 100 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1', 'lmonocytogenes_percent']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1', 'other_percent']
+    assert 60 == comparison_df.loc['mlst:lmonocytogenes:bglA:51', 'lmonocytogenes_percent']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:51', 'other_percent']
+    assert 40 == comparison_df.loc['mlst:lmonocytogenes:bglA:52', 'lmonocytogenes_percent']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:52', 'other_percent']
+    assert 0 == comparison_df.loc['mlst:ecoli:adk:100', 'lmonocytogenes_percent']
+    assert 50 == comparison_df.loc['mlst:ecoli:adk:100', 'other_percent']
+    assert 0 == comparison_df.loc['mlst:ecoli:recA:7', 'lmonocytogenes_percent']
+    assert 50 == comparison_df.loc['mlst:ecoli:recA:7', 'other_percent']
+    assert 0 == comparison_df.loc['mlst:campylobacter:uncA:6', 'lmonocytogenes_percent']
+    assert 25 == comparison_df.loc['mlst:campylobacter:uncA:6', 'other_percent']
+
+    # Test two categories proportion: one of lmonocytogenes and one of the rest
+    sample_categories = [SampleSet(lmonocytogenes), SampleSet(all_sample_ids - lmonocytogenes)]
+    comparison_df = mlst_summarizer.features_comparison(selected_samples=present_set,
+                                                        sample_categories=sample_categories,
+                                                        category_prefixes=['lmonocytogenes', 'other'],
+                                                        unit='proportion')
+    assert 24 == len(comparison_df)
+    assert 'MLST Feature' == comparison_df.index.name
+    assert ['Scheme', 'Locus', 'Allele', 'Total',
+            'lmonocytogenes_proportion', 'other_proportion',
+            'lmonocytogenes_total', 'other_total'] == list(comparison_df.columns)
+    comparison_df['lmonocytogenes_proportion'] = (comparison_df['lmonocytogenes_proportion'] * 100).astype(
+        int)  # Convert to percent as int for easier comparison
+    comparison_df['other_proportion'] = (comparison_df['other_proportion'] * 100).astype(int)
+    assert {9} == set(comparison_df['Total'].tolist())
+    assert {5} == set(comparison_df['lmonocytogenes_total'].tolist())
+    assert {4} == set(comparison_df['other_total'].tolist())
+    assert 100 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1', 'lmonocytogenes_proportion']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1', 'other_proportion']
+    assert 60 == comparison_df.loc['mlst:lmonocytogenes:bglA:51', 'lmonocytogenes_proportion']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:51', 'other_proportion']
+    assert 40 == comparison_df.loc['mlst:lmonocytogenes:bglA:52', 'lmonocytogenes_proportion']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:52', 'other_proportion']
+    assert 0 == comparison_df.loc['mlst:ecoli:adk:100', 'lmonocytogenes_proportion']
+    assert 50 == comparison_df.loc['mlst:ecoli:adk:100', 'other_proportion']
+    assert 0 == comparison_df.loc['mlst:ecoli:recA:7', 'lmonocytogenes_proportion']
+    assert 50 == comparison_df.loc['mlst:ecoli:recA:7', 'other_proportion']
+    assert 0 == comparison_df.loc['mlst:campylobacter:uncA:6', 'lmonocytogenes_proportion']
+    assert 25 == comparison_df.loc['mlst:campylobacter:uncA:6', 'other_proportion']
+
+    # Test two categories: one of lmonocytogenes and one of the rest threshold below
+    sample_categories = [SampleSet(lmonocytogenes), SampleSet(all_sample_ids - lmonocytogenes)]
+    comparison_df = mlst_summarizer.features_comparison(selected_samples=present_set,
+                                                        sample_categories=sample_categories,
+                                                        category_prefixes=['lmonocytogenes', 'other'],
+                                                        category_samples_threshold=4,
+                                                        unit='count')
+    assert 24 == len(comparison_df)
+    assert 'MLST Feature' == comparison_df.index.name
+    assert ['Scheme', 'Locus', 'Allele', 'Total',
+            'lmonocytogenes_count', 'other_count',
+            'lmonocytogenes_total', 'other_total'] == list(comparison_df.columns)
+    assert {9} == set(comparison_df['Total'].tolist())
+    assert {5} == set(comparison_df['lmonocytogenes_total'].tolist())
+    assert {4} == set(comparison_df['other_total'].tolist())
+    assert 5 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1', 'lmonocytogenes_count']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1', 'other_count']
+    assert 3 == comparison_df.loc['mlst:lmonocytogenes:bglA:51', 'lmonocytogenes_count']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:51', 'other_count']
+    assert 2 == comparison_df.loc['mlst:lmonocytogenes:bglA:52', 'lmonocytogenes_count']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:52', 'other_count']
+    assert 0 == comparison_df.loc['mlst:ecoli:adk:100', 'lmonocytogenes_count']
+    assert 2 == comparison_df.loc['mlst:ecoli:adk:100', 'other_count']
+    assert 0 == comparison_df.loc['mlst:ecoli:recA:7', 'lmonocytogenes_count']
+    assert 2 == comparison_df.loc['mlst:ecoli:recA:7', 'other_count']
+    assert 0 == comparison_df.loc['mlst:campylobacter:uncA:6', 'lmonocytogenes_count']
+    assert 1 == comparison_df.loc['mlst:campylobacter:uncA:6', 'other_count']
+
+    # Test two categories: one of lmonocytogenes and one of the rest threshold above
+    sample_categories = [SampleSet(lmonocytogenes), SampleSet(all_sample_ids - lmonocytogenes)]
+    comparison_df = mlst_summarizer.features_comparison(selected_samples=present_set,
+                                                        sample_categories=sample_categories,
+                                                        category_prefixes=['lmonocytogenes', 'other'],
+                                                        category_samples_threshold=5,
+                                                        unit='count')
+    assert 24 == len(comparison_df)
+    assert 'MLST Feature' == comparison_df.index.name
+    assert ['Scheme', 'Locus', 'Allele', 'Total',
+            'lmonocytogenes_count',
+            'lmonocytogenes_total'] == list(comparison_df.columns)
+    assert {9} == set(comparison_df['Total'].tolist())
+    assert {5} == set(comparison_df['lmonocytogenes_total'].tolist())
+    assert 5 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1', 'lmonocytogenes_count']
+    assert 3 == comparison_df.loc['mlst:lmonocytogenes:bglA:51', 'lmonocytogenes_count']
+    assert 2 == comparison_df.loc['mlst:lmonocytogenes:bglA:52', 'lmonocytogenes_count']
+    assert 0 == comparison_df.loc['mlst:ecoli:adk:100', 'lmonocytogenes_count']
+    assert 0 == comparison_df.loc['mlst:ecoli:recA:7', 'lmonocytogenes_count']
+    assert 0 == comparison_df.loc['mlst:campylobacter:uncA:6', 'lmonocytogenes_count']

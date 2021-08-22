@@ -1,3 +1,17 @@
+# 0.3.0
+
+* [api]: Added ability to generate a DataFrame of percents of features present in selected samples. To be used for comparing different categories of samples (0.3.0.dev1).
+* [api]: Added ability to handle joining larger dataframes to sets of samples by batching SQL queries (0.3.0.dev2).
+* [api]: Added mutation "Type" to the output of summaries/comparison table (0.3.0.dev3).
+* [analysis]: Added ability to select to include MNP as well as SNPs when building an alignment/tree (0.3.0.dev2).
+* [analysis]: Santizing sample names for analysis and restoring afterwards. This way a greater variety of sample names is possible (0.3.0.dev3).
+* [analysis]: Automatically split a single multi-FASTA file into separate files per sequence (used primarily for SARS-CoV-2 data) (0.3.0.dev4).
+* [analysis]: Added ability to handle lzma and bzip2 compressed sequence files (0.3.0.dev4).
+* [api]: Added a method to select a random subsample of a query (0.3.0.dev4).
+* [api]: Set outgroup of tree query (0.3.0.dev5).
+* [api]: Added experimental class to cluster samples within different categories (e.g., lineages) by distances between the proportion of samples having particular features (0.3.0.dev5).
+* [analysis]: All stages of the Snakemake workflow now have assigned conda environments (0.3.0.dev5).
+
 # 0.2.0
 
 * [doc]: Updates to readme and other documentation.
@@ -17,6 +31,7 @@
 * [analysis]: Switched command-line interface to use my Python API for queries.
 * [api]: `features_summary()` now works with MLST results.
 * [api]: Improved performance/redesigned `features_summary()` for mutation results.
+* [analysis]: Added ability to batch up loading of samples into database.
 
 # 0.1.0
 
