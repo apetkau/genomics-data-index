@@ -111,6 +111,11 @@ class MaskedGenomicRegions:
         return MaskedGenomicRegions(bed_file_data)
 
     @classmethod
+    def from_vcf_file(cls, file: Path) -> MaskedGenomicRegions:
+        bed_file_data = BedTool(str(file)).merge()
+        return MaskedGenomicRegions(bed_file_data)
+
+    @classmethod
     def empty_mask(cls):
         return MaskedGenomicRegions(BedTool('', from_string=True))
 

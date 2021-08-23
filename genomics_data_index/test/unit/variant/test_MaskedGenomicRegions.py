@@ -1,5 +1,6 @@
 import tempfile
 from pathlib import Path
+from os import path
 
 from Bio import SeqIO
 from Bio.Seq import Seq
@@ -7,6 +8,10 @@ from Bio.SeqRecord import SeqRecord
 from pybedtools import BedTool
 
 from genomics_data_index.storage.MaskedGenomicRegions import MaskedGenomicRegions
+
+
+root_data_dir = Path(path.dirname(__file__), 'data')
+snps_vcf_mask_file = root_data_dir / 'snps-for-mask.vcf.gz'
 
 
 def test_create_from_sequence():
@@ -72,6 +77,35 @@ def test_create_from_two_sequences():
     assert mask.contains('record2', 2)
     assert not mask.contains('record2', 3)
     assert not mask.contains('record2', 5)
+
+
+def test_create_from_vcf():
+    mask = MaskedGenomicRegions.from_vcf_file(snps_vcf_mask_file)
+
+    assert 9 == len(mask), 'Invalid length'
+    assert not mask.is_empty()
+
+    assert not mask.contains('reference', 291)
+    assert mask.contains('reference', 292)
+    assert not mask.contains('reference', 293)
+
+    assert not mask.contains('reference', 300)
+    assert mask.contains('reference', 301)
+    assert mask.contains('reference', 302)
+    assert not mask.contains('reference', 303)
+
+    assert not mask.contains('reference', 372)
+    assert mask.contains('reference', 373)
+    assert not mask.contains('reference', 374)
+
+    assert not mask.contains('reference', 459)
+    assert mask.contains('reference', 460)
+    assert mask.contains('reference', 463)
+    assert not mask.contains('reference', 464)
+
+    assert not mask.contains('reference', 504)
+    assert mask.contains('reference', 505)
+    assert not mask.contains('reference', 506)
 
 
 def test_mask_to_features_from_two_sequences():
