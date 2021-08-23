@@ -95,7 +95,7 @@ def regular_nucleotide_data_package() -> NucleotideSampleDataPackage:
     return NucleotideSampleDataPackage.create_from_vcf_masks(sample_vcf_map=vcf_files,
                                                              masked_genomic_files_map=mask_files,
                                                              sample_files_processor=SerialSampleFilesProcessor(
-                                                                      tmp_dir))
+                                                                 tmp_dir))
 
 
 @pytest.fixture
@@ -104,7 +104,7 @@ def snpeff_nucleotide_data_package() -> NucleotideSampleDataPackage:
     return NucleotideSampleDataPackage.create_from_vcf_masks(sample_vcf_map=snpeff_sample_vcfs,
                                                              masked_genomic_files_map=None,
                                                              sample_files_processor=SerialSampleFilesProcessor(
-                                                                      tmp_dir))
+                                                                 tmp_dir))
 
 
 @pytest.fixture
@@ -113,7 +113,7 @@ def snpeff_nucleotide_data_package_fake_duplicate_gene() -> NucleotideSampleData
     return NucleotideSampleDataPackage.create_from_vcf_masks(sample_vcf_map=snpeff_sample_vcfs_fake_dup,
                                                              masked_genomic_files_map=None,
                                                              sample_files_processor=SerialSampleFilesProcessor(
-                                                                      tmp_dir))
+                                                                 tmp_dir))
 
 
 @pytest.fixture
@@ -123,7 +123,7 @@ def snpeff_nucleotide_data_package_parallel_variants() -> NucleotideSampleDataPa
     return NucleotideSampleDataPackage.create_from_vcf_masks(sample_vcf_map=snpeff_sample_vcfs,
                                                              masked_genomic_files_map=None,
                                                              sample_files_processor=SerialSampleFilesProcessor(
-                                                                      tmp_dir),
+                                                                 tmp_dir),
                                                              variants_processor_factory=variants_processor_factory)
 
 

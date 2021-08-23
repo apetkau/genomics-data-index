@@ -56,7 +56,7 @@ def variants_reader_internal(sample_dirs, variants_processor_factory: VcfVariant
     file_processor = SerialSampleFilesProcessor(tmp_dir)
     data_package = NucleotideSampleDataPackage.create_from_vcf_masks(sample_vcf_map=vcf_masks['vcfs'],
                                                                      masked_genomic_files_map=vcf_masks[
-                                                                              'masks'],
+                                                                         'masks'],
                                                                      variants_processor_factory=variants_processor_factory,
                                                                      sample_files_processor=file_processor,
                                                                      index_unknown_missing=include_masked_regions)

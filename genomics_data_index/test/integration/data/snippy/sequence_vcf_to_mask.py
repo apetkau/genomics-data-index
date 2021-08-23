@@ -3,10 +3,11 @@
 
 import sys
 from pathlib import Path
-from genomics_data_index.storage.MaskedGenomicRegions import MaskedGenomicRegions
-from genomics_data_index.storage.io.mutation.SequenceFile import SequenceFile
+
 from pybedtools import BedTool
 
+from genomics_data_index.storage.MaskedGenomicRegions import MaskedGenomicRegions
+from genomics_data_index.storage.io.mutation.SequenceFile import SequenceFile
 
 if len(sys.argv) != 3:
     print(f"Usage: {sys.argv[0]} [snps.aligned.fa] [snps.vcf.gz]\n")
@@ -14,7 +15,6 @@ if len(sys.argv) != 3:
 
 snps_aligned = Path(sys.argv[1])
 snps_vcf = Path(sys.argv[2])
-
 
 sf = SequenceFile(snps_aligned)
 vcf_bed = BedTool(snps_vcf).merge()
@@ -24,4 +24,3 @@ regions_minus_vcf = MaskedGenomicRegions(regions._mask.subtract(vcf_bed))
 
 output_file = Path(name + '.bed.gz')
 regions.write(output_file)
-

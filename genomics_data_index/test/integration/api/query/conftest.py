@@ -30,7 +30,7 @@ def snippy_data_package_2() -> NucleotideSampleDataPackage:
     data_package = NucleotideSampleDataPackage.create_from_vcf_masks(sample_vcf_map=snippy_sample2_vcfs_dict,
                                                                      masked_genomic_files_map=snippy_sample2_mask_sequences_dict,
                                                                      sample_files_processor=SerialSampleFilesProcessor(
-                                                                              tmp_dir))
+                                                                         tmp_dir))
     return data_package
 
 
@@ -92,7 +92,7 @@ def loaded_database_connection_annotations() -> DataIndexConnection:
     data_package = NucleotideSampleDataPackage.create_from_vcf_masks(sample_vcf_map=snpeff_sample_vcfs,
                                                                      masked_genomic_files_map=None,
                                                                      sample_files_processor=SerialSampleFilesProcessor(
-                                                                              vcf_tmp_dir))
+                                                                         vcf_tmp_dir))
     database_connection.variation_service.insert(data_package, feature_scope_name='NC_011083')
 
     return database_connection
@@ -110,7 +110,7 @@ def loaded_database_connection_annotations_duplicate_genes() -> DataIndexConnect
     data_package = NucleotideSampleDataPackage.create_from_vcf_masks(sample_vcf_map=snpeff_sample_vcfs_fake_dup,
                                                                      masked_genomic_files_map=None,
                                                                      sample_files_processor=SerialSampleFilesProcessor(
-                                                                              vcf_tmp_dir))
+                                                                         vcf_tmp_dir))
     database_connection.variation_service.insert(data_package, feature_scope_name='NC_011083')
 
     return database_connection

@@ -6,8 +6,7 @@ from pybedtools import BedTool
 
 from genomics_data_index.storage.io.mutation.NucleotideSampleData import NucleotideSampleData
 from genomics_data_index.storage.io.mutation.NucleotideSampleDataBedMask import NucleotideSampleDataBedMask
-from genomics_data_index.test.integration import data_dir, regular_vcf_dir, variation_dir, reference_file, consensus_dir
-from genomics_data_index.test.integration import snippy_sample_vcfs_dict, snippy_sample_mask_sequences_dict
+from genomics_data_index.test.integration import variation_dir
 
 sampleA_mask_file = variation_dir / 'SampleA.bed.gz'
 sampleA_vcf = variation_dir / 'SampleA.vcf.gz'

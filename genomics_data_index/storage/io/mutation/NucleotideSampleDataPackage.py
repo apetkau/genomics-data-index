@@ -8,15 +8,15 @@ from genomics_data_index.storage.io.SampleData import SampleData
 from genomics_data_index.storage.io.SampleDataPackage import SampleDataPackage
 from genomics_data_index.storage.io.SampleFilesProcessor import SampleFilesProcessor
 from genomics_data_index.storage.io.mutation.NucleotideSampleData import NucleotideSampleData
-from genomics_data_index.storage.io.mutation.NucleotideSampleDataSequenceMask import NucleotideSampleDataSequenceMask
 from genomics_data_index.storage.io.mutation.NucleotideSampleDataBedMask import NucleotideSampleDataBedMask
+from genomics_data_index.storage.io.mutation.NucleotideSampleDataSequenceMask import NucleotideSampleDataSequenceMask
+from genomics_data_index.storage.io.mutation.SequenceFile import SequenceFile
 from genomics_data_index.storage.io.mutation.VcfVariantsReader import VcfVariantsReader
 from genomics_data_index.storage.io.mutation.variants_processor.SerialVcfVariantsTableProcessor import \
     SerialVcfVariantsTableProcessorFactory
 from genomics_data_index.storage.io.mutation.variants_processor.VcfVariantsTableProcessor import \
     VcfVariantsTableProcessorFactory
 from genomics_data_index.storage.io.processor.NullSampleFilesProcessor import NullSampleFilesProcessor
-from genomics_data_index.storage.io.mutation.SequenceFile import SequenceFile
 
 
 class NucleotideSampleDataPackage(SampleDataPackage):

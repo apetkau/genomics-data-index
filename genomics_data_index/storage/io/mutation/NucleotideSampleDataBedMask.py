@@ -1,11 +1,10 @@
-from typing import Optional
-from pathlib import Path
 import logging
+from pathlib import Path
+from typing import Optional
 
 from genomics_data_index.storage.MaskedGenomicRegions import MaskedGenomicRegions
 from genomics_data_index.storage.io.mutation.NucleotideSampleData import NucleotideSampleData
 from genomics_data_index.storage.util import TRACE_LEVEL
-
 
 logger = logging.getLogger(__name__)
 
