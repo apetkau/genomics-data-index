@@ -173,8 +173,6 @@ rule reads_single_mask_snippy:
         snippy_dir="reads/snippy/single/{sample}"
     output:
         mask="reads/single/mask/{sample}.bed.gz",
-    conda:
-        "envs/gdi.yaml"
     log:
         "logs/reads_mask.{sample}.log"
     script:
@@ -255,7 +253,8 @@ rule assembly_mask:
     log:
         "logs/assembly_consensus_mask.{sample}.consensus.log",
     shell:
-        "bedtools merge -i {input.vcf_all} | bedtools complement -i - -g {input.reference_bedtools} | "
+        "bedtools merge -i {input.vcf_all} | bedtools sort | bedtools merge |"
+        "bedtools complement -i - -g {input.reference_bedtools} | "
         "gzip > {output.mask}"
 
 
