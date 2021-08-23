@@ -87,7 +87,7 @@ class NucleotideSampleDataPackage(SampleDataPackage):
             else:
                 mask_file = None
 
-            if cls.mask_is_bed(mask_file):
+            if mask_file is None or cls.mask_is_bed(mask_file):
                 sample_data = NucleotideSampleDataBedMask.create(
                     sample_name=sample_name,
                     vcf_file=vcf_file,

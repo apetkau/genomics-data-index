@@ -1,7 +1,7 @@
 import re
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import cast
+from typing import cast, Dict
 
 import pytest
 
@@ -15,6 +15,24 @@ from genomics_data_index.storage.io.processor.MultipleProcessSampleFilesProcesso
     MultipleProcessSampleFilesProcessor
 from genomics_data_index.storage.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor
 from genomics_data_index.test.integration.storage.io.mutation import vcf_and_mask_files, vcf_and_bed_mask_files
+from genomics_data_index.test.integration import data_dir
+
+
+def vcf_and_mixed_mask_files() -> Dict[str, Dict[str, Path]]:
+    sample_vcf_map = {}
+    sample_genomic_files_mask = {}
+
+    sample_vcf_map['SampleA'] = data_dir / 'SampleA' / 'snps.vcf.gz'
+    sample_genomic_files_mask['SampleA'] = data_dir / 'SampleA' / 'snps.aligned.bed.gz'
+    sample_vcf_map['SampleB'] = data_dir / 'SampleB' / 'snps.vcf.gz'
+    sample_genomic_files_mask['SampleB'] = data_dir / 'SampleB' / 'snps.aligned.fa'
+    sample_vcf_map['SampleC'] = data_dir / 'SampleC' / 'snps.vcf.gz'
+    sample_genomic_files_mask['SampleC'] = None
+
+    return {
+        'vcfs': sample_vcf_map,
+        'masks': sample_genomic_files_mask
+    }
 
 
 def test_iter_sample_data(sample_dirs):
@@ -80,6 +98,46 @@ def test_iter_sample_data_bed_masks(sample_dirs):
             mask = sample_data.get_mask()
             assert mask_len == len(mask)
             assert {'reference'} == mask.sequence_names()
+            mask_file = sample_data.get_mask_file()
+            assert mask_file.parent == tmp_file
+            vcf_file, vcf_index = sample_data.get_vcf_file()
+            assert vcf_file.exists()
+            assert vcf_index.exists()
+            assert vcf_file.parent == tmp_file
+            assert vcf_index.parent == tmp_file
+
+            count += 1
+
+        # Make sure I tested all 3 files in above loop
+        assert 3 == count
+
+
+def test_iter_sample_data_mixed_masks(sample_dirs):
+    with TemporaryDirectory() as tmp_file_str:
+        tmp_file = Path(tmp_file_str)
+        vcf_masks = vcf_and_mixed_mask_files()
+        file_processor = SerialSampleFilesProcessor(tmp_file)
+        data_package = NucleotideSampleDataPackage.create_from_vcf_masks(sample_vcf_map=vcf_masks['vcfs'],
+                                                                         masked_genomic_files_map=vcf_masks[
+                                                                                  'masks'],
+                                                                         sample_files_processor=file_processor)
+
+        processed_files_dict = {}
+        for sample_file in data_package.iter_sample_data():
+            processed_files_dict[sample_file.sample_name] = sample_file
+
+        assert 3 == len(processed_files_dict)
+        assert {'SampleA', 'SampleB', 'SampleC'} == set(processed_files_dict.keys())
+
+        count = 0
+        for sample, mask_len, seq_names in [('SampleA', 437, {'reference'}), ('SampleB', 276, {'reference'}),
+                                           ('SampleC', 0, set())]:
+            sample_data = processed_files_dict[sample]
+            assert isinstance(sample_data, NucleotideSampleData)
+            sample_data = cast(NucleotideSampleData, sample_data)
+            mask = sample_data.get_mask()
+            assert mask_len == len(mask)
+            assert seq_names == mask.sequence_names()
             mask_file = sample_data.get_mask_file()
             assert mask_file.parent == tmp_file
             vcf_file, vcf_index = sample_data.get_vcf_file()
