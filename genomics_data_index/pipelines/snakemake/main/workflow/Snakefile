@@ -68,6 +68,8 @@ rule reference_genome_bedtools:
     conda:
         "envs/main.yaml"
     threads: 1
+    log:
+        "logs/reference_genome_bedtools.log"
     script:
         "scripts/fasta-to-genome-bedtools.py"
 
@@ -166,17 +168,6 @@ rule reads_paired_snippy:
         "cp {output.snippy_dir}/snps.vcf.gz {output.vcf}"
 
 
-rule reads_paired_mask_snippy:
-    input:
-        snippy_dir="reads/snippy/paired/{sample}"
-    output:
-        mask="reads/paired/mask/{sample}.bed.gz",
-    conda:
-        "envs/gdi.yaml"
-    script:
-        "scripts/create-snippy-mask.py"
-
-
 rule reads_single_mask_snippy:
     input:
         snippy_dir="reads/snippy/single/{sample}"
@@ -184,8 +175,17 @@ rule reads_single_mask_snippy:
         mask="reads/single/mask/{sample}.bed.gz",
     conda:
         "envs/gdi.yaml"
+    log:
+        "logs/reads_mask.{sample}.log"
     script:
         "scripts/create-snippy-mask.py"
+
+
+use rule reads_single_mask_snippy as reads_paired_mask_snippy with:
+    input:
+        snippy_dir="reads/snippy/paired/{sample}"
+    output:
+        mask="reads/paired/mask/{sample}.bed.gz",
 
 
 rule reads_single_snippy:
