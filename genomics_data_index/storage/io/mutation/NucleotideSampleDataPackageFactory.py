@@ -77,9 +77,9 @@ class NucleotideInputFilesSampleDataPackageFactory(NucleotideSampleDataPackageFa
             if row['Sample'] in sample_vcf_map:
                 raise Exception(f'Error, duplicate samples {row["Sample"]} in file {input_files_file}')
 
-            sample_vcf_map[row['Sample']] = row['VCF']
+            sample_vcf_map[row['Sample']] = Path(row['VCF'])
             if not pd.isna(row['Mask File']):
-                mask_files_map[row['Sample']] = row['Mask File']
+                mask_files_map[row['Sample']] = Path(row['Mask File'])
 
         logger.info(f'Found {len(sample_vcf_map)} VCFs and {len(mask_files_map)} mask files in [{input_files_file}]')
 
