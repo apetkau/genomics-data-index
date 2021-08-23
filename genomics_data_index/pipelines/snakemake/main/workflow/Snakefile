@@ -60,6 +60,18 @@ rule index_reference:
         "minimap2 -t {threads} -d {output.reference_mm2_index} {input.reference} 2>&1 1>{log.mm2_index}"
 
 
+rule reference_genome_bedtools:
+    input:
+        reference="reference/reference.fasta",
+    output:
+        genome_bedtools="reference/reference-genome-bedtools.tsv",
+    conda:
+        "envs/main.yaml"
+    threads: 1
+    script:
+        "scripts/fasta-to-genome-bedtools.py"
+
+
 rule prepare_snpeff_database:
     input:
         reference=reference_abs,
@@ -102,7 +114,7 @@ rule assembly_variant_all:
         "envs/bcftools.yaml"
     threads: 1
     params:
-        qual=20,
+        qual=10,
     log:
         mpileup="logs/assembly_variant_all.{sample}.mpileup.log",
         call="logs/assembly_variant_all.{sample}.call.log",
@@ -218,17 +230,21 @@ use rule assembly_variant_snpeff as reads_variant_single_snpeff with:
 rule assembly_consensus_mask:
     input:
         reference="reference/reference.fasta",
+        reference_bedtools="reference/reference-genome-bedtools.tsv",
         vcfall="assemblies/variant_all/{sample}.vcf.gz",
         index="assemblies/variant_all/{sample}.vcf.gz.csi",
     output:
-        "assemblies/consensus/{sample}.fasta.gz",
+        consensus="assemblies/consensus/{sample}.fasta.gz",
+        mask="assemblies/consensus/{sample}.bed.gz",
     conda:
-        "envs/bcftools.yaml"
+        "envs/bedtools.yaml"
     log:
         "logs/assembly_consensus_mask.{sample}.consensus.log",
     shell:
-        "bcftools consensus --absent N --mark-del '-' -f {input.reference} -i 'TYPE==\"REF\"' {input.vcfall} 2> {log} |"
-        "gzip -c - > {output}"
+        "bedtools merge -i {input.vcfall} | bedtools complement -i - -g {input.reference_bedtools} | "
+        "gzip > {output.mask} && "
+        "bedtools maskfasta -fi {input.reference} -bed {output.mask} -fo {output.consensus}.tmp && "
+        "gzip {output.consensus}.tmp && mv {output.consensus}.tmp.gz {output.consensus}"
 
 
 rule assembly_sourmash_sketch:
