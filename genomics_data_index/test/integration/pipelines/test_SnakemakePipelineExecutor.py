@@ -1,10 +1,10 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import List
+from typing import List, Union
 
 import pandas as pd
 import vcf
-from Bio.SeqRecord import SeqRecord
+from pybedtools import BedTool
 
 from genomics_data_index.pipelines.SnakemakePipelineExecutor import SnakemakePipelineExecutor
 from genomics_data_index.storage.io.mutation.SequenceFile import SequenceFile
@@ -12,6 +12,7 @@ from genomics_data_index.test.integration import reference_file, reference_file_
 from genomics_data_index.test.integration.pipelines import assemblies_samples, assemblies_reference, expected_mutations
 from genomics_data_index.test.integration.pipelines import snpeff_input_sampleA, snpeff_reference_genome
 from genomics_data_index.test.integration.pipelines import snpeff_reads_paired, snpeff_reads_single
+from genomics_data_index.test.integration.pipelines import empty_bed_file, expected_beds
 
 
 def vcf_to_mutations_list(vcf_file: Path) -> List[str]:
@@ -29,11 +30,6 @@ def read_expected_mutations(file: Path) -> List[str]:
         return mutations
 
 
-def get_consensus_sequences(file: Path) -> List[SeqRecord]:
-    ref_name, sequences = SequenceFile(file).parse_sequence_file()
-    return sequences
-
-
 def assert_vcf(vcf_file: Path, expected_mutations_file: Path):
     sample_expected_mutations = read_expected_mutations(expected_mutations_file)
     actual_mutations = vcf_to_mutations_list(vcf_file)
@@ -41,22 +37,20 @@ def assert_vcf(vcf_file: Path, expected_mutations_file: Path):
     assert actual_mutations == sample_expected_mutations
 
 
-def assert_consensus(consensus_file: Path, expected_length: int, expected_Ns: int, expected_gaps: int):
-    actual_consensus_records = get_consensus_sequences(consensus_file)
-    assert 1 == len(actual_consensus_records)
+def masks_equal(mask_file: Path, expected_bed: Union[Path, BedTool]) -> bool:
+    mask = BedTool(str(mask_file))
 
-    actual_consensus_record = actual_consensus_records[0]
-    assert expected_length == len(actual_consensus_record)
-    assert 'reference' == actual_consensus_record.id
-    assert expected_Ns == actual_consensus_record.upper().seq.count('N')
-    assert expected_gaps == actual_consensus_record.seq.count('-')
+    if isinstance(expected_bed, Path):
+        expected_bed = BedTool(str(expected_bed))
+
+    return expected_bed == mask
 
 
 def test_create_fofn_file_single_sample():
     with TemporaryDirectory() as tmp_dir_str:
         tmp_dir = Path(tmp_dir_str)
         actual_mutations_file = tmp_dir / 'assemblies' / 'variant' / 'SampleA.vcf.gz'
-        actual_consensus_file = tmp_dir / 'assemblies' / 'consensus' / 'SampleA.fasta.gz'
+        actual_mask_file = tmp_dir / 'assemblies' / 'mask' / 'SampleA.bed.gz'
         unexpected_mlst_file = tmp_dir / 'mlst.tsv'
         input_samples = [assemblies_samples['SampleA']]
 
@@ -72,7 +66,7 @@ def test_create_fofn_file_single_sample():
 
         assert input_fofn.exists()
         assert actual_mutations_file.exists()
-        assert actual_consensus_file.exists()
+        assert actual_mask_file.exists()
         assert not unexpected_mlst_file.exists()  # Make sure MLST file does not exist in this case
 
         # Verify input file of file names for rest of gdi software (used as input to the indexing component)
@@ -83,13 +77,13 @@ def test_create_fofn_file_single_sample():
         assert 1 == len(fofn_df)
         assert ['SampleA'] == fofn_df['Sample'].tolist()
         actual_mutations_file_from_df = Path(fofn_df[fofn_df['Sample'] == 'SampleA']['VCF'].tolist()[0])
-        actual_consensus_file_from_df = Path(fofn_df[fofn_df['Sample'] == 'SampleA']['Mask File'].tolist()[0])
+        actual_mask_file_from_df = Path(fofn_df[fofn_df['Sample'] == 'SampleA']['Mask File'].tolist()[0])
 
         assert actual_mutations_file == actual_mutations_file_from_df
-        assert actual_consensus_file == actual_consensus_file_from_df
+        assert actual_mask_file == actual_mask_file_from_df
 
         assert_vcf(actual_mutations_file, expected_mutations['SampleA'])
-        assert_consensus(actual_consensus_file, expected_length=5180, expected_Ns=0, expected_gaps=0)
+        assert masks_equal(actual_mask_file, empty_bed_file)
 
 
 def test_create_fofn_file_multiple_samples():
@@ -120,19 +114,19 @@ def test_create_fofn_file_multiple_samples():
         assert ['SampleA', 'SampleB', 'SampleC'] == fofn_df['Sample'].tolist()
 
         actual_mutations_A = Path(fofn_df[fofn_df['Sample'] == 'SampleA']['VCF'].tolist()[0])
-        actual_consensus_A = Path(fofn_df[fofn_df['Sample'] == 'SampleA']['Mask File'].tolist()[0])
+        actual_mask_file_A = Path(fofn_df[fofn_df['Sample'] == 'SampleA']['Mask File'].tolist()[0])
         assert_vcf(actual_mutations_A, expected_mutations['SampleA'])
-        assert_consensus(actual_consensus_A, expected_length=5180, expected_Ns=0, expected_gaps=0)
+        assert masks_equal(actual_mask_file_A, empty_bed_file)
 
         actual_mutations_B = Path(fofn_df[fofn_df['Sample'] == 'SampleB']['VCF'].tolist()[0])
-        actual_consensus_B = Path(fofn_df[fofn_df['Sample'] == 'SampleB']['Mask File'].tolist()[0])
+        actual_mask_file_B = Path(fofn_df[fofn_df['Sample'] == 'SampleB']['Mask File'].tolist()[0])
         assert_vcf(actual_mutations_B, expected_mutations['SampleB'])
-        assert_consensus(actual_consensus_B, expected_length=5180, expected_Ns=0, expected_gaps=0)
+        assert masks_equal(actual_mask_file_B, empty_bed_file)
 
         actual_mutations_C = Path(fofn_df[fofn_df['Sample'] == 'SampleC']['VCF'].tolist()[0])
-        actual_consensus_C = Path(fofn_df[fofn_df['Sample'] == 'SampleC']['Mask File'].tolist()[0])
+        actual_mask_file_C = Path(fofn_df[fofn_df['Sample'] == 'SampleC']['Mask File'].tolist()[0])
         assert_vcf(actual_mutations_C, expected_mutations['SampleC'])
-        assert_consensus(actual_consensus_C, expected_length=5180, expected_Ns=0, expected_gaps=0)
+        assert masks_equal(actual_mask_file_C, empty_bed_file)
 
 
 def test_create_fofn_file_multiple_samples_with_invalid_charcaters_in_name():
@@ -168,19 +162,19 @@ def test_create_fofn_file_multiple_samples_with_invalid_charcaters_in_name():
         assert ['SampleA/extra|1', 'SampleB/extra|1', 'SampleC/extra|1'] == fofn_df['Sample'].tolist()
 
         actual_mutations_A = Path(fofn_df[fofn_df['Sample'] == 'SampleA/extra|1']['VCF'].tolist()[0])
-        actual_consensus_A = Path(fofn_df[fofn_df['Sample'] == 'SampleA/extra|1']['Mask File'].tolist()[0])
+        actual_mask_file_A = Path(fofn_df[fofn_df['Sample'] == 'SampleA/extra|1']['Mask File'].tolist()[0])
         assert_vcf(actual_mutations_A, expected_mutations_local['SampleA/extra|1'])
-        assert_consensus(actual_consensus_A, expected_length=5180, expected_Ns=0, expected_gaps=0)
+        assert masks_equal(actual_mask_file_A, empty_bed_file)
 
         actual_mutations_B = Path(fofn_df[fofn_df['Sample'] == 'SampleB/extra|1']['VCF'].tolist()[0])
-        actual_consensus_B = Path(fofn_df[fofn_df['Sample'] == 'SampleB/extra|1']['Mask File'].tolist()[0])
+        actual_mask_file_B = Path(fofn_df[fofn_df['Sample'] == 'SampleB/extra|1']['Mask File'].tolist()[0])
         assert_vcf(actual_mutations_B, expected_mutations_local['SampleB/extra|1'])
-        assert_consensus(actual_consensus_B, expected_length=5180, expected_Ns=0, expected_gaps=0)
+        assert masks_equal(actual_mask_file_B, empty_bed_file)
 
         actual_mutations_C = Path(fofn_df[fofn_df['Sample'] == 'SampleC/extra|1']['VCF'].tolist()[0])
-        actual_consensus_C = Path(fofn_df[fofn_df['Sample'] == 'SampleC/extra|1']['Mask File'].tolist()[0])
+        actual_mask_file_C = Path(fofn_df[fofn_df['Sample'] == 'SampleC/extra|1']['Mask File'].tolist()[0])
         assert_vcf(actual_mutations_C, expected_mutations_local['SampleC/extra|1'])
-        assert_consensus(actual_consensus_C, expected_length=5180, expected_Ns=0, expected_gaps=0)
+        assert masks_equal(actual_mask_file_C, empty_bed_file)
 
 
 def test_create_fofn_file_multiple_samples_batching():
@@ -211,19 +205,19 @@ def test_create_fofn_file_multiple_samples_batching():
         assert ['SampleA', 'SampleB', 'SampleC'] == fofn_df['Sample'].tolist()
 
         actual_mutations_A = Path(fofn_df[fofn_df['Sample'] == 'SampleA']['VCF'].tolist()[0])
-        actual_consensus_A = Path(fofn_df[fofn_df['Sample'] == 'SampleA']['Mask File'].tolist()[0])
+        actual_mask_file_A = Path(fofn_df[fofn_df['Sample'] == 'SampleA']['Mask File'].tolist()[0])
         assert_vcf(actual_mutations_A, expected_mutations['SampleA'])
-        assert_consensus(actual_consensus_A, expected_length=5180, expected_Ns=0, expected_gaps=0)
+        assert masks_equal(actual_mask_file_A, empty_bed_file)
 
         actual_mutations_B = Path(fofn_df[fofn_df['Sample'] == 'SampleB']['VCF'].tolist()[0])
-        actual_consensus_B = Path(fofn_df[fofn_df['Sample'] == 'SampleB']['Mask File'].tolist()[0])
+        actual_mask_file_B = Path(fofn_df[fofn_df['Sample'] == 'SampleB']['Mask File'].tolist()[0])
         assert_vcf(actual_mutations_B, expected_mutations['SampleB'])
-        assert_consensus(actual_consensus_B, expected_length=5180, expected_Ns=0, expected_gaps=0)
+        assert masks_equal(actual_mask_file_B, empty_bed_file)
 
         actual_mutations_C = Path(fofn_df[fofn_df['Sample'] == 'SampleC']['VCF'].tolist()[0])
-        actual_consensus_C = Path(fofn_df[fofn_df['Sample'] == 'SampleC']['Mask File'].tolist()[0])
+        actual_mask_file_C = Path(fofn_df[fofn_df['Sample'] == 'SampleC']['Mask File'].tolist()[0])
         assert_vcf(actual_mutations_C, expected_mutations['SampleC'])
-        assert_consensus(actual_consensus_C, expected_length=5180, expected_Ns=0, expected_gaps=0)
+        assert masks_equal(actual_mask_file_C, empty_bed_file)
 
 
 def test_create_fofn_file_multiple_samples_with_ns():
@@ -254,19 +248,19 @@ def test_create_fofn_file_multiple_samples_with_ns():
         assert ['SampleD', 'SampleE', 'SampleF'] == fofn_df['Sample'].tolist()
 
         actual_mutations_D = Path(fofn_df[fofn_df['Sample'] == 'SampleD']['VCF'].tolist()[0])
-        actual_consensus_D = Path(fofn_df[fofn_df['Sample'] == 'SampleD']['Mask File'].tolist()[0])
+        actual_mask_D = Path(fofn_df[fofn_df['Sample'] == 'SampleD']['Mask File'].tolist()[0])
         assert_vcf(actual_mutations_D, expected_mutations['SampleD'])
-        assert_consensus(actual_consensus_D, expected_length=5180, expected_Ns=480, expected_gaps=0)
+        assert masks_equal(actual_mask_D, expected_beds['SampleD'])
 
         actual_mutations_E = Path(fofn_df[fofn_df['Sample'] == 'SampleE']['VCF'].tolist()[0])
-        actual_consensus_E = Path(fofn_df[fofn_df['Sample'] == 'SampleE']['Mask File'].tolist()[0])
+        actual_mask_E = Path(fofn_df[fofn_df['Sample'] == 'SampleE']['Mask File'].tolist()[0])
         assert_vcf(actual_mutations_E, expected_mutations['SampleE'])
-        assert_consensus(actual_consensus_E, expected_length=5180, expected_Ns=960, expected_gaps=0)
+        assert masks_equal(actual_mask_E, expected_beds['SampleE'])
 
         actual_mutations_F = Path(fofn_df[fofn_df['Sample'] == 'SampleF']['VCF'].tolist()[0])
-        actual_consensus_F = Path(fofn_df[fofn_df['Sample'] == 'SampleF']['Mask File'].tolist()[0])
+        actual_mask_F = Path(fofn_df[fofn_df['Sample'] == 'SampleF']['Mask File'].tolist()[0])
         assert_vcf(actual_mutations_F, expected_mutations['SampleF'])
-        assert_consensus(actual_consensus_F, expected_length=5180, expected_Ns=740, expected_gaps=0)
+        assert masks_equal(actual_mask_F, expected_beds['SampleF'])
 
 
 def test_create_fofn_file_multiple_samples_multiple_cores_and_use_conda():
@@ -301,7 +295,7 @@ def test_create_fofn_file_single_sketch_mlst():
     with TemporaryDirectory() as tmp_dir_str:
         tmp_dir = Path(tmp_dir_str)
         actual_mutations_file = tmp_dir / 'assemblies' / 'variant' / 'SampleA.vcf.gz'
-        actual_consensus_file = tmp_dir / 'assemblies' / 'consensus' / 'SampleA.fasta.gz'
+        actual_mask_file = tmp_dir / 'assemblies' / 'mask' / 'SampleA.bed.gz'
         actual_sketch_file = tmp_dir / 'assemblies' / 'sketch' / 'SampleA.sig.gz'
         actual_mlst_file = tmp_dir / 'mlst.tsv'
         input_samples = [assemblies_samples['SampleA']]
@@ -319,7 +313,7 @@ def test_create_fofn_file_single_sketch_mlst():
 
         assert input_fofn.exists()
         assert actual_mutations_file.exists()
-        assert actual_consensus_file.exists()
+        assert actual_mask_file.exists()
         assert actual_sketch_file.exists()
         assert actual_mlst_file.exists()
 
@@ -331,11 +325,11 @@ def test_create_fofn_file_single_sketch_mlst():
         assert 1 == len(fofn_df)
         assert ['SampleA'] == fofn_df['Sample'].tolist()
         actual_mutations_file_from_df = Path(fofn_df[fofn_df['Sample'] == 'SampleA']['VCF'].tolist()[0])
-        actual_consensus_file_from_df = Path(fofn_df[fofn_df['Sample'] == 'SampleA']['Mask File'].tolist()[0])
+        actual_mask_file_from_df = Path(fofn_df[fofn_df['Sample'] == 'SampleA']['Mask File'].tolist()[0])
         actual_sketch_file_from_df = Path(fofn_df[fofn_df['Sample'] == 'SampleA']['Sketch File'].tolist()[0])
 
         assert actual_mutations_file == actual_mutations_file_from_df
-        assert actual_consensus_file == actual_consensus_file_from_df
+        assert actual_mask_file == actual_mask_file_from_df
         assert actual_sketch_file == actual_sketch_file_from_df
         assert actual_mlst_file == mlst_file
 
@@ -344,7 +338,7 @@ def test_create_fofn_file_single_no_sketch_with_mlst():
     with TemporaryDirectory() as tmp_dir_str:
         tmp_dir = Path(tmp_dir_str)
         actual_mutations_file = tmp_dir / 'assemblies' / 'variant' / 'SampleA.vcf.gz'
-        actual_consensus_file = tmp_dir / 'assemblies' / 'consensus' / 'SampleA.fasta.gz'
+        actual_mask_file = tmp_dir / 'assemblies' / 'mask' / 'SampleA.bed.gz'
         unexpected_sketch_file = tmp_dir / 'assemblies' / 'sketch' / 'SampleA.sig.gz'
         actual_mlst_file = tmp_dir / 'mlst.tsv'
         input_samples = [assemblies_samples['SampleA']]
@@ -362,7 +356,7 @@ def test_create_fofn_file_single_no_sketch_with_mlst():
 
         assert input_fofn.exists()
         assert actual_mutations_file.exists()
-        assert actual_consensus_file.exists()
+        assert actual_mask_file.exists()
         assert not unexpected_sketch_file.exists()
         assert actual_mlst_file.exists()
 
@@ -374,10 +368,10 @@ def test_create_fofn_file_single_no_sketch_with_mlst():
         assert 1 == len(fofn_df)
         assert ['SampleA'] == fofn_df['Sample'].tolist()
         actual_mutations_file_from_df = Path(fofn_df[fofn_df['Sample'] == 'SampleA']['VCF'].tolist()[0])
-        actual_consensus_file_from_df = Path(fofn_df[fofn_df['Sample'] == 'SampleA']['Mask File'].tolist()[0])
+        actual_mask_file_from_df = Path(fofn_df[fofn_df['Sample'] == 'SampleA']['Mask File'].tolist()[0])
 
         assert actual_mutations_file == actual_mutations_file_from_df
-        assert actual_consensus_file == actual_consensus_file_from_df
+        assert actual_mask_file == actual_mask_file_from_df
         assert actual_mlst_file == mlst_file
 
 
@@ -386,7 +380,7 @@ def test_create_fofn_file_snpeff_no_conda():
         tmp_dir = Path(tmp_dir_str)
         actual_mutations_snpeff_file = tmp_dir / 'assemblies' / 'variant-snpeff' / 'SampleA.vcf.gz'
         actual_snpeff_config = tmp_dir / 'snpeff_db' / 'snpEff.config'
-        actual_consensus_file = tmp_dir / 'assemblies' / 'consensus' / 'SampleA.fasta.gz'
+        actual_mask_file = tmp_dir / 'assemblies' / 'mask' / 'SampleA.bed.gz'
         input_samples = [snpeff_input_sampleA]
 
         pipeline_executor = SnakemakePipelineExecutor(working_directory=tmp_dir, use_conda=False,
@@ -402,7 +396,7 @@ def test_create_fofn_file_snpeff_no_conda():
         assert input_fofn.exists()
         assert actual_snpeff_config.exists()
         assert actual_mutations_snpeff_file.exists()
-        assert actual_consensus_file.exists()
+        assert actual_mask_file.exists()
 
         # Verify input file of file names for rest of gdi software (used as input to the indexing component)
         fofn_df = pd.read_csv(input_fofn, sep='\t')
@@ -411,10 +405,10 @@ def test_create_fofn_file_snpeff_no_conda():
         assert 1 == len(fofn_df)
         assert ['SampleA'] == fofn_df['Sample'].tolist()
         actual_mutations_file_from_df = Path(fofn_df[fofn_df['Sample'] == 'SampleA']['VCF'].tolist()[0])
-        actual_consensus_file_from_df = Path(fofn_df[fofn_df['Sample'] == 'SampleA']['Mask File'].tolist()[0])
+        actual_mask_file_from_df = Path(fofn_df[fofn_df['Sample'] == 'SampleA']['Mask File'].tolist()[0])
 
         assert actual_mutations_snpeff_file == actual_mutations_file_from_df
-        assert actual_consensus_file == actual_consensus_file_from_df
+        assert actual_mask_file == actual_mask_file_from_df
 
         # snpeff annotations should be added in headers
         reader = vcf.Reader(filename=str(actual_mutations_snpeff_file))
@@ -426,7 +420,7 @@ def test_create_fofn_file_snpeff_with_conda():
         tmp_dir = Path(tmp_dir_str)
         actual_mutations_snpeff_file = tmp_dir / 'assemblies' / 'variant-snpeff' / 'SampleA.vcf.gz'
         actual_snpeff_config = tmp_dir / 'snpeff_db' / 'snpEff.config'
-        actual_consensus_file = tmp_dir / 'assemblies' / 'consensus' / 'SampleA.fasta.gz'
+        actual_mask_file = tmp_dir / 'assemblies' / 'consensus' / 'SampleA.bed.gz'
         input_samples = [snpeff_input_sampleA]
 
         pipeline_executor = SnakemakePipelineExecutor(working_directory=tmp_dir, use_conda=True,
@@ -442,7 +436,7 @@ def test_create_fofn_file_snpeff_with_conda():
         assert input_fofn.exists()
         assert actual_snpeff_config.exists()
         assert actual_mutations_snpeff_file.exists()
-        assert actual_consensus_file.exists()
+        assert actual_mask_file.exists()
 
         # Verify input file of file names for rest of gdi software (used as input to the indexing component)
         fofn_df = pd.read_csv(input_fofn, sep='\t')
@@ -451,10 +445,10 @@ def test_create_fofn_file_snpeff_with_conda():
         assert 1 == len(fofn_df)
         assert ['SampleA'] == fofn_df['Sample'].tolist()
         actual_mutations_file_from_df = Path(fofn_df[fofn_df['Sample'] == 'SampleA']['VCF'].tolist()[0])
-        actual_consensus_file_from_df = Path(fofn_df[fofn_df['Sample'] == 'SampleA']['Mask File'].tolist()[0])
+        actual_mask_file_from_df = Path(fofn_df[fofn_df['Sample'] == 'SampleA']['Mask File'].tolist()[0])
 
         assert actual_mutations_snpeff_file == actual_mutations_file_from_df
-        assert actual_consensus_file == actual_consensus_file_from_df
+        assert actual_mask_file == actual_mask_file_from_df
 
         # snpeff annotations should be added in headers
         reader = vcf.Reader(filename=str(actual_mutations_snpeff_file))
@@ -467,8 +461,8 @@ def test_create_fofn_file_snpeff_reads_with_conda():
         actual_mutations_snpeff_file_paired = tmp_dir / 'reads' / 'paired' / 'variant-snpeff' / 'SampleA-snpeff.vcf.gz'
         actual_mutations_snpeff_file_single = tmp_dir / 'reads' / 'single' / 'variant-snpeff' / 'SampleA-single-snpeff.vcf.gz'
         actual_snpeff_config = tmp_dir / 'snpeff_db' / 'snpEff.config'
-        actual_consensus_file_paired = tmp_dir / 'reads' / 'paired' / 'consensus' / 'SampleA-snpeff.fasta.gz'
-        actual_consensus_file_single = tmp_dir / 'reads' / 'single' / 'consensus' / 'SampleA-single-snpeff.fasta.gz'
+        actual_mask_file_paired = tmp_dir / 'reads' / 'paired' / 'mask' / 'SampleA-snpeff.bed.gz'
+        actual_mask_file_single = tmp_dir / 'reads' / 'single' / 'mask' / 'SampleA-single-snpeff.bed.gz'
         input_samples = snpeff_reads_paired + snpeff_reads_single
 
         pipeline_executor = SnakemakePipelineExecutor(working_directory=tmp_dir, use_conda=True,
@@ -486,8 +480,8 @@ def test_create_fofn_file_snpeff_reads_with_conda():
         assert actual_snpeff_config.exists()
         assert actual_mutations_snpeff_file_paired.exists()
         assert actual_mutations_snpeff_file_single.exists()
-        assert actual_consensus_file_paired.exists()
-        assert actual_consensus_file_single.exists()
+        assert actual_mask_file_paired.exists()
+        assert actual_mask_file_single.exists()
 
         # Verify input file of file names for rest of gdi software (used as input to the indexing component)
         fofn_df = pd.read_csv(input_fofn, sep='\t')
@@ -498,15 +492,15 @@ def test_create_fofn_file_snpeff_reads_with_conda():
         actual_mutations_file_paired_from_df = Path(fofn_df[fofn_df['Sample'] == 'SampleA-snpeff']['VCF'].tolist()[0])
         actual_mutations_file_single_from_df = Path(
             fofn_df[fofn_df['Sample'] == 'SampleA-single-snpeff']['VCF'].tolist()[0])
-        actual_consensus_file_paired_from_df = Path(
+        actual_mask_file_paired_from_df = Path(
             fofn_df[fofn_df['Sample'] == 'SampleA-snpeff']['Mask File'].tolist()[0])
-        actual_consensus_file_single_from_df = Path(
+        actual_mask_file_single_from_df = Path(
             fofn_df[fofn_df['Sample'] == 'SampleA-single-snpeff']['Mask File'].tolist()[0])
 
         assert actual_mutations_snpeff_file_paired == actual_mutations_file_paired_from_df
         assert actual_mutations_snpeff_file_single == actual_mutations_file_single_from_df
-        assert actual_consensus_file_paired == actual_consensus_file_paired_from_df
-        assert actual_consensus_file_single == actual_consensus_file_single_from_df
+        assert actual_mask_file_paired == actual_mask_file_paired_from_df
+        assert actual_mask_file_single == actual_mask_file_single_from_df
 
         # snpeff annotations should be added in headers
         reader = vcf.Reader(filename=str(actual_mutations_snpeff_file_paired))
