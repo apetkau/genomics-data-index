@@ -91,23 +91,46 @@ rule assembly_align:
         "samtools sort --threads {threads} --output-fmt BAM --write-index -o {output} 2> {log.samsort}"
 
 
-rule assembly_variant:
+rule assembly_variant_all:
     input:
         reference="reference/reference.fasta",
         bam="assemblies/align/{sample}.bam",
+    output:
+        vcf="assemblies/variant_all/{sample}.vcf.gz",
+        index="assemblies/variant_all/{sample}.vcf.gz.csi",
+    conda:
+        "envs/bcftools.yaml"
+    threads: 1
+    params:
+        qual=20,
+    log:
+        mpileup="logs/assembly_variant_all.{sample}.mpileup.log",
+        call="logs/assembly_variant_all.{sample}.call.log",
+        norm="logs/assembly_variant_all.{sample}.norm.log",
+        filter="logs/assembly_variant_all.{sample}.view.log",
+        tags="logs/assembly_variant_all.{sample}.tags.log",
+        index="logs/assembly_variant_all.{sample}.index.log"
+    shell:
+        "(bcftools mpileup -a DP --min-ireads 1 --threads {threads} -Ou -f {input.reference} {input.bam} 2> {log.mpileup} | "
+        "bcftools call --threads {threads} --ploidy 1 -Ou --multiallelic-caller 2> {log.call} | "
+        "bcftools norm -f {input.reference} --threads {threads} --old-rec-tag -Ou 2> {log.norm} | "
+        "bcftools view --include 'QUAL>{params.qual}' -Ou 2> {log.filter} | "
+        "bcftools plugin fill-tags -Oz -o {output.vcf} -- -t TYPE 2> {log.tags}) &&"
+        "bcftools index --csi -o {output.index} {output.vcf} 2> {log.index}"
+
+
+rule assembly_variant:
+    input:
+        "assemblies/variant_all/{sample}.vcf.gz",
     output:
         "assemblies/variant/{sample}.vcf.gz",
     conda:
         "envs/bcftools.yaml"
     threads: 1
     log:
-        mpileup="logs/assembly_variant.{sample}.mpileup.log",
-        call="logs/assembly_variant.{sample}.call.log",
-        norm="logs/assembly_variant.{sample}.norm.log",
+        "logs/assembly_variant.{sample}.log"
     shell:
-        "bcftools mpileup -a DP --min-ireads 1 --threads {threads} -Ou -f {input.reference} {input.bam} 2> {log.mpileup} | "
-        "bcftools call --threads {threads} --ploidy 1 -Ou -mv 2> {log.call} | "
-        "bcftools norm -f {input.reference} --threads {threads} --old-rec-tag -Oz -o {output} 2> {log.norm}"
+        "bcftools view --exclude 'TYPE==\"REF\"' -Oz -o {output} {input} 2> {log}"
 
 
 rule reads_paired_snippy:
@@ -192,18 +215,19 @@ use rule assembly_variant_snpeff as reads_variant_single_snpeff with:
         snpeff_vcf="reads/single/variant-snpeff/{sample}.vcf.gz",
 
 
-rule assembly_consensus:
+rule assembly_consensus_mask:
     input:
         reference="reference/reference.fasta",
-        bam="assemblies/align/{sample}.bam",
+        vcfall="assemblies/variant_all/{sample}.vcf.gz",
+        index="assemblies/variant_all/{sample}.vcf.gz.csi",
     output:
         "assemblies/consensus/{sample}.fasta.gz",
     conda:
-        "envs/htsbox.yaml"
+        "envs/bcftools.yaml"
     log:
-        consensus="logs/assembly_consensus.{sample}.consensus.log",
+        "logs/assembly_consensus_mask.{sample}.consensus.log",
     shell:
-        "htsbox pileup -f {input.reference} -d -F {input.bam} 2> {log.consensus} | "
+        "bcftools consensus --absent N --mark-del '-' -f {input.reference} -i 'TYPE==\"REF\"' {input.vcfall} 2> {log} |"
         "gzip -c - > {output}"
 
 
