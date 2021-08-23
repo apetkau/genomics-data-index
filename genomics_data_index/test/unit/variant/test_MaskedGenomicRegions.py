@@ -199,6 +199,59 @@ def test_union():
     assert not mask_union.contains('record1', 7)
 
 
+def test_subtract():
+    mask1 = MaskedGenomicRegions(BedTool([('ref', 10, 15)]))
+    mask2 = MaskedGenomicRegions(BedTool([('ref', 12, 20)]))
+    mask3 = MaskedGenomicRegions(BedTool([('ref', 10, 11), ('ref', 14, 15)]))
+    mask4 = MaskedGenomicRegions(BedTool([('ref', 10, 11), ('ref2', 14, 15)]))
+    mask_empty = MaskedGenomicRegions.empty_mask()
+
+    mask_subtract = mask1.subtract(mask2)
+    assert not mask_subtract.contains('ref', 9)
+    assert mask_subtract.contains('ref', 10)
+    assert mask_subtract.contains('ref', 11)
+    assert not mask_subtract.contains('ref', 12)
+    assert not mask_subtract.contains('ref', 13)
+    assert not mask_subtract.contains('ref', 15)
+
+    mask_subtract = mask2.subtract(mask1)
+    assert not mask_subtract.contains('ref', 14)
+    assert mask_subtract.contains('ref', 15)
+    assert mask_subtract.contains('ref', 16)
+    assert mask_subtract.contains('ref', 19)
+    assert not mask_subtract.contains('ref', 20)
+
+    mask_subtract = mask1.subtract(mask3)
+    assert not mask_subtract.contains('ref', 9)
+    assert not mask_subtract.contains('ref', 10)
+    assert mask_subtract.contains('ref', 11)
+    assert mask_subtract.contains('ref', 13)
+    assert not mask_subtract.contains('ref', 14)
+    assert not mask_subtract.contains('ref', 15)
+
+    mask_subtract = mask1.subtract(mask4)
+    assert not mask_subtract.contains('ref', 9)
+    assert not mask_subtract.contains('ref', 10)
+    assert mask_subtract.contains('ref', 11)
+    assert mask_subtract.contains('ref', 13)
+    assert mask_subtract.contains('ref', 14)
+    assert not mask_subtract.contains('ref', 15)
+
+    mask_subtract = mask1.subtract(mask_empty)
+    assert not mask_subtract.contains('ref', 9)
+    assert mask_subtract.contains('ref', 10)
+    assert mask_subtract.contains('ref', 11)
+    assert mask_subtract.contains('ref', 13)
+    assert mask_subtract.contains('ref', 14)
+    assert not mask_subtract.contains('ref', 15)
+
+    mask_subtract = mask_empty.subtract(mask1)
+    assert mask_subtract.is_empty()
+
+    mask_subtract = mask_empty.subtract(mask_empty)
+    assert mask_subtract.is_empty()
+
+
 def test_write():
     sequences = [SeqRecord(seq=Seq('ATCG-NN'), id='record1')]
     mask = MaskedGenomicRegions.from_sequences(sequences=sequences)

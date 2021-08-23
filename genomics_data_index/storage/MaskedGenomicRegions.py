@@ -20,6 +20,10 @@ class MaskedGenomicRegions:
     def intersect(self, other: MaskedGenomicRegions) -> MaskedGenomicRegions:
         return MaskedGenomicRegions(self._mask.intersect(other._mask))
 
+    def subtract(self, other: MaskedGenomicRegions) -> MaskedGenomicRegions:
+        subtraction = self._mask.subtract(other._mask)
+        return MaskedGenomicRegions(subtraction)
+
     def union(self, other: MaskedGenomicRegions) -> MaskedGenomicRegions:
         union = self._mask.cat(other._mask, postmerge=True, force_truncate=True)
         return MaskedGenomicRegions(union)
