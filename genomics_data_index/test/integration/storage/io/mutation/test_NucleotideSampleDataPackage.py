@@ -22,10 +22,10 @@ def test_iter_sample_data(sample_dirs):
         tmp_file = Path(tmp_file_str)
         vcf_masks = vcf_and_mask_files(sample_dirs)
         file_processor = SerialSampleFilesProcessor(tmp_file)
-        data_package = NucleotideSampleDataPackage.create_from_sequence_masks(sample_vcf_map=vcf_masks['vcfs'],
-                                                                              masked_genomic_files_map=vcf_masks[
+        data_package = NucleotideSampleDataPackage.create_from_vcf_masks(sample_vcf_map=vcf_masks['vcfs'],
+                                                                         masked_genomic_files_map=vcf_masks[
                                                                                   'masks'],
-                                                                              sample_files_processor=file_processor)
+                                                                         sample_files_processor=file_processor)
 
         processed_files_dict = {}
         for sample_file in data_package.iter_sample_data():
@@ -73,11 +73,11 @@ def test_get_features_reader_and_features_table_serial_variants_processor(sample
         vcf_masks = vcf_and_mask_files(sample_dirs)
         file_processor = SerialSampleFilesProcessor(tmp_file)
         variants_processor_factory = SerialVcfVariantsTableProcessorFactory.instance()
-        data_package = NucleotideSampleDataPackage.create_from_sequence_masks(sample_vcf_map=vcf_masks['vcfs'],
-                                                                              masked_genomic_files_map=vcf_masks[
+        data_package = NucleotideSampleDataPackage.create_from_vcf_masks(sample_vcf_map=vcf_masks['vcfs'],
+                                                                         masked_genomic_files_map=vcf_masks[
                                                                                   'masks'],
-                                                                              variants_processor_factory=variants_processor_factory,
-                                                                              sample_files_processor=file_processor)
+                                                                         variants_processor_factory=variants_processor_factory,
+                                                                         sample_files_processor=file_processor)
         do_test_get_features_reader_and_features_table(data_package)
 
 
@@ -87,11 +87,11 @@ def test_get_features_reader_and_features_table_parallel_variants_processor(samp
         vcf_masks = vcf_and_mask_files(sample_dirs)
         file_processor = SerialSampleFilesProcessor(tmp_file)
         variants_processor_factory = MultipleProcessVcfVariantsTableProcessorFactory(ncores=2)
-        data_package = NucleotideSampleDataPackage.create_from_sequence_masks(sample_vcf_map=vcf_masks['vcfs'],
-                                                                              masked_genomic_files_map=vcf_masks[
+        data_package = NucleotideSampleDataPackage.create_from_vcf_masks(sample_vcf_map=vcf_masks['vcfs'],
+                                                                         masked_genomic_files_map=vcf_masks[
                                                                                   'masks'],
-                                                                              variants_processor_factory=variants_processor_factory,
-                                                                              sample_files_processor=file_processor)
+                                                                         variants_processor_factory=variants_processor_factory,
+                                                                         sample_files_processor=file_processor)
         do_test_get_features_reader_and_features_table(data_package)
 
 
@@ -103,10 +103,10 @@ def test_persisted_sample_data_file_names(sample_dirs):
         tmp_file = Path(tmp_file_str)
         vcf_masks = vcf_and_mask_files(sample_dirs)
         file_processor = SerialSampleFilesProcessor(tmp_file)
-        data_package = NucleotideSampleDataPackage.create_from_sequence_masks(sample_vcf_map=vcf_masks['vcfs'],
-                                                                              masked_genomic_files_map=vcf_masks[
+        data_package = NucleotideSampleDataPackage.create_from_vcf_masks(sample_vcf_map=vcf_masks['vcfs'],
+                                                                         masked_genomic_files_map=vcf_masks[
                                                                                   'masks'],
-                                                                              sample_files_processor=file_processor)
+                                                                         sample_files_processor=file_processor)
 
         processed_data_package = cast(NucleotideSampleDataPackage, data_package.process_all_data())
         processed_files_dict = processed_data_package.get_sample_data()
@@ -126,10 +126,10 @@ def test_with_serial_sample_files_processor(sample_dirs):
         tmp_file = Path(tmp_file_str)
         vcf_masks = vcf_and_mask_files(sample_dirs)
         file_processor = SerialSampleFilesProcessor(tmp_file)
-        data_package = NucleotideSampleDataPackage.create_from_sequence_masks(sample_vcf_map=vcf_masks['vcfs'],
-                                                                              masked_genomic_files_map=vcf_masks[
+        data_package = NucleotideSampleDataPackage.create_from_vcf_masks(sample_vcf_map=vcf_masks['vcfs'],
+                                                                         masked_genomic_files_map=vcf_masks[
                                                                                   'masks'],
-                                                                              sample_files_processor=file_processor)
+                                                                         sample_files_processor=file_processor)
 
         processed_data_package = cast(NucleotideSampleDataPackage, data_package.process_all_data())
         processed_files_dict = processed_data_package.get_sample_data()
@@ -181,10 +181,10 @@ def test_with_multiprocess_sample_files_processor(sample_dirs):
         tmp_file = Path(tmp_file_str)
         vcf_masks = vcf_and_mask_files(sample_dirs)
         file_processor = MultipleProcessSampleFilesProcessor(tmp_file, processing_cores=2)
-        data_package = NucleotideSampleDataPackage.create_from_sequence_masks(sample_vcf_map=vcf_masks['vcfs'],
-                                                                              masked_genomic_files_map=vcf_masks[
+        data_package = NucleotideSampleDataPackage.create_from_vcf_masks(sample_vcf_map=vcf_masks['vcfs'],
+                                                                         masked_genomic_files_map=vcf_masks[
                                                                                   'masks'],
-                                                                              sample_files_processor=file_processor)
+                                                                         sample_files_processor=file_processor)
 
         processed_data_package = cast(NucleotideSampleDataPackage, data_package.process_all_data())
         processed_files_dict = processed_data_package.get_sample_data()
@@ -233,8 +233,8 @@ def test_with_multiprocess_sample_files_processor(sample_dirs):
 
 def test_with_null_sample_files_processor(sample_dirs):
     vcf_masks = vcf_and_mask_files(sample_dirs)
-    data_package = NucleotideSampleDataPackage.create_from_sequence_masks(sample_vcf_map=vcf_masks['vcfs'],
-                                                                          masked_genomic_files_map=vcf_masks[
+    data_package = NucleotideSampleDataPackage.create_from_vcf_masks(sample_vcf_map=vcf_masks['vcfs'],
+                                                                     masked_genomic_files_map=vcf_masks[
                                                                               'masks'])
 
     processed_data_package = cast(NucleotideSampleDataPackage, data_package.process_all_data())

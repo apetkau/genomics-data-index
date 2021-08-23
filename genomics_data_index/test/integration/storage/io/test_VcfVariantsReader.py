@@ -54,12 +54,12 @@ def variants_reader_internal(sample_dirs, variants_processor_factory: VcfVariant
     tmp_dir = Path(tempfile.mkdtemp())
     vcf_masks = vcf_and_mask_files(sample_dirs)
     file_processor = SerialSampleFilesProcessor(tmp_dir)
-    data_package = NucleotideSampleDataPackage.create_from_sequence_masks(sample_vcf_map=vcf_masks['vcfs'],
-                                                                          masked_genomic_files_map=vcf_masks[
+    data_package = NucleotideSampleDataPackage.create_from_vcf_masks(sample_vcf_map=vcf_masks['vcfs'],
+                                                                     masked_genomic_files_map=vcf_masks[
                                                                               'masks'],
-                                                                          variants_processor_factory=variants_processor_factory,
-                                                                          sample_files_processor=file_processor,
-                                                                          index_unknown_missing=include_masked_regions)
+                                                                     variants_processor_factory=variants_processor_factory,
+                                                                     sample_files_processor=file_processor,
+                                                                     index_unknown_missing=include_masked_regions)
     processed_data_package = cast(NucleotideSampleDataPackage, data_package.process_all_data())
     processed_files = processed_data_package.get_sample_data()
     return VcfVariantsReader.create(processed_files, variants_processor_factory=variants_processor_factory,
@@ -87,9 +87,9 @@ def variants_reader_snpeff_annotations_single_sample() -> VcfVariantsReader:
         'SH10-014': snpeff_sample_vcfs['SH10-014']
     }
 
-    data_package = NucleotideSampleDataPackage.create_from_sequence_masks(sample_vcf_map=vcfs_map,
-                                                                          masked_genomic_files_map=None,
-                                                                          sample_files_processor=file_processor)
+    data_package = NucleotideSampleDataPackage.create_from_vcf_masks(sample_vcf_map=vcfs_map,
+                                                                     masked_genomic_files_map=None,
+                                                                     sample_files_processor=file_processor)
     processed_data_package = cast(NucleotideSampleDataPackage, data_package.process_all_data())
     processed_files = processed_data_package.get_sample_data()
     return VcfVariantsReader.create(processed_files, variants_processor_factory=serial_variants_processor_factory,
@@ -100,9 +100,9 @@ def variants_reader_snpeff_annotations_single_sample() -> VcfVariantsReader:
 def variants_reader_snpeff_annotations_multiple_samples() -> VcfVariantsReader:
     tmp_dir = Path(tempfile.mkdtemp())
     file_processor = SerialSampleFilesProcessor(tmp_dir)
-    data_package = NucleotideSampleDataPackage.create_from_sequence_masks(sample_vcf_map=snpeff_sample_vcfs,
-                                                                          masked_genomic_files_map=None,
-                                                                          sample_files_processor=file_processor)
+    data_package = NucleotideSampleDataPackage.create_from_vcf_masks(sample_vcf_map=snpeff_sample_vcfs,
+                                                                     masked_genomic_files_map=None,
+                                                                     sample_files_processor=file_processor)
     processed_data_package = cast(NucleotideSampleDataPackage, data_package.process_all_data())
     processed_files = processed_data_package.get_sample_data()
     return VcfVariantsReader.create(processed_files, variants_processor_factory=serial_variants_processor_factory,
@@ -120,8 +120,8 @@ def variants_reader_empty_masks(sample_dirs) -> VcfVariantsReader:
 
     tmp_dir = Path(tempfile.mkdtemp())
     file_processor = SerialSampleFilesProcessor(tmp_dir)
-    data_package = NucleotideSampleDataPackage.create_from_sequence_masks(sample_vcf_map=sample_vcf_map,
-                                                                          sample_files_processor=file_processor)
+    data_package = NucleotideSampleDataPackage.create_from_vcf_masks(sample_vcf_map=sample_vcf_map,
+                                                                     sample_files_processor=file_processor)
     processed_data_package = cast(NucleotideSampleDataPackage, data_package.process_all_data())
     processed_files = processed_data_package.get_sample_data()
     return VcfVariantsReader.create(processed_files, variants_processor_factory=serial_variants_processor_factory,
@@ -184,8 +184,8 @@ def variants_reader_from_snippy_masked_multicore(sample_dirs) -> VcfVariantsRead
 def variants_reader_snpeff() -> VcfVariantsReader:
     tmp_dir = Path(tempfile.mkdtemp())
     file_processor = SerialSampleFilesProcessor(tmp_dir)
-    data_package = NucleotideSampleDataPackage.create_from_sequence_masks(sample_vcf_map=snpeff_sample_vcfs,
-                                                                          sample_files_processor=file_processor)
+    data_package = NucleotideSampleDataPackage.create_from_vcf_masks(sample_vcf_map=snpeff_sample_vcfs,
+                                                                     sample_files_processor=file_processor)
     processed_files = cast(Dict[str, NucleotideSampleData], data_package.process_all_data())
     return VcfVariantsReader.create(processed_files, variants_processor_factory=serial_variants_processor_factory,
                                     include_masked_regions=False)

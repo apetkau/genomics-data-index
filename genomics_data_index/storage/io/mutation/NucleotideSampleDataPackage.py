@@ -61,11 +61,11 @@ class NucleotideSampleDataPackage(SampleDataPackage):
                                                                    index_unknown_missing=self.index_unknown_missing())
 
     @classmethod
-    def create_from_sequence_masks(cls, sample_vcf_map: Dict[str, Path],
-                                   masked_genomic_files_map: Dict[str, Path] = None,
-                                   sample_files_processor: SampleFilesProcessor = NullSampleFilesProcessor.instance(),
-                                   variants_processor_factory: VcfVariantsTableProcessorFactory = SerialVcfVariantsTableProcessorFactory.instance(),
-                                   index_unknown_missing: bool = True) -> NucleotideSampleDataPackage:
+    def create_from_vcf_masks(cls, sample_vcf_map: Dict[str, Path],
+                              masked_genomic_files_map: Dict[str, Path] = None,
+                              sample_files_processor: SampleFilesProcessor = NullSampleFilesProcessor.instance(),
+                              variants_processor_factory: VcfVariantsTableProcessorFactory = SerialVcfVariantsTableProcessorFactory.instance(),
+                              index_unknown_missing: bool = True) -> NucleotideSampleDataPackage:
         if masked_genomic_files_map is None:
             masked_genomic_files_map = {}
 

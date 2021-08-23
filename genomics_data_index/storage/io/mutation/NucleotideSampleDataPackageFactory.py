@@ -104,11 +104,11 @@ class NucleotideInputFilesSampleDataPackageFactory(NucleotideSampleDataPackageFa
 
     def _create_data_package(self, sample_vcfs: Dict[str, Path],
                              sample_mask_files: Dict[str, Path]) -> SampleDataPackage:
-        return NucleotideSampleDataPackage.create_from_sequence_masks(sample_vcf_map=sample_vcfs,
-                                                                      masked_genomic_files_map=sample_mask_files,
-                                                                      sample_files_processor=self._sample_files_processor,
-                                                                      variants_processor_factory=self._variants_processor_factory,
-                                                                      index_unknown_missing=self._index_unknown)
+        return NucleotideSampleDataPackage.create_from_vcf_masks(sample_vcf_map=sample_vcfs,
+                                                                 masked_genomic_files_map=sample_mask_files,
+                                                                 sample_files_processor=self._sample_files_processor,
+                                                                 variants_processor_factory=self._variants_processor_factory,
+                                                                 index_unknown_missing=self._index_unknown)
 
     def create_data_package(self) -> SampleDataPackage:
         sample_vcf, mask_files = self.create_sample_vcf_mask(self._input_files_file)
