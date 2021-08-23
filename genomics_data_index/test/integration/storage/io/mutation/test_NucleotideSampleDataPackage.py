@@ -33,19 +33,26 @@ def test_iter_sample_data(sample_dirs):
 
         assert 3 == len(processed_files_dict)
 
-        sample_data = processed_files_dict['SampleA']
-        assert isinstance(sample_data, NucleotideSampleData)
-        sample_data = cast(NucleotideSampleData, sample_data)
-        mask = sample_data.get_mask()
-        assert 437 == len(mask)
-        assert {'reference'} == mask.sequence_names()
-        mask_file = sample_data.get_mask_file()
-        assert mask_file.parent == tmp_file
-        vcf_file, vcf_index = sample_data.get_vcf_file()
-        assert vcf_file.exists()
-        assert vcf_index.exists()
-        assert vcf_file.parent == tmp_file
-        assert vcf_index.parent == tmp_file
+        count = 0
+        for sample, mask_len in [('SampleA', 437), ('SampleB', 276), ('SampleC', 329)]:
+            sample_data = processed_files_dict[sample]
+            assert isinstance(sample_data, NucleotideSampleData)
+            sample_data = cast(NucleotideSampleData, sample_data)
+            mask = sample_data.get_mask()
+            assert mask_len == len(mask)
+            assert {'reference'} == mask.sequence_names()
+            mask_file = sample_data.get_mask_file()
+            assert mask_file.parent == tmp_file
+            vcf_file, vcf_index = sample_data.get_vcf_file()
+            assert vcf_file.exists()
+            assert vcf_index.exists()
+            assert vcf_file.parent == tmp_file
+            assert vcf_index.parent == tmp_file
+
+            count += 1
+
+        # Make sure I tested all 3 files in above loop
+        assert 3 == count
 
 
 def test_iter_sample_data_bed_masks(sample_dirs):
