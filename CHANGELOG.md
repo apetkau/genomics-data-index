@@ -12,6 +12,7 @@
 * [api]: Added experimental class to cluster samples within different categories (e.g., lineages) by distances between the proportion of samples having particular features (0.3.0.dev5).
 * [analysis]: All stages of the Snakemake workflow now have assigned conda environments (0.3.0.dev5).
 * [cli]: Added support for loading mask files as BED files in addition to sequence files (0.3.0.dev6).
+* [analysis]: Fixed issue where there was overlap between unknown/missing positions and VCF files (0.3.0.dev7).
 
 # 0.2.0
 
