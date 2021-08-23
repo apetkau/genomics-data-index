@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from genomics_data_index.storage.io.mutation.SequenceFile import SequenceFile
 from genomics_data_index.storage.MaskedGenomicRegions import MaskedGenomicRegions
+from genomics_data_index.storage.io.mutation.SequenceFile import SequenceFile
 
 # Generates a mask bed file from a snippy output directory
 

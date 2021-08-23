@@ -10,9 +10,9 @@ from genomics_data_index.pipelines.SnakemakePipelineExecutor import SnakemakePip
 from genomics_data_index.storage.io.mutation.SequenceFile import SequenceFile
 from genomics_data_index.test.integration import reference_file, reference_file_5000_snpeff_2
 from genomics_data_index.test.integration.pipelines import assemblies_samples, assemblies_reference, expected_mutations
+from genomics_data_index.test.integration.pipelines import empty_bed_file, expected_beds
 from genomics_data_index.test.integration.pipelines import snpeff_input_sampleA, snpeff_reference_genome
 from genomics_data_index.test.integration.pipelines import snpeff_reads_paired, snpeff_reads_single
-from genomics_data_index.test.integration.pipelines import empty_bed_file, expected_beds
 
 
 def vcf_to_mutations_list(vcf_file: Path) -> List[str]:

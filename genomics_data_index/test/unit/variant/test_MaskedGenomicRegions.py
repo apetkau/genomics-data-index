@@ -1,6 +1,6 @@
 import tempfile
-from pathlib import Path
 from os import path
+from pathlib import Path
 
 from Bio import SeqIO
 from Bio.Seq import Seq
@@ -8,7 +8,6 @@ from Bio.SeqRecord import SeqRecord
 from pybedtools import BedTool
 
 from genomics_data_index.storage.MaskedGenomicRegions import MaskedGenomicRegions
-
 
 root_data_dir = Path(path.dirname(__file__), 'data')
 snps_vcf_mask_file = root_data_dir / 'snps-for-mask.vcf.gz'
