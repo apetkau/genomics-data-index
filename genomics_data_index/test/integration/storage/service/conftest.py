@@ -92,39 +92,39 @@ def regular_nucleotide_data_package() -> NucleotideSampleDataPackage:
     }
 
     tmp_dir = Path(tempfile.mkdtemp())
-    return NucleotideSampleDataPackage.create_from_sequence_masks(sample_vcf_map=vcf_files,
-                                                                  masked_genomic_files_map=mask_files,
-                                                                  sample_files_processor=SerialSampleFilesProcessor(
-                                                                      tmp_dir))
+    return NucleotideSampleDataPackage.create_from_vcf_masks(sample_vcf_map=vcf_files,
+                                                             masked_genomic_files_map=mask_files,
+                                                             sample_files_processor=SerialSampleFilesProcessor(
+                                                                 tmp_dir))
 
 
 @pytest.fixture
 def snpeff_nucleotide_data_package() -> NucleotideSampleDataPackage:
     tmp_dir = Path(tempfile.mkdtemp())
-    return NucleotideSampleDataPackage.create_from_sequence_masks(sample_vcf_map=snpeff_sample_vcfs,
-                                                                  masked_genomic_files_map=None,
-                                                                  sample_files_processor=SerialSampleFilesProcessor(
-                                                                      tmp_dir))
+    return NucleotideSampleDataPackage.create_from_vcf_masks(sample_vcf_map=snpeff_sample_vcfs,
+                                                             masked_genomic_files_map=None,
+                                                             sample_files_processor=SerialSampleFilesProcessor(
+                                                                 tmp_dir))
 
 
 @pytest.fixture
 def snpeff_nucleotide_data_package_fake_duplicate_gene() -> NucleotideSampleDataPackage:
     tmp_dir = Path(tempfile.mkdtemp())
-    return NucleotideSampleDataPackage.create_from_sequence_masks(sample_vcf_map=snpeff_sample_vcfs_fake_dup,
-                                                                  masked_genomic_files_map=None,
-                                                                  sample_files_processor=SerialSampleFilesProcessor(
-                                                                      tmp_dir))
+    return NucleotideSampleDataPackage.create_from_vcf_masks(sample_vcf_map=snpeff_sample_vcfs_fake_dup,
+                                                             masked_genomic_files_map=None,
+                                                             sample_files_processor=SerialSampleFilesProcessor(
+                                                                 tmp_dir))
 
 
 @pytest.fixture
 def snpeff_nucleotide_data_package_parallel_variants() -> NucleotideSampleDataPackage:
     tmp_dir = Path(tempfile.mkdtemp())
     variants_processor_factory = MultipleProcessVcfVariantsTableProcessorFactory(ncores=2)
-    return NucleotideSampleDataPackage.create_from_sequence_masks(sample_vcf_map=snpeff_sample_vcfs,
-                                                                  masked_genomic_files_map=None,
-                                                                  sample_files_processor=SerialSampleFilesProcessor(
-                                                                      tmp_dir),
-                                                                  variants_processor_factory=variants_processor_factory)
+    return NucleotideSampleDataPackage.create_from_vcf_masks(sample_vcf_map=snpeff_sample_vcfs,
+                                                             masked_genomic_files_map=None,
+                                                             sample_files_processor=SerialSampleFilesProcessor(
+                                                                 tmp_dir),
+                                                             variants_processor_factory=variants_processor_factory)
 
 
 @pytest.fixture
