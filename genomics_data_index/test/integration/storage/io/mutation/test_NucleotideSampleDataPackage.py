@@ -14,7 +14,7 @@ from genomics_data_index.storage.io.mutation.variants_processor.SerialVcfVariant
 from genomics_data_index.storage.io.processor.MultipleProcessSampleFilesProcessor import \
     MultipleProcessSampleFilesProcessor
 from genomics_data_index.storage.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor
-from genomics_data_index.test.integration.storage.io.mutation import vcf_and_mask_files
+from genomics_data_index.test.integration.storage.io.mutation import vcf_and_mask_files, vcf_and_bed_mask_files
 
 
 def test_iter_sample_data(sample_dirs):
@@ -46,6 +46,45 @@ def test_iter_sample_data(sample_dirs):
         assert vcf_index.exists()
         assert vcf_file.parent == tmp_file
         assert vcf_index.parent == tmp_file
+
+
+def test_iter_sample_data_bed_masks(sample_dirs):
+    with TemporaryDirectory() as tmp_file_str:
+        tmp_file = Path(tmp_file_str)
+        vcf_masks = vcf_and_bed_mask_files(sample_dirs)
+        file_processor = SerialSampleFilesProcessor(tmp_file)
+        data_package = NucleotideSampleDataPackage.create_from_vcf_masks(sample_vcf_map=vcf_masks['vcfs'],
+                                                                         masked_genomic_files_map=vcf_masks[
+                                                                                  'masks'],
+                                                                         sample_files_processor=file_processor)
+
+        processed_files_dict = {}
+        for sample_file in data_package.iter_sample_data():
+            processed_files_dict[sample_file.sample_name] = sample_file
+
+        assert 3 == len(processed_files_dict)
+        assert {'SampleA', 'SampleB', 'SampleC'} == set(processed_files_dict.keys())
+
+        count = 0
+        for sample, mask_len in [('SampleA', 437), ('SampleB', 276), ('SampleC', 329)]:
+            sample_data = processed_files_dict[sample]
+            assert isinstance(sample_data, NucleotideSampleData)
+            sample_data = cast(NucleotideSampleData, sample_data)
+            mask = sample_data.get_mask()
+            assert mask_len == len(mask)
+            assert {'reference'} == mask.sequence_names()
+            mask_file = sample_data.get_mask_file()
+            assert mask_file.parent == tmp_file
+            vcf_file, vcf_index = sample_data.get_vcf_file()
+            assert vcf_file.exists()
+            assert vcf_index.exists()
+            assert vcf_file.parent == tmp_file
+            assert vcf_index.parent == tmp_file
+
+            count += 1
+
+        # Make sure I tested all 3 files in above loop
+        assert 3 == count
 
 
 def do_test_get_features_reader_and_features_table(data_package: NucleotideSampleDataPackage):

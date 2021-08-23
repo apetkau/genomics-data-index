@@ -9,12 +9,14 @@ from genomics_data_index.storage.io.SampleDataPackage import SampleDataPackage
 from genomics_data_index.storage.io.SampleFilesProcessor import SampleFilesProcessor
 from genomics_data_index.storage.io.mutation.NucleotideSampleData import NucleotideSampleData
 from genomics_data_index.storage.io.mutation.NucleotideSampleDataSequenceMask import NucleotideSampleDataSequenceMask
+from genomics_data_index.storage.io.mutation.NucleotideSampleDataBedMask import NucleotideSampleDataBedMask
 from genomics_data_index.storage.io.mutation.VcfVariantsReader import VcfVariantsReader
 from genomics_data_index.storage.io.mutation.variants_processor.SerialVcfVariantsTableProcessor import \
     SerialVcfVariantsTableProcessorFactory
 from genomics_data_index.storage.io.mutation.variants_processor.VcfVariantsTableProcessor import \
     VcfVariantsTableProcessorFactory
 from genomics_data_index.storage.io.processor.NullSampleFilesProcessor import NullSampleFilesProcessor
+from genomics_data_index.storage.io.mutation.SequenceFile import SequenceFile
 
 
 class NucleotideSampleDataPackage(SampleDataPackage):
@@ -61,6 +63,14 @@ class NucleotideSampleDataPackage(SampleDataPackage):
                                                                    index_unknown_missing=self.index_unknown_missing())
 
     @classmethod
+    def mask_is_bed(cls, file: Path) -> bool:
+        return file.name.endswith('.bed') or file.name.endswith('.bed.gz')
+
+    @classmethod
+    def mask_is_sequence(cls, file: Path) -> bool:
+        return SequenceFile(file).is_fasta()
+
+    @classmethod
     def create_from_vcf_masks(cls, sample_vcf_map: Dict[str, Path],
                               masked_genomic_files_map: Dict[str, Path] = None,
                               sample_files_processor: SampleFilesProcessor = NullSampleFilesProcessor.instance(),
@@ -77,11 +87,20 @@ class NucleotideSampleDataPackage(SampleDataPackage):
             else:
                 mask_file = None
 
-            sample_data = NucleotideSampleDataSequenceMask.create(
-                sample_name=sample_name,
-                vcf_file=vcf_file,
-                sample_mask_sequence=mask_file
-            )
+            if cls.mask_is_bed(mask_file):
+                sample_data = NucleotideSampleDataBedMask.create(
+                    sample_name=sample_name,
+                    vcf_file=vcf_file,
+                    mask_bed_file=mask_file
+                )
+            elif cls.mask_is_sequence(mask_file):
+                sample_data = NucleotideSampleDataSequenceMask.create(
+                    sample_name=sample_name,
+                    vcf_file=vcf_file,
+                    sample_mask_sequence=mask_file
+                )
+            else:
+                raise Exception(f'Unsupported mask file=[{mask_file}]. Must be either BED or FASTA.')
 
             sample_data_dict[sample_name] = sample_data
 
