@@ -17,6 +17,10 @@ class MaskedGenomicRegions:
     def __init__(self, mask: BedTool):
         self._mask = mask.sort().merge()
 
+    @property
+    def mask(self):
+        return self._mask
+
     def intersect(self, other: MaskedGenomicRegions) -> MaskedGenomicRegions:
         return MaskedGenomicRegions(self._mask.intersect(other._mask))
 
