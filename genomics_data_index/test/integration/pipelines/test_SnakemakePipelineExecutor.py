@@ -425,7 +425,7 @@ def test_create_fofn_file_snpeff_with_conda():
         tmp_dir = Path(tmp_dir_str)
         actual_mutations_snpeff_file = tmp_dir / 'assemblies' / 'variant-snpeff' / 'SampleA.vcf.gz'
         actual_snpeff_config = tmp_dir / 'snpeff_db' / 'snpEff.config'
-        actual_mask_file = tmp_dir / 'assemblies' / 'consensus' / 'SampleA.bed.gz'
+        actual_mask_file = tmp_dir / 'assemblies' / 'mask' / 'SampleA.bed.gz'
         input_samples = [snpeff_input_sampleA]
 
         pipeline_executor = SnakemakePipelineExecutor(working_directory=tmp_dir, use_conda=True,
