@@ -1040,7 +1040,7 @@ def test_multiple_insert_variants_different_reference_genomes(database, snippy_n
     variation_service.insert(feature_scope_name='genome', data_package=snippy_nucleotide_data_package_AB)
     variation_service.insert(feature_scope_name='NC_011083', data_package=snpeff_nucleotide_data_package)
 
-    assert 774 == session.query(NucleotideVariantsSamples).count(), 'Incorrect number of storage entries'
+    assert 96 + 437 + 177 == session.query(NucleotideVariantsSamples).count(), 'Incorrect number of storage entries'
     assert 5 == session.query(Sample).count(), 'Incorrect number of Samples'
     assert 5 == session.query(SampleNucleotideVariation).count(), 'Incorrect number of SampleNucleotideVariation'
 
