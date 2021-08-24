@@ -86,9 +86,9 @@ def regular_nucleotide_data_package() -> NucleotideSampleDataPackage:
     }
 
     mask_files = {
-        'SampleA': Path(data_dir, 'SampleA', 'snps.aligned.fa'),
-        'SampleB': Path(data_dir, 'SampleB', 'snps.aligned.fa'),
-        'SampleC': Path(data_dir, 'SampleC', 'snps.aligned.fa'),
+        'SampleA': Path(data_dir, 'SampleA', 'snps.aligned.minus-vcf.bed.gz'),
+        'SampleB': Path(data_dir, 'SampleB', 'snps.aligned.minus-vcf.bed.gz'),
+        'SampleC': Path(data_dir, 'SampleC', 'snps.aligned.minus-vcf.bed.gz'),
     }
 
     tmp_dir = Path(tempfile.mkdtemp())
