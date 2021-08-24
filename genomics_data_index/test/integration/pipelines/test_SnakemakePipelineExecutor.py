@@ -37,13 +37,13 @@ def assert_vcf(vcf_file: Path, expected_mutations_file: Path):
     assert actual_mutations == sample_expected_mutations
 
 
-def masks_equal(mask_file: Path, expected_bed: Union[Path, BedTool]) -> bool:
-    mask = BedTool(str(mask_file))
+def assert_masks_equal(actual_mask_file: Path, expected_bed: Union[Path, BedTool]):
+    actual_mask = BedTool(str(actual_mask_file))
 
     if isinstance(expected_bed, Path):
         expected_bed = BedTool(str(expected_bed))
 
-    return expected_bed == mask
+    assert expected_bed == actual_mask, f'expected=\n{expected_bed} != actual=\n{actual_mask}'
 
 
 def test_create_fofn_file_single_sample():
@@ -83,7 +83,7 @@ def test_create_fofn_file_single_sample():
         assert actual_mask_file == actual_mask_file_from_df
 
         assert_vcf(actual_mutations_file, expected_mutations['SampleA'])
-        assert masks_equal(actual_mask_file, empty_bed_file)
+        assert_masks_equal(actual_mask_file, empty_bed_file)
 
 
 def test_create_fofn_file_multiple_samples():
@@ -116,17 +116,17 @@ def test_create_fofn_file_multiple_samples():
         actual_mutations_A = Path(fofn_df[fofn_df['Sample'] == 'SampleA']['VCF'].tolist()[0])
         actual_mask_file_A = Path(fofn_df[fofn_df['Sample'] == 'SampleA']['Mask File'].tolist()[0])
         assert_vcf(actual_mutations_A, expected_mutations['SampleA'])
-        assert masks_equal(actual_mask_file_A, empty_bed_file)
+        assert_masks_equal(actual_mask_file_A, empty_bed_file)
 
         actual_mutations_B = Path(fofn_df[fofn_df['Sample'] == 'SampleB']['VCF'].tolist()[0])
         actual_mask_file_B = Path(fofn_df[fofn_df['Sample'] == 'SampleB']['Mask File'].tolist()[0])
         assert_vcf(actual_mutations_B, expected_mutations['SampleB'])
-        assert masks_equal(actual_mask_file_B, empty_bed_file)
+        assert_masks_equal(actual_mask_file_B, empty_bed_file)
 
         actual_mutations_C = Path(fofn_df[fofn_df['Sample'] == 'SampleC']['VCF'].tolist()[0])
         actual_mask_file_C = Path(fofn_df[fofn_df['Sample'] == 'SampleC']['Mask File'].tolist()[0])
         assert_vcf(actual_mutations_C, expected_mutations['SampleC'])
-        assert masks_equal(actual_mask_file_C, empty_bed_file)
+        assert_masks_equal(actual_mask_file_C, empty_bed_file)
 
 
 def test_create_fofn_file_multiple_samples_with_invalid_charcaters_in_name():
@@ -164,17 +164,17 @@ def test_create_fofn_file_multiple_samples_with_invalid_charcaters_in_name():
         actual_mutations_A = Path(fofn_df[fofn_df['Sample'] == 'SampleA/extra|1']['VCF'].tolist()[0])
         actual_mask_file_A = Path(fofn_df[fofn_df['Sample'] == 'SampleA/extra|1']['Mask File'].tolist()[0])
         assert_vcf(actual_mutations_A, expected_mutations_local['SampleA/extra|1'])
-        assert masks_equal(actual_mask_file_A, empty_bed_file)
+        assert_masks_equal(actual_mask_file_A, empty_bed_file)
 
         actual_mutations_B = Path(fofn_df[fofn_df['Sample'] == 'SampleB/extra|1']['VCF'].tolist()[0])
         actual_mask_file_B = Path(fofn_df[fofn_df['Sample'] == 'SampleB/extra|1']['Mask File'].tolist()[0])
         assert_vcf(actual_mutations_B, expected_mutations_local['SampleB/extra|1'])
-        assert masks_equal(actual_mask_file_B, empty_bed_file)
+        assert_masks_equal(actual_mask_file_B, empty_bed_file)
 
         actual_mutations_C = Path(fofn_df[fofn_df['Sample'] == 'SampleC/extra|1']['VCF'].tolist()[0])
         actual_mask_file_C = Path(fofn_df[fofn_df['Sample'] == 'SampleC/extra|1']['Mask File'].tolist()[0])
         assert_vcf(actual_mutations_C, expected_mutations_local['SampleC/extra|1'])
-        assert masks_equal(actual_mask_file_C, empty_bed_file)
+        assert_masks_equal(actual_mask_file_C, empty_bed_file)
 
 
 def test_create_fofn_file_multiple_samples_batching():
@@ -207,23 +207,23 @@ def test_create_fofn_file_multiple_samples_batching():
         actual_mutations_A = Path(fofn_df[fofn_df['Sample'] == 'SampleA']['VCF'].tolist()[0])
         actual_mask_file_A = Path(fofn_df[fofn_df['Sample'] == 'SampleA']['Mask File'].tolist()[0])
         assert_vcf(actual_mutations_A, expected_mutations['SampleA'])
-        assert masks_equal(actual_mask_file_A, empty_bed_file)
+        assert_masks_equal(actual_mask_file_A, empty_bed_file)
 
         actual_mutations_B = Path(fofn_df[fofn_df['Sample'] == 'SampleB']['VCF'].tolist()[0])
         actual_mask_file_B = Path(fofn_df[fofn_df['Sample'] == 'SampleB']['Mask File'].tolist()[0])
         assert_vcf(actual_mutations_B, expected_mutations['SampleB'])
-        assert masks_equal(actual_mask_file_B, empty_bed_file)
+        assert_masks_equal(actual_mask_file_B, empty_bed_file)
 
         actual_mutations_C = Path(fofn_df[fofn_df['Sample'] == 'SampleC']['VCF'].tolist()[0])
         actual_mask_file_C = Path(fofn_df[fofn_df['Sample'] == 'SampleC']['Mask File'].tolist()[0])
         assert_vcf(actual_mutations_C, expected_mutations['SampleC'])
-        assert masks_equal(actual_mask_file_C, empty_bed_file)
+        assert_masks_equal(actual_mask_file_C, empty_bed_file)
 
 
-def test_create_fofn_file_multiple_samples_with_ns():
+def test_create_fofn_file_multiple_samples_with_ns_deletions():
     with TemporaryDirectory() as tmp_dir_str:
         tmp_dir = Path(tmp_dir_str)
-        samples = ['SampleD', 'SampleE', 'SampleF']
+        samples = ['SampleD', 'SampleE', 'SampleF', 'SampleH']
 
         input_samples = [assemblies_samples[s] for s in samples]
 
@@ -244,23 +244,28 @@ def test_create_fofn_file_multiple_samples_with_ns():
         print(fofn_df)
         assert ['Sample', 'VCF', 'Mask File', 'Sketch File'] == fofn_df.columns.tolist()
 
-        assert 3 == len(fofn_df)
-        assert ['SampleD', 'SampleE', 'SampleF'] == fofn_df['Sample'].tolist()
+        assert 4 == len(fofn_df)
+        assert ['SampleD', 'SampleE', 'SampleF', 'SampleH'] == fofn_df['Sample'].tolist()
 
         actual_mutations_D = Path(fofn_df[fofn_df['Sample'] == 'SampleD']['VCF'].tolist()[0])
         actual_mask_D = Path(fofn_df[fofn_df['Sample'] == 'SampleD']['Mask File'].tolist()[0])
         assert_vcf(actual_mutations_D, expected_mutations['SampleD'])
-        assert masks_equal(actual_mask_D, expected_beds['SampleD'])
+        assert_masks_equal(actual_mask_D, expected_beds['SampleD'])
 
         actual_mutations_E = Path(fofn_df[fofn_df['Sample'] == 'SampleE']['VCF'].tolist()[0])
         actual_mask_E = Path(fofn_df[fofn_df['Sample'] == 'SampleE']['Mask File'].tolist()[0])
         assert_vcf(actual_mutations_E, expected_mutations['SampleE'])
-        assert masks_equal(actual_mask_E, expected_beds['SampleE'])
+        assert_masks_equal(actual_mask_E, expected_beds['SampleE'])
 
         actual_mutations_F = Path(fofn_df[fofn_df['Sample'] == 'SampleF']['VCF'].tolist()[0])
         actual_mask_F = Path(fofn_df[fofn_df['Sample'] == 'SampleF']['Mask File'].tolist()[0])
         assert_vcf(actual_mutations_F, expected_mutations['SampleF'])
-        assert masks_equal(actual_mask_F, expected_beds['SampleF'])
+        assert_masks_equal(actual_mask_F, expected_beds['SampleF'])
+
+        actual_mutations_H = Path(fofn_df[fofn_df['Sample'] == 'SampleH']['VCF'].tolist()[0])
+        actual_mask_H = Path(fofn_df[fofn_df['Sample'] == 'SampleH']['Mask File'].tolist()[0])
+        assert_vcf(actual_mutations_H, expected_mutations['SampleH'])
+        assert_masks_equal(actual_mask_H, expected_beds['SampleH'])
 
 
 def test_create_fofn_file_multiple_samples_multiple_cores_and_use_conda():

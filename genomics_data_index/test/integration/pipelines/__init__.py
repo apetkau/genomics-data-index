@@ -12,7 +12,8 @@ expected_mutations = {s: expected_mutations_dir / f'{s}-mutations.txt' for s in 
 expected_beds = {
     'SampleD': expected_mutations_dir / 'SampleD.bed.gz',
     'SampleE': expected_mutations_dir / 'SampleE.bed.gz',
-    'SampleF': expected_mutations_dir / 'SampleF.bed.gz'
+    'SampleF': expected_mutations_dir / 'SampleF.bed.gz',
+    'SampleH': expected_mutations_dir / 'SampleH.bed.gz',
 }
 
 empty_bed_file = expected_mutations_dir / 'empty.bed.gz'
