@@ -1,4 +1,5 @@
 import warnings
+from typing import Union
 
 import pytest
 
@@ -18,7 +19,17 @@ def remove_column(alignment: MultipleSeqAlignment, position: int) -> MultipleSeq
     return alignment[:, :(position - 1)] + alignment[:, position:]
 
 
-def replace_column_with_reference(alignment: MultipleSeqAlignment, position: int,
+def replace_column_with_reference(alignment: MultipleSeqAlignment, position: Union[int, range],
+                                  skip_missing=True) -> MultipleSeqAlignment:
+    if isinstance(position, range):
+        for pos in position:
+            alignment = replace_column_with_reference_internal(alignment, position=pos, skip_missing=skip_missing)
+        return alignment
+    else:
+        return replace_column_with_reference_internal(alignment, position=position, skip_missing=skip_missing)
+
+
+def replace_column_with_reference_internal(alignment: MultipleSeqAlignment, position: int,
                                   skip_missing=True) -> MultipleSeqAlignment:
     column = alignment[:, (position - 1):position]
     ref = None
@@ -105,13 +116,74 @@ def expected_alignment_full() -> MultipleSeqAlignment:
 
         replace_ref_name(alignment)
 
-        # Replace Ns in locations I did not expect (not low coverage)
-        alignment = replace_column_with_reference(alignment, 463, skip_missing=False)
-        alignment = replace_column_with_reference(alignment, 464, skip_missing=False)
+        # Replace deletions, which currently aren't supported by my application when generating an
+        # alignment
+        # Generated using
+        # zgrep -hv '^#' Sample*/snps.vcf.gz | zgrep 'del\|complex' | cut -f 2,4 | sort -nu |
+        #  sed -e 's/^\([0-9][0-9]*\)\t\(\w*\)/alignment =
+        #   replace_column_with_reference(alignment, range(\1 + 1, \1 + 1 + len("\2") - 1), skip_missing=False)/'
+        alignment = replace_column_with_reference(alignment, range(302 + 1, 302 + 1 + len("CT") - 1),
+                                                  skip_missing=False)
+        alignment = replace_column_with_reference(alignment, range(347 + 1, 347 + 1 + len("TGAAG") - 1),
+                                                  skip_missing=False)
+        alignment = replace_column_with_reference(alignment, range(349 + 1, 349 + 1 + len("AAGT") - 1),
+                                                  skip_missing=False)
 
-        # Replace SNVs/SNPs introduced by complex events
-        alignment = replace_column_with_reference(alignment, 1325)
-        alignment = replace_column_with_reference(alignment, 1984)
+        # This is a complex/OTHER event, which won't be represented in my alignment
+        # Needed to expand boundaries on the left/right by 1 since it's not a simple deletion
+        alignment = replace_column_with_reference(alignment, range(461, 461 + len("AAAT")),
+                                                  skip_missing=False)
+
+        alignment = replace_column_with_reference(alignment, range(866 + 1, 866 + 1 + len("GCCAGATCC") - 1),
+                                                  skip_missing=False)
+        alignment = replace_column_with_reference(alignment, range(883 + 1, 883 + 1 + len("CACATG") - 1),
+                                                  skip_missing=False)
+        alignment = replace_column_with_reference(alignment, range(1070 + 1, 1070 + 1 + len("TG") - 1),
+                                                  skip_missing=False)
+        alignment = replace_column_with_reference(alignment, range(1135 + 1, 1135 + 1 + len("CCT") - 1),
+                                                  skip_missing=False)
+        alignment = replace_column_with_reference(alignment, range(1167 + 1, 1167 + 1 + len("GA") - 1),
+                                                  skip_missing=False)
+        alignment = replace_column_with_reference(alignment, range(1209 + 1, 1209 + 1 + len("AG") - 1),
+                                                  skip_missing=False)
+        alignment = replace_column_with_reference(alignment, range(1270 + 1, 1270 + 1 + len("CTT") - 1),
+                                                  skip_missing=False)
+
+        # This is a complex/OTHER event, so won't be represented in my alignment. Need to treat left/right
+        # boundaries differently
+        alignment = replace_column_with_reference(alignment, range(1325, 1325 + len("TGA")),
+                                                  skip_missing=False)
+
+        alignment = replace_column_with_reference(alignment,
+                                                  range(1483 + 1, 1483 + 1 + len("AAAGAGGGGCTGCTGGAGCCG") - 1),
+                                                  skip_missing=False)
+        alignment = replace_column_with_reference(alignment, range(1708 + 1, 1708 + 1 + len("ATGCTGTTCAATAC") - 1),
+                                                  skip_missing=False)
+        alignment = replace_column_with_reference(alignment, range(1815 + 1, 1815 + 1 + len("CAA") - 1),
+                                                  skip_missing=False)
+
+        # This is a complex/OTHER event, so won't be represented in my alignment. Need to treat left/right
+        # boundaries differently
+        alignment = replace_column_with_reference(alignment, range(1984, 1984 + len("GTGATTG")),
+                                                  skip_missing=False)
+
+        alignment = replace_column_with_reference(alignment, range(2419 + 1, 2419 + 1 + len("GA") - 1),
+                                                  skip_missing=False)
+        alignment = replace_column_with_reference(alignment, range(2480 + 1, 2480 + 1 + len("TG") - 1),
+                                                  skip_missing=False)
+        alignment = replace_column_with_reference(alignment, range(3008 + 1, 3008 + 1 + len("GA") - 1),
+                                                  skip_missing=False)
+        alignment = replace_column_with_reference(alignment, range(3276 + 1, 3276 + 1 + len("GC") - 1),
+                                                  skip_missing=False)
+        alignment = replace_column_with_reference(alignment, range(3576 + 1, 3576 + 1 + len("TTTC") - 1),
+                                                  skip_missing=False)
+        alignment = replace_column_with_reference(alignment, range(3656 + 1, 3656 + 1 + len("CATT") - 1),
+                                                  skip_missing=False)
+        alignment = replace_column_with_reference(alignment, range(3897 + 1, 3897 + 1 + len("GCGCA") - 1),
+                                                  skip_missing=False)
+        alignment = replace_column_with_reference(alignment, range(4437 + 1, 4437 + 1 + len("AG") - 1),
+                                                  skip_missing=False)
+
         alignment = replace_gap_with_n_and_upper(alignment)
 
         alignment.sort()
@@ -119,14 +191,26 @@ def expected_alignment_full() -> MultipleSeqAlignment:
         return alignment
 
 
-def compare_alignments(a: MultipleSeqAlignment, b: MultipleSeqAlignment) -> None:
-    assert len(a) == len(b), 'Alignment has incorrect number of samples'
-    assert a.get_alignment_length() == b.get_alignment_length()
+def get_unequal_positions_str(expected, actual) -> str:
+    return_val = ''
+    for idx, e in enumerate(expected.seq):
+        a = actual[idx]
+        if e != a:
+            return_val = f'{idx+1}: expected:{expected.id}={e} != actual:{actual.id}={a}\n'
 
-    number_of_sequences = len(a)
+    return return_val
+
+
+def compare_alignments(expected: MultipleSeqAlignment, actual: MultipleSeqAlignment) -> None:
+    assert len(expected) == len(actual), 'Alignment has incorrect number of samples'
+    assert expected.get_alignment_length() == actual.get_alignment_length()
+
+    number_of_sequences = len(expected)
     for i in range(0, number_of_sequences):
-        assert a[i].id == b[i].id, f'Alignment ids are not equal [{a[i].id}] != [{b[i].id}]'
-        assert a[i].seq == b[i].seq, f'Alignment sequences are not equal for [a.id={a[i].id}, b.id={b[i].id}]'
+        assert expected[i].id == actual[i].id, f'Alignment ids are not equal [{expected[i].id}] != [{actual[i].id}]'
+        assert expected[i].seq == actual[i].seq, f'Alignment sequences are not equal for ' \
+                                                   f'[expected.id={expected[i].id}, actual.id={actual[i].id}] ' \
+                                                   f'\n{get_unequal_positions_str(expected[i], actual[i])}'
 
 
 def test_snippy_core_align(core_alignment_service: CoreAlignmentService, expected_alignment_core):
