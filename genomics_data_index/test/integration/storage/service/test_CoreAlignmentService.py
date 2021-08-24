@@ -30,7 +30,7 @@ def replace_column_with_reference(alignment: MultipleSeqAlignment, position: Uni
 
 
 def replace_column_with_reference_internal(alignment: MultipleSeqAlignment, position: int,
-                                  skip_missing=True) -> MultipleSeqAlignment:
+                                           skip_missing=True) -> MultipleSeqAlignment:
     column = alignment[:, (position - 1):position]
     ref = None
     ref_name = 'genome'
@@ -196,7 +196,7 @@ def get_unequal_positions_str(expected, actual) -> str:
     for idx, e in enumerate(expected.seq):
         a = actual[idx]
         if e != a:
-            return_val = f'{idx+1}: expected:{expected.id}={e} != actual:{actual.id}={a}\n'
+            return_val = f'{idx + 1}: expected:{expected.id}={e} != actual:{actual.id}={a}\n'
 
     return return_val
 
@@ -209,8 +209,8 @@ def compare_alignments(expected: MultipleSeqAlignment, actual: MultipleSeqAlignm
     for i in range(0, number_of_sequences):
         assert expected[i].id == actual[i].id, f'Alignment ids are not equal [{expected[i].id}] != [{actual[i].id}]'
         assert expected[i].seq == actual[i].seq, f'Alignment sequences are not equal for ' \
-                                                   f'[expected.id={expected[i].id}, actual.id={actual[i].id}] ' \
-                                                   f'\n{get_unequal_positions_str(expected[i], actual[i])}'
+                                                 f'[expected.id={expected[i].id}, actual.id={actual[i].id}] ' \
+                                                 f'\n{get_unequal_positions_str(expected[i], actual[i])}'
 
 
 def test_snippy_core_align(core_alignment_service: CoreAlignmentService, expected_alignment_core):
