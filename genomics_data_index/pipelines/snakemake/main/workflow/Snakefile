@@ -206,8 +206,7 @@ rule reads_single_snippy:
         "snippy --cpus {threads} --outdir {output.snippy_dir} --ref {input.reference} --mincov {params.mincov}"
         " --minqual {params.minqual} --subsample {params.subsample} --se {input.reads1}"
         " 1> {log.snippy} 2>&1 && "
-        "cp {output.snippy_dir}/snps.vcf.gz {output.vcf} && "
-        "gzip --stdout {output.snippy_dir}/snps.aligned.fa > {output.consensus}"
+        "cp {output.snippy_dir}/snps.vcf.gz {output.vcf}"
 
 
 rule assembly_variant_snpeff:
