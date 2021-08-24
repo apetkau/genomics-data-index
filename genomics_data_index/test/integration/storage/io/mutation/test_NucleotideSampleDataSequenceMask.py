@@ -5,11 +5,11 @@ from typing import Dict
 import pytest
 from pybedtools import BedTool
 
+from genomics_data_index.storage.MaskedGenomicRegions import MaskedGenomicRegions
 from genomics_data_index.storage.io.mutation.NucleotideSampleDataSequenceMask import NucleotideSampleDataSequenceMask
 from genomics_data_index.test.integration import regular_vcf_dir, data_dir
 from genomics_data_index.test.integration.storage.io import read_vcf_df
 from genomics_data_index.test.integration.storage.io.mutation import vcf_and_bed_mask_files
-from genomics_data_index.storage.MaskedGenomicRegions import MaskedGenomicRegions
 
 
 @pytest.fixture

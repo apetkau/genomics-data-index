@@ -40,9 +40,9 @@ def verify_features_df_for_sample(sample_name: str, features_df: pd.DataFrame,
                                   is_snippy: bool) -> None:
     if is_snippy:
         lengths = {
-            'SampleA': 46+414,
-            'SampleB': 50+234,
-            'SampleC': 33+302,
+            'SampleA': 46 + 414,
+            'SampleB': 50 + 234,
+            'SampleC': 33 + 302,
         }
     else:
         lengths = {
@@ -107,9 +107,9 @@ def test_snippy_data_package():
         assert 1079 == len(features_df)
         assert {'SampleA', 'SampleB', 'SampleC'} == set(features_df['SAMPLE'].tolist())
 
-        assert 46+414 == len(features_df[features_df['SAMPLE'] == 'SampleA'])
-        assert 50+234 == len(features_df[features_df['SAMPLE'] == 'SampleB'])
-        assert 33+302 == len(features_df[features_df['SAMPLE'] == 'SampleC'])
+        assert 46 + 414 == len(features_df[features_df['SAMPLE'] == 'SampleA'])
+        assert 50 + 234 == len(features_df[features_df['SAMPLE'] == 'SampleB'])
+        assert 33 + 302 == len(features_df[features_df['SAMPLE'] == 'SampleC'])
 
 
 def test_snippy_data_package_iter():

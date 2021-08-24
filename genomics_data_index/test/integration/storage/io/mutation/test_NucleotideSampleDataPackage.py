@@ -97,7 +97,7 @@ def test_iter_sample_data_snippy(sample_dirs):
 
             expected_mask = BedTool(str(expected_data['masks_minus_vcf'][sample]))
             assert expected_mask == mask.mask, f'expected=\n{expected_mask} != actual=\n{mask.mask}'
-            
+
             assert {'reference'} == mask.sequence_names()
             mask_file = sample_data.get_mask_file()
             assert mask_file.parent == tmp_file

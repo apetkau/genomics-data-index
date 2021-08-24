@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import List, Generator, Dict, Set, cast
-import logging
 
 from genomics_data_index.storage.io.FeaturesReader import FeaturesReader
 from genomics_data_index.storage.io.SampleData import SampleData
@@ -18,7 +18,6 @@ from genomics_data_index.storage.io.mutation.variants_processor.SerialVcfVariant
 from genomics_data_index.storage.io.mutation.variants_processor.VcfVariantsTableProcessor import \
     VcfVariantsTableProcessorFactory
 from genomics_data_index.storage.io.processor.NullSampleFilesProcessor import NullSampleFilesProcessor
-
 
 logger = logging.getLogger(__file__)
 
