@@ -1,14 +1,15 @@
 import warnings
-from typing import Union
+from typing import Union, Set
 
 import pytest
+from pybedtools import BedTool
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 from Bio import AlignIO
 from Bio.Align import MultipleSeqAlignment
 
-from genomics_data_index.test.integration import data_dir
+from genomics_data_index.test.integration import data_dir, masked_positions_snippy_bed
 from genomics_data_index.storage.service.CoreAlignmentService import CoreAlignmentService
 
 
@@ -60,16 +61,37 @@ def replace_ref_name(alignment):
             s.description = 'generated automatically'
 
 
-def replace_gap_with_n_and_upper(alignment: MultipleSeqAlignment) -> MultipleSeqAlignment:
+def replace_gap_with_n_and_upper(alignment: MultipleSeqAlignment, position_set: Set[int] = None) -> MultipleSeqAlignment:
     for record in alignment:
         seq = record.seq.tomutable()
         for index, character in enumerate(seq):
-            if character.upper() == '-' or character.upper() == 'X':
-                seq[index] = 'N'
-            else:
-                seq[index] = seq[index].upper()
+            if position_set is None or (index + 1) in position_set:
+                if character.upper() == '-' or character.upper() == 'X':
+                    seq[index] = 'N'
+                else:
+                    seq[index] = seq[index].upper()
 
         record.seq = seq.toseq()
+    return alignment
+
+
+def replace_n_with_gap_and_upper(alignment: MultipleSeqAlignment, position_set: Set[int] = None) -> MultipleSeqAlignment:
+    for record in alignment:
+        seq = record.seq.tomutable()
+        for index, character in enumerate(seq):
+            if position_set is None or (index + 1) in position_set:
+                if character.upper() == 'N':
+                    seq[index] = '-'
+                else:
+                    seq[index] = seq[index].upper()
+
+        record.seq = seq.toseq()
+    return alignment
+
+
+def alignment_upper(alignment: MultipleSeqAlignment):
+    for record in alignment:
+        record.seq = record.seq.upper()
     return alignment
 
 
@@ -195,12 +217,53 @@ def expected_alignment_full_only_snps(expected_alignment_full_unmodified) -> Mul
     return alignment
 
 
+@pytest.fixture
+def expected_alignment_full_snps_mnp_deletions(expected_alignment_full_unmodified) -> MultipleSeqAlignment:
+    """
+    Loads the full snippy alignment, and then keeps SNPs, MNPs (which aren't in test data) and DELETIONs
+    :return: The exepcted alignment as a MultipleSeqAlignment object.
+    """
+    alignment = alignment_upper(expected_alignment_full_unmodified)
+
+    masked_positions = BedTool(masked_positions_snippy_bed)
+    positions_to_fill_with_n = set()
+    for interval in masked_positions:
+        positions_to_fill_with_n = positions_to_fill_with_n | set(range(interval.start+1, interval.end+1))
+
+    alignment = replace_gap_with_n_and_upper(alignment, position_set=positions_to_fill_with_n)
+
+    # This is a complex/OTHER event, which won't be represented in my alignment
+    # Needed to expand boundaries on the left/right by 1 since it's not a simple deletion
+    alignment = replace_column_with_reference(alignment, range(461, 461 + len("AAAT")),
+                                              skip_missing=False)
+
+    # This is a complex/OTHER event, so won't be represented in my alignment. Need to treat left/right
+    # boundaries differently
+    alignment = replace_column_with_reference(alignment, range(1325, 1325 + len("TGA")),
+                                              skip_missing=False)
+
+    # This is a complex/OTHER event, so won't be represented in my alignment. Need to treat left/right
+    # boundaries differently
+    alignment = replace_column_with_reference(alignment, range(1984, 1984 + len("GTGATTG")),
+                                              skip_missing=False)
+
+    # These are recorded as deletions in the VCF file, but snippy is setting some characters to N instead of -
+    # Since I set them as - in my results I need to change them in the expected alignment
+    alignment = replace_n_with_gap_and_upper(alignment, {1210, 2420, 3657, 3658, 3659, 4438,
+                                                         885, 1272, 2481,
+                                                         1136, 1816, 3009})
+
+    alignment.sort()
+
+    return alignment
+
+
 def get_unequal_positions_str(expected, actual) -> str:
     return_val = ''
     for idx, e in enumerate(expected.seq):
         a = actual[idx]
         if e != a:
-            return_val = f'{idx + 1}: expected:{expected.id}={e} != actual:{actual.id}={a}\n'
+            return_val = return_val + f'{idx + 1}: expected:{expected.id}={e} != actual:{actual.id}={a}\n'
 
     return return_val
 
@@ -247,6 +310,13 @@ def test_snippy_full_align(core_alignment_service, expected_alignment_full_only_
                                                                   align_type='full',
                                                                   include_variants=['SNP'])
     compare_alignments(expected_alignment_full_only_snps, actual_alignment)
+
+
+def test_snippy_full_align_snp_mnp_deletion(core_alignment_service, expected_alignment_full_snps_mnp_deletions):
+    actual_alignment = core_alignment_service.construct_alignment(reference_name='genome',
+                                                                  samples=['SampleA', 'SampleB', 'SampleC'],
+                                                                  align_type='full')
+    compare_alignments(expected_alignment_full_snps_mnp_deletions, actual_alignment)
 
 
 def test_regular_vcf_full_align(core_alignment_service_non_snippy_vcfs, expected_alignment_full_only_snps):
