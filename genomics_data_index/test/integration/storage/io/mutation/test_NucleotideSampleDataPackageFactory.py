@@ -36,15 +36,29 @@ def create_samples_input_file(tmp_dir: Path, sample_dirs: List[Path],
     return file
 
 
-def verify_features_df_for_sample(sample_name: str, features_df: pd.DataFrame) -> None:
+def verify_features_df_for_sample(sample_name: str, features_df: pd.DataFrame,
+                                  is_snippy: bool) -> None:
+    if is_snippy:
+        lengths = {
+            'SampleA': 46 + 414,
+            'SampleB': 50 + 234,
+            'SampleC': 33 + 302,
+        }
+    else:
+        lengths = {
+            'SampleA': 482,
+            'SampleB': 326,
+            'SampleC': 362
+        }
+
     if sample_name == 'SampleA':
-        assert 482 == len(features_df)
+        assert lengths['SampleA'] == len(features_df)
         assert {'SampleA'} == set(features_df['SAMPLE'].tolist())
     elif sample_name == 'SampleB':
-        assert 326 == len(features_df)
+        assert lengths['SampleB'] == len(features_df)
         assert {'SampleB'} == set(features_df['SAMPLE'].tolist())
     elif sample_name == 'SampleC':
-        assert 362 == len(features_df)
+        assert lengths['SampleC'] == len(features_df)
         assert {'SampleC'} == set(features_df['SAMPLE'].tolist())
     else:
         raise Exception(f'sample={sample_name} is not expected')
@@ -90,12 +104,12 @@ def test_snippy_data_package():
         assert {'SampleA', 'SampleB', 'SampleC'} == processed_data_package.sample_names()
 
         features_df = processed_data_package.get_features_reader().get_features_table()
-        assert 1170 == len(features_df)
+        assert 1079 == len(features_df)
         assert {'SampleA', 'SampleB', 'SampleC'} == set(features_df['SAMPLE'].tolist())
 
-        assert 482 == len(features_df[features_df['SAMPLE'] == 'SampleA'])
-        assert 326 == len(features_df[features_df['SAMPLE'] == 'SampleB'])
-        assert 362 == len(features_df[features_df['SAMPLE'] == 'SampleC'])
+        assert 46 + 414 == len(features_df[features_df['SAMPLE'] == 'SampleA'])
+        assert 50 + 234 == len(features_df[features_df['SAMPLE'] == 'SampleB'])
+        assert 33 + 302 == len(features_df[features_df['SAMPLE'] == 'SampleC'])
 
 
 def test_snippy_data_package_iter():
@@ -114,7 +128,8 @@ def test_snippy_data_package_iter():
             sample_name = list(processed_data_package.sample_names())[0]
             features_df = processed_data_package.get_features_reader().get_features_table()
 
-            verify_features_df_for_sample(sample_name=sample_name, features_df=features_df)
+            verify_features_df_for_sample(sample_name=sample_name, features_df=features_df,
+                                          is_snippy=True)
 
             handled_samples[sample_name] = True
             number_iterations = number_iterations + 1
@@ -243,7 +258,8 @@ def test_vcf_mask_files_data_package_iter(sample_dirs: List[Path]):
             sample_name = list(processed_data_package.sample_names())[0]
             features_df = processed_data_package.get_features_reader().get_features_table()
 
-            verify_features_df_for_sample(sample_name=sample_name, features_df=features_df)
+            verify_features_df_for_sample(sample_name=sample_name, features_df=features_df,
+                                          is_snippy=False)
 
             handled_samples[sample_name] = True
             number_iterations = number_iterations + 1
@@ -274,7 +290,8 @@ def test_vcf_mask_files_data_package_iter(sample_dirs: List[Path]):
         sample_names = list(processed_data_package.sample_names())
         for sample_name in sample_names:
             features_df_sample = features_df[features_df['SAMPLE'] == sample_name]
-            verify_features_df_for_sample(sample_name=sample_name, features_df=features_df_sample)
+            verify_features_df_for_sample(sample_name=sample_name, features_df=features_df_sample,
+                                          is_snippy=False)
             handled_samples[sample_name] = True
 
         # Iteration 2
@@ -287,7 +304,8 @@ def test_vcf_mask_files_data_package_iter(sample_dirs: List[Path]):
         sample_names = list(processed_data_package.sample_names())
         assert 1 == len(sample_names)
         sample_name = sample_names[0]
-        verify_features_df_for_sample(sample_name=sample_name, features_df=features_df)
+        verify_features_df_for_sample(sample_name=sample_name, features_df=features_df,
+                                      is_snippy=False)
         handled_samples[sample_name] = True
 
         assert handled_samples['SampleA']
@@ -319,7 +337,8 @@ def test_vcf_mask_files_data_package_iter(sample_dirs: List[Path]):
         sample_names = list(processed_data_package.sample_names())
         for sample_name in sample_names:
             features_df_sample = features_df[features_df['SAMPLE'] == sample_name]
-            verify_features_df_for_sample(sample_name=sample_name, features_df=features_df_sample)
+            verify_features_df_for_sample(sample_name=sample_name, features_df=features_df_sample,
+                                          is_snippy=False)
             handled_samples[sample_name] = True
 
         assert handled_samples['SampleA']

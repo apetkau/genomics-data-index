@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import List, Generator, Dict, Set, cast
 
@@ -17,6 +18,8 @@ from genomics_data_index.storage.io.mutation.variants_processor.SerialVcfVariant
 from genomics_data_index.storage.io.mutation.variants_processor.VcfVariantsTableProcessor import \
     VcfVariantsTableProcessorFactory
 from genomics_data_index.storage.io.processor.NullSampleFilesProcessor import NullSampleFilesProcessor
+
+logger = logging.getLogger(__file__)
 
 
 class NucleotideSampleDataPackage(SampleDataPackage):
@@ -117,12 +120,17 @@ class NucleotideSampleDataPackage(SampleDataPackage):
                            index_unknown_missing: bool = True) -> NucleotideSampleDataPackage:
 
         sample_data_dict = {}
+        subtract_vcf_from_mask = True
+        logger.debug(f'Creating SampleDataPackage for snippy data. Setting '
+                     f'subtract_vcf_from_mask={subtract_vcf_from_mask} to account for the deletions that are '
+                     f'in the VCF file and also in the sequence alignment (snps.aligned.fa) file.')
         for d in sample_dirs:
             sample_name = d.name
             sample_data = NucleotideSampleDataSequenceMask.create(
                 sample_name=sample_name,
                 vcf_file=Path(d, 'snps.vcf.gz'),
-                sample_mask_sequence=Path(d, 'snps.aligned.fa')
+                sample_mask_sequence=Path(d, 'snps.aligned.fa'),
+                subtract_vcf_from_mask=subtract_vcf_from_mask,
             )
             sample_data_dict[sample_name] = sample_data
 

@@ -60,6 +60,20 @@ rule index_reference:
         "minimap2 -t {threads} -d {output.reference_mm2_index} {input.reference} 2>&1 1>{log.mm2_index}"
 
 
+rule reference_genome_bedtools:
+    input:
+        reference="reference/reference.fasta",
+    output:
+        genome_bedtools="reference/reference-genome-bedtools.tsv",
+    conda:
+        "envs/main.yaml"
+    threads: 1
+    log:
+        "logs/reference_genome_bedtools.log"
+    script:
+        "scripts/fasta-to-genome-bedtools.py"
+
+
 rule prepare_snpeff_database:
     input:
         reference=reference_abs,
@@ -91,23 +105,43 @@ rule assembly_align:
         "samtools sort --threads {threads} --output-fmt BAM --write-index -o {output} 2> {log.samsort}"
 
 
-rule assembly_variant:
+rule assembly_variant_all:
     input:
         reference="reference/reference.fasta",
         bam="assemblies/align/{sample}.bam",
+    output:
+        vcf="assemblies/variant_all/{sample}.vcf.gz",
+    conda:
+        "envs/bcftools.yaml"
+    threads: 1
+    params:
+        qual=10,
+    log:
+        mpileup="logs/assembly_variant_all.{sample}.mpileup.log",
+        call="logs/assembly_variant_all.{sample}.call.log",
+        norm="logs/assembly_variant_all.{sample}.norm.log",
+        filter="logs/assembly_variant_all.{sample}.view.log",
+        tags="logs/assembly_variant_all.{sample}.tags.log",
+    shell:
+        "bcftools mpileup -a DP --min-ireads 1 --threads {threads} -Ou -f {input.reference} {input.bam} 2> {log.mpileup} | "
+        "bcftools call --threads {threads} --ploidy 1 -Ou --multiallelic-caller 2> {log.call} | "
+        "bcftools norm -f {input.reference} --threads {threads} --old-rec-tag -Ou 2> {log.norm} | "
+        "bcftools view --include 'QUAL>{params.qual}' -Ou 2> {log.filter} | "
+        "bcftools plugin fill-tags -Oz -o {output.vcf} -- -t TYPE 2> {log.tags}"
+
+
+rule assembly_variant:
+    input:
+        "assemblies/variant_all/{sample}.vcf.gz",
     output:
         "assemblies/variant/{sample}.vcf.gz",
     conda:
         "envs/bcftools.yaml"
     threads: 1
     log:
-        mpileup="logs/assembly_variant.{sample}.mpileup.log",
-        call="logs/assembly_variant.{sample}.call.log",
-        norm="logs/assembly_variant.{sample}.norm.log",
+        "logs/assembly_variant.{sample}.log"
     shell:
-        "bcftools mpileup -a DP --min-ireads 1 --threads {threads} -Ou -f {input.reference} {input.bam} 2> {log.mpileup} | "
-        "bcftools call --threads {threads} --ploidy 1 -Ou -mv 2> {log.call} | "
-        "bcftools norm -f {input.reference} --threads {threads} --old-rec-tag -Oz -o {output} 2> {log.norm}"
+        "bcftools view --exclude 'TYPE==\"REF\"' -Oz -o {output} {input} 2> {log}"
 
 
 rule reads_paired_snippy:
@@ -118,7 +152,6 @@ rule reads_paired_snippy:
     output:
         snippy_dir=directory("reads/snippy/paired/{sample}"),
         vcf="reads/paired/variant/{sample}.vcf.gz",
-        consensus="reads/paired/consensus/{sample}.fasta.gz",
     conda:
         "envs/snippy.yaml"
     threads: 1
@@ -132,8 +165,25 @@ rule reads_paired_snippy:
         "snippy --cpus {threads} --outdir {output.snippy_dir} --ref {input.reference} --mincov {params.mincov}"
         " --minqual {params.minqual} --subsample {params.subsample} --R1 {input.reads1} --R2 {input.reads2}"
         " 1> {log.snippy} 2>&1 && "
-        "cp {output.snippy_dir}/snps.vcf.gz {output.vcf} && "
-        "gzip --stdout {output.snippy_dir}/snps.aligned.fa > {output.consensus}"
+        "cp {output.snippy_dir}/snps.vcf.gz {output.vcf}"
+
+
+rule reads_single_mask_snippy:
+    input:
+        snippy_dir="reads/snippy/single/{sample}"
+    output:
+        mask="reads/single/mask/{sample}.bed.gz",
+    log:
+        "logs/reads_mask.{sample}.log"
+    script:
+        "scripts/create-snippy-mask.py"
+
+
+use rule reads_single_mask_snippy as reads_paired_mask_snippy with:
+    input:
+        snippy_dir="reads/snippy/paired/{sample}"
+    output:
+        mask="reads/paired/mask/{sample}.bed.gz",
 
 
 rule reads_single_snippy:
@@ -143,7 +193,6 @@ rule reads_single_snippy:
     output:
         snippy_dir=directory("reads/snippy/single/{sample}"),
         vcf="reads/single/variant/{sample}.vcf.gz",
-        consensus="reads/single/consensus/{sample}.fasta.gz",
     conda:
         "envs/snippy.yaml"
     threads: 1
@@ -157,8 +206,7 @@ rule reads_single_snippy:
         "snippy --cpus {threads} --outdir {output.snippy_dir} --ref {input.reference} --mincov {params.mincov}"
         " --minqual {params.minqual} --subsample {params.subsample} --se {input.reads1}"
         " 1> {log.snippy} 2>&1 && "
-        "cp {output.snippy_dir}/snps.vcf.gz {output.vcf} && "
-        "gzip --stdout {output.snippy_dir}/snps.aligned.fa > {output.consensus}"
+        "cp {output.snippy_dir}/snps.vcf.gz {output.vcf}"
 
 
 rule assembly_variant_snpeff:
@@ -192,19 +240,21 @@ use rule assembly_variant_snpeff as reads_variant_single_snpeff with:
         snpeff_vcf="reads/single/variant-snpeff/{sample}.vcf.gz",
 
 
-rule assembly_consensus:
+rule assembly_mask:
     input:
         reference="reference/reference.fasta",
-        bam="assemblies/align/{sample}.bam",
+        reference_bedtools="reference/reference-genome-bedtools.tsv",
+        vcf_all="assemblies/variant_all/{sample}.vcf.gz",
     output:
-        "assemblies/consensus/{sample}.fasta.gz",
+        mask="assemblies/mask/{sample}.bed.gz",
     conda:
-        "envs/htsbox.yaml"
+        "envs/bedtools.yaml"
     log:
-        consensus="logs/assembly_consensus.{sample}.consensus.log",
+        "logs/assembly_consensus_mask.{sample}.consensus.log",
     shell:
-        "htsbox pileup -f {input.reference} -d -F {input.bam} 2> {log.consensus} | "
-        "gzip -c - > {output}"
+        "bedtools merge -i {input.vcf_all} | bedtools sort | bedtools merge |"
+        "bedtools complement -i - -g {input.reference_bedtools} | "
+        "gzip > {output.mask}"
 
 
 rule assembly_sourmash_sketch:
@@ -265,10 +315,10 @@ def sample_vcfs_input(wildcards) -> List[str]:
                expand("reads/single/variant/{sample}.vcf.gz",sample=samples_single_reads)
 
 
-def sample_consensus_input(wildcards) -> List[str]:
-    return expand("assemblies/consensus/{sample}.fasta.gz",sample=samples_assemblies) + \
-           expand("reads/paired/consensus/{sample}.fasta.gz",sample=samples_paired_reads) + \
-           expand("reads/single/consensus/{sample}.fasta.gz",sample=samples_single_reads)
+def sample_mask_input(wildcards) -> List[str]:
+    return expand("assemblies/mask/{sample}.bed.gz",sample=samples_assemblies) + \
+           expand("reads/paired/mask/{sample}.bed.gz",sample=samples_paired_reads) + \
+           expand("reads/single/mask/{sample}.bed.gz",sample=samples_single_reads)
 
 
 def sample_sketches_input(wildcards) -> List[str]:
@@ -283,7 +333,7 @@ def sample_sketches_input(wildcards) -> List[str]:
 rule gdi_input_fofn:
     input:
         sample_vcfs=sample_vcfs_input,
-        sample_consensus=sample_consensus_input,
+        sample_masks=sample_mask_input,
         sample_sketches=sample_sketches_input,
     log:
         "logs/gdi_input_fofn.log"

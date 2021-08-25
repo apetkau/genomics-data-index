@@ -4,6 +4,7 @@ from tempfile import TemporaryDirectory
 from typing import cast, Dict
 
 import pytest
+from pybedtools import BedTool
 
 from genomics_data_index.storage.io.mutation.NucleotideSampleData import NucleotideSampleData
 from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
@@ -58,6 +59,45 @@ def test_iter_sample_data(sample_dirs):
             sample_data = cast(NucleotideSampleData, sample_data)
             mask = sample_data.get_mask()
             assert mask_len == len(mask)
+            assert {'reference'} == mask.sequence_names()
+            mask_file = sample_data.get_mask_file()
+            assert mask_file.parent == tmp_file
+            vcf_file, vcf_index = sample_data.get_vcf_file()
+            assert vcf_file.exists()
+            assert vcf_index.exists()
+            assert vcf_file.parent == tmp_file
+            assert vcf_index.parent == tmp_file
+
+            count += 1
+
+        # Make sure I tested all 3 files in above loop
+        assert 3 == count
+
+
+def test_iter_sample_data_snippy(sample_dirs):
+    with TemporaryDirectory() as tmp_file_str:
+        tmp_file = Path(tmp_file_str)
+        file_processor = SerialSampleFilesProcessor(tmp_file)
+        expected_data = vcf_and_bed_mask_files(sample_dirs)
+        data_package = NucleotideSampleDataPackage.create_from_snippy(sample_dirs,
+                                                                      sample_files_processor=file_processor)
+
+        processed_files_dict = {}
+        for sample_file in data_package.iter_sample_data():
+            processed_files_dict[sample_file.sample_name] = sample_file
+
+        assert 3 == len(processed_files_dict)
+
+        count = 0
+        for sample in ['SampleA', 'SampleB', 'SampleC']:
+            sample_data = processed_files_dict[sample]
+            assert isinstance(sample_data, NucleotideSampleData)
+            sample_data = cast(NucleotideSampleData, sample_data)
+            mask = sample_data.get_mask()
+
+            expected_mask = BedTool(str(expected_data['masks_minus_vcf'][sample]))
+            assert expected_mask == mask.mask, f'expected=\n{expected_mask} != actual=\n{mask.mask}'
+
             assert {'reference'} == mask.sequence_names()
             mask_file = sample_data.get_mask_file()
             assert mask_file.parent == tmp_file

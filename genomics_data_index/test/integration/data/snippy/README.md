@@ -24,7 +24,11 @@ zgrep -v '^#' snps.fill-tags.vcf.gz | cut -f 1,2,4,5,8 | sed -e 's/[^\t]*TYPE=\(
 Generated `Sample*/snps.aligned.bed.gz` with (run in each `Sample*` directory):
 
 ```
+# Generate bed file of sequence minus vcf
 python ../sequence_vcf_to_mask.py snps.aligned.fa snps.vcf.gz
+
+# Generate bed file of sequence
+python ../sequence_vcf_to_mask.py snps.aligned.fa
 ```
 
 This contains the expected BED files for masking regions from snippy (the regions in snps.aligned.fa minus the snps.vcf.gz)..
