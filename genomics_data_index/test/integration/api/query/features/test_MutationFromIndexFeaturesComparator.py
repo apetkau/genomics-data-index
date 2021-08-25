@@ -29,10 +29,6 @@ def test_summary_all(loaded_database_genomic_data_store: GenomicsDataIndex):
     expected_df['Total'] = 9
     expected_df['Percent'] = 100 * (expected_df['Count'] / expected_df['Total'])
 
-    f = ['reference:461:AAAT:G']
-    warnings.warn(f'Removing {f} from expected until I can figure out how to properly handle these')
-    expected_df = expected_df.drop(f)
-
     present_set = SampleSet(all_sample_ids)
     mutations_summarizer = MutationFeaturesFromIndexComparator(connection=loaded_database_genomic_data_store.connection,
                                                                ignore_annotations=True)
@@ -49,6 +45,7 @@ def test_summary_all(loaded_database_genomic_data_store: GenomicsDataIndex):
     assert list(expected_df['Total']) == list(mutations_df['Total'])
     assert list(expected_df['Type']) == list(mutations_df['Type'])
     assert 22 == mutations_df.loc['reference:619:G:C', 'Percent']
+    assert 11 == mutations_df.loc['reference:461:AAAT:G', 'Percent']
 
     # Test with unknown
     mutations_summarizer = MutationFeaturesFromIndexComparator(connection=loaded_database_genomic_data_store.connection,
@@ -57,7 +54,7 @@ def test_summary_all(loaded_database_genomic_data_store: GenomicsDataIndex):
     mutations_df['Percent'] = mutations_df['Percent'].astype(int)  # Convert to int for easier comparison
     mutations_df = mutations_df.sort_index()
 
-    assert 632 == len(mutations_df)
+    assert 112 + 440 == len(mutations_df)
     assert list(expected_df.columns) == list(mutations_df.columns)
     assert 2 == mutations_df.loc['reference:619:G:C', 'Count']
     assert 'SNP' == mutations_df.loc['reference:619:G:C', 'Type']
@@ -71,8 +68,8 @@ def test_summary_all(loaded_database_genomic_data_store: GenomicsDataIndex):
     assert 'UNKNOWN_MISSING' == mutations_df.loc['reference:90:T:?', 'Type']
     assert 2 == mutations_df.loc['reference:190:A:?', 'Count']
     assert 'UNKNOWN_MISSING' == mutations_df.loc['reference:190:A:?', 'Type']
-    assert 1 == mutations_df.loc['reference:887:T:?', 'Count']
-    assert 'UNKNOWN_MISSING' == mutations_df.loc['reference:887:T:?', 'Type']
+    assert 1 == mutations_df.loc['reference:210:C:?', 'Count']
+    assert 'UNKNOWN_MISSING' == mutations_df.loc['reference:210:C:?', 'Type']
 
     # Test only include unknown
     mutations_summarizer = MutationFeaturesFromIndexComparator(connection=loaded_database_genomic_data_store.connection,
@@ -82,14 +79,14 @@ def test_summary_all(loaded_database_genomic_data_store: GenomicsDataIndex):
     mutations_df['Percent'] = mutations_df['Percent'].astype(int)  # Convert to int for easier comparison
     mutations_df = mutations_df.sort_index()
 
-    assert 521 == len(mutations_df)
+    assert 440 == len(mutations_df)
     assert list(expected_df.columns) == list(mutations_df.columns)
     assert 3 == mutations_df.loc['reference:90:T:?', 'Count']
     assert 'UNKNOWN_MISSING' == mutations_df.loc['reference:90:T:?', 'Type']
     assert 2 == mutations_df.loc['reference:190:A:?', 'Count']
     assert 'UNKNOWN_MISSING' == mutations_df.loc['reference:190:A:?', 'Type']
-    assert 1 == mutations_df.loc['reference:887:T:?', 'Count']
-    assert 'UNKNOWN_MISSING' == mutations_df.loc['reference:887:T:?', 'Type']
+    assert 1 == mutations_df.loc['reference:210:C:?', 'Count']
+    assert 'UNKNOWN_MISSING' == mutations_df.loc['reference:210:C:?', 'Type']
     assert 'reference:619:G:C' not in mutations_df
 
     # Test with different id type where deletion is int instead of sequence
@@ -99,7 +96,7 @@ def test_summary_all(loaded_database_genomic_data_store: GenomicsDataIndex):
     mutations_df['Percent'] = mutations_df['Percent'].astype(int)  # Convert to int for easier comparison
     mutations_df = mutations_df.sort_index()
 
-    assert 112 - 1 == len(mutations_df)
+    assert 112 == len(mutations_df)
     assert list(expected_df.columns) == list(mutations_df.columns)
     assert 2 == mutations_df.loc['reference:619:1:C', 'Count']
     assert 'SNP' == mutations_df.loc['reference:619:1:C', 'Type']
@@ -118,7 +115,7 @@ def test_summary_all(loaded_database_genomic_data_store: GenomicsDataIndex):
     mutations_df['Percent'] = mutations_df['Percent'].astype(int)  # Convert to int for easier comparison
     mutations_df = mutations_df.sort_index()
 
-    assert 632 == len(mutations_df)
+    assert 112 + 440 == len(mutations_df)
     assert list(expected_df.columns) == list(mutations_df.columns)
     assert 2 == mutations_df.loc['reference:619:1:C', 'Count']
     assert 'SNP' == mutations_df.loc['reference:619:1:C', 'Type']
@@ -132,8 +129,8 @@ def test_summary_all(loaded_database_genomic_data_store: GenomicsDataIndex):
     assert 'UNKNOWN_MISSING' == mutations_df.loc['reference:90:1:?', 'Type']
     assert 2 == mutations_df.loc['reference:190:1:?', 'Count']
     assert 'UNKNOWN_MISSING' == mutations_df.loc['reference:190:1:?', 'Type']
-    assert 1 == mutations_df.loc['reference:887:1:?', 'Count']
-    assert 'UNKNOWN_MISSING' == mutations_df.loc['reference:887:1:?', 'Type']
+    assert 1 == mutations_df.loc['reference:210:1:?', 'Count']
+    assert 'UNKNOWN_MISSING' == mutations_df.loc['reference:210:1:?', 'Type']
 
 
 def test_summary_unique(loaded_database_genomic_data_store: GenomicsDataIndex):
@@ -169,16 +166,13 @@ def test_summary_unique(loaded_database_genomic_data_store: GenomicsDataIndex):
 
     mutations_df['Percent'] = mutations_df['Percent'].astype(int)  # Convert to int for easier comparison
 
-    f = ['reference:461:AAAT:G']
-    warnings.warn(f'Removing {f} from expected until I can figure out how to properly handle these')
-    expected_df = expected_df.drop(f)
-
     assert len(expected_df) == len(mutations_df)
-    assert 45 == len(mutations_df)  # Check length against independently generated length
+    assert 46 == len(mutations_df)  # Check length against independently generated length
     assert list(expected_df.index) == list(mutations_df.index)
     assert list(expected_df['Count']) == list(mutations_df['Count'])
     assert list(expected_df['Total']) == list(mutations_df['Total'])
     assert 100 == mutations_df.loc['reference:3656:CATT:C', 'Percent']
+    assert 100 == mutations_df.loc['reference:461:AAAT:G', 'Percent']
 
     # Unique to B
     present_set = SampleSet({sampleB.id})
