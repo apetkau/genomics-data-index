@@ -125,7 +125,7 @@ class CoreAlignmentService:
                     raise Exception(f'variant={variant} found in include_variants={include_variants}. '
                                     f'Only {self.INCLUDE_VARIANT_TYPES} are supported')
 
-        include_expression = ' | '.join(f'(TYPE=="{variant}")' for variant in include_variants)
+        include_expression = ' | '.join(f'(INFO/TYPE=="{variant}")' for variant in include_variants)
 
         sample_nucleotide_variants = self._variation_service.get_sample_nucleotide_variation(samples)
 
