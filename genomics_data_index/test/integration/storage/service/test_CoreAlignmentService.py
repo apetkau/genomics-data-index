@@ -99,96 +99,100 @@ def expected_alignment_core() -> MultipleSeqAlignment:
 
 
 @pytest.fixture
-def expected_alignment_full() -> MultipleSeqAlignment:
-    '''
+def expected_alignment_full_unmodified() -> MultipleSeqAlignment:
+    """
     Loads the expected alignment for testing (full alignment).
-    This expected alignment was copied from the output of snippy. However, snippy
-    includes some complex events in the alignment which I do not include.
-    I modify this expected alignment (from snippy) by replacing 2 SNVs/SNPs introduced
-    by complex events with the reference sequence. That way I can compare the alignments for equality.
-    Additionally, snippy uses 'N' and '-' to mask regions, but I only use one character (default 'N')
-    so I replace '-' with 'N'.
+    This expected alignment was copied from the output of snippy.
     :return: The exepcted alignment as a MultipleSeqAlignment object.
-    '''
+    """
     with open(data_dir / 'snippy.full.aln', 'r') as f:
         alignments = list(AlignIO.parse(f, 'fasta'))
         alignment = alignments[0]
 
         replace_ref_name(alignment)
+    return alignment
 
-        # Replace deletions, which currently aren't supported by my application when generating an
-        # alignment
-        # Generated using
-        # zgrep -hv '^#' Sample*/snps.vcf.gz | zgrep 'del\|complex' | cut -f 2,4 | sort -nu |
-        #  sed -e 's/^\([0-9][0-9]*\)\t\(\w*\)/alignment =
-        #   replace_column_with_reference(alignment, range(\1 + 1, \1 + 1 + len("\2") - 1), skip_missing=False)/'
-        alignment = replace_column_with_reference(alignment, range(302 + 1, 302 + 1 + len("CT") - 1),
-                                                  skip_missing=False)
-        alignment = replace_column_with_reference(alignment, range(347 + 1, 347 + 1 + len("TGAAG") - 1),
-                                                  skip_missing=False)
-        alignment = replace_column_with_reference(alignment, range(349 + 1, 349 + 1 + len("AAGT") - 1),
-                                                  skip_missing=False)
 
-        # This is a complex/OTHER event, which won't be represented in my alignment
-        # Needed to expand boundaries on the left/right by 1 since it's not a simple deletion
-        alignment = replace_column_with_reference(alignment, range(461, 461 + len("AAAT")),
-                                                  skip_missing=False)
+@pytest.fixture
+def expected_alignment_full_only_snps(expected_alignment_full_unmodified) -> MultipleSeqAlignment:
+    """
+    Loads the full snippy alignment, and then removes all but SNPs.
+    :return: The exepcted alignment as a MultipleSeqAlignment object.
+    """
+    alignment = expected_alignment_full_unmodified
 
-        alignment = replace_column_with_reference(alignment, range(866 + 1, 866 + 1 + len("GCCAGATCC") - 1),
-                                                  skip_missing=False)
-        alignment = replace_column_with_reference(alignment, range(883 + 1, 883 + 1 + len("CACATG") - 1),
-                                                  skip_missing=False)
-        alignment = replace_column_with_reference(alignment, range(1070 + 1, 1070 + 1 + len("TG") - 1),
-                                                  skip_missing=False)
-        alignment = replace_column_with_reference(alignment, range(1135 + 1, 1135 + 1 + len("CCT") - 1),
-                                                  skip_missing=False)
-        alignment = replace_column_with_reference(alignment, range(1167 + 1, 1167 + 1 + len("GA") - 1),
-                                                  skip_missing=False)
-        alignment = replace_column_with_reference(alignment, range(1209 + 1, 1209 + 1 + len("AG") - 1),
-                                                  skip_missing=False)
-        alignment = replace_column_with_reference(alignment, range(1270 + 1, 1270 + 1 + len("CTT") - 1),
-                                                  skip_missing=False)
+    # Replace deletions/complex
+    # Generated using
+    # zgrep -hv '^#' Sample*/snps.vcf.gz | zgrep 'del\|complex' | cut -f 2,4 | sort -nu |
+    #  sed -e 's/^\([0-9][0-9]*\)\t\(\w*\)/alignment =
+    #   replace_column_with_reference(alignment, range(\1 + 1, \1 + 1 + len("\2") - 1), skip_missing=False)/'
+    alignment = replace_column_with_reference(alignment, range(302 + 1, 302 + 1 + len("CT") - 1),
+                                              skip_missing=False)
+    alignment = replace_column_with_reference(alignment, range(347 + 1, 347 + 1 + len("TGAAG") - 1),
+                                              skip_missing=False)
+    alignment = replace_column_with_reference(alignment, range(349 + 1, 349 + 1 + len("AAGT") - 1),
+                                              skip_missing=False)
 
-        # This is a complex/OTHER event, so won't be represented in my alignment. Need to treat left/right
-        # boundaries differently
-        alignment = replace_column_with_reference(alignment, range(1325, 1325 + len("TGA")),
-                                                  skip_missing=False)
+    # This is a complex/OTHER event, which won't be represented in my alignment
+    # Needed to expand boundaries on the left/right by 1 since it's not a simple deletion
+    alignment = replace_column_with_reference(alignment, range(461, 461 + len("AAAT")),
+                                              skip_missing=False)
 
-        alignment = replace_column_with_reference(alignment,
-                                                  range(1483 + 1, 1483 + 1 + len("AAAGAGGGGCTGCTGGAGCCG") - 1),
-                                                  skip_missing=False)
-        alignment = replace_column_with_reference(alignment, range(1708 + 1, 1708 + 1 + len("ATGCTGTTCAATAC") - 1),
-                                                  skip_missing=False)
-        alignment = replace_column_with_reference(alignment, range(1815 + 1, 1815 + 1 + len("CAA") - 1),
-                                                  skip_missing=False)
+    alignment = replace_column_with_reference(alignment, range(866 + 1, 866 + 1 + len("GCCAGATCC") - 1),
+                                              skip_missing=False)
+    alignment = replace_column_with_reference(alignment, range(883 + 1, 883 + 1 + len("CACATG") - 1),
+                                              skip_missing=False)
+    alignment = replace_column_with_reference(alignment, range(1070 + 1, 1070 + 1 + len("TG") - 1),
+                                              skip_missing=False)
+    alignment = replace_column_with_reference(alignment, range(1135 + 1, 1135 + 1 + len("CCT") - 1),
+                                              skip_missing=False)
+    alignment = replace_column_with_reference(alignment, range(1167 + 1, 1167 + 1 + len("GA") - 1),
+                                              skip_missing=False)
+    alignment = replace_column_with_reference(alignment, range(1209 + 1, 1209 + 1 + len("AG") - 1),
+                                              skip_missing=False)
+    alignment = replace_column_with_reference(alignment, range(1270 + 1, 1270 + 1 + len("CTT") - 1),
+                                              skip_missing=False)
 
-        # This is a complex/OTHER event, so won't be represented in my alignment. Need to treat left/right
-        # boundaries differently
-        alignment = replace_column_with_reference(alignment, range(1984, 1984 + len("GTGATTG")),
-                                                  skip_missing=False)
+    # This is a complex/OTHER event, so won't be represented in my alignment. Need to treat left/right
+    # boundaries differently
+    alignment = replace_column_with_reference(alignment, range(1325, 1325 + len("TGA")),
+                                              skip_missing=False)
 
-        alignment = replace_column_with_reference(alignment, range(2419 + 1, 2419 + 1 + len("GA") - 1),
-                                                  skip_missing=False)
-        alignment = replace_column_with_reference(alignment, range(2480 + 1, 2480 + 1 + len("TG") - 1),
-                                                  skip_missing=False)
-        alignment = replace_column_with_reference(alignment, range(3008 + 1, 3008 + 1 + len("GA") - 1),
-                                                  skip_missing=False)
-        alignment = replace_column_with_reference(alignment, range(3276 + 1, 3276 + 1 + len("GC") - 1),
-                                                  skip_missing=False)
-        alignment = replace_column_with_reference(alignment, range(3576 + 1, 3576 + 1 + len("TTTC") - 1),
-                                                  skip_missing=False)
-        alignment = replace_column_with_reference(alignment, range(3656 + 1, 3656 + 1 + len("CATT") - 1),
-                                                  skip_missing=False)
-        alignment = replace_column_with_reference(alignment, range(3897 + 1, 3897 + 1 + len("GCGCA") - 1),
-                                                  skip_missing=False)
-        alignment = replace_column_with_reference(alignment, range(4437 + 1, 4437 + 1 + len("AG") - 1),
-                                                  skip_missing=False)
+    alignment = replace_column_with_reference(alignment,
+                                              range(1483 + 1, 1483 + 1 + len("AAAGAGGGGCTGCTGGAGCCG") - 1),
+                                              skip_missing=False)
+    alignment = replace_column_with_reference(alignment, range(1708 + 1, 1708 + 1 + len("ATGCTGTTCAATAC") - 1),
+                                              skip_missing=False)
+    alignment = replace_column_with_reference(alignment, range(1815 + 1, 1815 + 1 + len("CAA") - 1),
+                                              skip_missing=False)
 
-        alignment = replace_gap_with_n_and_upper(alignment)
+    # This is a complex/OTHER event, so won't be represented in my alignment. Need to treat left/right
+    # boundaries differently
+    alignment = replace_column_with_reference(alignment, range(1984, 1984 + len("GTGATTG")),
+                                              skip_missing=False)
 
-        alignment.sort()
+    alignment = replace_column_with_reference(alignment, range(2419 + 1, 2419 + 1 + len("GA") - 1),
+                                              skip_missing=False)
+    alignment = replace_column_with_reference(alignment, range(2480 + 1, 2480 + 1 + len("TG") - 1),
+                                              skip_missing=False)
+    alignment = replace_column_with_reference(alignment, range(3008 + 1, 3008 + 1 + len("GA") - 1),
+                                              skip_missing=False)
+    alignment = replace_column_with_reference(alignment, range(3276 + 1, 3276 + 1 + len("GC") - 1),
+                                              skip_missing=False)
+    alignment = replace_column_with_reference(alignment, range(3576 + 1, 3576 + 1 + len("TTTC") - 1),
+                                              skip_missing=False)
+    alignment = replace_column_with_reference(alignment, range(3656 + 1, 3656 + 1 + len("CATT") - 1),
+                                              skip_missing=False)
+    alignment = replace_column_with_reference(alignment, range(3897 + 1, 3897 + 1 + len("GCGCA") - 1),
+                                              skip_missing=False)
+    alignment = replace_column_with_reference(alignment, range(4437 + 1, 4437 + 1 + len("AG") - 1),
+                                              skip_missing=False)
 
-        return alignment
+    alignment = replace_gap_with_n_and_upper(alignment)
+
+    alignment.sort()
+
+    return alignment
 
 
 def get_unequal_positions_str(expected, actual) -> str:
@@ -215,7 +219,8 @@ def compare_alignments(expected: MultipleSeqAlignment, actual: MultipleSeqAlignm
 
 def test_snippy_core_align(core_alignment_service: CoreAlignmentService, expected_alignment_core):
     actual_alignment = core_alignment_service.construct_alignment(reference_name='genome',
-                                                                  samples=['SampleA', 'SampleB', 'SampleC'])
+                                                                  samples=['SampleA', 'SampleB', 'SampleC'],
+                                                                  include_variants=['SNP'])
     compare_alignments(expected_alignment_core, actual_alignment)
 
 
@@ -233,26 +238,29 @@ def test_snippy_full_align_with_invalid_include_variants(core_alignment_service:
                                                    samples=['SampleA', 'SampleB', 'SampleC'],
                                                    align_type='full',
                                                    include_variants=['invalid'])
-    assert f"Only {['SNP', 'MNP']} are supported" in str(execinfo.value)
+    assert f"Only {['SNP', 'MNP', 'DELETION', 'DELETION_OTHER']} are supported" in str(execinfo.value)
 
 
-def test_snippy_full_align(core_alignment_service, expected_alignment_full):
+def test_snippy_full_align(core_alignment_service, expected_alignment_full_only_snps):
     actual_alignment = core_alignment_service.construct_alignment(reference_name='genome',
                                                                   samples=['SampleA', 'SampleB', 'SampleC'],
-                                                                  align_type='full')
-    compare_alignments(expected_alignment_full, actual_alignment)
+                                                                  align_type='full',
+                                                                  include_variants=['SNP'])
+    compare_alignments(expected_alignment_full_only_snps, actual_alignment)
 
 
-def test_regular_vcf_full_align(core_alignment_service_non_snippy_vcfs, expected_alignment_full):
+def test_regular_vcf_full_align(core_alignment_service_non_snippy_vcfs, expected_alignment_full_only_snps):
     actual_alignment = core_alignment_service_non_snippy_vcfs.construct_alignment(reference_name='genome',
                                                                                   samples=['SampleA', 'SampleB',
                                                                                            'SampleC'],
-                                                                                  align_type='full')
-    compare_alignments(expected_alignment_full, actual_alignment)
+                                                                                  align_type='full',
+                                                                                  include_variants=['SNP'])
+    compare_alignments(expected_alignment_full_only_snps, actual_alignment)
 
 
 def test_regular_vcf_core_align(core_alignment_service_non_snippy_vcfs, expected_alignment_core):
     actual_alignment = core_alignment_service_non_snippy_vcfs.construct_alignment(reference_name='genome',
                                                                                   samples=['SampleA', 'SampleB',
-                                                                                           'SampleC'])
+                                                                                           'SampleC'],
+                                                                                  include_variants=['SNP'])
     compare_alignments(expected_alignment_core, actual_alignment)

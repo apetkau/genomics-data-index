@@ -148,6 +148,9 @@ class CoreAlignmentService:
         elif len(deletion_types) > 1:
             raise Exception(f'Can only set one of {self.INCLUDE_VARIANT_DELETION}, got {deletion_types}')
 
+        if len(subtitution_types) > 0 and len(include_expression) > 0:
+            include_expression = include_expression + ' & '
+
         include_expression = include_expression + ' | '.join(f'(INFO/TYPE=="{variant}")' for variant in subtitution_types)
 
         sample_nucleotide_variants = self._variation_service.get_sample_nucleotide_variation(samples)
