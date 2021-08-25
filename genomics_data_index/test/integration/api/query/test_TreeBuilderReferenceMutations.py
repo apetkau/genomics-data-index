@@ -36,6 +36,7 @@ def test_build_tree_core(loaded_database_connection):
     actual_tree, alignment_length, tree_set = tree_builder.build(samples_set=['SampleA', 'SampleB', 'SampleC'],
                                                                  method='iqtree',
                                                                  align_type='core',
+                                                                 include_variants=['SNP'],
                                                                  include_reference=True,
                                                                  extra_params='--seed 42 -m GTR+ASC'
                                                                  )
