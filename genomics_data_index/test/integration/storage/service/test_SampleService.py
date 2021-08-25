@@ -352,32 +352,91 @@ def test_find_unknown_sample_sets_by_features_variations_different_feature_defin
     sample_sets = sample_service.find_unknown_sample_sets_by_features([QueryFeatureMutationSPDI('reference:202:1:GCG')])
     assert {sampleA.id} == set(sample_sets[f'reference:202:1:GCG'])
 
+    # Test right before unknown: 1 unknown
+    sample_sets = sample_service.find_unknown_sample_sets_by_features([QueryFeatureMutationSPDI('reference:220:1:A')])
+    assert 0 == len(sample_sets)
+
+    # Test on unknown: 1 unknown
+    sample_sets = sample_service.find_unknown_sample_sets_by_features([QueryFeatureMutationSPDI('reference:221:1:A')])
+    assert {sampleA.id} == set(sample_sets[f'reference:221:1:A'])
+
+    # Test right after unknown: 1 unknown
+    sample_sets = sample_service.find_unknown_sample_sets_by_features([QueryFeatureMutationSPDI('reference:222:1:A')])
+    assert 0 == len(sample_sets)
+
+    # Test right before unknown but 2 bp: 1 unknown
+    sample_sets = sample_service.find_unknown_sample_sets_by_features([QueryFeatureMutationSPDI('reference:220:2:A')])
+    assert {sampleA.id} == set(sample_sets[f'reference:220:2:A'])
+
+    # Test right before unknown but 3 bp: 1 unknown
+    sample_sets = sample_service.find_unknown_sample_sets_by_features([QueryFeatureMutationSPDI('reference:220:3:A')])
+    assert {sampleA.id} == set(sample_sets[f'reference:220:3:A'])
+
+    # Test right before unknown but 3 bp as characters: 1 unknown
+    sample_sets = sample_service.find_unknown_sample_sets_by_features([QueryFeatureMutationSPDI('reference:220:ATT:A')])
+    assert {sampleA.id} == set(sample_sets[f'reference:220:ATT:A'])
+
+    # Test 3 unknowns 1 bp: before
+    sample_sets = sample_service.find_unknown_sample_sets_by_features([QueryFeatureMutationSPDI('reference:133:1:A')])
+    assert {sampleA.id, sampleB.id, sampleC.id} == set(sample_sets[f'reference:133:1:A'])
+
+    # Test 2 unknowns 1 bp: left edge
+    sample_sets = sample_service.find_unknown_sample_sets_by_features([QueryFeatureMutationSPDI('reference:134:1:A')])
+    assert {sampleA.id, sampleC.id} == set(sample_sets[f'reference:134:1:A'])
+
+    # Test 2 unknowns 1 bp: right edge
+    sample_sets = sample_service.find_unknown_sample_sets_by_features([QueryFeatureMutationSPDI('reference:135:1:A')])
+    assert {sampleA.id, sampleC.id} == set(sample_sets[f'reference:135:1:A'])
+
+    # Test 2 unknowns 2 bp: left and right edge
+    sample_sets = sample_service.find_unknown_sample_sets_by_features([QueryFeatureMutationSPDI('reference:134:2:A')])
+    assert {sampleA.id, sampleC.id} == set(sample_sets[f'reference:134:2:A'])
+
+    # Test 3 unknowns 1 bp: after
+    sample_sets = sample_service.find_unknown_sample_sets_by_features([QueryFeatureMutationSPDI('reference:136:1:A')])
+    assert {sampleA.id, sampleB.id, sampleC.id} == set(sample_sets[f'reference:136:1:A'])
+
+    # Test 3 unknowns 2 bp: before and overlapping left edge
+    sample_sets = sample_service.find_unknown_sample_sets_by_features([QueryFeatureMutationSPDI('reference:133:2:A')])
+    assert {sampleA.id, sampleB.id, sampleC.id} == set(sample_sets[f'reference:133:2:A'])
+
+    # Test 3 unknowns 3 bp: left and right edge and into 3 unknown region
+    sample_sets = sample_service.find_unknown_sample_sets_by_features([QueryFeatureMutationSPDI('reference:134:3:A')])
+    assert {sampleA.id, sampleB.id, sampleC.id} == set(sample_sets[f'reference:134:3:A'])
+
     # Test on edge of unknown and indels
     sample_sets = sample_service.find_unknown_sample_sets_by_features([QueryFeatureMutationSPDI('reference:1167:1:A')])
     assert 0 == len(sample_sets)
 
+    # Test on deletion (no unknowns since it's a deletion)
     sample_sets = sample_service.find_unknown_sample_sets_by_features([QueryFeatureMutationSPDI('reference:1168:1:A')])
-    assert {sampleA.id} == set(sample_sets[f'reference:1168:1:A'])
+    assert 0 == len(sample_sets)
 
+    # Test right after deletion (still no unknown)
     sample_sets = sample_service.find_unknown_sample_sets_by_features([QueryFeatureMutationSPDI('reference:1169:1:A')])
     assert 0 == len(sample_sets)
 
+    # Test deletion 2 bp (no unknown)
     sample_sets = sample_service.find_unknown_sample_sets_by_features([QueryFeatureMutationSPDI('reference:1167:2:A')])
-    assert {sampleA.id} == set(sample_sets[f'reference:1167:2:A'])
+    assert 0 == len(sample_sets)
 
+    # Test deletion 2 bp (no unknown)
     sample_sets = sample_service.find_unknown_sample_sets_by_features([QueryFeatureMutationSPDI('reference:1167:AT:A')])
-    assert {sampleA.id} == set(sample_sets[f'reference:1167:AT:A'])
+    assert 0 == len(sample_sets)
 
+    # Test deletion 3 bp (no unknown)
     sample_sets = sample_service.find_unknown_sample_sets_by_features(
         [QueryFeatureMutationSPDI('reference:1167:ATT:A')])
-    assert {sampleA.id} == set(sample_sets[f'reference:1167:ATT:A'])
+    assert 0 == len(sample_sets)
 
+    # Test overlapping deletion but with insertion (no unknown)
     sample_sets = sample_service.find_unknown_sample_sets_by_features(
         [QueryFeatureMutationSPDI('reference:1167:1:AGG')])
     assert 0 == len(sample_sets)
 
+    # Test overlapping deletion but with insertion of 2 bp (no unknown)
     sample_sets = sample_service.find_unknown_sample_sets_by_features([QueryFeatureMutationSPDI('reference:1167:2:AT')])
-    assert {sampleA.id} == set(sample_sets[f'reference:1167:2:AT'])
+    assert 0 == len(sample_sets)
 
 
 def test_find_features_spdi_for_hgvsgn(database, sample_service_snpeff_annotations: SampleService):
