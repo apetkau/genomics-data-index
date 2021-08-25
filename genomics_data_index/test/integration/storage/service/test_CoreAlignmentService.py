@@ -61,7 +61,8 @@ def replace_ref_name(alignment):
             s.description = 'generated automatically'
 
 
-def replace_gap_with_n_and_upper(alignment: MultipleSeqAlignment, position_set: Set[int] = None) -> MultipleSeqAlignment:
+def replace_gap_with_n_and_upper(alignment: MultipleSeqAlignment,
+                                 position_set: Set[int] = None) -> MultipleSeqAlignment:
     for record in alignment:
         seq = record.seq.tomutable()
         for index, character in enumerate(seq):
@@ -75,7 +76,8 @@ def replace_gap_with_n_and_upper(alignment: MultipleSeqAlignment, position_set: 
     return alignment
 
 
-def replace_n_with_gap_and_upper(alignment: MultipleSeqAlignment, position_set: Set[int] = None) -> MultipleSeqAlignment:
+def replace_n_with_gap_and_upper(alignment: MultipleSeqAlignment,
+                                 position_set: Set[int] = None) -> MultipleSeqAlignment:
     for record in alignment:
         seq = record.seq.tomutable()
         for index, character in enumerate(seq):
@@ -228,7 +230,7 @@ def expected_alignment_full_snps_mnp_deletions(expected_alignment_full_unmodifie
     masked_positions = BedTool(masked_positions_snippy_bed)
     positions_to_fill_with_n = set()
     for interval in masked_positions:
-        positions_to_fill_with_n = positions_to_fill_with_n | set(range(interval.start+1, interval.end+1))
+        positions_to_fill_with_n = positions_to_fill_with_n | set(range(interval.start + 1, interval.end + 1))
 
     alignment = replace_gap_with_n_and_upper(alignment, position_set=positions_to_fill_with_n)
 
