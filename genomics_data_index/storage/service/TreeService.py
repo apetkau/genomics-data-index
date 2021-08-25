@@ -88,7 +88,7 @@ class TreeService:
                 raise Exception(f'tree_type=[{tree_build_type}] is invalid')
 
     def rebuild_tree(self, reference_name: str, num_cores: int = 1, tree_build_type='iqtree',
-                     align_type='core', include_variants: List[str] = None, extra_params=None):
+                     align_type='full', include_variants: List[str] = None, extra_params=None):
         logger.debug('Building alignment')
         alignment = self._core_alignment_service.construct_alignment(reference_name=reference_name,
                                                                      include_reference=True,
