@@ -3265,10 +3265,6 @@ def test_summary_features_kindmutations(loaded_database_connection: DataIndexCon
     expected_df['Total'] = 9
     expected_df['Percent'] = 100 * (expected_df['Count'] / expected_df['Total'])
 
-    f = ['reference:461:AAAT:G']
-    warnings.warn(f'Removing {f} from expected until I can figure out how to properly handle these')
-    expected_df = expected_df.drop(f)
-
     mutations_df = query(loaded_database_connection).features_summary(ignore_annotations=True)
     mutations_df = mutations_df.sort_index()
 
@@ -3279,6 +3275,7 @@ def test_summary_features_kindmutations(loaded_database_connection: DataIndexCon
     assert list(expected_df['Total']) == list(mutations_df['Total'])
     assert list(expected_df['Type']) == list(mutations_df['Type'])
     assert math.isclose(100 * (2 / 9), mutations_df.loc['reference:619:G:C', 'Percent'])
+    assert math.isclose(100 * (1 / 9), mutations_df.loc['reference:461:AAAT:G', 'Percent'])
 
     # Test including unknowns
     mutations_df = query(loaded_database_connection).features_summary(ignore_annotations=True,
@@ -3286,7 +3283,7 @@ def test_summary_features_kindmutations(loaded_database_connection: DataIndexCon
     mutations_df['Percent'] = mutations_df['Percent'].astype(int)  # Convert to int for easier comparison
     mutations_df = mutations_df.sort_index()
 
-    assert 632 == len(mutations_df)
+    assert 112 + 440 == len(mutations_df)
     assert list(expected_df.columns) == list(mutations_df.columns)
     assert 2 == mutations_df.loc['reference:619:G:C', 'Count']
     assert 'SNP' == mutations_df.loc['reference:619:G:C', 'Type']
@@ -3296,7 +3293,7 @@ def test_summary_features_kindmutations(loaded_database_connection: DataIndexCon
     assert 3 == mutations_df.loc['reference:90:T:?', 'Count']
     assert 'UNKNOWN_MISSING' == mutations_df.loc['reference:90:T:?', 'Type']
     assert 2 == mutations_df.loc['reference:190:A:?', 'Count']
-    assert 1 == mutations_df.loc['reference:887:T:?', 'Count']
+    assert 1 == mutations_df.loc['reference:210:C:?', 'Count']
 
     # Test only include unknowns
     mutations_df = query(loaded_database_connection).features_summary(ignore_annotations=True,
@@ -3305,12 +3302,12 @@ def test_summary_features_kindmutations(loaded_database_connection: DataIndexCon
     mutations_df['Percent'] = mutations_df['Percent'].astype(int)  # Convert to int for easier comparison
     mutations_df = mutations_df.sort_index()
 
-    assert 521 == len(mutations_df)
+    assert 440 == len(mutations_df)
     assert list(expected_df.columns) == list(mutations_df.columns)
     assert 3 == mutations_df.loc['reference:90:T:?', 'Count']
     assert 'UNKNOWN_MISSING' == mutations_df.loc['reference:90:T:?', 'Type']
     assert 2 == mutations_df.loc['reference:190:A:?', 'Count']
-    assert 1 == mutations_df.loc['reference:887:T:?', 'Count']
+    assert 1 == mutations_df.loc['reference:210:C:?', 'Count']
     assert 'reference:619:G:C' not in mutations_df
 
 
@@ -3332,17 +3329,13 @@ def test_summary_features_kindmutations_unique(loaded_database_connection: DataI
     expected_df['Total'] = 1
     expected_df['Percent'] = 100 * (expected_df['Count'] / expected_df['Total'])
 
-    f = ['reference:461:AAAT:G']
-    warnings.warn(f'Removing {f} from expected until I can figure out how to properly handle these')
-    expected_df = expected_df.drop(f)
-
     q = query(loaded_database_connection)
 
     mutations_df = q.isa('SampleA').features_summary(selection='unique', ignore_annotations=True)
     mutations_df = mutations_df.sort_index()
 
     assert len(expected_df) == len(mutations_df)
-    assert 45 == len(mutations_df)  # Check length against independently generated length
+    assert 46 == len(mutations_df)  # Check length against independently generated length
     assert list(expected_df.index) == list(mutations_df.index)
     assert list(expected_df['Count']) == list(mutations_df['Count'])
     assert list(expected_df['Total']) == list(mutations_df['Total'])
@@ -3438,16 +3431,12 @@ def test_summary_features_kindmutations_unique(loaded_database_connection: DataI
     expected_df['Total'] = 3
     expected_df['Percent'] = 100 * (expected_df['Count'] / expected_df['Total'])
 
-    f = ['reference:461:AAAT:G']
-    warnings.warn(f'Removing {f} from expected until I can figure out how to properly handle these')
-    expected_df = expected_df.drop(f)
-
     mutations_df = q.isin(['SampleA', 'SampleB', 'SampleC']).features_summary(selection='unique',
                                                                               ignore_annotations=True)
     mutations_df = mutations_df.sort_index()
 
     assert len(expected_df) == len(mutations_df)
-    assert 111 == len(mutations_df)  # Check length against independently generated length
+    assert 112 == len(mutations_df)  # Check length against independently generated length
     assert list(expected_df.index) == list(mutations_df.index)
     assert list(expected_df['Count']) == list(mutations_df['Count'])
     assert list(expected_df['Type']) == list(mutations_df['Type'])
