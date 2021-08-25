@@ -181,7 +181,7 @@ def load_variants_common(data_index_connection: DataIndexConnection, ncores: int
 @click.option('--build-tree/--no-build-tree', default=False, help='Builds tree of all samples after loading')
 @click.option('--align-type', help=f'The type of alignment to generate', default='full',
               type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
-@click.option('--include-variants', help=f'Which type of variant to include in tree.',
+@click.option('--include-variants', help=f'Which type of variant(s) to include in tree.',
               default=CoreAlignmentService.INCLUDE_VARIANT_DEFAULT,
               type=click.Choice(CoreAlignmentService.INCLUDE_VARIANT_TYPES), multiple=True)
 @click.option('--extra-tree-params', help='Extra parameters to tree-building software',
@@ -233,7 +233,7 @@ def load_snippy(ctx, snippy_dir: str, reference_file: str, reference_name: str,
 @click.option('--build-tree/--no-build-tree', default=False, help='Builds tree of all samples after loading')
 @click.option('--align-type', help=f'The type of alignment to generate', default='full',
               type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
-@click.option('--include-variants', help=f'Which type of variant to include in tree.',
+@click.option('--include-variants', help=f'Which type of variant(s) to include in tree.',
               default=CoreAlignmentService.INCLUDE_VARIANT_DEFAULT,
               type=click.Choice(CoreAlignmentService.INCLUDE_VARIANT_TYPES), multiple=True)
 @click.option('--extra-tree-params', help='Extra parameters to tree-building software',
@@ -493,7 +493,7 @@ def input_split_file(absolute: bool, output_dir: str, output_samples_file: str, 
 @click.option('--build-tree/--no-build-tree', default=False, help='Builds tree of all samples after loading')
 @click.option('--align-type', help=f'The type of alignment to generate', default='full',
               type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
-@click.option('--include-variants', help=f'Which type of variant to include in tree.',
+@click.option('--include-variants', help=f'Which type of variant(s) to include in tree.',
               default=CoreAlignmentService.INCLUDE_VARIANT_DEFAULT,
               type=click.Choice(CoreAlignmentService.INCLUDE_VARIANT_TYPES), multiple=True)
 @click.option('--extra-tree-params', help='Extra parameters to tree-building software',
@@ -679,7 +679,7 @@ def build(ctx):
 @click.option('--reference-name', help='Reference genome name', required=True, type=str)
 @click.option('--align-type', help=f'The type of alignment to generate', default='full',
               type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
-@click.option('--include-variants', help=f'Which type of variant to include.',
+@click.option('--include-variants', help=f'Which type of variant(s) to include.',
               default=CoreAlignmentService.INCLUDE_VARIANT_DEFAULT,
               type=click.Choice(CoreAlignmentService.INCLUDE_VARIANT_TYPES), multiple=True)
 @click.option('--sample', help='Sample to include in alignment (can list more than one).',
@@ -724,7 +724,7 @@ supported_tree_build_types = ['iqtree']
               type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
 @click.option('--tree-build-type', help=f'The type of tree building software', default='iqtree',
               type=click.Choice(supported_tree_build_types))
-@click.option('--include-variants', help=f'Which type of variant to include.',
+@click.option('--include-variants', help=f'Which type of variant(s) to include.',
               default=CoreAlignmentService.INCLUDE_VARIANT_DEFAULT,
               type=click.Choice(CoreAlignmentService.INCLUDE_VARIANT_TYPES), multiple=True)
 @click.option('--sample', help='Sample to include in tree (can list more than one).',
@@ -779,7 +779,7 @@ def rebuild(ctx):
 @click.argument('reference', type=str, nargs=-1)
 @click.option('--align-type', help=f'The type of alignment to use for generating the tree', default='full',
               type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
-@click.option('--include-variants', help=f'Which type of variant to include.',
+@click.option('--include-variants', help=f'Which type of variant(s) to include.',
               default=CoreAlignmentService.INCLUDE_VARIANT_DEFAULT,
               type=click.Choice(CoreAlignmentService.INCLUDE_VARIANT_TYPES), multiple=True)
 @click.option('--extra-params', help='Extra parameters to tree-building software',

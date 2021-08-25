@@ -23,8 +23,10 @@ logger = logging.getLogger(__name__)
 
 class CoreAlignmentService:
     ALIGN_TYPES = ['core', 'full']
-    INCLUDE_VARIANT_TYPES = ['SNP', 'MNP']
-    INCLUDE_VARIANT_DEFAULT = ['SNP']
+    INCLUDE_VARIANT_SUBSTITUTION = ['SNP', 'MNP']
+    INCLUDE_VARIANT_DELETION = ['DELETION', 'DELETION_OTHER']
+    INCLUDE_VARIANT_TYPES = INCLUDE_VARIANT_SUBSTITUTION + INCLUDE_VARIANT_DELETION
+    INCLUDE_VARIANT_DEFAULT = ['SNP', 'MNP', 'DELETION']
 
     # Mask generated sequence with this character (which should not appear anywhere else) so I can remove
     # all positions with this character later (when generating core alignment)
@@ -120,12 +122,33 @@ class CoreAlignmentService:
             raise Exception(f'align_type={align_type} and include_variants={include_variants}. Currently'
                             f' align_type=core only works with include_variants=["SNP"]')
         else:
-            for variant in include_variants:
-                if variant not in self.INCLUDE_VARIANT_TYPES:
-                    raise Exception(f'variant={variant} found in include_variants={include_variants}. '
+            subtitution_types = []
+            deletion_types = []
+            for variant_type in include_variants:
+                if variant_type not in self.INCLUDE_VARIANT_TYPES:
+                    raise Exception(f'variant_type={variant_type} found in include_variants={include_variants}. '
                                     f'Only {self.INCLUDE_VARIANT_TYPES} are supported')
+                elif variant_type in self.INCLUDE_VARIANT_SUBSTITUTION:
+                    subtitution_types.append(variant_type)
+                elif variant_type in self.INCLUDE_VARIANT_DELETION:
+                    deletion_types.append(variant_type)
 
-        include_expression = ' | '.join(f'(INFO/TYPE=="{variant}")' for variant in include_variants)
+        include_expression = ''
+        if len(deletion_types) == 1:
+            deletion_type = deletion_types[0]
+            # To make sure I only include deletions (out of all INDELs) I use (ILEN<0) which
+            # represents INDELs that are deletions (see <http://samtools.github.io/bcftools/bcftools.html#expressions>).
+            if deletion_type == 'DELETION':
+                include_expression = '((INFO/TYPE=="INDEL") & (ILEN<0))'
+            elif deletion_type == 'DELETION_OTHER':
+                include_expression = '(ILEN<0)'
+            else:
+                raise Exception(f'deletion_type={deletion_type} is invalid. Must be one of '
+                                f'{self.INCLUDE_VARIANT_DELETION}')
+        elif len(deletion_types) > 1:
+            raise Exception(f'Can only set one of {self.INCLUDE_VARIANT_DELETION}, got {deletion_types}')
+
+        include_expression = include_expression + ' | '.join(f'(INFO/TYPE=="{variant}")' for variant in subtitution_types)
 
         sample_nucleotide_variants = self._variation_service.get_sample_nucleotide_variation(samples)
 
