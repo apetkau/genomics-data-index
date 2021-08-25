@@ -24,4 +24,3 @@ for file in sys.argv[2:]:
         print(f'{file} contains {sequence}:{position}')
 #    else:
 #        print(f'{file} does not contain {sequence}:{position}')
-

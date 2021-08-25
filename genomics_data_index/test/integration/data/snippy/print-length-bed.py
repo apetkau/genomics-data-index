@@ -3,7 +3,6 @@
 # Usage: cat file.bed | print-length-bed.py 
 
 import sys
-from pathlib import Path
 
 from pybedtools import BedTool
 
@@ -15,4 +14,3 @@ for i in bed:
     total += len(i)
 
 print(total)
-

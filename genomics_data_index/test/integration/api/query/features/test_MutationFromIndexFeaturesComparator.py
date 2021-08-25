@@ -1,5 +1,3 @@
-import warnings
-
 import pandas as pd
 
 from genomics_data_index.api.query.GenomicsDataIndex import GenomicsDataIndex
