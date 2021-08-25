@@ -159,6 +159,10 @@ def load_variants_common(data_index_connection: DataIndexConnection, ncores: int
         logger.info(f'Loaded variants from [{input}] into database')
 
         if build_tree:
+            if align_type == 'core':
+                logger.info(f'--align-type {align_type} so changing to --include-variants SNP')
+                include_variants = ['SNP']
+
             tree_service.rebuild_tree(reference_name=reference_name,
                                       align_type=align_type,
                                       include_variants=include_variants,
@@ -179,9 +183,10 @@ def load_variants_common(data_index_connection: DataIndexConnection, ncores: int
 @click.option('--sample-batch-size', help='Number of samples to process within a single batch.', default=2000,
               type=click.IntRange(min=1))
 @click.option('--build-tree/--no-build-tree', default=False, help='Builds tree of all samples after loading')
-@click.option('--align-type', help=f'The type of alignment to generate', default='full',
+@click.option('--align-type', help=f'The type of alignment to generate '
+                                   f'("core" implies is only --include-variants "SNP")', default='full',
               type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
-@click.option('--include-variants', help=f'Which type of variant to include in tree.',
+@click.option('--include-variants', help=f'Which type of variant(s) to include in tree.',
               default=CoreAlignmentService.INCLUDE_VARIANT_DEFAULT,
               type=click.Choice(CoreAlignmentService.INCLUDE_VARIANT_TYPES), multiple=True)
 @click.option('--extra-tree-params', help='Extra parameters to tree-building software',
@@ -231,9 +236,10 @@ def load_snippy(ctx, snippy_dir: str, reference_file: str, reference_name: str,
 @click.option('--sample-batch-size', help='Number of samples to process within a single batch.', default=2000,
               type=click.IntRange(min=1))
 @click.option('--build-tree/--no-build-tree', default=False, help='Builds tree of all samples after loading')
-@click.option('--align-type', help=f'The type of alignment to generate', default='full',
+@click.option('--align-type', help=f'The type of alignment to generate '
+                                   f'("core" implies is only --include-variants "SNP")', default='full',
               type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
-@click.option('--include-variants', help=f'Which type of variant to include in tree.',
+@click.option('--include-variants', help=f'Which type of variant(s) to include in tree.',
               default=CoreAlignmentService.INCLUDE_VARIANT_DEFAULT,
               type=click.Choice(CoreAlignmentService.INCLUDE_VARIANT_TYPES), multiple=True)
 @click.option('--extra-tree-params', help='Extra parameters to tree-building software',
@@ -491,9 +497,10 @@ def input_split_file(absolute: bool, output_dir: str, output_samples_file: str, 
               required=False, default=True)
 @click.option('--clean/--no-clean', help='Clean up intermediate files when finished.', default=True)
 @click.option('--build-tree/--no-build-tree', default=False, help='Builds tree of all samples after loading')
-@click.option('--align-type', help=f'The type of alignment to generate', default='full',
+@click.option('--align-type', help=f'The type of alignment to generate '
+                                   f'("core" implies is only --include-variants "SNP")', default='full',
               type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
-@click.option('--include-variants', help=f'Which type of variant to include in tree.',
+@click.option('--include-variants', help=f'Which type of variant(s) to include in tree.',
               default=CoreAlignmentService.INCLUDE_VARIANT_DEFAULT,
               type=click.Choice(CoreAlignmentService.INCLUDE_VARIANT_TYPES), multiple=True)
 @click.option('--extra-tree-params', help='Extra parameters to tree-building software',
@@ -677,9 +684,10 @@ def build(ctx):
 @click.pass_context
 @click.option('--output-file', help='Output file', required=True, type=click.Path())
 @click.option('--reference-name', help='Reference genome name', required=True, type=str)
-@click.option('--align-type', help=f'The type of alignment to generate', default='full',
+@click.option('--align-type', help=f'The type of alignment to generate '
+                                   f'("core" implies is only --include-variants "SNP")', default='full',
               type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
-@click.option('--include-variants', help=f'Which type of variant to include.',
+@click.option('--include-variants', help=f'Which type of variant(s) to include.',
               default=CoreAlignmentService.INCLUDE_VARIANT_DEFAULT,
               type=click.Choice(CoreAlignmentService.INCLUDE_VARIANT_TYPES), multiple=True)
 @click.option('--sample', help='Sample to include in alignment (can list more than one).',
@@ -702,6 +710,10 @@ def alignment(ctx, output_file: Path, reference_name: str, align_type: str,
         logger.error(f'Samples {set(sample) - found_samples} do not exist')
         sys.exit(1)
 
+    if align_type == 'core':
+        logger.info(f'--align-type {align_type} so changing to --include-variants SNP')
+        include_variants = ['SNP']
+
     alignment_data = alignment_service.construct_alignment(reference_name=reference_name,
                                                            samples=query.tolist(names=True),
                                                            align_type=align_type,
@@ -720,11 +732,12 @@ supported_tree_build_types = ['iqtree']
 @click.pass_context
 @click.option('--output-file', help='Output file', required=True, type=click.Path())
 @click.option('--reference-name', help='Reference genome name', type=str, required=True)
-@click.option('--align-type', help=f'The type of alignment to use for generating the tree', default='full',
+@click.option('--align-type', help=f'The type of alignment to use for generating the tree '
+                                   f'("core" implies is only --include-variants "SNP")', default='full',
               type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
 @click.option('--tree-build-type', help=f'The type of tree building software', default='iqtree',
               type=click.Choice(supported_tree_build_types))
-@click.option('--include-variants', help=f'Which type of variant to include.',
+@click.option('--include-variants', help=f'Which type of variant(s) to include.',
               default=CoreAlignmentService.INCLUDE_VARIANT_DEFAULT,
               type=click.Choice(CoreAlignmentService.INCLUDE_VARIANT_TYPES), multiple=True)
 @click.option('--sample', help='Sample to include in tree (can list more than one).',
@@ -755,6 +768,10 @@ def tree(ctx, output_file: Path, reference_name: str, align_type: str, include_v
         logger.error(f'align_type=[{align_type}] is not supported for tree_build_type=[{tree_build_type}]')
         sys.exit(1)
 
+    if align_type == 'core':
+        logger.info(f'--align-type {align_type} so changing to --include-variants SNP')
+        include_variants = ['SNP']
+
     tree_query = query.build_tree(kind='mutation',
                                   method=tree_build_type,
                                   align_type=align_type,
@@ -777,9 +794,10 @@ def rebuild(ctx):
 @rebuild.command(name='tree')
 @click.pass_context
 @click.argument('reference', type=str, nargs=-1)
-@click.option('--align-type', help=f'The type of alignment to use for generating the tree', default='full',
+@click.option('--align-type', help=f'The type of alignment to use for generating the tree '
+                                   f'("core" implies is only --include-variants "SNP")', default='full',
               type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
-@click.option('--include-variants', help=f'Which type of variant to include.',
+@click.option('--include-variants', help=f'Which type of variant(s) to include.',
               default=CoreAlignmentService.INCLUDE_VARIANT_DEFAULT,
               type=click.Choice(CoreAlignmentService.INCLUDE_VARIANT_TYPES), multiple=True)
 @click.option('--extra-params', help='Extra parameters to tree-building software',
@@ -800,6 +818,10 @@ def rebuild_tree(ctx, reference: List[str], align_type: str, include_variants: T
         if not reference_service.exists_reference_genome(reference_name):
             logger.error(f'Reference genome [{reference_name}] does not exist')
             sys.exit(1)
+
+    if align_type == 'core':
+        logger.info(f'--align-type {align_type} so changing to --include-variants SNP')
+        include_variants = ['SNP']
 
     for reference_name in reference:
         logger.info(f'Started rebuilding tree for reference genome [{reference_name}]')

@@ -13,6 +13,7 @@
 * [analysis]: All stages of the Snakemake workflow now have assigned conda environments (0.3.0.dev5).
 * [cli]: Added support for loading mask files as BED files in addition to sequence files (0.3.0.dev6).
 * [analysis]: Fixed issue where there was overlap between unknown/missing positions and VCF files (0.3.0.dev7).
+* [cli/api]: Added `--include-variants DELETION` and `--include-variants DELETION_OTHER` to include deletions in the alignment that is generated (represented by gaps `-`) (0.3.0.dev8).
 
 # 0.2.0
 

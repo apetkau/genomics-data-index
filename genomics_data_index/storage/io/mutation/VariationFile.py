@@ -114,7 +114,8 @@ class VariationFile:
     def consensus(self, reference_file: Path, mask_file: Path = None, include_expression: str = 'TYPE="SNP"',
                   mask_with: str = 'N') -> List[SeqRecord]:
         with tempfile.NamedTemporaryFile() as out_f:
-            command = ['bcftools', 'consensus', '--fasta-ref', str(reference_file)]
+            command = ['bcftools', 'consensus', '--fasta-ref', str(reference_file),
+                       '--mark-del', '-']
             if mask_file is not None:
                 command.extend(['--mask', str(mask_file), '--mask-with', mask_with])
             command.extend([
