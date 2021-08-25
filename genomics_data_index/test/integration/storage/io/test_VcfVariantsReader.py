@@ -238,16 +238,16 @@ def test_snippy_get_variants_table_parallel(variants_reader_from_snippy_parallel
 def test_snippy_get_variants_table_masked(variants_reader_from_snippy_masked):
     df = variants_reader_from_snippy_masked.get_features_table()
 
-    assert 1170 == len(df), 'Data has incorrect length'
+    assert 1079 == len(df), 'Data has incorrect length'
     assert {'SampleA', 'SampleB', 'SampleC'} == set(df['SAMPLE'].tolist()), 'Incorrect sample names'
 
     # Missing/unknown
-    assert 437 == len(df[(df['SAMPLE'] == 'SampleA') & (df['TYPE'] == 'UNKNOWN_MISSING')])
-    assert 276 == len(df[(df['SAMPLE'] == 'SampleB') & (df['TYPE'] == 'UNKNOWN_MISSING')])
-    assert 329 == len(df[(df['SAMPLE'] == 'SampleC') & (df['TYPE'] == 'UNKNOWN_MISSING')])
+    assert 414 == len(df[(df['SAMPLE'] == 'SampleA') & (df['TYPE'] == 'UNKNOWN_MISSING')])
+    assert 234 == len(df[(df['SAMPLE'] == 'SampleB') & (df['TYPE'] == 'UNKNOWN_MISSING')])
+    assert 302 == len(df[(df['SAMPLE'] == 'SampleC') & (df['TYPE'] == 'UNKNOWN_MISSING')])
 
     # Variants
-    assert 45 == len(df[(df['SAMPLE'] == 'SampleA') & (df['TYPE'] != 'UNKNOWN_MISSING')])
+    assert 46 == len(df[(df['SAMPLE'] == 'SampleA') & (df['TYPE'] != 'UNKNOWN_MISSING')])
     assert 50 == len(df[(df['SAMPLE'] == 'SampleB') & (df['TYPE'] != 'UNKNOWN_MISSING')])
     assert 33 == len(df[(df['SAMPLE'] == 'SampleC') & (df['TYPE'] != 'UNKNOWN_MISSING')])
 
@@ -255,16 +255,16 @@ def test_snippy_get_variants_table_masked(variants_reader_from_snippy_masked):
 def test_snippy_get_variants_table_masked_parallel(variants_reader_from_snippy_masked_parallel):
     df = variants_reader_from_snippy_masked_parallel.get_features_table()
 
-    assert 1170 == len(df), 'Data has incorrect length'
+    assert 1079 == len(df), 'Data has incorrect length'
     assert {'SampleA', 'SampleB', 'SampleC'} == set(df['SAMPLE'].tolist()), 'Incorrect sample names'
 
     # Missing/unknown
-    assert 437 == len(df[(df['SAMPLE'] == 'SampleA') & (df['TYPE'] == 'UNKNOWN_MISSING')])
-    assert 276 == len(df[(df['SAMPLE'] == 'SampleB') & (df['TYPE'] == 'UNKNOWN_MISSING')])
-    assert 329 == len(df[(df['SAMPLE'] == 'SampleC') & (df['TYPE'] == 'UNKNOWN_MISSING')])
+    assert 414 == len(df[(df['SAMPLE'] == 'SampleA') & (df['TYPE'] == 'UNKNOWN_MISSING')])
+    assert 234 == len(df[(df['SAMPLE'] == 'SampleB') & (df['TYPE'] == 'UNKNOWN_MISSING')])
+    assert 302 == len(df[(df['SAMPLE'] == 'SampleC') & (df['TYPE'] == 'UNKNOWN_MISSING')])
 
     # Variants
-    assert 45 == len(df[(df['SAMPLE'] == 'SampleA') & (df['TYPE'] != 'UNKNOWN_MISSING')])
+    assert 46 == len(df[(df['SAMPLE'] == 'SampleA') & (df['TYPE'] != 'UNKNOWN_MISSING')])
     assert 50 == len(df[(df['SAMPLE'] == 'SampleB') & (df['TYPE'] != 'UNKNOWN_MISSING')])
     assert 33 == len(df[(df['SAMPLE'] == 'SampleC') & (df['TYPE'] != 'UNKNOWN_MISSING')])
 
@@ -272,31 +272,31 @@ def test_snippy_get_variants_table_masked_parallel(variants_reader_from_snippy_m
 def test_snippy_get_variants_table_masked_multicore(variants_reader_from_snippy_masked_multicore):
     df = variants_reader_from_snippy_masked_multicore.get_features_table()
 
-    assert 1170 == len(df), 'Data has incorrect length'
+    assert 1079 == len(df), 'Data has incorrect length'
     assert {'SampleA', 'SampleB', 'SampleC'} == set(df['SAMPLE'].tolist()), 'Incorrect sample names'
 
     # Missing/unknown
-    assert 437 == len(df[(df['SAMPLE'] == 'SampleA') & (df['TYPE'] == 'UNKNOWN_MISSING')])
-    assert 276 == len(df[(df['SAMPLE'] == 'SampleB') & (df['TYPE'] == 'UNKNOWN_MISSING')])
-    assert 329 == len(df[(df['SAMPLE'] == 'SampleC') & (df['TYPE'] == 'UNKNOWN_MISSING')])
+    assert 414 == len(df[(df['SAMPLE'] == 'SampleA') & (df['TYPE'] == 'UNKNOWN_MISSING')])
+    assert 234 == len(df[(df['SAMPLE'] == 'SampleB') & (df['TYPE'] == 'UNKNOWN_MISSING')])
+    assert 302 == len(df[(df['SAMPLE'] == 'SampleC') & (df['TYPE'] == 'UNKNOWN_MISSING')])
 
     # Variants
-    assert 45 == len(df[(df['SAMPLE'] == 'SampleA') & (df['TYPE'] != 'UNKNOWN_MISSING')])
+    assert 46 == len(df[(df['SAMPLE'] == 'SampleA') & (df['TYPE'] != 'UNKNOWN_MISSING')])
     assert 50 == len(df[(df['SAMPLE'] == 'SampleB') & (df['TYPE'] != 'UNKNOWN_MISSING')])
     assert 33 == len(df[(df['SAMPLE'] == 'SampleC') & (df['TYPE'] != 'UNKNOWN_MISSING')])
 
 
 def test_snippy_get_genomic_masks(variants_reader_from_snippy):
     mask = variants_reader_from_snippy.get_genomic_masked_region('SampleA')
-    assert 437 == len(mask)
+    assert 414 == len(mask)
     assert {'reference'} == mask.sequence_names()
 
     mask = variants_reader_from_snippy.get_genomic_masked_region('SampleB')
-    assert 276 == len(mask)
+    assert 234 == len(mask)
     assert {'reference'} == mask.sequence_names()
 
     mask = variants_reader_from_snippy.get_genomic_masked_region('SampleC')
-    assert 329 == len(mask)
+    assert 302 == len(mask)
     assert {'reference'} == mask.sequence_names()
 
 
