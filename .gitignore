@@ -4,5 +4,6 @@
 /build
 /dist
 *.egg-info
+*.swp
 /docs/tutorial
 /test-index
