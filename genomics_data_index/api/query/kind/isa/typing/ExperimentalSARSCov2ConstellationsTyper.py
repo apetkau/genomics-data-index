@@ -26,6 +26,8 @@ class ExperimentalSARSCov2ConstellationsTyper(SamplesTypingIsaKind):
     This parses constellation definitions from https://github.com/cov-lineages/constellations/blob/main/constellations/definitions
     TODO: I need to review code in here https://github.com/cov-lineages/scorpio/blob/main/scorpio/scripts/type_constellations.py
           to make sure I match what's going on there.
+    TODO: There are still some bugs with this. In particular, I've noticed typing B.1.1.7 doesn't work due to different standards in naming
+          mutations between HGVS notation and names given in the constellation files (S:p.Y145del vs. s:Y144-).
     """
 
     def __init__(self, constellation_files: Union[List[Path], List[str]],
