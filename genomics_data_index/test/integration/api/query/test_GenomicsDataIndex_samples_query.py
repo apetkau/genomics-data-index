@@ -1,5 +1,4 @@
 import math
-import warnings
 from typing import cast
 
 import pandas as pd
@@ -1536,6 +1535,7 @@ def test_query_chained_mlst_alleles_has_allele(loaded_database_connection: DataI
 
 def test_query_chained_mlst_nucleotide(loaded_database_connection: DataIndexConnection):
     db = loaded_database_connection.database
+    sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
     sampleB = db.get_session().query(Sample).filter(Sample.name == 'SampleB').one()
     sampleC = db.get_session().query(Sample).filter(Sample.name == 'SampleC').one()
     all_sample_ids = {i for i, in db.get_session().query(Sample.id).all()}
@@ -1554,10 +1554,10 @@ def test_query_chained_mlst_nucleotide(loaded_database_connection: DataIndexConn
     assert ['SampleC'] == query_result.tolist()
     assert [sampleC.id] == query_result.tolist(names=False)
 
-    # Test query MLST then mutation with a deletion that will be switched to unknown
+    # Test query MLST then mutation that will be switched to unknown
     query_result = query(loaded_database_connection) \
-        .hasa('mlst:lmonocytogenes:cat:11', kind='mlst') \
-        .hasa('reference:3897:GCGCA:G', kind='mutation')
+        .hasa('mlst:lmonocytogenes:bglA:52', kind='mlst') \
+        .hasa('reference:3319:1:G', kind='mutation')
     assert 0 == len(query_result)
     assert 1 == len(query_result.unknown_set)
     assert {sampleB.id} == set(query_result.unknown_set)
@@ -1565,21 +1565,21 @@ def test_query_chained_mlst_nucleotide(loaded_database_connection: DataIndexConn
     assert all_sample_ids - {sampleB.id} == set(query_result.absent_set)
     assert 9 == len(query_result.universe_set)
 
-    # Test query MLST (with unknown allele) then mutation with a deletion that will be switched to unknown
+    # Test query MLST (with unknown allele) then mutation that will be switched to unknown
     query_result = query(loaded_database_connection) \
         .hasa('mlst:lmonocytogenes:ldh:5', kind='mlst') \
-        .hasa('reference:3897:GCGCA:G', kind='mutation')
+        .hasa('reference:1:1:G', kind='mutation')
     assert 0 == len(query_result)
-    assert 2 == len(query_result.unknown_set)
-    assert {sampleB.id, sampleC.id} == set(query_result.unknown_set)
-    assert 7 == len(query_result.absent_set)
-    assert all_sample_ids - {sampleB.id, sampleC.id} == set(query_result.absent_set)
+    assert 3 == len(query_result.unknown_set)
+    assert {sampleA.id, sampleB.id, sampleC.id} == set(query_result.unknown_set)
+    assert 6 == len(query_result.absent_set)
+    assert all_sample_ids - {sampleA.id, sampleB.id, sampleC.id} == set(query_result.absent_set)
     assert 9 == len(query_result.universe_set)
 
-    # Test the unknown allele of MLST with a deletion that will be switched to unknown
+    # Test the unknown allele of MLST with a mutation that will be switched to unknown
     query_result = query(loaded_database_connection) \
         .hasa('mlst:lmonocytogenes:ldh:?', kind='mlst') \
-        .hasa('reference:3897:GCGCA:G', kind='mutation')
+        .hasa('reference:3319:1:G', kind='mutation')
     assert 0 == len(query_result)
     assert 1 == len(query_result.unknown_set)
     assert {sampleB.id} == set(query_result.unknown_set)
@@ -3265,10 +3265,6 @@ def test_summary_features_kindmutations(loaded_database_connection: DataIndexCon
     expected_df['Total'] = 9
     expected_df['Percent'] = 100 * (expected_df['Count'] / expected_df['Total'])
 
-    f = ['reference:461:AAAT:G']
-    warnings.warn(f'Removing {f} from expected until I can figure out how to properly handle these')
-    expected_df = expected_df.drop(f)
-
     mutations_df = query(loaded_database_connection).features_summary(ignore_annotations=True)
     mutations_df = mutations_df.sort_index()
 
@@ -3279,6 +3275,7 @@ def test_summary_features_kindmutations(loaded_database_connection: DataIndexCon
     assert list(expected_df['Total']) == list(mutations_df['Total'])
     assert list(expected_df['Type']) == list(mutations_df['Type'])
     assert math.isclose(100 * (2 / 9), mutations_df.loc['reference:619:G:C', 'Percent'])
+    assert math.isclose(100 * (1 / 9), mutations_df.loc['reference:461:AAAT:G', 'Percent'])
 
     # Test including unknowns
     mutations_df = query(loaded_database_connection).features_summary(ignore_annotations=True,
@@ -3286,7 +3283,7 @@ def test_summary_features_kindmutations(loaded_database_connection: DataIndexCon
     mutations_df['Percent'] = mutations_df['Percent'].astype(int)  # Convert to int for easier comparison
     mutations_df = mutations_df.sort_index()
 
-    assert 632 == len(mutations_df)
+    assert 112 + 440 == len(mutations_df)
     assert list(expected_df.columns) == list(mutations_df.columns)
     assert 2 == mutations_df.loc['reference:619:G:C', 'Count']
     assert 'SNP' == mutations_df.loc['reference:619:G:C', 'Type']
@@ -3296,7 +3293,7 @@ def test_summary_features_kindmutations(loaded_database_connection: DataIndexCon
     assert 3 == mutations_df.loc['reference:90:T:?', 'Count']
     assert 'UNKNOWN_MISSING' == mutations_df.loc['reference:90:T:?', 'Type']
     assert 2 == mutations_df.loc['reference:190:A:?', 'Count']
-    assert 1 == mutations_df.loc['reference:887:T:?', 'Count']
+    assert 1 == mutations_df.loc['reference:210:C:?', 'Count']
 
     # Test only include unknowns
     mutations_df = query(loaded_database_connection).features_summary(ignore_annotations=True,
@@ -3305,12 +3302,12 @@ def test_summary_features_kindmutations(loaded_database_connection: DataIndexCon
     mutations_df['Percent'] = mutations_df['Percent'].astype(int)  # Convert to int for easier comparison
     mutations_df = mutations_df.sort_index()
 
-    assert 521 == len(mutations_df)
+    assert 440 == len(mutations_df)
     assert list(expected_df.columns) == list(mutations_df.columns)
     assert 3 == mutations_df.loc['reference:90:T:?', 'Count']
     assert 'UNKNOWN_MISSING' == mutations_df.loc['reference:90:T:?', 'Type']
     assert 2 == mutations_df.loc['reference:190:A:?', 'Count']
-    assert 1 == mutations_df.loc['reference:887:T:?', 'Count']
+    assert 1 == mutations_df.loc['reference:210:C:?', 'Count']
     assert 'reference:619:G:C' not in mutations_df
 
 
@@ -3332,17 +3329,13 @@ def test_summary_features_kindmutations_unique(loaded_database_connection: DataI
     expected_df['Total'] = 1
     expected_df['Percent'] = 100 * (expected_df['Count'] / expected_df['Total'])
 
-    f = ['reference:461:AAAT:G']
-    warnings.warn(f'Removing {f} from expected until I can figure out how to properly handle these')
-    expected_df = expected_df.drop(f)
-
     q = query(loaded_database_connection)
 
     mutations_df = q.isa('SampleA').features_summary(selection='unique', ignore_annotations=True)
     mutations_df = mutations_df.sort_index()
 
     assert len(expected_df) == len(mutations_df)
-    assert 45 == len(mutations_df)  # Check length against independently generated length
+    assert 46 == len(mutations_df)  # Check length against independently generated length
     assert list(expected_df.index) == list(mutations_df.index)
     assert list(expected_df['Count']) == list(mutations_df['Count'])
     assert list(expected_df['Total']) == list(mutations_df['Total'])
@@ -3438,16 +3431,12 @@ def test_summary_features_kindmutations_unique(loaded_database_connection: DataI
     expected_df['Total'] = 3
     expected_df['Percent'] = 100 * (expected_df['Count'] / expected_df['Total'])
 
-    f = ['reference:461:AAAT:G']
-    warnings.warn(f'Removing {f} from expected until I can figure out how to properly handle these')
-    expected_df = expected_df.drop(f)
-
     mutations_df = q.isin(['SampleA', 'SampleB', 'SampleC']).features_summary(selection='unique',
                                                                               ignore_annotations=True)
     mutations_df = mutations_df.sort_index()
 
     assert len(expected_df) == len(mutations_df)
-    assert 111 == len(mutations_df)  # Check length against independently generated length
+    assert 112 == len(mutations_df)  # Check length against independently generated length
     assert list(expected_df.index) == list(mutations_df.index)
     assert list(expected_df['Count']) == list(mutations_df['Count'])
     assert list(expected_df['Type']) == list(mutations_df['Type'])
@@ -4099,41 +4088,37 @@ def test_tofeaturesset_all(loaded_database_only_snippy: DataIndexConnection):
         'Mutation': 'count',
     }).rename(columns={'Mutation': 'Count'}).sort_index()
 
-    f = ['reference:461:AAAT:G']
-    warnings.warn(f'Removing {f} from expected until I can figure out how to properly handle these')
-    expected_df = expected_df.drop(f)
-
     expected_set = set(expected_df.index)
 
     # Test default (no unknown features)
     mutations = query(loaded_database_only_snippy).tofeaturesset()
-    assert 111 == len(mutations)
+    assert 112 == len(mutations)
     assert set(expected_set) == set(mutations)
 
     # Test include unknowns
     mutations = query(loaded_database_only_snippy).tofeaturesset(include_unknown_features=True)
-    assert 632 == len(mutations)
+    assert 112 + 440 == len(mutations)
 
     # Test only unknowns
     mutations = query(loaded_database_only_snippy).tofeaturesset(include_present_features=False,
                                                                  include_unknown_features=True)
-    assert 521 == len(mutations)
+    assert 440 == len(mutations)
 
 
 def test_tofeaturesset_unique_all_selected(loaded_database_connection: DataIndexConnection):
     unique_mutations = query(loaded_database_connection).tofeaturesset(selection='unique')
-    assert 111 == len(unique_mutations)
+    assert 112 == len(unique_mutations)
 
     # Include unknowns
     unique_mutations = query(loaded_database_connection).tofeaturesset(selection='unique',
                                                                        include_unknown_features=True)
-    assert 632 == len(unique_mutations)
+    assert 112 + 440 == len(unique_mutations)
 
     # Include only unknowns
     unique_mutations = query(loaded_database_connection).tofeaturesset(selection='unique',
                                                                        include_present_features=False,
                                                                        include_unknown_features=True)
-    assert 521 == len(unique_mutations)
+    assert 440 == len(unique_mutations)
 
 
 def test_tofeaturesset_unique_none_selected(loaded_database_connection: DataIndexConnection):
@@ -4149,28 +4134,24 @@ def test_tofeaturesset_unique_one_sample(loaded_database_only_snippy: DataIndexC
     with open(data_dir / 'features_in_A_not_BC.txt', 'r') as fh:
         expected_set = {line.rstrip() for line in fh}
 
-    f = {'reference:461:AAAT:G'}
-    warnings.warn(f'Removing {f} from expected until I can figure out how to properly handle these')
-    expected_set = expected_set - f
-
     sample_setA = SampleSet([sampleA.id])
 
     # No unknowns
     query_A = query(loaded_database_only_snippy).intersect(sample_setA)
     unique_mutations_A = query_A.tofeaturesset(selection='unique')
-    assert 45 == len(unique_mutations_A)
+    assert 46 == len(unique_mutations_A)
     assert expected_set == unique_mutations_A
 
     # Include unknowns
     query_A = query(loaded_database_only_snippy).intersect(sample_setA)
     unique_mutations_A = query_A.tofeaturesset(selection='unique', include_unknown_features=True)
-    assert 45 + 138 == len(unique_mutations_A)
+    assert 46 + 115 == len(unique_mutations_A)
 
     # Include only unknowns
     query_A = query(loaded_database_only_snippy).intersect(sample_setA)
     unique_mutations_A = query_A.tofeaturesset(selection='unique', include_unknown_features=True,
                                                include_present_features=False)
-    assert 138 == len(unique_mutations_A)
+    assert 115 == len(unique_mutations_A)
 
 
 def test_tofeaturesset_unique_two_samples(loaded_database_only_snippy: DataIndexConnection):
@@ -4192,13 +4173,13 @@ def test_tofeaturesset_unique_two_samples(loaded_database_only_snippy: DataIndex
     # Include unknowns
     query_BC = query(loaded_database_only_snippy).intersect(sample_setBC)
     unique_mutations_BC = query_BC.tofeaturesset(selection='unique', include_unknown_features=True)
-    assert 66 + 84 == len(unique_mutations_BC)
+    assert 66 + 26 == len(unique_mutations_BC)
 
     # Include only unknowns
     query_BC = query(loaded_database_only_snippy).intersect(sample_setBC)
     unique_mutations_BC = query_BC.tofeaturesset(selection='unique', include_unknown_features=True,
                                                  include_present_features=False)
-    assert 84 == len(unique_mutations_BC)
+    assert 26 == len(unique_mutations_BC)
 
 
 def test_subsample(loaded_database_connection: DataIndexConnection):

@@ -43,12 +43,12 @@ def test_summaries_loaded_data(loaded_database_genomic_data_store: GenomicsDataI
     assert 1 == gds.count_references()
     assert ['genome'] == gds.reference_names()
 
-    assert 111 == gds.count_mutations('genome')
-    assert 632 == gds.count_mutations('genome', include_unknown=True)
+    assert 112 == gds.count_mutations('genome')
+    assert 112 + 440 == gds.count_mutations('genome', include_unknown=True)
 
     # Mutations ignore unknown spdi
     ms = gds.mutations_summary('genome', id_type='spdi', ignore_annotations=True)
-    assert 111 == len(ms)
+    assert 112 == len(ms)
     assert 'Mutation' == ms.index.name
     assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type', 'Count', 'Total', 'Percent'] == list(ms.columns)
 
@@ -62,7 +62,7 @@ def test_summaries_loaded_data(loaded_database_genomic_data_store: GenomicsDataI
 
     # Mutations include unknown spdi
     ms = gds.mutations_summary('genome', id_type='spdi', ignore_annotations=True, include_unknown=True)
-    assert 632 == len(ms)
+    assert 112 + 440 == len(ms)
     assert 'Mutation' == ms.index.name
     assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type', 'Count', 'Total', 'Percent'] == list(ms.columns)
 
@@ -79,7 +79,7 @@ def test_summaries_loaded_data(loaded_database_genomic_data_store: GenomicsDataI
 
     # Mutations spdi ref
     ms = gds.mutations_summary('genome', id_type='spdi_ref', ignore_annotations=True)
-    assert 111 == len(ms)
+    assert 112 == len(ms)
     assert 'Mutation' == ms.index.name
     assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type', 'Count', 'Total', 'Percent'] == list(ms.columns)
 
@@ -94,7 +94,7 @@ def test_summaries_loaded_data(loaded_database_genomic_data_store: GenomicsDataI
 
     # Mutations spdi ref include unknowns
     ms = gds.mutations_summary('genome', id_type='spdi_ref', ignore_annotations=True, include_unknown=True)
-    assert 632 == len(ms)
+    assert 112 + 440 == len(ms)
     assert 'Mutation' == ms.index.name
     assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type', 'Count', 'Total', 'Percent'] == list(ms.columns)
 
@@ -112,7 +112,7 @@ def test_summaries_loaded_data(loaded_database_genomic_data_store: GenomicsDataI
 
     # Mutations include annotations (which should all be empty)
     ms = gds.mutations_summary('genome', id_type='spdi', ignore_annotations=False)
-    assert 111 == len(ms)
+    assert 112 == len(ms)
     assert 'Mutation' == ms.index.name
     assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type',
             'Count', 'Total', 'Percent', 'Annotation', 'Annotation_Impact',
@@ -127,7 +127,7 @@ def test_summaries_loaded_data(loaded_database_genomic_data_store: GenomicsDataI
 
     # Test case of directly calling features_summary
     ms = gds.features_summary(kind='mutations', scope='genome', id_type='spdi', ignore_annotations=True)
-    assert 111 == len(ms)
+    assert 112 == len(ms)
     assert 'Mutation' == ms.index.name
     assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type', 'Count', 'Total', 'Percent'] == list(ms.columns)
 
@@ -141,7 +141,7 @@ def test_summaries_loaded_data(loaded_database_genomic_data_store: GenomicsDataI
 
     # Test case of only including unknowns
     ms = gds.mutations_summary('genome', id_type='spdi', include_present=False, include_unknown=True)
-    assert 521 == len(ms)
+    assert 440 == len(ms)
     assert 'reference:649:1:?' in set(ms.index.tolist())
     assert 'reference:839:1:G' not in (ms.index.tolist())
 

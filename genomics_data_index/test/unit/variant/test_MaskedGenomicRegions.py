@@ -1,4 +1,5 @@
 import tempfile
+from os import path
 from pathlib import Path
 
 from Bio import SeqIO
@@ -7,6 +8,9 @@ from Bio.SeqRecord import SeqRecord
 from pybedtools import BedTool
 
 from genomics_data_index.storage.MaskedGenomicRegions import MaskedGenomicRegions
+
+root_data_dir = Path(path.dirname(__file__), 'data')
+snps_vcf_mask_file = root_data_dir / 'snps-for-mask.vcf.gz'
 
 
 def test_create_from_sequence():
@@ -72,6 +76,35 @@ def test_create_from_two_sequences():
     assert mask.contains('record2', 2)
     assert not mask.contains('record2', 3)
     assert not mask.contains('record2', 5)
+
+
+def test_create_from_vcf():
+    mask = MaskedGenomicRegions.from_vcf_file(snps_vcf_mask_file)
+
+    assert 9 == len(mask), 'Invalid length'
+    assert not mask.is_empty()
+
+    assert not mask.contains('reference', 291)
+    assert mask.contains('reference', 292)
+    assert not mask.contains('reference', 293)
+
+    assert not mask.contains('reference', 300)
+    assert mask.contains('reference', 301)
+    assert mask.contains('reference', 302)
+    assert not mask.contains('reference', 303)
+
+    assert not mask.contains('reference', 372)
+    assert mask.contains('reference', 373)
+    assert not mask.contains('reference', 374)
+
+    assert not mask.contains('reference', 459)
+    assert mask.contains('reference', 460)
+    assert mask.contains('reference', 463)
+    assert not mask.contains('reference', 464)
+
+    assert not mask.contains('reference', 504)
+    assert mask.contains('reference', 505)
+    assert not mask.contains('reference', 506)
 
 
 def test_mask_to_features_from_two_sequences():
@@ -197,6 +230,59 @@ def test_union():
     assert mask_union.contains('record1', 5)
     assert mask_union.contains('record1', 6)
     assert not mask_union.contains('record1', 7)
+
+
+def test_subtract():
+    mask1 = MaskedGenomicRegions(BedTool([('ref', 10, 15)]))
+    mask2 = MaskedGenomicRegions(BedTool([('ref', 12, 20)]))
+    mask3 = MaskedGenomicRegions(BedTool([('ref', 10, 11), ('ref', 14, 15)]))
+    mask4 = MaskedGenomicRegions(BedTool([('ref', 10, 11), ('ref2', 14, 15)]))
+    mask_empty = MaskedGenomicRegions.empty_mask()
+
+    mask_subtract = mask1.subtract(mask2)
+    assert not mask_subtract.contains('ref', 9)
+    assert mask_subtract.contains('ref', 10)
+    assert mask_subtract.contains('ref', 11)
+    assert not mask_subtract.contains('ref', 12)
+    assert not mask_subtract.contains('ref', 13)
+    assert not mask_subtract.contains('ref', 15)
+
+    mask_subtract = mask2.subtract(mask1)
+    assert not mask_subtract.contains('ref', 14)
+    assert mask_subtract.contains('ref', 15)
+    assert mask_subtract.contains('ref', 16)
+    assert mask_subtract.contains('ref', 19)
+    assert not mask_subtract.contains('ref', 20)
+
+    mask_subtract = mask1.subtract(mask3)
+    assert not mask_subtract.contains('ref', 9)
+    assert not mask_subtract.contains('ref', 10)
+    assert mask_subtract.contains('ref', 11)
+    assert mask_subtract.contains('ref', 13)
+    assert not mask_subtract.contains('ref', 14)
+    assert not mask_subtract.contains('ref', 15)
+
+    mask_subtract = mask1.subtract(mask4)
+    assert not mask_subtract.contains('ref', 9)
+    assert not mask_subtract.contains('ref', 10)
+    assert mask_subtract.contains('ref', 11)
+    assert mask_subtract.contains('ref', 13)
+    assert mask_subtract.contains('ref', 14)
+    assert not mask_subtract.contains('ref', 15)
+
+    mask_subtract = mask1.subtract(mask_empty)
+    assert not mask_subtract.contains('ref', 9)
+    assert mask_subtract.contains('ref', 10)
+    assert mask_subtract.contains('ref', 11)
+    assert mask_subtract.contains('ref', 13)
+    assert mask_subtract.contains('ref', 14)
+    assert not mask_subtract.contains('ref', 15)
+
+    mask_subtract = mask_empty.subtract(mask1)
+    assert mask_subtract.is_empty()
+
+    mask_subtract = mask_empty.subtract(mask_empty)
+    assert mask_subtract.is_empty()
 
 
 def test_write():

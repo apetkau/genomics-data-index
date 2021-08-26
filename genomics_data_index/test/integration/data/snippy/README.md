@@ -20,3 +20,15 @@ Generated `Sample*/mutations-dataframe.all.tsv` with:
 echo -e "Mutation\tSequence\tPosition\tDeletion\tInsertion\tType" > mutations-dataframe.all.tsv
 zgrep -v '^#' snps.fill-tags.vcf.gz | cut -f 1,2,4,5,8 | sed -e 's/[^\t]*TYPE=\(.*\)$/\1/' | perl -ne 'chomp;@a=split(/\t/, $_);print("$a[0]:$a[1]:$a[2]:$a[3]", "\t", $a[0], "\t", $a[1], "\t", $a[2], "\t", $a[3], "\t", $a[4], "\n");' >> mutations-dataframe.all.tsv
 ```
+
+Generated `Sample*/snps.aligned.bed.gz` with (run in each `Sample*` directory):
+
+```
+# Generate bed file of sequence minus vcf
+python ../sequence_vcf_to_mask.py snps.aligned.fa snps.vcf.gz
+
+# Generate bed file of sequence
+python ../sequence_vcf_to_mask.py snps.aligned.fa
+```
+
+This contains the expected BED files for masking regions from snippy (the regions in snps.aligned.fa minus the snps.vcf.gz)..

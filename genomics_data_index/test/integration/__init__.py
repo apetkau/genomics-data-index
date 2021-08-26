@@ -13,6 +13,7 @@ variation_dir = root_data_dir / 'variation'
 consensus_dir = root_data_dir / 'consensus'
 sourmash_dir = root_data_dir / 'sourmash'
 sample_dirs = [data_dir / d for d in listdir(data_dir) if path.isdir(data_dir / d)]
+masked_positions_snippy_bed = data_dir / 'missing-all.bed.gz'
 sample_dirs_AB = [data_dir / 'SampleA', data_dir / 'SampleB']
 sample_dirs_C = [data_dir / 'SampleC']
 sample_dirs_A = [data_dir / 'SampleA']
