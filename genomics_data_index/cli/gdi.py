@@ -549,7 +549,7 @@ def input_split_file(absolute: bool, output_dir: str, output_samples_file: str, 
 @click.option('--extra-tree-params', help='Extra parameters to tree-building software',
               default=None)
 @click.option('--use-conda/--no-use-conda', help="Use (or don't use) conda for dependency management for pipeline.",
-              default=False)
+              default=True)
 @click.option('--include-mlst/--no-include-mlst', help="Enable/disable including basic MLST in results.",
               default=False)
 @click.option('--include-kmer/--no-include-kmer', help="Enable/disable including kmer analysis in results.",
