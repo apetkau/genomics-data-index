@@ -15,6 +15,7 @@
 * [analysis]: Fixed issue where there was overlap between unknown/missing positions and VCF files (0.3.0.dev7).
 * [cli/api]: Added `--include-variants DELETION` and `--include-variants DELETION_OTHER` to include deletions in the alignment that is generated (represented by gaps `-`) (0.3.0.dev8).
 * [api]: Added method to define custom `q.isa()` methods and implemented a method to type SARS-CoV-2 genomes using [constellations](https://github.com/cov-lineages/constellations) of mutations (the SARS-CoV-2 typer should be considered experimental at this stage and is not guaranteed to work in all cases) (0.3.0.dev9).
+* [api]: Loading both VCFs and Kmer sketches listed in the same file (0.3.0.dev10).
 
 # 0.2.0
 
