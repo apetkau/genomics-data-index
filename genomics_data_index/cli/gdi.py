@@ -911,15 +911,24 @@ def perform_query(query: SamplesQuery, command: str) -> SamplesQuery:
               type=click.Choice(SamplesQueryIndex.SUMMARY_FEATURES_KINDS),
               multiple=False,
               help='Summarize by the passed feature.')
-@click.option('--include-annotations/--no-include-annotations', help='If using --features-summary will variant'
-                                                                     'annotations be included.',
+@click.option('--features-summary-unique', required=False,
+              type=click.Choice(SamplesQueryIndex.SUMMARY_FEATURES_KINDS),
+              multiple=False,
+              help='Summarize by the passed feature (show only unique features).')
+@click.option('--include-annotations/--no-include-annotations',
+              help='If using --features-summary or --features-summary-unique '
+                   'specifies if variant annotations are included.',
               default=True)
 def query(ctx, query_command: List[str], reference_name: str, summary: bool, features_summary: str,
+          features_summary_unique: str,
           include_annotations: bool):
     genomics_index = get_genomics_index(ctx)
 
-    if summary and features_summary is not None:
-        logger.error(f'Cannot set both --summary and --features-summary')
+    if features_summary is not None and features_summary_unique is not None:
+        logger.error(f'Cannot set both --features-summary and --features-summary-unique')
+        sys.exit(1)
+    elif summary and (features_summary is not None or features_summary_unique is not None):
+        logger.error(f'Cannot set both --summary and --features-summary or --features-summary-unique')
         sys.exit(1)
 
     if reference_name is not None:
@@ -935,6 +944,11 @@ def query(ctx, query_command: List[str], reference_name: str, summary: bool, fea
     elif features_summary is not None:
         results_df = query.features_summary(
             kind=features_summary, ignore_annotations=not include_annotations).sort_values(
+            'Count', ascending=False).reset_index()
+    elif features_summary_unique is not None:
+        results_df = query.features_summary(
+            kind=features_summary_unique, selection='unique',
+            ignore_annotations=not include_annotations).sort_values(
             'Count', ascending=False).reset_index()
     else:
         results_df = query.toframe(include_unknown=True)
