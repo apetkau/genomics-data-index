@@ -20,6 +20,7 @@ import genomics_data_index.storage.service.FeatureService as FeatureService
 from genomics_data_index import __version__
 from genomics_data_index.api.query.GenomicsDataIndex import GenomicsDataIndex
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
+from genomics_data_index.api.query.impl.SamplesQueryIndex import SamplesQueryIndex
 from genomics_data_index.cli import yaml_config_provider
 from genomics_data_index.configuration.Project import Project, ProjectConfigurationError
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
@@ -906,8 +907,20 @@ def perform_query(query: SamplesQuery, command: str) -> SamplesQuery:
 @click.argument('query_command', nargs=-1)
 @click.option('--reference-name', type=str, required=False, help='Reference genome name for querying by phylogenetic distance')
 @click.option('--summary/--no-summary', help='Print summary information on query')
-def query(ctx, query_command: List[str], reference_name: str, summary: bool):
+@click.option('--features-summary', required=False,
+              type=click.Choice(SamplesQueryIndex.SUMMARY_FEATURES_KINDS),
+              multiple=False,
+              help='Summarize by the passed feature.')
+@click.option('--include-annotations/--no-include-annotations', help='If using --features-summary will variant'
+                                                                     'annotations be included.',
+              default=True)
+def query(ctx, query_command: List[str], reference_name: str, summary: bool, features_summary: str,
+          include_annotations: bool):
     genomics_index = get_genomics_index(ctx)
+
+    if summary and features_summary is not None:
+        logger.error(f'Cannot set both --summary and --features-summary')
+        sys.exit(1)
 
     if reference_name is not None:
         query = genomics_index.samples_query(universe='mutations', reference_name=reference_name)
@@ -919,6 +932,10 @@ def query(ctx, query_command: List[str], reference_name: str, summary: bool):
 
     if summary:
         results_df = query.summary()
+    elif features_summary is not None:
+        results_df = query.features_summary(
+            kind=features_summary, ignore_annotations=not include_annotations).sort_values(
+            'Count', ascending=False).reset_index()
     else:
         results_df = query.toframe(include_unknown=True)
 
