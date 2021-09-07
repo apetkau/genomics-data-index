@@ -8,6 +8,7 @@ from os import getcwd, mkdir
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import List, cast, Tuple
+import re
 
 import click
 import click_config_file
@@ -884,6 +885,16 @@ def perform_query(query: SamplesQuery, command: str) -> SamplesQuery:
     elif command.startswith('isa:'):
         query_str = command[len('isa:'):]
         return query.isa(query_str)
+    elif command.startswith('isin_'):
+        match = re.match(r'isin_([^_]+)_([^:]+):(.*)', command)
+        if not match:
+            raise Exception(f'Invalid isin command: [{command}]. Should be in the form [isin_1_substitutions:SAMPLE]')
+        else:
+            unit_value = float(match.group(1))
+            units = match.group(2)
+            sample = match.group(3)
+
+            return query.isin(sample, kind='distance', units=units, distance=unit_value)
     else:
         logger.warning(f'Unknown command for [{command}]. Will assume you meant [hasa:{command}]')
         query_str = command
@@ -893,10 +904,15 @@ def perform_query(query: SamplesQuery, command: str) -> SamplesQuery:
 @main.command(name='query')
 @click.pass_context
 @click.argument('query_command', nargs=-1)
+@click.option('--reference-name', type=str, required=False, help='Reference genome name for querying by phylogenetic distance')
 @click.option('--summary/--no-summary', help='Print summary information on query')
-def query(ctx, query_command: List[str], summary: bool):
+def query(ctx, query_command: List[str], reference_name: str, summary: bool):
     genomics_index = get_genomics_index(ctx)
-    query = genomics_index.samples_query()
+
+    if reference_name is not None:
+        query = genomics_index.samples_query(universe='mutations', reference_name=reference_name)
+    else:
+        query = genomics_index.samples_query()
 
     for command in query_command:
         query = perform_query(query, command=command)
