@@ -876,43 +876,22 @@ def rebuild_tree(ctx, reference: List[str], align_type: str, include_variants: T
         logger.info(f'Finished rebuilding tree')
 
 
-@main.group()
+@main.command(name='query')
 @click.pass_context
-def query(ctx):
-    pass
-
-
-def query_feature(genomics_index: GenomicsDataIndex, features: List[QueryFeature], summarize: bool) -> None:
+@click.argument('features', nargs=-1)
+@click.option('--summary/--no-summary', help='Print summary information on query')
+def query(ctx, features: List[str], summary: bool):
+    genomics_index = get_genomics_index(ctx)
     query = genomics_index.samples_query()
     for feature in features:
         query = query.hasa(feature)
 
-    if summarize:
+    if summary:
         results_df = query.summary()
     else:
         results_df = query.toframe(include_unknown=True)
 
     results_df.to_csv(sys.stdout, sep='\t', index=False, float_format='%0.4g', na_rep='-')
-
-
-@query.command(name='mutation')
-@click.pass_context
-@click.argument('name', nargs=-1)
-@click.option('--summarize/--no-summarize', help='Print summary information on query')
-def query_mutation(ctx, name: List[str], summarize: bool):
-    genomics_index = get_genomics_index(ctx)
-    features = [QueryFeatureMutationSPDI(n) for n in name]
-    query_feature(genomics_index=genomics_index, features=features, summarize=summarize)
-
-
-@query.command(name='mlst')
-@click.pass_context
-@click.argument('name', nargs=-1)
-@click.option('--summarize/--no-summarize', help='Print summary information on query')
-def query_mlst(ctx, name: List[str], summarize: bool):
-    genomics_index = get_genomics_index(ctx)
-    features = [QueryFeatureMLST(n) for n in name]
-    query_feature(genomics_index=genomics_index, features=features, summarize=summarize)
 
 
 @main.group(name='db')
