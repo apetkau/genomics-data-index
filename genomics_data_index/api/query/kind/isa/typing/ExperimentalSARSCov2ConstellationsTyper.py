@@ -1,9 +1,9 @@
-from typing import List, Dict, Set, Any, Union
-from pathlib import Path
-import logging
 import json
-from collections import Counter
+import logging
 import re
+from collections import Counter
+from pathlib import Path
+from typing import List, Dict, Set, Any, Union
 
 from Bio.SeqRecord import SeqRecord
 
@@ -37,13 +37,15 @@ class ExperimentalSARSCov2ConstellationsTyper(SamplesTypingIsaKind):
 
         sequence_name = str(sequence.id)
         if sequence_name not in ['NC_045512.2', 'NC_045512']:
-            logger.warning(f"sequence_name=[{sequence_name}] is not 'NC_045512.2' or 'NC_045512'. This is what the constellations are with respect"
-                            "to <https://github.com/cov-lineages/constellations/blob/main/constellations/data/SARS-CoV-2.json>")
+            logger.warning(
+                f"sequence_name=[{sequence_name}] is not 'NC_045512.2' or 'NC_045512'. This is what the constellations are with respect"
+                "to <https://github.com/cov-lineages/constellations/blob/main/constellations/data/SARS-CoV-2.json>")
 
         self._sequence_name = sequence_name
         self._sequence = sequence
         if valid_gene_identifiers is None:
-            self._valid_gene_identifiers = {'ORF1ab', 'S', 'ORF3a', 'E', 'M', 'ORF6', 'ORF7a', 'ORF7b', 'ORF8', 'N', 'ORF10'}
+            self._valid_gene_identifiers = {'ORF1ab', 'S', 'ORF3a', 'E', 'M', 'ORF6', 'ORF7a', 'ORF7b', 'ORF8', 'N',
+                                            'ORF10'}
         self._typing_definitions = self._parse_definitions(constellation_files)
         self._perfect_match_only = perfect_match_only
 
@@ -209,7 +211,8 @@ class ExperimentalSARSCov2ConstellationsTyper(SamplesTypingIsaKind):
     def type_names(self) -> List[str]:
         return list(self._typing_definitions.keys())
 
-    def perfect_matches(self, type_name: str, query: SamplesQuery, signature_mutations: Set[str] = None) -> SamplesQuery:
+    def perfect_matches(self, type_name: str, query: SamplesQuery,
+                        signature_mutations: Set[str] = None) -> SamplesQuery:
         self._validate_type_name(type_name)
         if signature_mutations is None:
             signature_mutations = self._typing_definitions[type_name]['signature_mutations']

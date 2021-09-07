@@ -15,13 +15,13 @@ from genomics_data_index.api.query.features.MutationFeaturesFromIndexComparator 
 from genomics_data_index.api.query.impl.DataFrameSamplesQuery import DataFrameSamplesQuery
 from genomics_data_index.api.query.impl.QueriesCollection import QueriesCollection
 from genomics_data_index.api.query.impl.TreeSamplesQueryFactory import TreeSamplesQueryFactory
+from genomics_data_index.api.query.kind.IsaKind import IsaKind
+from genomics_data_index.api.query.kind.isa.DelegateIsaKind import DelegateIsaKind
 from genomics_data_index.configuration.connector import DataIndexConnection
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.QueryFeature import QueryFeature
 from genomics_data_index.storage.model.QueryFeatureFactory import QueryFeatureFactory
 from genomics_data_index.storage.service.KmerService import KmerService
-from genomics_data_index.api.query.kind.IsaKind import IsaKind
-from genomics_data_index.api.query.kind.isa.DelegateIsaKind import DelegateIsaKind
 
 logger = logging.getLogger(__name__)
 

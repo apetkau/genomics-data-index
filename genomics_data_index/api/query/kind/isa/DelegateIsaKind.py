@@ -1,8 +1,8 @@
 import abc
 from typing import Union, List
 
-from genomics_data_index.api.query.kind.IsaKind import IsaKind
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
+from genomics_data_index.api.query.kind.IsaKind import IsaKind
 from genomics_data_index.storage.SampleSet import SampleSet
 
 

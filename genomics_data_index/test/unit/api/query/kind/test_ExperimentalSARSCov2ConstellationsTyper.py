@@ -1,11 +1,12 @@
-import pytest
 import gzip
-from pathlib import Path
 from os import path
+from pathlib import Path
 
+import pytest
 from Bio import SeqIO
 
-from genomics_data_index.api.query.kind.isa.typing.ExperimentalSARSCov2ConstellationsTyper import ExperimentalSARSCov2ConstellationsTyper
+from genomics_data_index.api.query.kind.isa.typing.ExperimentalSARSCov2ConstellationsTyper import \
+    ExperimentalSARSCov2ConstellationsTyper
 
 root_data_dir = Path(path.dirname(__file__)) / '..' / '..' / '..' / 'data'
 sequence_path = root_data_dir / 'NC_045512.2.gb.gz'

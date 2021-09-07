@@ -1,5 +1,6 @@
 import logging
 import multiprocessing
+import re
 import shutil
 import sys
 import time
@@ -18,6 +19,8 @@ from Bio import AlignIO
 import genomics_data_index.storage.service.FeatureService as FeatureService
 from genomics_data_index import __version__
 from genomics_data_index.api.query.GenomicsDataIndex import GenomicsDataIndex
+from genomics_data_index.api.query.SamplesQuery import SamplesQuery
+from genomics_data_index.api.query.impl.SamplesQueryIndex import SamplesQueryIndex
 from genomics_data_index.cli import yaml_config_provider
 from genomics_data_index.configuration.Project import Project, ProjectConfigurationError
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
@@ -33,9 +36,6 @@ from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackageFactory 
 from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackageFactory import \
     NucleotideSnippySampleDataPackageFactory
 from genomics_data_index.storage.io.mutation.SequenceFile import SequenceFile
-from genomics_data_index.storage.model.QueryFeature import QueryFeature
-from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
-from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
 from genomics_data_index.storage.service import EntityExistsError
 from genomics_data_index.storage.service.CoreAlignmentService import CoreAlignmentService
 from genomics_data_index.storage.service.MLSTService import MLSTService
@@ -300,9 +300,8 @@ def load_vcf(ctx, vcf_fofns: str, reference_file: str, reference_name: str,
 @click.option('--extra-tree-params', help='Extra parameters to tree-building software',
               default=None)
 def load_vcf_kmer(ctx, vcf_kmer_fofns: str, reference_file: str, reference_name: str,
-             index_unknown: bool, sample_batch_size: int, build_tree: bool, align_type: str,
-             include_variants: Tuple[str], extra_tree_params: str):
-
+                  index_unknown: bool, sample_batch_size: int, build_tree: bool, align_type: str,
+                  include_variants: Tuple[str], extra_tree_params: str):
     logger.info(f'Indexing processed VCF files defined in [{vcf_kmer_fofns}]')
     ctx.invoke(load_vcf, index_unknown=index_unknown, vcf_fofns=vcf_kmer_fofns,
                reference_file=reference_file, reference_name=reference_name,
@@ -876,43 +875,82 @@ def rebuild_tree(ctx, reference: List[str], align_type: str, include_variants: T
         logger.info(f'Finished rebuilding tree')
 
 
-@main.group()
+def perform_query(query: SamplesQuery, command: str) -> SamplesQuery:
+    if command.startswith('hasa:'):
+        query_str = command[len('hasa:'):]
+        return query.hasa(query_str)
+    elif command.startswith('isa:'):
+        query_str = command[len('isa:'):]
+        return query.isa(query_str)
+    elif command.startswith('isin_'):
+        match = re.match(r'isin_([^_]+)_([^:]+):(.*)', command)
+        if not match:
+            raise Exception(f'Invalid isin command: [{command}]. Should be in the form [isin_1_substitutions:SAMPLE]')
+        else:
+            unit_value = float(match.group(1))
+            units = match.group(2)
+            sample = match.group(3)
+
+            return query.isin(sample, kind='distance', units=units, distance=unit_value)
+    else:
+        logger.warning(f'Unknown command for [{command}]. Will assume you meant [hasa:{command}]')
+        query_str = command
+        return query.hasa(query_str)
+
+
+@main.command(name='query')
 @click.pass_context
-def query(ctx):
-    pass
+@click.argument('query_command', nargs=-1)
+@click.option('--reference-name', type=str, required=False,
+              help='Reference genome name for querying by phylogenetic distance')
+@click.option('--summary/--no-summary', help='Print summary information on query')
+@click.option('--features-summary', required=False,
+              type=click.Choice(SamplesQueryIndex.SUMMARY_FEATURES_KINDS),
+              multiple=False,
+              help='Summarize by the passed feature.')
+@click.option('--features-summary-unique', required=False,
+              type=click.Choice(SamplesQueryIndex.SUMMARY_FEATURES_KINDS),
+              multiple=False,
+              help='Summarize by the passed feature (show only unique features).')
+@click.option('--include-annotations/--no-include-annotations',
+              help='If using --features-summary or --features-summary-unique '
+                   'specifies if variant annotations are included.',
+              default=True)
+def query(ctx, query_command: List[str], reference_name: str, summary: bool, features_summary: str,
+          features_summary_unique: str,
+          include_annotations: bool):
+    genomics_index = get_genomics_index(ctx)
 
+    if features_summary is not None and features_summary_unique is not None:
+        logger.error(f'Cannot set both --features-summary and --features-summary-unique')
+        sys.exit(1)
+    elif summary and (features_summary is not None or features_summary_unique is not None):
+        logger.error(f'Cannot set both --summary and --features-summary or --features-summary-unique')
+        sys.exit(1)
 
-def query_feature(genomics_index: GenomicsDataIndex, features: List[QueryFeature], summarize: bool) -> None:
-    query = genomics_index.samples_query()
-    for feature in features:
-        query = query.hasa(feature)
+    if reference_name is not None:
+        query = genomics_index.samples_query(universe='mutations', reference_name=reference_name)
+    else:
+        query = genomics_index.samples_query()
 
-    if summarize:
+    for command in query_command:
+        query = perform_query(query, command=command)
+
+    if summary:
         results_df = query.summary()
+    elif features_summary is not None:
+        results_df = query.features_summary(
+            kind=features_summary, ignore_annotations=not include_annotations).sort_values(
+            'Count', ascending=False).reset_index()
+    elif features_summary_unique is not None:
+        results_df = query.features_summary(
+            kind=features_summary_unique, selection='unique',
+            ignore_annotations=not include_annotations).sort_values(
+            'Count', ascending=False).reset_index()
     else:
         results_df = query.toframe(include_unknown=True)
 
     results_df.to_csv(sys.stdout, sep='\t', index=False, float_format='%0.4g', na_rep='-')
-
-
-@query.command(name='mutation')
-@click.pass_context
-@click.argument('name', nargs=-1)
-@click.option('--summarize/--no-summarize', help='Print summary information on query')
-def query_mutation(ctx, name: List[str], summarize: bool):
-    genomics_index = get_genomics_index(ctx)
-    features = [QueryFeatureMutationSPDI(n) for n in name]
-    query_feature(genomics_index=genomics_index, features=features, summarize=summarize)
-
-
-@query.command(name='mlst')
-@click.pass_context
-@click.argument('name', nargs=-1)
-@click.option('--summarize/--no-summarize', help='Print summary information on query')
-def query_mlst(ctx, name: List[str], summarize: bool):
-    genomics_index = get_genomics_index(ctx)
-    features = [QueryFeatureMLST(n) for n in name]
-    query_feature(genomics_index=genomics_index, features=features, summarize=summarize)
 
 
 @main.group(name='db')
