@@ -18,6 +18,7 @@ from Bio import AlignIO
 import genomics_data_index.storage.service.FeatureService as FeatureService
 from genomics_data_index import __version__
 from genomics_data_index.api.query.GenomicsDataIndex import GenomicsDataIndex
+from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.cli import yaml_config_provider
 from genomics_data_index.configuration.Project import Project, ProjectConfigurationError
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
@@ -876,15 +877,29 @@ def rebuild_tree(ctx, reference: List[str], align_type: str, include_variants: T
         logger.info(f'Finished rebuilding tree')
 
 
+def perform_query(query: SamplesQuery, command: str) -> SamplesQuery:
+    if command.startswith('hasa:'):
+        query_str = command[len('hasa:'):]
+        return query.hasa(query_str)
+    elif command.startswith('isa:'):
+        query_str = command[len('isa:'):]
+        return query.isa(query_str)
+    else:
+        logger.warning(f'Unknown command for [{command}]. Will assume you meant [hasa:{command}]')
+        query_str = command
+        return query.hasa(query_str)
+
+
 @main.command(name='query')
 @click.pass_context
-@click.argument('features', nargs=-1)
+@click.argument('query_command', nargs=-1)
 @click.option('--summary/--no-summary', help='Print summary information on query')
-def query(ctx, features: List[str], summary: bool):
+def query(ctx, query_command: List[str], summary: bool):
     genomics_index = get_genomics_index(ctx)
     query = genomics_index.samples_query()
-    for feature in features:
-        query = query.hasa(feature)
+
+    for command in query_command:
+        query = perform_query(query, command=command)
 
     if summary:
         results_df = query.summary()
