@@ -279,6 +279,49 @@ def load_vcf(ctx, vcf_fofns: str, reference_file: str, reference_name: str,
                              sample_batch_size=sample_batch_size)
 
 
+@load.command(name='vcf-kmer')
+@click.pass_context
+@click.argument('vcf_kmer_fofns', type=click.Path(exists=True))
+@click.option('--reference-file', help='Reference genome file', required=False, type=click.Path(exists=True))
+@click.option('--reference-name', help='Reference genome name', required=False)
+@click.option('--index-unknown/--no-index-unknown',
+              help='Enable/disable indexing unknown/missing positions. Indexing missing positions can significantly '
+                   'slow down the indexing process.',
+              required=False, default=True)
+@click.option('--sample-batch-size', help='Number of samples to process within a single batch.', default=2000,
+              type=click.IntRange(min=1))
+@click.option('--build-tree/--no-build-tree', default=False, help='Builds tree of all samples after loading')
+@click.option('--align-type', help=f'The type of alignment to generate '
+                                   f'("core" implies is only --include-variants "SNP")', default='full',
+              type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
+@click.option('--include-variants', help=f'Which type of variant(s) to include in tree.',
+              default=CoreAlignmentService.INCLUDE_VARIANT_DEFAULT,
+              type=click.Choice(CoreAlignmentService.INCLUDE_VARIANT_TYPES), multiple=True)
+@click.option('--extra-tree-params', help='Extra parameters to tree-building software',
+              default=None)
+def load_vcf_kmer(ctx, vcf_kmer_fofns: str, reference_file: str, reference_name: str,
+             index_unknown: bool, sample_batch_size: int, build_tree: bool, align_type: str,
+             include_variants: Tuple[str], extra_tree_params: str):
+
+    logger.info(f'Indexing processed VCF files defined in [{vcf_kmer_fofns}]')
+    ctx.invoke(load_vcf, index_unknown=index_unknown, vcf_fofns=vcf_kmer_fofns,
+               reference_file=reference_file, reference_name=reference_name,
+               build_tree=build_tree, align_type=align_type,
+               include_variants=include_variants,
+               extra_tree_params=extra_tree_params, sample_batch_size=sample_batch_size)
+
+    data_index_connection = get_project_exit_on_error(ctx).create_connection()
+    kmer_service = data_index_connection.kmer_service
+
+    logger.info(f'Inserting kmer sketches found in [{vcf_kmer_fofns}] into database')
+    files_df = pd.read_csv(vcf_kmer_fofns, sep='\t', index_col=False)
+    for idx, row in files_df.iterrows():
+        sample_name = row['Sample']
+        kmer_sketch = row['Sketch File']
+        kmer_service.insert_kmer_index(sample_name=sample_name,
+                                       kmer_index_path=Path(kmer_sketch))
+
+
 @load.command(name='kmer')
 @click.pass_context
 @click.argument('kmer_fofns', type=click.Path(exists=True))
@@ -506,7 +549,7 @@ def input_split_file(absolute: bool, output_dir: str, output_samples_file: str, 
 @click.option('--extra-tree-params', help='Extra parameters to tree-building software',
               default=None)
 @click.option('--use-conda/--no-use-conda', help="Use (or don't use) conda for dependency management for pipeline.",
-              default=False)
+              default=True)
 @click.option('--include-mlst/--no-include-mlst', help="Enable/disable including basic MLST in results.",
               default=False)
 @click.option('--include-kmer/--no-include-kmer', help="Enable/disable including kmer analysis in results.",
