@@ -1,5 +1,6 @@
 import logging
 import multiprocessing
+import re
 import shutil
 import sys
 import time
@@ -8,7 +9,6 @@ from os import getcwd, mkdir
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import List, cast, Tuple
-import re
 
 import click
 import click_config_file
@@ -36,9 +36,6 @@ from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackageFactory 
 from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackageFactory import \
     NucleotideSnippySampleDataPackageFactory
 from genomics_data_index.storage.io.mutation.SequenceFile import SequenceFile
-from genomics_data_index.storage.model.QueryFeature import QueryFeature
-from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
-from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
 from genomics_data_index.storage.service import EntityExistsError
 from genomics_data_index.storage.service.CoreAlignmentService import CoreAlignmentService
 from genomics_data_index.storage.service.MLSTService import MLSTService
@@ -303,9 +300,8 @@ def load_vcf(ctx, vcf_fofns: str, reference_file: str, reference_name: str,
 @click.option('--extra-tree-params', help='Extra parameters to tree-building software',
               default=None)
 def load_vcf_kmer(ctx, vcf_kmer_fofns: str, reference_file: str, reference_name: str,
-             index_unknown: bool, sample_batch_size: int, build_tree: bool, align_type: str,
-             include_variants: Tuple[str], extra_tree_params: str):
-
+                  index_unknown: bool, sample_batch_size: int, build_tree: bool, align_type: str,
+                  include_variants: Tuple[str], extra_tree_params: str):
     logger.info(f'Indexing processed VCF files defined in [{vcf_kmer_fofns}]')
     ctx.invoke(load_vcf, index_unknown=index_unknown, vcf_fofns=vcf_kmer_fofns,
                reference_file=reference_file, reference_name=reference_name,
@@ -905,7 +901,8 @@ def perform_query(query: SamplesQuery, command: str) -> SamplesQuery:
 @main.command(name='query')
 @click.pass_context
 @click.argument('query_command', nargs=-1)
-@click.option('--reference-name', type=str, required=False, help='Reference genome name for querying by phylogenetic distance')
+@click.option('--reference-name', type=str, required=False,
+              help='Reference genome name for querying by phylogenetic distance')
 @click.option('--summary/--no-summary', help='Print summary information on query')
 @click.option('--features-summary', required=False,
               type=click.Choice(SamplesQueryIndex.SUMMARY_FEATURES_KINDS),

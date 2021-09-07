@@ -7,9 +7,9 @@ import numpy as np
 import pandas as pd
 from ete3 import Tree
 
+from genomics_data_index.api.query.kind.IsaKind import IsaKind
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.QueryFeature import QueryFeature
-from genomics_data_index.api.query.kind.IsaKind import IsaKind
 
 
 class SamplesQuery(abc.ABC):

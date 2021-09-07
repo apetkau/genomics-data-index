@@ -15,7 +15,7 @@ def test_build_tree_core_fasttree(tree_service, core_alignment_service, expected
         include_variants=['SNP'], align_type='core',
     )
 
-    tree, out = tree_service.build_tree(alignment, tree_build_type='fasttree',)
+    tree, out = tree_service.build_tree(alignment, tree_build_type='fasttree', )
 
     assert {'SampleA', 'SampleB', 'SampleC', 'genome'} == set(tree.get_leaf_names())
 

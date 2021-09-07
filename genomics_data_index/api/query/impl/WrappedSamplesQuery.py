@@ -7,11 +7,11 @@ import numpy as np
 import pandas as pd
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
+from genomics_data_index.api.query.kind.IsaKind import IsaKind
+from genomics_data_index.api.query.kind.isa.DelegateIsaKind import DelegateIsaKind
 from genomics_data_index.configuration.connector import DataIndexConnection
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.QueryFeature import QueryFeature
-from genomics_data_index.api.query.kind.IsaKind import IsaKind
-from genomics_data_index.api.query.kind.isa.DelegateIsaKind import DelegateIsaKind
 
 
 class WrappedSamplesQuery(SamplesQuery, abc.ABC):
