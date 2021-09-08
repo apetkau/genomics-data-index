@@ -4,7 +4,7 @@
 * [api]: Added ability to handle joining larger dataframes to sets of samples by batching SQL queries (0.3.0.dev2).
 * [api]: Added mutation "Type" to the output of summaries/comparison table (0.3.0.dev3).
 * [analysis]: Added ability to select to include MNP as well as SNPs when building an alignment/tree (0.3.0.dev2).
-* [analysis]: Santizing sample names for analysis and restoring afterwards. This way a greater variety of sample names is possible (0.3.0.dev3).
+* [analysis]: Santizing sample names for analysis and restoring afterwards. This way a greater variety of sample names is possible (0.3.0.dev3, 0.3.0.dev12).
 * [analysis]: Automatically split a single multi-FASTA file into separate files per sequence (used primarily for SARS-CoV-2 data) (0.3.0.dev4).
 * [analysis]: Added ability to handle lzma and bzip2 compressed sequence files (0.3.0.dev4).
 * [api]: Added a method to select a random subsample of a query (0.3.0.dev4).

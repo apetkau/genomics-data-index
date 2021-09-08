@@ -220,13 +220,13 @@ def test_fix_sample_names_with_change():
 
     assert ['Sample', 'Assemblies', 'Reads1', 'Reads2'] == input_samples_fixed.columns.tolist()
     assert 2 == len(input_samples_fixed)
-    assert ['A_1', 'B2'] == input_samples_fixed['Sample'].tolist()
+    assert ['A__1', 'B2'] == input_samples_fixed['Sample'].tolist()
     assert [Path('file1.fasta'), Path('file2.fasta')] == input_samples_fixed['Assemblies'].tolist()
 
     assert ['Sample_original', 'Sample_fixed'] == original_fixed_names.columns.tolist()
     assert 2 == len(original_fixed_names)
     assert ['A/1', 'B2'] == original_fixed_names['Sample_original'].tolist()
-    assert ['A_1', 'B2'] == original_fixed_names['Sample_fixed'].tolist()
+    assert ['A__1', 'B2'] == original_fixed_names['Sample_fixed'].tolist()
 
 
 def test_fix_sample_names_with_change2():
@@ -242,19 +242,19 @@ def test_fix_sample_names_with_change2():
 
     assert ['Sample', 'Assemblies', 'Reads1', 'Reads2'] == input_samples_fixed.columns.tolist()
     assert 3 == len(input_samples_fixed)
-    assert ['new_A_1_', 'new_B_2', 'new_C__2'] == input_samples_fixed['Sample'].tolist()
+    assert ['new__A__1__', 'new__B__2', 'new__C____2'] == input_samples_fixed['Sample'].tolist()
     assert [Path('file1.fasta'), Path('file2.fasta'), Path('file3.fasta')] == input_samples_fixed['Assemblies'].tolist()
 
     assert ['Sample_original', 'Sample_fixed'] == original_fixed_names.columns.tolist()
     assert 3 == len(original_fixed_names)
     assert ['new/A/1/', 'new/B/2', 'new/C//2'] == original_fixed_names['Sample_original'].tolist()
-    assert ['new_A_1_', 'new_B_2', 'new_C__2'] == original_fixed_names['Sample_fixed'].tolist()
+    assert ['new__A__1__', 'new__B__2', 'new__C____2'] == original_fixed_names['Sample_fixed'].tolist()
 
 
 def test_fix_sample_names_with_duplicates():
     input_samples = pd.DataFrame([
         ['A/1', Path('file1.fasta'), pd.NA, pd.NA],
-        ['A_1', Path('file2.fasta'), pd.NA, pd.NA],
+        ['A__1', Path('file2.fasta'), pd.NA, pd.NA],
     ], columns=['Sample', 'Assemblies', 'Reads1', 'Reads2'])
 
     executor = SnakemakePipelineExecutor()
@@ -267,15 +267,15 @@ def test_fix_sample_names_with_duplicates():
 
 def test_restore_sample_names():
     original_new_names = pd.DataFrame([
-        ['new/A/1/', 'new_A_1_'],
-        ['new/B/2', 'new_B_2'],
-        ['new/C//2', 'new_C__2'],
+        ['new/A/1/', 'new__A__1__'],
+        ['new/B/2', 'new__B__2'],
+        ['new/C//2', 'new__C____2'],
     ], columns=['Sample_original', 'Sample_fixed'])
 
     data = pd.DataFrame([
-        ['new_A_1_', Path('file1.vcf'), Path('file1.fasta')],
-        ['new_B_2', Path('file2.vcf'), Path('file2.fasta')],
-        ['new_C__2', Path('file3.vcf'), Path('file3.fasta')]
+        ['new__A__1__', Path('file1.vcf'), Path('file1.fasta')],
+        ['new__B__2', Path('file2.vcf'), Path('file2.fasta')],
+        ['new__C____2', Path('file3.vcf'), Path('file3.fasta')]
     ], columns=['Sample', 'VCF', 'Mask'])
 
     executor = SnakemakePipelineExecutor()

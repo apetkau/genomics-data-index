@@ -49,7 +49,7 @@ class PipelineExecutor(abc.ABC):
         fixed_sample_files = sample_files.copy()
 
         fixed_sample_files['Sample_fixed'] = fixed_sample_files['Sample'].apply(
-            lambda x: sanitize_filename(x, replacement_text='_'))
+            lambda x: sanitize_filename(x, replacement_text='__'))
 
         samples_changed = (fixed_sample_files['Sample'] != fixed_sample_files['Sample_fixed'])
         if not samples_changed.any():
@@ -250,7 +250,7 @@ class PipelineExecutor(abc.ABC):
                 sample_name = record.id
 
                 if samples is None or sample_name in samples:
-                    sample_filename = sanitize_filename(sample_name, replacement_text='_')
+                    sample_filename = sanitize_filename(sample_name, replacement_text='__')
                     sample_path = output_dir / (sample_filename + extension)
                     with gzip.open(sample_path, "wt") as oh:
                         SeqIO.write(record, oh, filetype)
