@@ -19,6 +19,7 @@
 * [analysis]: Changed default option to `--use-conda` for analysis.
 * [cli]: Added general query command for multiple types of queries (`gdi query hasa:feature` or `gdi query isa:sample`) as well as summarizing features (`--features-summary`) (0.3.0.dev11).
 * [cli]: Renamed `--summarize` to `--summary` for CLI (0.3.0.dev11).
+* [install]: Restricted `setuptools<58` since `pyvcf` uses the option `use_2to3` which is no longer compatible with setuptools >= 58 <https://setuptools.readthedocs.io/en/latest/history.html#v58-0-0> (0.3.0.dev13).
 
 # 0.2.0
 

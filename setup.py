@@ -27,6 +27,9 @@ setup(name='genomics-data-index',
       license='Apache v2.0',
       classifiers=classifiers,
       install_requires=[
+          # pyvcf uses the option use_2to3 which is not compatible with setuptools>=58
+          'setuptools<58',
+
           'biopython>=1.70',
           'pandas>=1.0.0',
           'numpy',
