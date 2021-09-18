@@ -173,6 +173,8 @@ rule reads_single_mask_snippy:
         snippy_dir="reads/snippy/single/{sample}"
     output:
         mask="reads/single/mask/{sample}.bed.gz",
+    conda:
+        "envs/gdi.yaml"
     log:
         "logs/reads_mask.{sample}.log"
     script:
