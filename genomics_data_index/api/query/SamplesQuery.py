@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 from ete3 import Tree
 
+from genomics_data_index.api.query.kind.IsaKind import IsaKind
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.QueryFeature import QueryFeature
 
@@ -183,6 +184,48 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
+    def features_comparison(self, sample_categories: Union[List[SamplesQuery], List[SampleSet], str],
+                            category_prefixes: List[str] = None,
+                            categories_kind: str = 'samples',
+                            kind: str = 'mutations',
+                            unit: str = 'percent',
+                            category_samples_threshold: int = None,
+                            **kwargs) -> pd.DataFrame:
+        """
+        Creates a dataframe which compares different categories of samples with each other with respect to features.
+
+        For example, if kind=='mutations', compare_kind == 'percent' and there are two sample_categories then
+        this will return dataframe like:
+
+        | Mutation     | Total | Category1_percent | Category2_percent | Category1_total | Category2_total |
+        | ref:100:A:T  | 10    | 50%               | 100%              | 8               | 2               |
+        | ref:200:CT:C | 10    | 100%              | 0%                | 8               | 2               |
+        | ...          | ...   | ...               | ...               | 8               | 2               |
+
+        Here, "Category1_percent" is the percent of samples in Category1 that have this mutation/feature
+        (50% or 4 out of 8 samples in Category1). "Category2_percent" is the percent of samples in Category2 with the
+        feature (100% or 2 out of 2 samples in Category2).
+
+        "Category1_total" and "Category2_total" are the total samples in each category. "Total" is the total
+        samples in the overall query that form the universe from which we are defining "Category1" and "Category2".
+
+        Note: since categories are defined based on sample queries, there is no enforcement that categories are
+        mutually exclusive (that is, "Category1_total" + "Category2_total" will not always equal "Total"). This
+        is done on purpose in case the categories you wish to compare are not mutually exclusive.
+
+        :param sample_categories: The different categories to compare. Either specify as lists of SampleQuery, SampleSet
+                                  or a string.
+        :param kind: The kind of features to compare.
+        :param categories_kind: The kind of category to use ("sample_set", or "dataframe").
+        :param category_prefixes: The prefixes to use for the different categories (defaults to 1, 2, 3, ...).
+        :param unit: The type of data to compare in each category (either 'percent', 'proportion', or 'count').
+        :param category_samples_threshold: A threshold on the number of samples in a category for it to be considered.
+        :param **kwargs: Additional keyword arguments. Please see the documentation for the underlying implementation.
+        :return: A dataframe comparing each category with respect to the differences in features.
+        """
+        pass
+
+    @abc.abstractmethod
     def tofeaturesset(self, kind: str = 'mutations', selection: str = 'all',
                       include_present_features: bool = True, include_unknown_features: bool = False) -> Set[str]:
         """
@@ -236,6 +279,19 @@ class SamplesQuery(abc.ABC):
         :param other: The other SamplesQuery to use.
 
         :return: A new SamplesQuery which is the union of this query and the other query.
+        """
+        pass
+
+    @abc.abstractmethod
+    def subsample(self, k: Union[int, float], include_unknown: bool = False, seed: int = None) -> SamplesQuery:
+        """
+        Select a random subsample of genomic samples from this query.
+        :param k: If k >= 1, select this number of samples. If k < 1, select this proportion of samples
+                  (e.g., 0.5 means select 50% of the samples in the query).
+        :param include_unknown: Whether unknown samples should be included in the subsample. If True,
+                                then the value given by n will apply to both unknown and present samples.
+        :param seed: The seed for the random number generator (defaults to picking a random seed).
+        :return: A new SamplesQuery that selects a random subsample of the genomic samples in the current query.
         """
         pass
 
@@ -342,7 +398,7 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def isa(self, data: Union[str, List[str], SamplesQuery, SampleSet], kind: str = None,
+    def isa(self, data: Union[str, List[str], SamplesQuery, SampleSet], kind: Union[IsaKind, str] = 'sample',
             **kwargs) -> SamplesQuery:
         """
         Queries for samples which are a particular type/belong to a particular category.

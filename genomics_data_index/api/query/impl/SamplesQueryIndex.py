@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import random
 from typing import Union, List, Set, Tuple, Dict
 
 import numpy as np
@@ -8,12 +9,14 @@ import pandas as pd
 from ete3 import Tree
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
-from genomics_data_index.api.query.features.MLSTFeaturesSummarizer import MLSTFeaturesSummarizer
-from genomics_data_index.api.query.features.MutationFeaturesFromIndexSummarizer import \
-    MutationFeaturesFromIndexSummarizer
+from genomics_data_index.api.query.features.MLSTFeaturesComparator import MLSTFeaturesComparator
+from genomics_data_index.api.query.features.MutationFeaturesFromIndexComparator import \
+    MutationFeaturesFromIndexComparator
 from genomics_data_index.api.query.impl.DataFrameSamplesQuery import DataFrameSamplesQuery
 from genomics_data_index.api.query.impl.QueriesCollection import QueriesCollection
 from genomics_data_index.api.query.impl.TreeSamplesQueryFactory import TreeSamplesQueryFactory
+from genomics_data_index.api.query.kind.IsaKind import IsaKind
+from genomics_data_index.api.query.kind.isa.DelegateIsaKind import DelegateIsaKind
 from genomics_data_index.configuration.connector import DataIndexConnection
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.QueryFeature import QueryFeature
@@ -35,6 +38,7 @@ class SamplesQueryIndex(SamplesQuery):
     ISIN_TYPES = ['sample', 'samples', 'distance', 'distances']
     ISA_TYPES = ['sample', 'samples']
     DISTANCES_UNITS = ['kmer_jaccard']
+    CATEGORY_KINDS = ['samples']
 
     def __init__(self, connection: DataIndexConnection,
                  universe_set: SampleSet,
@@ -253,12 +257,12 @@ class SamplesQueryIndex(SamplesQuery):
                          include_present_features: bool = True, include_unknown_features: bool = False,
                          **kwargs) -> pd.DataFrame:
         if kind == 'mutations':
-            features_summarizier = MutationFeaturesFromIndexSummarizer(connection=self._query_connection,
+            features_summarizier = MutationFeaturesFromIndexComparator(connection=self._query_connection,
                                                                        include_unknown=include_unknown_features,
                                                                        include_present=include_present_features,
                                                                        **kwargs)
         elif kind == 'mlst':
-            features_summarizier = MLSTFeaturesSummarizer(connection=self._query_connection,
+            features_summarizier = MLSTFeaturesComparator(connection=self._query_connection,
                                                           include_unknown=include_unknown_features,
                                                           include_present=include_present_features,
                                                           **kwargs)
@@ -272,6 +276,52 @@ class SamplesQueryIndex(SamplesQuery):
                                                        other_set=self.universe_set.minus(self.sample_set))
         else:
             raise Exception(f'selection=[{selection}] is unknown. Must be one of {self.FEATURES_SELECTIONS}')
+
+    def features_comparison(self, sample_categories: Union[List[SamplesQuery], List[SampleSet], str],
+                            category_prefixes: List[str] = None,
+                            categories_kind: str = 'samples',
+                            kind: str = 'mutations',
+                            unit: str = 'percent',
+                            category_samples_threshold: int = None,
+                            **kwargs) -> pd.DataFrame:
+        if kind == 'mutations':
+            features_comparator = MutationFeaturesFromIndexComparator(connection=self._query_connection,
+                                                                      include_unknown=False,
+                                                                      include_present=True,
+                                                                      **kwargs)
+        elif kind == 'mlst':
+            features_comparator = MLSTFeaturesComparator(connection=self._query_connection,
+                                                         include_unknown=False,
+                                                         include_present=True,
+                                                         **kwargs)
+        else:
+            raise Exception(f'Unsupported value kind=[{kind}]. Must be one of {self.SUMMARY_FEATURES_KINDS}.')
+
+        if categories_kind not in self.CATEGORY_KINDS:
+            raise Exception(f'Unknown categories_kind={categories_kind}. Must be one of {self.CATEGORY_KINDS}. '
+                            f'Are you sure you have the correct instance of the query class: {self.__class__}?')
+
+        if not isinstance(sample_categories, list):
+            raise Exception(
+                f'sample_categories={sample_categories} must be a list (to iterate in a well-defined order)')
+        else:
+            categories = []
+            for sample_category in sample_categories:
+                if isinstance(sample_category, SamplesQuery):
+                    sample_set = sample_category.sample_set
+                elif isinstance(sample_category, SampleSet):
+                    sample_set = sample_category
+                else:
+                    raise Exception(f'Unknown type={type(sample_category)} in sample_cateogires={sample_categories}. '
+                                    f'Type must be either {SamplesQuery.__name__} or {SampleSet.__name__}')
+
+                categories.append(sample_set)
+
+            return features_comparator.features_comparison(selected_samples=self.sample_set,
+                                                           sample_categories=categories,
+                                                           category_prefixes=category_prefixes,
+                                                           category_samples_threshold=category_samples_threshold,
+                                                           unit=unit)
 
     def tofeaturesset(self, kind: str = 'mutations', selection: str = 'all',
                       include_present_features: bool = True, include_unknown_features: bool = False) -> Set[str]:
@@ -303,6 +353,38 @@ class SamplesQueryIndex(SamplesQuery):
                                      queries_collection=queries_collection)
         else:
             raise Exception(f'Cannot perform an "or" on object {other}')
+
+    def subsample(self, k: Union[int, float], include_unknown: bool = False, seed: int = None) -> SamplesQuery:
+        if k is None:
+            raise Exception(f'k={k} must not be None')
+        elif k < 0:
+            raise Exception(f'k={k} must not be negative')
+
+        # I set a random seed here using random.randint so that I can display the seed used
+        # As part of the query string text. That way, someone could, later on, reproduce the same
+        # subsample even if they didn't explicity set the seed.
+        if seed is None:
+            seed = random.randint(0, 10 ** 10)
+
+        initial_sample_set = self.sample_set
+        if include_unknown:
+            initial_sample_set = initial_sample_set.union(self.unknown_set)
+
+        if k < 1:
+            k = round(k * len(initial_sample_set))
+        elif k > len(initial_sample_set):
+            raise Exception(f'k={k} is greater than number of samples in query={len(initial_sample_set)}')
+        else:
+            k = round(k)
+
+        # There might be a more efficient way to select a random subsample directly from a roaring bitmap
+        # instead of converting to a list and back, but I wasn't able to find one.
+        initial_samples_list = list(initial_sample_set)
+        random.seed(seed)
+        subsamples_list = random.sample(initial_samples_list, k=k)
+        subsamples = SampleSet(subsamples_list)
+
+        return self.intersect(subsamples, f'subsample(k={k}, seed={seed})')
 
     def is_empty(self, include_unknown=False) -> bool:
         if include_unknown:
@@ -541,9 +623,12 @@ class SamplesQueryIndex(SamplesQuery):
     def _can_handle_distance_units(self, units: str) -> bool:
         return units in self.DISTANCES_UNITS
 
-    def isa(self, data: Union[str, List[str]], kind: str = 'sample', **kwargs) -> SamplesQuery:
+    def isa(self, data: Union[str, List[str], SamplesQuery, SampleSet], kind: Union[IsaKind, str] = 'sample',
+            **kwargs) -> SamplesQuery:
         if kind == 'sample' or kind == 'samples':
             return self._isin_samples(data=data, query_message_prefix='isa_sample')
+        elif isinstance(kind, DelegateIsaKind):
+            return kind.isa(data, self)
         else:
             raise Exception(f'kind=[{kind}] is not supported. Must be one of {self._isa_kinds()}')
 

@@ -2,12 +2,12 @@ from typing import List
 
 import pandas as pd
 
-from genomics_data_index.api.query.features.FeaturesSummarizer import FeaturesSummarizer
+from genomics_data_index.api.query.features.FeaturesComparator import FeaturesComparator
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
 from genomics_data_index.storage.SampleSet import SampleSet
 
 
-class MutationFeaturesSummarizer(FeaturesSummarizer):
+class MutationFeaturesComparator(FeaturesComparator):
 
     def __init__(self, connection: DataIndexConnection, ignore_annotations: bool = False,
                  ncores: int = 1, batch_size: int = 500, mutation_type: str = 'all'):
@@ -19,11 +19,21 @@ class MutationFeaturesSummarizer(FeaturesSummarizer):
 
     @property
     def summary_columns(self) -> List[str]:
-        return ['Sequence', 'Position', 'Deletion', 'Insertion', 'Count', 'Total', 'Percent']
+        return self.feature_id_columns + ['Count', 'Total', 'Percent']
+
+    @property
+    def feature_id_columns(self) -> List[str]:
+        return ['Sequence', 'Position', 'Deletion', 'Insertion']
 
     @property
     def index_name(self) -> str:
         return 'Mutation'
+
+    def features_comparison(self, selected_samples: SampleSet,
+                            sample_categories: List[SampleSet],
+                            category_prefixes: List[str] = None,
+                            unit: str = 'percent') -> pd.DataFrame:
+        raise NotImplementedError()
 
     def summary(self, sample_set: SampleSet) -> pd.DataFrame:
         vs = self._connection.variation_service

@@ -1,5 +1,6 @@
 import logging
 import multiprocessing
+import re
 import shutil
 import sys
 import time
@@ -7,7 +8,7 @@ from functools import partial
 from os import getcwd, mkdir
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import List, cast
+from typing import List, cast, Tuple
 
 import click
 import click_config_file
@@ -18,6 +19,8 @@ from Bio import AlignIO
 import genomics_data_index.storage.service.FeatureService as FeatureService
 from genomics_data_index import __version__
 from genomics_data_index.api.query.GenomicsDataIndex import GenomicsDataIndex
+from genomics_data_index.api.query.SamplesQuery import SamplesQuery
+from genomics_data_index.api.query.impl.SamplesQueryIndex import SamplesQueryIndex
 from genomics_data_index.cli import yaml_config_provider
 from genomics_data_index.configuration.Project import Project, ProjectConfigurationError
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
@@ -33,9 +36,6 @@ from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackageFactory 
 from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackageFactory import \
     NucleotideSnippySampleDataPackageFactory
 from genomics_data_index.storage.io.mutation.SequenceFile import SequenceFile
-from genomics_data_index.storage.model.QueryFeature import QueryFeature
-from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
-from genomics_data_index.storage.model.QueryFeatureMutationSPDI import QueryFeatureMutationSPDI
 from genomics_data_index.storage.service import EntityExistsError
 from genomics_data_index.storage.service.CoreAlignmentService import CoreAlignmentService
 from genomics_data_index.storage.service.MLSTService import MLSTService
@@ -120,7 +120,9 @@ def load_variants_common(data_index_connection: DataIndexConnection, ncores: int
                          data_package_factory: SampleDataPackageFactory,
                          reference_file: Path, reference_name: str,
                          input: Path, build_tree: bool,
-                         align_type: str, extra_tree_params: str,
+                         align_type: str,
+                         include_variants: List[str],
+                         extra_tree_params: str,
                          sample_batch_size: int):
     reference_service = data_index_connection.reference_service
     variation_service = cast(VariationService, data_index_connection.variation_service)
@@ -157,8 +159,13 @@ def load_variants_common(data_index_connection: DataIndexConnection, ncores: int
         logger.info(f'Loaded variants from [{input}] into database')
 
         if build_tree:
+            if align_type == 'core':
+                logger.info(f'--align-type {align_type} so changing to --include-variants SNP')
+                include_variants = ['SNP']
+
             tree_service.rebuild_tree(reference_name=reference_name,
                                       align_type=align_type,
+                                      include_variants=include_variants,
                                       num_cores=ncores,
                                       extra_params=extra_tree_params)
             logger.info('Finished building tree of all samples')
@@ -176,16 +183,21 @@ def load_variants_common(data_index_connection: DataIndexConnection, ncores: int
 @click.option('--sample-batch-size', help='Number of samples to process within a single batch.', default=2000,
               type=click.IntRange(min=1))
 @click.option('--build-tree/--no-build-tree', default=False, help='Builds tree of all samples after loading')
-@click.option('--align-type', help=f'The type of alignment to generate', default='core',
+@click.option('--align-type', help=f'The type of alignment to generate '
+                                   f'("core" implies is only --include-variants "SNP")', default='full',
               type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
+@click.option('--include-variants', help=f'Which type of variant(s) to include in tree.',
+              default=CoreAlignmentService.INCLUDE_VARIANT_DEFAULT,
+              type=click.Choice(CoreAlignmentService.INCLUDE_VARIANT_TYPES), multiple=True)
 @click.option('--extra-tree-params', help='Extra parameters to tree-building software',
               default=None)
 def load_snippy(ctx, snippy_dir: str, reference_file: str, reference_name: str,
                 index_unknown: bool, sample_batch_size: int, build_tree: bool,
-                align_type: str, extra_tree_params: str):
+                align_type: str, include_variants: Tuple[str], extra_tree_params: str):
     ncores = ctx.obj['ncores']
     project = get_project_exit_on_error(ctx)
     data_index_connection = project.create_connection()
+    include_variants = [v for v in include_variants]
 
     if reference_name is None and reference_file is None:
         logger.error(f'Neither --reference-file nor --reference-name are specified. Please define either '
@@ -207,6 +219,7 @@ def load_snippy(ctx, snippy_dir: str, reference_file: str, reference_name: str,
                              reference_file=reference_file,
                              reference_name=reference_name,
                              input=Path(snippy_dir), build_tree=build_tree, align_type=align_type,
+                             include_variants=include_variants,
                              extra_tree_params=extra_tree_params,
                              sample_batch_size=sample_batch_size)
 
@@ -223,15 +236,21 @@ def load_snippy(ctx, snippy_dir: str, reference_file: str, reference_name: str,
 @click.option('--sample-batch-size', help='Number of samples to process within a single batch.', default=2000,
               type=click.IntRange(min=1))
 @click.option('--build-tree/--no-build-tree', default=False, help='Builds tree of all samples after loading')
-@click.option('--align-type', help=f'The type of alignment to generate', default='core',
+@click.option('--align-type', help=f'The type of alignment to generate '
+                                   f'("core" implies is only --include-variants "SNP")', default='full',
               type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
+@click.option('--include-variants', help=f'Which type of variant(s) to include in tree.',
+              default=CoreAlignmentService.INCLUDE_VARIANT_DEFAULT,
+              type=click.Choice(CoreAlignmentService.INCLUDE_VARIANT_TYPES), multiple=True)
 @click.option('--extra-tree-params', help='Extra parameters to tree-building software',
               default=None)
 def load_vcf(ctx, vcf_fofns: str, reference_file: str, reference_name: str,
-             index_unknown: bool, sample_batch_size: int, build_tree: bool, align_type: str, extra_tree_params: str):
+             index_unknown: bool, sample_batch_size: int, build_tree: bool, align_type: str,
+             include_variants: Tuple[str], extra_tree_params: str):
     ncores = ctx.obj['ncores']
     project = get_project_exit_on_error(ctx)
     vcf_fofns = Path(vcf_fofns)
+    include_variants = [v for v in include_variants]
 
     if reference_name is None and reference_file is None:
         logger.error(f'Neither --reference-file nor --reference-name are specified. Please define either '
@@ -255,8 +274,51 @@ def load_vcf(ctx, vcf_fofns: str, reference_file: str, reference_name: str,
                              reference_file=reference_file,
                              reference_name=reference_name,
                              input=Path(vcf_fofns), build_tree=build_tree, align_type=align_type,
+                             include_variants=include_variants,
                              extra_tree_params=extra_tree_params,
                              sample_batch_size=sample_batch_size)
+
+
+@load.command(name='vcf-kmer')
+@click.pass_context
+@click.argument('vcf_kmer_fofns', type=click.Path(exists=True))
+@click.option('--reference-file', help='Reference genome file', required=False, type=click.Path(exists=True))
+@click.option('--reference-name', help='Reference genome name', required=False)
+@click.option('--index-unknown/--no-index-unknown',
+              help='Enable/disable indexing unknown/missing positions. Indexing missing positions can significantly '
+                   'slow down the indexing process.',
+              required=False, default=True)
+@click.option('--sample-batch-size', help='Number of samples to process within a single batch.', default=2000,
+              type=click.IntRange(min=1))
+@click.option('--build-tree/--no-build-tree', default=False, help='Builds tree of all samples after loading')
+@click.option('--align-type', help=f'The type of alignment to generate '
+                                   f'("core" implies is only --include-variants "SNP")', default='full',
+              type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
+@click.option('--include-variants', help=f'Which type of variant(s) to include in tree.',
+              default=CoreAlignmentService.INCLUDE_VARIANT_DEFAULT,
+              type=click.Choice(CoreAlignmentService.INCLUDE_VARIANT_TYPES), multiple=True)
+@click.option('--extra-tree-params', help='Extra parameters to tree-building software',
+              default=None)
+def load_vcf_kmer(ctx, vcf_kmer_fofns: str, reference_file: str, reference_name: str,
+                  index_unknown: bool, sample_batch_size: int, build_tree: bool, align_type: str,
+                  include_variants: Tuple[str], extra_tree_params: str):
+    logger.info(f'Indexing processed VCF files defined in [{vcf_kmer_fofns}]')
+    ctx.invoke(load_vcf, index_unknown=index_unknown, vcf_fofns=vcf_kmer_fofns,
+               reference_file=reference_file, reference_name=reference_name,
+               build_tree=build_tree, align_type=align_type,
+               include_variants=include_variants,
+               extra_tree_params=extra_tree_params, sample_batch_size=sample_batch_size)
+
+    data_index_connection = get_project_exit_on_error(ctx).create_connection()
+    kmer_service = data_index_connection.kmer_service
+
+    logger.info(f'Inserting kmer sketches found in [{vcf_kmer_fofns}] into database')
+    files_df = pd.read_csv(vcf_kmer_fofns, sep='\t', index_col=False)
+    for idx, row in files_df.iterrows():
+        sample_name = row['Sample']
+        kmer_sketch = row['Sketch File']
+        kmer_service.insert_kmer_index(sample_name=sample_name,
+                                       kmer_index_path=Path(kmer_sketch))
 
 
 @load.command(name='kmer')
@@ -400,6 +462,70 @@ def input_command(absolute: bool, input_genomes_file: str, genomes: List[str]):
     pipeline_executor.write_input_sample_files(input_sample_files=sample_files, abolute_paths=absolute)
 
 
+@main.command(name='input-split-file')
+@click.option('--absolute/--no-absolute', help='Convert paths to absolute paths', required=False)
+@click.option('--output-dir',
+              help='The directory where individual output sequence files should be written into.',
+              type=click.Path(),
+              default=Path(f'split-files.{time.time()}'),
+              required=False)
+@click.option('--output-samples-file',
+              help='The file listing all the samples and linking them back to the individual sequence files. '
+                   'Defaults to STDOUT.',
+              type=click.Path(),
+              required=False
+              )
+@click.option('--subsample-file',
+              help='Subsample the input files to contain only those samples listed in the passed file '
+                   '(one sample per line).',
+              type=click.Path(exists=True),
+              required=False
+              )
+@click.option('--subsample',
+              help='Subsample the input files to contain only the give number of samples. If >= 1 this is '
+                   'the number of samples to select. If < 1 this is the proportion of samples out of all '
+                   'sequences in the input files (e.g., 0.5 means subsample to 50% of the original sequences).',
+              type=click.FloatRange(min=0),
+              required=False
+              )
+@click.option('--seed', help='Seed for random number generator when subsampling.',
+              type=int, required=False, default=None)
+@click.argument('input-files', type=click.Path(exists=True), nargs=-1)
+def input_split_file(absolute: bool, output_dir: str, output_samples_file: str, subsample_file: str,
+                     subsample: float,
+                     seed: int,
+                     input_files: Tuple[str]):
+    if output_samples_file is None:
+        output_samples_file = sys.stdout
+    else:
+        output_samples_file = Path(output_samples_file)
+
+    input_files = [Path(f) for f in input_files]
+
+    pipeline_executor = SnakemakePipelineExecutor()
+
+    samples = None
+    if subsample_file is not None:
+        with open(subsample_file, 'r') as fh:
+            samples = {x.strip() for x in fh.readlines()}
+    elif subsample is not None:
+        samples = pipeline_executor.select_random_samples(input_files,
+                                                          number_samples=subsample,
+                                                          random_seed=seed)
+
+    output_dir = Path(output_dir)
+    if not output_dir.exists():
+        mkdir(output_dir)
+
+    sample_data_df = pipeline_executor.split_input_sequence_files(input_files,
+                                                                  samples=samples,
+                                                                  output_dir=output_dir)
+
+    pipeline_executor.write_input_sample_files(input_sample_files=sample_data_df,
+                                               output_file=output_samples_file,
+                                               abolute_paths=absolute)
+
+
 @main.command()
 @click.pass_context
 @click.option('--reference-file', help='Reference genome', required=True, type=click.Path(exists=True))
@@ -413,12 +539,16 @@ def input_command(absolute: bool, input_genomes_file: str, genomes: List[str]):
               required=False, default=True)
 @click.option('--clean/--no-clean', help='Clean up intermediate files when finished.', default=True)
 @click.option('--build-tree/--no-build-tree', default=False, help='Builds tree of all samples after loading')
-@click.option('--align-type', help=f'The type of alignment to generate', default='core',
+@click.option('--align-type', help=f'The type of alignment to generate '
+                                   f'("core" implies is only --include-variants "SNP")', default='full',
               type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
+@click.option('--include-variants', help=f'Which type of variant(s) to include in tree.',
+              default=CoreAlignmentService.INCLUDE_VARIANT_DEFAULT,
+              type=click.Choice(CoreAlignmentService.INCLUDE_VARIANT_TYPES), multiple=True)
 @click.option('--extra-tree-params', help='Extra parameters to tree-building software',
               default=None)
 @click.option('--use-conda/--no-use-conda', help="Use (or don't use) conda for dependency management for pipeline.",
-              default=False)
+              default=True)
 @click.option('--include-mlst/--no-include-mlst', help="Enable/disable including basic MLST in results.",
               default=False)
 @click.option('--include-kmer/--no-include-kmer', help="Enable/disable including kmer analysis in results.",
@@ -458,6 +588,7 @@ def input_command(absolute: bool, input_genomes_file: str, genomes: List[str]):
 @click.argument('genomes', type=click.Path(exists=True), nargs=-1)
 def analysis(ctx, reference_file: str, load_data: bool, index_unknown: bool, clean: bool, build_tree: bool,
              align_type: str,
+             include_variants: Tuple[str],
              extra_tree_params: str, use_conda: bool,
              include_mlst: bool, include_kmer: bool, ignore_snpeff: bool,
              reads_mincov: int, reads_minqual: int,
@@ -526,6 +657,7 @@ def analysis(ctx, reference_file: str, load_data: bool, index_unknown: bool, cle
             logger.info(f'Indexing processed VCF files defined in [{processed_files_fofn}]')
             ctx.invoke(load_vcf, index_unknown=index_unknown, vcf_fofns=str(processed_files_fofn),
                        reference_file=reference_file, build_tree=build_tree, align_type=align_type,
+                       include_variants=include_variants,
                        extra_tree_params=extra_tree_params, sample_batch_size=sample_batch_size)
         except Exception as e:
             logger.exception(e)
@@ -594,14 +726,20 @@ def build(ctx):
 @click.pass_context
 @click.option('--output-file', help='Output file', required=True, type=click.Path())
 @click.option('--reference-name', help='Reference genome name', required=True, type=str)
-@click.option('--align-type', help=f'The type of alignment to generate', default='core',
+@click.option('--align-type', help=f'The type of alignment to generate '
+                                   f'("core" implies is only --include-variants "SNP")', default='full',
               type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
+@click.option('--include-variants', help=f'Which type of variant(s) to include.',
+              default=CoreAlignmentService.INCLUDE_VARIANT_DEFAULT,
+              type=click.Choice(CoreAlignmentService.INCLUDE_VARIANT_TYPES), multiple=True)
 @click.option('--sample', help='Sample to include in alignment (can list more than one).',
               multiple=True, type=str)
-def alignment(ctx, output_file: Path, reference_name: str, align_type: str, sample: List[str]):
+def alignment(ctx, output_file: Path, reference_name: str, align_type: str,
+              include_variants: Tuple[str], sample: List[str]):
     genomics_index = get_genomics_index(ctx)
     references = genomics_index.reference_names()
     alignment_service = genomics_index.connection.alignment_service
+    include_variants = [v for v in include_variants]
 
     if reference_name not in references:
         logger.error(f'Reference genome [{reference_name}] does not exist')
@@ -614,9 +752,14 @@ def alignment(ctx, output_file: Path, reference_name: str, align_type: str, samp
         logger.error(f'Samples {set(sample) - found_samples} do not exist')
         sys.exit(1)
 
+    if align_type == 'core':
+        logger.info(f'--align-type {align_type} so changing to --include-variants SNP')
+        include_variants = ['SNP']
+
     alignment_data = alignment_service.construct_alignment(reference_name=reference_name,
                                                            samples=query.tolist(names=True),
                                                            align_type=align_type,
+                                                           include_variants=include_variants,
                                                            include_reference=True)
 
     with open(output_file, 'w') as f:
@@ -631,19 +774,24 @@ supported_tree_build_types = ['iqtree']
 @click.pass_context
 @click.option('--output-file', help='Output file', required=True, type=click.Path())
 @click.option('--reference-name', help='Reference genome name', type=str, required=True)
-@click.option('--align-type', help=f'The type of alignment to use for generating the tree', default='core',
+@click.option('--align-type', help=f'The type of alignment to use for generating the tree '
+                                   f'("core" implies is only --include-variants "SNP")', default='full',
               type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
 @click.option('--tree-build-type', help=f'The type of tree building software', default='iqtree',
               type=click.Choice(supported_tree_build_types))
+@click.option('--include-variants', help=f'Which type of variant(s) to include.',
+              default=CoreAlignmentService.INCLUDE_VARIANT_DEFAULT,
+              type=click.Choice(CoreAlignmentService.INCLUDE_VARIANT_TYPES), multiple=True)
 @click.option('--sample', help='Sample to include in tree (can list more than one).',
               multiple=True, type=str)
 @click.option('--extra-params', help='Extra parameters to tree-building software',
               default=None)
-def tree(ctx, output_file: Path, reference_name: str, align_type: str,
+def tree(ctx, output_file: Path, reference_name: str, align_type: str, include_variants: Tuple[str],
          tree_build_type: str, sample: List[str], extra_params: str):
     genomics_index = get_genomics_index(ctx)
     references = genomics_index.reference_names()
     ncores = ctx.obj['ncores']
+    include_variants = [v for v in include_variants]
 
     if reference_name not in references:
         logger.error(f'Reference genome [{reference_name}] does not exist')
@@ -662,11 +810,16 @@ def tree(ctx, output_file: Path, reference_name: str, align_type: str,
         logger.error(f'align_type=[{align_type}] is not supported for tree_build_type=[{tree_build_type}]')
         sys.exit(1)
 
+    if align_type == 'core':
+        logger.info(f'--align-type {align_type} so changing to --include-variants SNP')
+        include_variants = ['SNP']
+
     tree_query = query.build_tree(kind='mutation',
                                   method=tree_build_type,
                                   align_type=align_type,
                                   scope=reference_name,
                                   include_reference=True,
+                                  include_variants=include_variants,
                                   ncores=ncores,
                                   extra_params=extra_params)
 
@@ -683,15 +836,20 @@ def rebuild(ctx):
 @rebuild.command(name='tree')
 @click.pass_context
 @click.argument('reference', type=str, nargs=-1)
-@click.option('--align-type', help=f'The type of alignment to use for generating the tree', default='core',
+@click.option('--align-type', help=f'The type of alignment to use for generating the tree '
+                                   f'("core" implies is only --include-variants "SNP")', default='full',
               type=click.Choice(CoreAlignmentService.ALIGN_TYPES))
+@click.option('--include-variants', help=f'Which type of variant(s) to include.',
+              default=CoreAlignmentService.INCLUDE_VARIANT_DEFAULT,
+              type=click.Choice(CoreAlignmentService.INCLUDE_VARIANT_TYPES), multiple=True)
 @click.option('--extra-params', help='Extra parameters to tree-building software',
               default=None)
-def rebuild_tree(ctx, reference: List[str], align_type: str, extra_params: str):
+def rebuild_tree(ctx, reference: List[str], align_type: str, include_variants: Tuple[str], extra_params: str):
     data_index_connection = get_project_exit_on_error(ctx).create_connection()
     tree_service = data_index_connection.tree_service
     reference_service = data_index_connection.reference_service
     ncores = ctx.obj['ncores']
+    include_variants = [v for v in include_variants]
 
     if len(reference) == 0:
         logger.error('Must define name of reference genome to use. '
@@ -703,52 +861,96 @@ def rebuild_tree(ctx, reference: List[str], align_type: str, extra_params: str):
             logger.error(f'Reference genome [{reference_name}] does not exist')
             sys.exit(1)
 
+    if align_type == 'core':
+        logger.info(f'--align-type {align_type} so changing to --include-variants SNP')
+        include_variants = ['SNP']
+
     for reference_name in reference:
         logger.info(f'Started rebuilding tree for reference genome [{reference_name}]')
         tree_service.rebuild_tree(reference_name=reference_name,
                                   align_type=align_type,
+                                  include_variants=include_variants,
                                   num_cores=ncores,
                                   extra_params=extra_params)
         logger.info(f'Finished rebuilding tree')
 
 
-@main.group()
+def perform_query(query: SamplesQuery, command: str) -> SamplesQuery:
+    if command.startswith('hasa:'):
+        query_str = command[len('hasa:'):]
+        return query.hasa(query_str)
+    elif command.startswith('isa:'):
+        query_str = command[len('isa:'):]
+        return query.isa(query_str)
+    elif command.startswith('isin_'):
+        match = re.match(r'isin_([^_]+)_([^:]+):(.*)', command)
+        if not match:
+            raise Exception(f'Invalid isin command: [{command}]. Should be in the form [isin_1_substitutions:SAMPLE]')
+        else:
+            unit_value = float(match.group(1))
+            units = match.group(2)
+            sample = match.group(3)
+
+            return query.isin(sample, kind='distance', units=units, distance=unit_value)
+    else:
+        logger.warning(f'Unknown command for [{command}]. Will assume you meant [hasa:{command}]')
+        query_str = command
+        return query.hasa(query_str)
+
+
+@main.command(name='query')
 @click.pass_context
-def query(ctx):
-    pass
+@click.argument('query_command', nargs=-1)
+@click.option('--reference-name', type=str, required=False,
+              help='Reference genome name for querying by phylogenetic distance')
+@click.option('--summary/--no-summary', help='Print summary information on query')
+@click.option('--features-summary', required=False,
+              type=click.Choice(SamplesQueryIndex.SUMMARY_FEATURES_KINDS),
+              multiple=False,
+              help='Summarize by the passed feature.')
+@click.option('--features-summary-unique', required=False,
+              type=click.Choice(SamplesQueryIndex.SUMMARY_FEATURES_KINDS),
+              multiple=False,
+              help='Summarize by the passed feature (show only unique features).')
+@click.option('--include-annotations/--no-include-annotations',
+              help='If using --features-summary or --features-summary-unique '
+                   'specifies if variant annotations are included.',
+              default=True)
+def query(ctx, query_command: List[str], reference_name: str, summary: bool, features_summary: str,
+          features_summary_unique: str,
+          include_annotations: bool):
+    genomics_index = get_genomics_index(ctx)
 
+    if features_summary is not None and features_summary_unique is not None:
+        logger.error(f'Cannot set both --features-summary and --features-summary-unique')
+        sys.exit(1)
+    elif summary and (features_summary is not None or features_summary_unique is not None):
+        logger.error(f'Cannot set both --summary and --features-summary or --features-summary-unique')
+        sys.exit(1)
 
-def query_feature(genomics_index: GenomicsDataIndex, features: List[QueryFeature], summarize: bool) -> None:
-    query = genomics_index.samples_query()
-    for feature in features:
-        query = query.hasa(feature)
+    if reference_name is not None:
+        query = genomics_index.samples_query(universe='mutations', reference_name=reference_name)
+    else:
+        query = genomics_index.samples_query()
 
-    if summarize:
+    for command in query_command:
+        query = perform_query(query, command=command)
+
+    if summary:
         results_df = query.summary()
+    elif features_summary is not None:
+        results_df = query.features_summary(
+            kind=features_summary, ignore_annotations=not include_annotations).sort_values(
+            'Count', ascending=False).reset_index()
+    elif features_summary_unique is not None:
+        results_df = query.features_summary(
+            kind=features_summary_unique, selection='unique',
+            ignore_annotations=not include_annotations).sort_values(
+            'Count', ascending=False).reset_index()
     else:
         results_df = query.toframe(include_unknown=True)
 
     results_df.to_csv(sys.stdout, sep='\t', index=False, float_format='%0.4g', na_rep='-')
-
-
-@query.command(name='mutation')
-@click.pass_context
-@click.argument('name', nargs=-1)
-@click.option('--summarize/--no-summarize', help='Print summary information on query')
-def query_mutation(ctx, name: List[str], summarize: bool):
-    genomics_index = get_genomics_index(ctx)
-    features = [QueryFeatureMutationSPDI(n) for n in name]
-    query_feature(genomics_index=genomics_index, features=features, summarize=summarize)
-
-
-@query.command(name='mlst')
-@click.pass_context
-@click.argument('name', nargs=-1)
-@click.option('--summarize/--no-summarize', help='Print summary information on query')
-def query_mlst(ctx, name: List[str], summarize: bool):
-    genomics_index = get_genomics_index(ctx)
-    features = [QueryFeatureMLST(n) for n in name]
-    query_feature(genomics_index=genomics_index, features=features, summarize=summarize)
 
 
 @main.group(name='db')

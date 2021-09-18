@@ -3,10 +3,13 @@ from tempfile import TemporaryDirectory
 from typing import Dict
 
 import pytest
+from pybedtools import BedTool
 
+from genomics_data_index.storage.MaskedGenomicRegions import MaskedGenomicRegions
 from genomics_data_index.storage.io.mutation.NucleotideSampleDataSequenceMask import NucleotideSampleDataSequenceMask
 from genomics_data_index.test.integration import regular_vcf_dir, data_dir
 from genomics_data_index.test.integration.storage.io import read_vcf_df
+from genomics_data_index.test.integration.storage.io.mutation import vcf_and_bed_mask_files
 
 
 @pytest.fixture
@@ -25,6 +28,11 @@ def files_map():
             'mask': Path(data_dir, 'SampleC', 'snps.aligned.fa'),
         }
     }
+
+
+@pytest.fixture
+def files_bed_mask_map(sample_dirs):
+    return vcf_and_bed_mask_files(sample_dirs)
 
 
 def test_get_vcf_file_no_preprocess(files_map: Dict[str, Dict[str, Path]]):
@@ -67,6 +75,29 @@ def test_get_sample_mask_after_preprocess(files_map: Dict[str, Dict[str, Path]])
         assert processed_sample_files.is_preprocessed()
         mask = processed_sample_files.get_mask()
         assert 437 == len(mask)
+        assert {'reference'} == mask.sequence_names()
+        mask_file = processed_sample_files.get_mask_file()
+        assert mask_file.exists()
+        assert mask_file.parent == tmp_dir
+
+
+def test_get_sample_mask_after_preprocess_subtract_vcf(files_map: Dict[str, Dict[str, Path]],
+                                                       files_bed_mask_map: Dict[str, Dict[str, Path]]):
+    with TemporaryDirectory() as tmp_dir_str:
+        tmp_dir = Path(tmp_dir_str)
+        sample_files = NucleotideSampleDataSequenceMask.create(sample_name='SampleA',
+                                                               vcf_file=files_map['SampleA']['vcf'],
+                                                               sample_mask_sequence=files_map['SampleA']['mask'],
+                                                               subtract_vcf_from_mask=True)
+        expected_bed = BedTool(str(files_bed_mask_map['masks_minus_vcf']['SampleA']))
+        expected_mask = MaskedGenomicRegions(expected_bed)
+
+        assert not sample_files.is_preprocessed()
+        processed_sample_files = sample_files.persist(tmp_dir)
+        assert processed_sample_files.is_preprocessed()
+        mask = processed_sample_files.get_mask()
+        assert expected_mask.mask == mask.mask, f'expected=\n{expected_mask.mask} != actual=\n{mask.mask}'
+        assert 414 == len(mask)
         assert {'reference'} == mask.sequence_names()
         mask_file = processed_sample_files.get_mask_file()
         assert mask_file.exists()

@@ -17,7 +17,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setup(name='genomics-data-index',
-      version='0.2.0',
+      version='0.3.0.dev13',
       description='Indexes genomics data (mutations, kmers, MLST) for fast querying of features.',
       long_description=long_description,
       long_description_content_type="text/markdown",
@@ -27,10 +27,14 @@ setup(name='genomics-data-index',
       license='Apache v2.0',
       classifiers=classifiers,
       install_requires=[
+          # pyvcf uses the option use_2to3 which is not compatible with setuptools>=58
+          'setuptools<58',
+
           'biopython>=1.70',
           'pandas>=1.0.0',
           'numpy',
           'scikit-bio',
+          'scipy',
           'pyvcf',
           'sqlalchemy',
           'pymysql',
@@ -53,6 +57,7 @@ setup(name='genomics-data-index',
           'pybedtools',
           'snakemake',
           'Jinja2',
+          'pathvalidate',
           'pytest',
       ],
       python_requires="<3.9",

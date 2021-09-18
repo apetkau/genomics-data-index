@@ -17,8 +17,16 @@ class MaskedGenomicRegions:
     def __init__(self, mask: BedTool):
         self._mask = mask.sort().merge()
 
+    @property
+    def mask(self):
+        return self._mask
+
     def intersect(self, other: MaskedGenomicRegions) -> MaskedGenomicRegions:
         return MaskedGenomicRegions(self._mask.intersect(other._mask))
+
+    def subtract(self, other: MaskedGenomicRegions) -> MaskedGenomicRegions:
+        subtraction = self._mask.subtract(other._mask)
+        return MaskedGenomicRegions(subtraction)
 
     def union(self, other: MaskedGenomicRegions) -> MaskedGenomicRegions:
         union = self._mask.cat(other._mask, postmerge=True, force_truncate=True)
@@ -104,6 +112,11 @@ class MaskedGenomicRegions:
     @classmethod
     def from_file(cls, file: Path) -> MaskedGenomicRegions:
         bed_file_data = BedTool(str(file))
+        return MaskedGenomicRegions(bed_file_data)
+
+    @classmethod
+    def from_vcf_file(cls, file: Path) -> MaskedGenomicRegions:
+        bed_file_data = BedTool(str(file)).merge()
         return MaskedGenomicRegions(bed_file_data)
 
     @classmethod

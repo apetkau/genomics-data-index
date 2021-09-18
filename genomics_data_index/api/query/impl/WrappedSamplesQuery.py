@@ -7,6 +7,8 @@ import numpy as np
 import pandas as pd
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
+from genomics_data_index.api.query.kind.IsaKind import IsaKind
+from genomics_data_index.api.query.kind.isa.DelegateIsaKind import DelegateIsaKind
 from genomics_data_index.configuration.connector import DataIndexConnection
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.QueryFeature import QueryFeature
@@ -95,6 +97,21 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
                                                     include_unknown_features=include_unknown_features,
                                                     **kwargs)
 
+    def features_comparison(self, sample_categories: Union[List[SamplesQuery], List[SampleSet], str],
+                            category_prefixes: List[str] = None,
+                            categories_kind: str = 'samples',
+                            kind: str = 'mutations',
+                            unit: str = 'percent',
+                            category_samples_threshold: int = None,
+                            **kwargs) -> pd.DataFrame:
+        return self._wrapped_query.features_comparison(sample_categories=sample_categories,
+                                                       category_prefixes=category_prefixes,
+                                                       categories_kind=categories_kind,
+                                                       kind=kind,
+                                                       unit=unit,
+                                                       category_samples_threshold=category_samples_threshold,
+                                                       **kwargs)
+
     def tofeaturesset(self, kind: str = 'mutations', selection: str = 'all',
                       include_present_features: bool = True, include_unknown_features: bool = False) -> Set[str]:
         return self._wrapped_query.tofeaturesset(kind=kind, selection=selection,
@@ -106,6 +123,10 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
 
     def or_(self, other: SamplesQuery) -> SamplesQuery:
         return self._wrap_create(self._wrapped_query.or_(other))
+
+    def subsample(self, k: Union[int, float], include_unknown: bool = False, seed: int = None) -> SamplesQuery:
+        return self._wrap_create(self._wrapped_query.subsample(k=k, include_unknown=include_unknown,
+                                                               seed=seed))
 
     def hasa(self, property: Union[QueryFeature, str, pd.Series], kind='mutation') -> SamplesQuery:
         return self._wrap_create(self._wrapped_query.hasa(property=property, kind=kind))
@@ -187,9 +208,12 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
     def _can_handle_isa_kind(self, kind: str) -> bool:
         return False
 
-    def isa(self, data: Union[str, List[str]], kind: str = 'sample', **kwargs) -> SamplesQuery:
+    def isa(self, data: Union[str, List[str], SamplesQuery, SampleSet], kind: Union[IsaKind, str] = 'sample',
+            **kwargs) -> SamplesQuery:
         if self._can_handle_isa_kind(kind):
             return self._isa_internal(data=data, kind=kind, **kwargs)
+        elif isinstance(kind, DelegateIsaKind):
+            return kind.isa(data, self)
         else:
             return self._wrap_create(self._wrapped_query.isa(data=data, kind=kind, **kwargs))
 

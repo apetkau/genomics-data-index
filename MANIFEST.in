@@ -1,6 +1,12 @@
+recursive-include genomics_data_index/pipelines/snakemake/main/config/ *
+recursive-include genomics_data_index/pipelines/snakemake/main/input-data/ *
+recursive-include genomics_data_index/pipelines/snakemake/main/workflow/ *
+include genomics_data_index/pipelines/snakemake/main/README.md
+include genomics_data_index/pipelines/snakemake/main/clean.sh
 recursive-include genomics_data_index/test/integration/data *
+recursive-include genomics_data_index/test/unit/data *
+recursive-include genomics_data_index/test/unit/variant/data *
 recursive-include genomics_data_index/test/integration/pipelines/data *
-recursive-include genomics_data_index/pipelines/snakemake/ *
 recursive-include genomics_data_index/storage/io/mutation/templates/ *
 include README.md
 include CHANGELOG.md

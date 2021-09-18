@@ -11,9 +11,11 @@ def expected_tree() -> Tree:
 
 def test_build_tree_core_fasttree(tree_service, core_alignment_service, expected_tree):
     alignment = core_alignment_service.construct_alignment(
-        reference_name='genome', samples=['SampleA', 'SampleB', 'SampleC'])
+        reference_name='genome', samples=['SampleA', 'SampleB', 'SampleC'],
+        include_variants=['SNP'], align_type='core',
+    )
 
-    tree, out = tree_service.build_tree(alignment, tree_build_type='fasttree')
+    tree, out = tree_service.build_tree(alignment, tree_build_type='fasttree', )
 
     assert {'SampleA', 'SampleB', 'SampleC', 'genome'} == set(tree.get_leaf_names())
 
@@ -23,7 +25,9 @@ def test_build_tree_core_fasttree(tree_service, core_alignment_service, expected
 
 def test_build_tree_core_iqtree(tree_service, core_alignment_service, expected_tree):
     alignment = core_alignment_service.construct_alignment(
-        reference_name='genome', samples=['SampleA', 'SampleB', 'SampleC'])
+        reference_name='genome', samples=['SampleA', 'SampleB', 'SampleC'],
+        include_variants=['SNP'], align_type='core',
+    )
 
     tree, out = tree_service.build_tree(alignment, tree_build_type='iqtree',
                                         extra_params='--seed 42 -m GTR+ASC')
@@ -40,7 +44,9 @@ def test_build_tree_core_iqtree(tree_service, core_alignment_service, expected_t
 
 def test_build_tree_core_iqtree_2cores(tree_service, core_alignment_service, expected_tree):
     alignment = core_alignment_service.construct_alignment(
-        reference_name='genome', samples=['SampleA', 'SampleB', 'SampleC'])
+        reference_name='genome', samples=['SampleA', 'SampleB', 'SampleC'],
+        include_variants=['SNP'], align_type='core',
+    )
 
     tree, out = tree_service.build_tree(alignment, tree_build_type='iqtree', num_cores=2)
 
@@ -77,7 +83,7 @@ def test_build_tree_two_samples(tree_service, core_alignment_service):
 
 
 def test_rebuild_tree(tree_service, reference_service_with_data, expected_tree):
-    tree_service.rebuild_tree(reference_name='genome')
+    tree_service.rebuild_tree(reference_name='genome', align_type='core', include_variants=['SNP'])
     reference_genome = reference_service_with_data.find_reference_genome('genome')
     tree = reference_genome.tree
 

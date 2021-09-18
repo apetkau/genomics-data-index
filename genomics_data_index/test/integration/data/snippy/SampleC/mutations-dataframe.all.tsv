@@ -1,34 +1,34 @@
-Mutation	Sequence	Position	Deletion	Insertion
-reference:347:TGAAG:T	reference	347	TGAAG	T
-reference:619:G:C	reference	619	G	C
-reference:839:C:G	reference	839	C	G
-reference:866:GCCAGATCC:G	reference	866	GCCAGATCC	G
-reference:1056:G:GC	reference	1056	G	GC
-reference:1135:CCT:C	reference	1135	CCT	C
-reference:1184:A:G	reference	1184	A	G
-reference:1270:CTT:C	reference	1270	CTT	C
-reference:1347:C:A	reference	1347	C	A
-reference:1440:G:GCCAC	reference	1440	G	GCCAC
-reference:1815:CAA:C	reference	1815	CAA	C
-reference:1984:GTGATTG:TTGA	reference	1984	GTGATTG	TTGA
-reference:2480:TG:T	reference	2480	TG	T
-reference:2539:A:AG	reference	2539	A	AG
-reference:3008:GA:G	reference	3008	GA	G
-reference:3063:A:ATGCAGC	reference	3063	A	ATGCAGC
-reference:3263:A:G	reference	3263	A	G
-reference:3337:C:G	reference	3337	C	G
-reference:3522:G:A	reference	3522	G	A
-reference:3526:T:TA	reference	3526	T	TA
-reference:3642:A:G	reference	3642	A	G
-reference:3733:A:AAATC	reference	3733	A	AAATC
-reference:3762:A:G	reference	3762	A	G
-reference:3846:T:A	reference	3846	T	A
-reference:3897:GCGCA:G	reference	3897	GCGCA	G
-reference:4036:T:A	reference	4036	T	A
-reference:4245:G:A	reference	4245	G	A
-reference:4585:T:C	reference	4585	T	C
-reference:4628:A:G	reference	4628	A	G
-reference:4644:G:A	reference	4644	G	A
-reference:4693:C:CGA	reference	4693	C	CGA
-reference:4765:A:G	reference	4765	A	G
-reference:4975:T:C	reference	4975	T	C
+Mutation	Sequence	Position	Deletion	Insertion	Type
+reference:347:TGAAG:T	reference	347	TGAAG	T	INDEL
+reference:619:G:C	reference	619	G	C	SNP
+reference:839:C:G	reference	839	C	G	SNP
+reference:866:GCCAGATCC:G	reference	866	GCCAGATCC	G	INDEL
+reference:1056:G:GC	reference	1056	G	GC	INDEL
+reference:1135:CCT:C	reference	1135	CCT	C	INDEL
+reference:1184:A:G	reference	1184	A	G	SNP
+reference:1270:CTT:C	reference	1270	CTT	C	INDEL
+reference:1347:C:A	reference	1347	C	A	SNP
+reference:1440:G:GCCAC	reference	1440	G	GCCAC	INDEL
+reference:1815:CAA:C	reference	1815	CAA	C	INDEL
+reference:1984:GTGATTG:TTGA	reference	1984	GTGATTG	TTGA	OTHER
+reference:2480:TG:T	reference	2480	TG	T	INDEL
+reference:2539:A:AG	reference	2539	A	AG	INDEL
+reference:3008:GA:G	reference	3008	GA	G	INDEL
+reference:3063:A:ATGCAGC	reference	3063	A	ATGCAGC	INDEL
+reference:3263:A:G	reference	3263	A	G	SNP
+reference:3337:C:G	reference	3337	C	G	SNP
+reference:3522:G:A	reference	3522	G	A	SNP
+reference:3526:T:TA	reference	3526	T	TA	INDEL
+reference:3642:A:G	reference	3642	A	G	SNP
+reference:3733:A:AAATC	reference	3733	A	AAATC	INDEL
+reference:3762:A:G	reference	3762	A	G	SNP
+reference:3846:T:A	reference	3846	T	A	SNP
+reference:3897:GCGCA:G	reference	3897	GCGCA	G	INDEL
+reference:4036:T:A	reference	4036	T	A	SNP
+reference:4245:G:A	reference	4245	G	A	SNP
+reference:4585:T:C	reference	4585	T	C	SNP
+reference:4628:A:G	reference	4628	A	G	SNP
+reference:4644:G:A	reference	4644	G	A	SNP
+reference:4693:C:CGA	reference	4693	C	CGA	INDEL
+reference:4765:A:G	reference	4765	A	G	SNP
+reference:4975:T:C	reference	4975	T	C	SNP

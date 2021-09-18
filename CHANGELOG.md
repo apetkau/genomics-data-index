@@ -1,3 +1,26 @@
+# 0.3.0
+
+* [api]: Added ability to generate a DataFrame of percents of features present in selected samples. To be used for comparing different categories of samples (0.3.0.dev1).
+* [api]: Added ability to handle joining larger dataframes to sets of samples by batching SQL queries (0.3.0.dev2).
+* [api]: Added mutation "Type" to the output of summaries/comparison table (0.3.0.dev3).
+* [analysis]: Added ability to select to include MNP as well as SNPs when building an alignment/tree (0.3.0.dev2).
+* [analysis]: Santizing sample names for analysis and restoring afterwards. This way a greater variety of sample names is possible (0.3.0.dev3, 0.3.0.dev12).
+* [analysis]: Automatically split a single multi-FASTA file into separate files per sequence (used primarily for SARS-CoV-2 data) (0.3.0.dev4).
+* [analysis]: Added ability to handle lzma and bzip2 compressed sequence files (0.3.0.dev4).
+* [api]: Added a method to select a random subsample of a query (0.3.0.dev4).
+* [api]: Set outgroup of tree query (0.3.0.dev5).
+* [api]: Added experimental class to cluster samples within different categories (e.g., lineages) by distances between the proportion of samples having particular features (0.3.0.dev5).
+* [analysis]: All stages of the Snakemake workflow now have assigned conda environments (0.3.0.dev5).
+* [cli]: Added support for loading mask files as BED files in addition to sequence files (0.3.0.dev6).
+* [analysis]: Fixed issue where there was overlap between unknown/missing positions and VCF files (0.3.0.dev7).
+* [cli/api]: Added `--include-variants DELETION` and `--include-variants DELETION_OTHER` to include deletions in the alignment that is generated (represented by gaps `-`) (0.3.0.dev8).
+* [api]: Added method to define custom `q.isa()` methods and implemented a method to type SARS-CoV-2 genomes using [constellations](https://github.com/cov-lineages/constellations) of mutations (the SARS-CoV-2 typer should be considered experimental at this stage and is not guaranteed to work in all cases) (0.3.0.dev9).
+* [api]: Loading both VCFs and Kmer sketches listed in the same file (0.3.0.dev10).
+* [analysis]: Changed default option to `--use-conda` for analysis.
+* [cli]: Added general query command for multiple types of queries (`gdi query hasa:feature` or `gdi query isa:sample`) as well as summarizing features (`--features-summary`) (0.3.0.dev11).
+* [cli]: Renamed `--summarize` to `--summary` for CLI (0.3.0.dev11).
+* [install]: Restricted `setuptools<58` since `pyvcf` uses the option `use_2to3` which is no longer compatible with setuptools >= 58 <https://setuptools.readthedocs.io/en/latest/history.html#v58-0-0> (0.3.0.dev13).
+
 # 0.2.0
 
 * [doc]: Updates to readme and other documentation.

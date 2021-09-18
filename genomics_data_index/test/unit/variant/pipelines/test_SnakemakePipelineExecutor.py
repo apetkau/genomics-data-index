@@ -188,3 +188,102 @@ def test_write_read_input_sample_files():
         assert 2 == len(df)
         assert ['A', Path('file.fasta'), pd.NA, pd.NA] == df.iloc[0].tolist()
         assert ['B', pd.NA, Path('file.fastq'), pd.NA] == df.iloc[1].tolist()
+
+
+def test_fix_sample_names_no_change():
+    input_samples = pd.DataFrame([
+        ['A', Path('file1.fasta'), pd.NA, pd.NA],
+        ['B', Path('file2.fasta'), pd.NA, pd.NA]
+    ], columns=['Sample', 'Assemblies', 'Reads1', 'Reads2'])
+
+    executor = SnakemakePipelineExecutor()
+
+    input_samples_fixed, original_fixed_names = executor.fix_sample_names(input_samples)
+    assert original_fixed_names is None
+
+    assert ['Sample', 'Assemblies', 'Reads1', 'Reads2'] == input_samples_fixed.columns.tolist()
+    assert 2 == len(input_samples_fixed)
+    assert ['A', 'B'] == input_samples_fixed['Sample'].tolist()
+    assert [Path('file1.fasta'), Path('file2.fasta')] == input_samples_fixed['Assemblies'].tolist()
+
+
+def test_fix_sample_names_with_change():
+    input_samples = pd.DataFrame([
+        ['A/1', Path('file1.fasta'), pd.NA, pd.NA],
+        ['B2', Path('file2.fasta'), pd.NA, pd.NA]
+    ], columns=['Sample', 'Assemblies', 'Reads1', 'Reads2'])
+
+    executor = SnakemakePipelineExecutor()
+
+    input_samples_fixed, original_fixed_names = executor.fix_sample_names(input_samples)
+    assert original_fixed_names is not None
+
+    assert ['Sample', 'Assemblies', 'Reads1', 'Reads2'] == input_samples_fixed.columns.tolist()
+    assert 2 == len(input_samples_fixed)
+    assert ['A__1', 'B2'] == input_samples_fixed['Sample'].tolist()
+    assert [Path('file1.fasta'), Path('file2.fasta')] == input_samples_fixed['Assemblies'].tolist()
+
+    assert ['Sample_original', 'Sample_fixed'] == original_fixed_names.columns.tolist()
+    assert 2 == len(original_fixed_names)
+    assert ['A/1', 'B2'] == original_fixed_names['Sample_original'].tolist()
+    assert ['A__1', 'B2'] == original_fixed_names['Sample_fixed'].tolist()
+
+
+def test_fix_sample_names_with_change2():
+    input_samples = pd.DataFrame([
+        ['new/A/1/', Path('file1.fasta'), pd.NA, pd.NA],
+        ['new/B/2', Path('file2.fasta'), pd.NA, pd.NA],
+        ['new/C//2', Path('file3.fasta'), pd.NA, pd.NA]
+    ], columns=['Sample', 'Assemblies', 'Reads1', 'Reads2'])
+
+    executor = SnakemakePipelineExecutor()
+
+    input_samples_fixed, original_fixed_names = executor.fix_sample_names(input_samples)
+
+    assert ['Sample', 'Assemblies', 'Reads1', 'Reads2'] == input_samples_fixed.columns.tolist()
+    assert 3 == len(input_samples_fixed)
+    assert ['new__A__1__', 'new__B__2', 'new__C____2'] == input_samples_fixed['Sample'].tolist()
+    assert [Path('file1.fasta'), Path('file2.fasta'), Path('file3.fasta')] == input_samples_fixed['Assemblies'].tolist()
+
+    assert ['Sample_original', 'Sample_fixed'] == original_fixed_names.columns.tolist()
+    assert 3 == len(original_fixed_names)
+    assert ['new/A/1/', 'new/B/2', 'new/C//2'] == original_fixed_names['Sample_original'].tolist()
+    assert ['new__A__1__', 'new__B__2', 'new__C____2'] == original_fixed_names['Sample_fixed'].tolist()
+
+
+def test_fix_sample_names_with_duplicates():
+    input_samples = pd.DataFrame([
+        ['A/1', Path('file1.fasta'), pd.NA, pd.NA],
+        ['A__1', Path('file2.fasta'), pd.NA, pd.NA],
+    ], columns=['Sample', 'Assemblies', 'Reads1', 'Reads2'])
+
+    executor = SnakemakePipelineExecutor()
+
+    with pytest.raises(Exception) as execinfo:
+        executor.fix_sample_names(input_samples)
+
+    assert "Sanitizing sample names to use as file names leads to duplicates" in str(execinfo.value)
+
+
+def test_restore_sample_names():
+    original_new_names = pd.DataFrame([
+        ['new/A/1/', 'new__A__1__'],
+        ['new/B/2', 'new__B__2'],
+        ['new/C//2', 'new__C____2'],
+    ], columns=['Sample_original', 'Sample_fixed'])
+
+    data = pd.DataFrame([
+        ['new__A__1__', Path('file1.vcf'), Path('file1.fasta')],
+        ['new__B__2', Path('file2.vcf'), Path('file2.fasta')],
+        ['new__C____2', Path('file3.vcf'), Path('file3.fasta')]
+    ], columns=['Sample', 'VCF', 'Mask'])
+
+    executor = SnakemakePipelineExecutor()
+
+    actual_df = executor.restore_sample_names(data, sample_column='Sample', samples_original_fixed=original_new_names)
+
+    assert ['Sample', 'VCF', 'Mask'] == actual_df.columns.tolist()
+    assert 3 == len(actual_df)
+    assert ['new/A/1/', 'new/B/2', 'new/C//2'] == actual_df['Sample'].tolist()
+    assert [Path('file1.vcf'), Path('file2.vcf'), Path('file3.vcf')] == actual_df['VCF'].tolist()
+    assert [Path('file1.fasta'), Path('file2.fasta'), Path('file3.fasta')] == actual_df['Mask'].tolist()

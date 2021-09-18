@@ -12,14 +12,14 @@ def remove_suffix(s, suffix):
 
 # TODO: Instead of parallel lists I should probably have a dictionary keyed by the sample name
 sample_vcfs = snakemake.input.sample_vcfs
-sample_consensus = snakemake.input.sample_consensus
+sample_masks = snakemake.input.sample_masks
 sample_sketches = snakemake.input.sample_sketches
 include_kmer = snakemake.config["include_kmer"]
 output_file = snakemake.output[0]
 
-if len(sample_vcfs) != len(sample_consensus):
+if len(sample_vcfs) != len(sample_masks):
     raise Exception(f'sample_vcfs length [{len(sample_vcfs)}] '
-                    f'does not equal sample_consensus length [{len(sample_consensus)}]')
+                    f'does not equal sample_masks length [{len(sample_masks)}]')
 
 if include_kmer and len(sample_vcfs) != len(sample_sketches):
     raise Exception(f'sample_vcfs length [{len(sample_vcfs)}] '
@@ -31,18 +31,18 @@ with open(output_file, 'w') as fh:
     else:
         fh.write('Sample\tVCF\tMask File\n')
 
-    for idx in range(0, len(sample_consensus)):
+    for idx in range(0, len(sample_masks)):
         vcf = os.path.abspath(sample_vcfs[idx])
-        consensus = os.path.abspath(sample_consensus[idx])
+        mask = os.path.abspath(sample_masks[idx])
 
         # I check both sample names to guarantee that files don't get mixed up
         # I don't know enough about snakemake to solve this differently. Ideally I'd like to just pass a dictionary
         # to this script which maps the sample name to the vcf and consensus file
         sample_name_vcf = remove_suffix(os.path.basename(vcf), '.vcf.gz')
-        sample_name_consensus = remove_suffix(os.path.basename(consensus), '.fasta.gz')
+        sample_name_mask = remove_suffix(os.path.basename(mask), '.bed.gz')
 
-        if sample_name_consensus != sample_name_vcf:
-            raise Exception(f'VCF=[{vcf}] has a different sample name from consensus=[{consensus}]')
+        if sample_name_mask != sample_name_vcf:
+            raise Exception(f'VCF=[{vcf}] has a different sample name from mask=[{mask}]')
 
         if include_kmer:
             sketch = os.path.abspath(sample_sketches[idx])
@@ -51,6 +51,6 @@ with open(output_file, 'w') as fh:
             if sample_name_vcf != sample_name_sketch:
                 raise Exception(f'VCF=[{vcf}] has a different sample name from sketch=[{sketch}]')
 
-            fh.write(f'{sample_name_vcf}\t{vcf}\t{consensus}\t{sketch}\n')
+            fh.write(f'{sample_name_vcf}\t{vcf}\t{mask}\t{sketch}\n')
         else:
-            fh.write(f'{sample_name_vcf}\t{vcf}\t{consensus}\n')
+            fh.write(f'{sample_name_vcf}\t{vcf}\t{mask}\n')

@@ -6,3 +6,7 @@ dependencies:
   - snpeff
   - biopython
   - htslib
+  - python=3.8
+  - pip
+  - pip:
+    - genomics-data-index==0.2.0

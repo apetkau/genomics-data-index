@@ -1,14 +1,21 @@
-# Assembly input
+# Snakemake analysis pipeline
 
-This Snakemake workflow takes assembled genomes as input and generates VCF variant calls and a masked consenus sequences
+This Snakemake workflow takes assembled genomes as input and generates VCF variant calls and a BED file of unknown/missing regions 
 to be used as input for indexing. This works by:
 
 1. Taking as input a config.yaml file defining the inputs (see `config/config.yaml` for an example)
     1. `reference`: The reference input file.
-    2. `samples`: The input sample nams/files (as assembled genomes).
-2. Aligns samples to the reference genome using `minimap2`.
-3. Uses `htsbox` to identify variants (VCF files) and a masked consenus sequence for each sample.
-4. (Optional) Annotates VCF using snpeff.
+    2. `samples`: The input sample nams/files (as assemblies or reads genomes).
+2. For each assembly
+    1. Aligns samples to the reference genome using `minimap2`.
+    2. Uses `bcftools` to identify variants (output VCF files).
+    3. Used `bedtools` to identify unknown/missing regions (output BED files).
+    4. (Optional) Annotates VCF using snpeff.
+3. For each set of reads
+    1. Identifies variants using [snippy](https://github.com/tseemann/snippy)
+    2. Uses `bedtools` and the `.aligned.fa` and `snps.vcf.gz` files from snippy to generate a BED file of unknown/missing regions.
+4. (Optional) If requested, uses [sourmash](https://github.com/sourmash-bio/sourmash) to generate k-mer sketches.
+5. (Optional) If requested, uses [mlst](https://github.com/tseemann/mlst) to generate MLST results (only for assemblies).
 5. Outputs a file of file names to be used as input to the larger genomics index application. 
 
 # Test

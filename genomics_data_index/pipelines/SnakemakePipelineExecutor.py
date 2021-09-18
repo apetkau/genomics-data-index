@@ -2,6 +2,7 @@ import logging
 import math
 from os import path
 from pathlib import Path
+from shutil import copy
 from typing import List
 
 import pandas as pd
@@ -106,6 +107,7 @@ class SnakemakePipelineExecutor(PipelineExecutor):
             raise Exception(f'working_directory is None. Please re-create {self.__class__.__name__} with a proper '
                             f'working directory.')
         self.validate_input_sample_files(sample_files)
+        sample_files, sample_names_original_fixed = self.fix_sample_names(sample_files)
 
         number_samples = len(sample_files)
         logger.debug(f'Preparing working directory [{working_directory}] for snakemake')
@@ -139,7 +141,25 @@ class SnakemakePipelineExecutor(PipelineExecutor):
         logger.info('Running Snakemake for rule all')
         execute_commands([command])
         logger.info('Finished running snakemake.')
+
+        if sample_names_original_fixed is not None:
+            logger.debug(f'Restoring original sample names for {len(sample_files)} samples')
+            self._restore_and_write_sample_names(snakemake_output_fofn, sample_column='Sample',
+                                                 samples_original_fixed=sample_names_original_fixed)
+        else:
+            logger.debug('Original sample names were unmodified so no need to restore them')
+
         logger.debug(f'Output file [{snakemake_output_fofn}]. '
                      f'MLST file [{snakemake_output_mlst}]')
 
         return ExecutorResults({'gdi-fofn': snakemake_output_fofn, 'mlst': snakemake_output_mlst})
+
+    def _restore_and_write_sample_names(self, file: Path, sample_column: str,
+                                        samples_original_fixed: pd.DataFrame) -> None:
+        backup_file = Path(str(file) + '.bak')
+        copy(file, backup_file)
+
+        file_df = pd.read_csv(file, sep='\t')
+        file_df = self.restore_sample_names(file_df, sample_column=sample_column,
+                                            samples_original_fixed=samples_original_fixed)
+        file_df.to_csv(file, sep='\t', index=False)
