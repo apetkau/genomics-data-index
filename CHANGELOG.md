@@ -1,3 +1,7 @@
+# 0.4.0
+
+* [analysis]: Switched all steps to use conda in Snakemake pipeline (0.3.1).
+
 # 0.3.0
 
 * [api]: Added ability to generate a DataFrame of percents of features present in selected samples. To be used for comparing different categories of samples (0.3.0.dev1).
