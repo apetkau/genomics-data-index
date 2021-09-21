@@ -111,6 +111,49 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
         tree.set_outgroup(sample_name)
         return self._create_from_tree_internal(tree)
 
+    def prune(self, preserve_branch_length: bool = True, include_present: bool = True,
+              include_unknown: bool = False, include_absent: bool = False) -> SamplesQuery:
+        """
+        Prunes the tree joined to this TreeSamplesQuery down to only the currently selected samples.
+        :param preserve_branch_length: True if branch lengths between the subset of samples should be preserved, False otherwise.
+        :param include_present: If samples with a present status should be included in the tree.
+        :param include_unknown: If samples with an unknown status should be included in the tree.
+        :param include_absent: If samples with an absent status from query should be included in the tree.
+        :return: A new TreeSamplesQuery with the tree pruned down to only the selected samples (and the reference
+                 genome if it is one of the leaves of the tree).
+        """
+        tree = self._tree_copy_prune(preserve_branch_length=preserve_branch_length,
+                                     include_present=include_present, include_unknown=include_unknown,
+                                     include_absent=include_absent)
+        return self._create_from_tree_internal(tree)
+
+    def _tree_copy_prune(self,
+                         preserve_branch_length: bool,
+                         include_present: bool,
+                         include_unknown: bool,
+                         include_absent: bool,
+                         from_query: SamplesQuery = None,
+                         ) -> Tree:
+        tree = self._tree_copy()
+        if from_query is not None:
+            query = from_query
+        else:
+            query = self
+
+        nodes_to_keep = self._get_samples_to_keep_from_query(query, include_present=include_present,
+                                                             include_unknown=include_unknown,
+                                                             include_absent=include_absent)
+        tree.prune(nodes_to_keep, preserve_branch_length=preserve_branch_length)
+        return tree
+
+    def _get_samples_to_keep_from_query(self, query: SamplesQuery,
+                                        include_present: bool,
+                                        include_unknown: bool,
+                                        include_absent: bool,
+                                        ) -> List[str]:
+        return query.tolist(names=True, include_present=include_present, include_unknown=include_unknown,
+                            include_absent=include_absent)
+
     @abc.abstractmethod
     def _create_from_tree_internal(self, tree: Tree) -> SamplesQuery:
         pass
