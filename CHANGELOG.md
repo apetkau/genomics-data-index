@@ -1,6 +1,7 @@
 # 0.4.0
 
 * [analysis]: Switched all steps to use conda in Snakemake pipeline (0.3.1).
+* [api]: Added `rotation`, `allow_face_overlap`, `show_branch_length`, and `show_branch_support` to tree viewing API (0.4.0.dev1).
 
 # 0.3.0
 

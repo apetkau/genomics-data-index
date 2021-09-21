@@ -348,7 +348,7 @@ class TreeStyler:
     @classmethod
     def create(cls, tree: Tree,
                initial_style: TreeStyle = None,
-               mode='r',
+               mode: str = 'r',
                highlight_style: Union[str, HighlightStyle] = 'light',
                legend_nsize: int = 20, legend_fsize: int = 11,
                annotate_color_present: str = 'black',
@@ -379,6 +379,10 @@ class TreeStyler:
                show_legend_type_labels: bool = True,
                legend_type_label_present: str = 'Pr.',
                legend_type_label_unknown: str = 'Un.',
+               rotation: float = 0,
+               allow_face_overlap: bool = False,
+               show_branch_length: bool = False,
+               show_branch_support: bool = False,
                tree_scale: float = None) -> TreeStyler:
         """
         Constructs a new TreeStyler object used to style and visualize trees.
@@ -420,6 +424,10 @@ class TreeStyler:
         :param show_legend_type_labels: Whether or not to show labels for legend types/categories (present or unknown).
         :param legend_type_label_present: Text to show above legend color for present items.
         :param legend_type_label_unknown: Text to show above legend color for unknown items.
+        :param rotation: The rotation of the tree in degrees (for circular mode).
+        :param allow_face_overlap: Allow overlap in node faces for circular images.
+        :param show_branch_length: Show branch lengths.
+        :param show_branch_support: Show branch supports.
         :param tree_scale: A scale factor for the tree.
         :return: A new TreeStyler object used to style and visualize trees.
         """
@@ -428,7 +436,9 @@ class TreeStyler:
                                    'figure_margin': figure_margin, 'show_border': show_border,
                                    'title': title, 'legend_title': legend_title, 'title_fsize': title_fsize,
                                    'annotate_arc_span': annotate_arc_span, 'show_leaf_names': show_leaf_names,
-                                   'tree_scale': tree_scale}
+                                   'tree_scale': tree_scale, 'rotation': rotation,
+                                   'allow_face_overlap': allow_face_overlap, 'show_branch_length': show_branch_length,
+                                   'show_branch_support': show_branch_support}
             tree_style_elements_none = [tree_style_elements[k] is None for k in tree_style_elements]
 
             if any(tree_style_elements_none):
@@ -440,6 +450,10 @@ class TreeStyler:
             ts = TreeStyle()
             ts.arc_span = annotate_arc_span
             ts.show_leaf_name = show_leaf_names
+            ts.rotation = rotation
+            ts.allow_face_overlap = allow_face_overlap
+            ts.show_branch_length = show_branch_length
+            ts.show_branch_support = show_branch_support
 
             if mode is not None and mode not in cls.MODES:
                 raise Exception(f'Invalid value mode=[{mode}]. Must be one of {cls.MODES}')

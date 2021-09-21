@@ -172,8 +172,12 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
                     include_unknown: bool = True,
                     show_leaf_names: bool = True,
                     show_legend_type_labels: bool = True,
-                    legend_type_label_present: str = 'P',
-                    legend_type_label_unknown: str = 'U',
+                    legend_type_label_present: str = 'Pr.',
+                    legend_type_label_unknown: str = 'Un.',
+                    rotation: float = 0,
+                    allow_face_overlap: bool = False,
+                    show_branch_length: bool = False,
+                    show_branch_support: bool = False,
                     tree_scale: float = None) -> TreeStyler:
         """
         Constructs a new :py:class:`genomics_data_index.api.viewer.TreeStyler` object used to style and visualize trees.
@@ -214,6 +218,10 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
         :param show_legend_type_labels: Whether or not to show labels for legend types/categories (present or unknown).
         :param legend_type_label_present: Text to show above legend color for present items.
         :param legend_type_label_unknown: Text to show above legend color for unknown items.
+        :param rotation: The rotation of the tree in degrees (for circular mode).
+        :param allow_face_overlap: Allow overlap in node faces for circular images.
+        :param show_branch_length: Show branch lengths.
+        :param show_branch_support: Show branch supports.
         :param tree_scale: A scale factor for the tree.
         :return: A new :py:class:`genomics_data_index.api.viewer.TreeStyler` object used to style and visualize trees.
         """
@@ -251,6 +259,10 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
                                  show_legend_type_labels=show_legend_type_labels,
                                  legend_type_label_present=legend_type_label_present,
                                  legend_type_label_unknown=legend_type_label_unknown,
+                                 rotation=rotation,
+                                 allow_face_overlap=allow_face_overlap,
+                                 show_branch_length=show_branch_length,
+                                 show_branch_support=show_branch_support,
                                  tree_scale=tree_scale)
 
     @property
