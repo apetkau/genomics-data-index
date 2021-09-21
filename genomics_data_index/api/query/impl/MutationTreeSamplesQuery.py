@@ -62,9 +62,9 @@ class MutationTreeSamplesQuery(TreeSamplesQuery):
                                         include_absent: bool,
                                         ) -> List[str]:
         sample_names_from_query = super()._get_samples_to_keep_from_query(query=query,
-                                                           include_present=include_present,
-                                                           include_unknown=include_unknown,
-                                                           include_absent=include_absent)
+                                                                          include_present=include_present,
+                                                                          include_unknown=include_unknown,
+                                                                          include_absent=include_absent)
         if self.reference_included:
             return sample_names_from_query + [self.reference_name]
         else:
