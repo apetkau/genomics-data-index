@@ -98,7 +98,7 @@ class DataFrameSamplesQuery(WrappedSamplesQuery):
                                 f'For categories_kind={categories_kind}, sample_categories refers to a column in the '
                                 f'dataframe, which must be one of {self._data_frame.columns.tolist()}')
 
-            aggregated_df = self._data_frame.groupby(sample_categories).agg({
+            aggregated_df = self.toframe().groupby(sample_categories).agg({
                 'Sample ID': SampleSet,
             })
             aggregated_df = aggregated_df.sort_index()
