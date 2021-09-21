@@ -938,15 +938,18 @@ def query(ctx, query_command: List[str], reference_name: str, summary: bool, fea
 
     if summary:
         results_df = query.summary()
-    elif features_summary is not None:
-        results_df = query.features_summary(
-            kind=features_summary, ignore_annotations=not include_annotations).sort_values(
-            'Count', ascending=False).reset_index()
-    elif features_summary_unique is not None:
-        results_df = query.features_summary(
-            kind=features_summary_unique, selection='unique',
-            ignore_annotations=not include_annotations).sort_values(
-            'Count', ascending=False).reset_index()
+    elif features_summary is not None or features_summary_unique is not None:
+        if features_summary_unique is not None:
+            selection = 'unique'
+        else:
+            selection = 'all'
+
+        if features_summary == 'mutation' or features_summary == 'mutations':
+            results_df = query.features_summary(kind=features_summary, selection=selection,
+                                                ignore_annotations=not include_annotations)
+        else:
+            results_df = query.features_summary(kind=features_summary, selection=selection)
+        results_df = results_df.sort_values('Count', ascending=False).reset_index()
     else:
         results_df = query.toframe(include_unknown=True)
 
