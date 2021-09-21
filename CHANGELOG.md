@@ -4,6 +4,7 @@
 * [api]: Added `rotation`, `allow_face_overlap`, `show_branch_length`, and `show_branch_support` to tree viewing API (0.4.0.dev1).
 * [api]: Fixed up `features_comparison` for joined dataframe to query so it uses proper subset of dataframe (0.4.0.dev1).
 * [api]: Implemented a `prune()` method for pruning a tree down to only the selected samples (0.4.0.dev1).
+* [api]: Fixed bug where `query.join_tree()` was pruning the original tree (instead of a copy) (0.4.0.dev1).
 * [cli]: Fixed bug where `--features-summary mlst` would not work in command-line interface (0.4.0.dev1).
 
 # 0.3.0
