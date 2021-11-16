@@ -627,15 +627,25 @@ class HighlightStyle:
         return HighlightStyle(self._node_styles, index=new_index)
 
     @classmethod
-    def create(cls, kind: str, base_node_style: NodeStyle) -> HighlightStyle:
+    def create(cls, kind: str = None, colors: List[str] = None, base_node_style: NodeStyle = None) -> HighlightStyle:
         """
         Creates a new pre-defined HighlightStyle.
         :param kind: The kind (name) of the pre-defined HighlightStyle to create.
+        :param colors: A list of colors to use for highlights (unused if kind is set).
         :param base_node_style: The base node style to use.
         :return: A new HighlightStyle.
         """
         unknown_fg_color = 'lightgray'
         unknown_bg_color = 'lightgray'
+
+        if base_node_style is None:
+            base_node_style = DEFAULT_NODE_STYLE
+
+        if kind is None and colors is not None:
+            return cls._create_highlights(base_node_style=base_node_style, fg_colors=colors, bg_colors=colors,
+                                          unknown_bg_color=unknown_bg_color, unknown_fg_color=unknown_fg_color)
+        elif kind is None:
+            kind = 'light'
 
         if kind == 'light':
             fg_colors = ['#e5f5f9', '#fee8c8', '#e0ecf4', '#deebf7']
