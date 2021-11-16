@@ -4,7 +4,7 @@ import abc
 import logging
 from typing import Union, List, cast
 
-from ete3 import Tree, TreeStyle
+from ete3 import Tree, TreeStyle, NodeStyle
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.api.query.impl.WrappedSamplesQuery import WrappedSamplesQuery
@@ -188,6 +188,7 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
                     initial_style: TreeStyle = None,
                     mode='r',
                     highlight_style: Union[str, HighlightStyle] = 'pastel',
+                    node_style: NodeStyle = None,
                     legend_nsize: int = 20, legend_fsize: int = 11,
                     annotate_color_present: str = 'black',
                     annotate_color_absent: str = 'white',
@@ -230,6 +231,7 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
         :param highlight_style: A style used to define how the highlight() method should behave.
                                 Can either be one of the named highlight styles ['light', 'light_hn', 'pastel', 'medium', dark']
                                 or an instance of a :py:class:`genomics_data_index.api.viewer.TreeStyler.HighlightStyle`.
+        :param node_style: The default ete3.NodeStyle object for styling the nodes of the tree.
         :param legend_nsize: The legend node size.
         :param legend_fsize: The legend font size.
         :param annotate_color_present: The default color of samples which are present in the set for the annotate() method.
@@ -272,6 +274,7 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
                                  initial_style=initial_style,
                                  mode=mode,
                                  highlight_style=highlight_style,
+                                 node_style=node_style,
                                  legend_nsize=legend_nsize,
                                  legend_fsize=legend_fsize,
                                  annotate_color_present=annotate_color_present,

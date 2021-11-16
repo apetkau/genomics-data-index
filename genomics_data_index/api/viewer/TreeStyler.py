@@ -13,6 +13,8 @@ from genomics_data_index.api.viewer.samples_visuals.HighlightTreeSamplesVisual i
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_NODE_STYLE = NodeStyle()
+DEFAULT_NODE_STYLE['size'] = 0
 
 class TreeStyler:
     """
@@ -23,6 +25,7 @@ class TreeStyler:
 
     def __init__(self, tree: Tree, default_highlight_styles: HighlightStyle, annotate_column: int,
                  tree_style: TreeStyle,
+                 node_style: NodeStyle,
                  legend_columns: Dict[str, int],
                  samples_styles_list: List[TreeSamplesVisual],
                  legend_nsize: int = 20, legend_fsize: int = 11,
@@ -50,6 +53,7 @@ class TreeStyler:
                                 or an instance of a :py:class:`genomics_data_index.api.viewer.TreeStyler.HighlightStyle`.
         :param annotate_column: Which column in the annotate table this annotate visual belongs to (starting from column 0).
         :param tree_style: The ete3.TreeStyle object defining the style of the tree.
+        :param node_style: The default ete3.NodeStyle object for styling the nodes of the tree.
         :param legend_columns: A dictionary mapping legend column names to integers defining the column numbers.
         :param samples_styles_list: A list of :py:class:`genomics_data_index.api.viewer.TreeSamplesVisual` objects
                                    that define the different styles to apply to sets of samples (e.g., highlight or annotate).
@@ -76,6 +80,7 @@ class TreeStyler:
         self._tree = tree
         self._default_highlight_styles = default_highlight_styles
         self._tree_style = tree_style
+        self._node_style = node_style
         self._legend_columns = legend_columns
         self._legend_nsize = legend_nsize
         self._legend_fsize = legend_fsize
@@ -206,6 +211,7 @@ class TreeStyler:
 
         return TreeStyler(self._tree, default_highlight_styles=self._default_highlight_styles,
                           tree_style=self._tree_style,
+                          node_style=self._node_style,
                           samples_styles_list=samples_styles_list_new,
                           legend_fsize=self._legend_fsize, legend_nsize=self._legend_nsize,
                           annotate_column=self._annotate_column + 1,
@@ -270,6 +276,7 @@ class TreeStyler:
 
         return TreeStyler(self._tree, default_highlight_styles=new_default_styles,
                           tree_style=self._tree_style,
+                          node_style=self._node_style,
                           samples_styles_list=samples_styles_list_new,
                           legend_fsize=self._legend_fsize, legend_nsize=self._legend_nsize,
                           annotate_column=self._annotate_column,
@@ -319,6 +326,11 @@ class TreeStyler:
 
         tree = self._tree.copy('newick')
         tree_style = copy.deepcopy(tree_style)
+
+        # Sets default node style for all nodes in the tree
+        for n in tree.traverse():
+            n.set_style(self._node_style)
+
         self._apply_samples_styles(tree=tree, tree_style=tree_style)
 
         return tree.render(file_name=file_name, w=w, h=h, tree_style=tree_style,
@@ -350,6 +362,7 @@ class TreeStyler:
                initial_style: TreeStyle = None,
                mode: str = 'r',
                highlight_style: Union[str, HighlightStyle] = 'light',
+               node_style: NodeStyle = None,
                legend_nsize: int = 20, legend_fsize: int = 11,
                annotate_color_present: str = 'black',
                annotate_color_absent: str = 'white',
@@ -393,6 +406,7 @@ class TreeStyler:
         :param highlight_style: A style used to define how the highlight() method should behave.
                                 Can either be one of the named highlight styles ['light', 'light_hn', 'pastel', 'medium', dark']
                                 or an instance of a :py:class:`genomics_data_index.api.viewer.TreeStyler.HighlightStyle`.
+        :param node_style: The default ete3.NodeStyle object for styling the nodes of the tree.
         :param legend_nsize: The legend node size.
         :param legend_fsize: The legend font size.
         :param annotate_color_present: The default color of samples which are present in the set for the annotate() method.
@@ -485,10 +499,13 @@ class TreeStyler:
                 'text': 1
             }
 
+        if node_style is None:
+            node_style = DEFAULT_NODE_STYLE
+
         if highlight_style is None:
-            highlight_style = HighlightStyle.create('pastel')
+            highlight_style = HighlightStyle.create('pastel', base_node_style=node_style)
         elif isinstance(highlight_style, str):
-            highlight_style = HighlightStyle.create(highlight_style)
+            highlight_style = HighlightStyle.create(highlight_style, base_node_style=node_style)
 
         if legend_title is not None:
             margin_bottom = 10
@@ -532,6 +549,7 @@ class TreeStyler:
         return TreeStyler(tree=tree,
                           default_highlight_styles=highlight_style,
                           tree_style=ts,
+                          node_style=node_style,
                           legend_columns=legend_columns,
                           samples_styles_list=[],
                           legend_nsize=legend_nsize,
@@ -609,10 +627,11 @@ class HighlightStyle:
         return HighlightStyle(self._node_styles, index=new_index)
 
     @classmethod
-    def create(cls, kind: str) -> HighlightStyle:
+    def create(cls, kind: str, base_node_style: NodeStyle) -> HighlightStyle:
         """
         Creates a new pre-defined HighlightStyle.
         :param kind: The kind (name) of the pre-defined HighlightStyle to create.
+        :param base_node_style: The base node style to use.
         :return: A new HighlightStyle.
         """
         unknown_fg_color = 'lightgray'
@@ -621,33 +640,33 @@ class HighlightStyle:
         if kind == 'light':
             fg_colors = ['#e5f5f9', '#fee8c8', '#e0ecf4', '#deebf7']
             bg_colors = fg_colors
-            return cls._create_highlights(fg_colors=fg_colors, bg_colors=bg_colors,
+            return cls._create_highlights(base_node_style=base_node_style, fg_colors=fg_colors, bg_colors=bg_colors,
                                           unknown_bg_color=unknown_bg_color, unknown_fg_color=unknown_fg_color)
         elif kind == 'light_hn':
             fg_colors = ['#41ae76', '#ef6548', '#8c6bb1', '#4292c6']
             bg_colors = ['#e5f5f9', '#fee8c8', '#e0ecf4', '#deebf7']
-            return cls._create_highlights(fg_colors=fg_colors, bg_colors=bg_colors, nsize=20,
+            return cls._create_highlights(base_node_style=base_node_style, fg_colors=fg_colors, bg_colors=bg_colors, nsize=20,
                                           unknown_bg_color=unknown_bg_color, unknown_fg_color=unknown_fg_color)
         elif kind == 'pastel':
             fg_colors = ['#fbb4ae', '#b3cde3', '#ccebc5', '#decbe4', '#fed9a6']
             bg_colors = fg_colors
-            return cls._create_highlights(fg_colors=fg_colors, bg_colors=bg_colors,
+            return cls._create_highlights(base_node_style=base_node_style, fg_colors=fg_colors, bg_colors=bg_colors,
                                           unknown_bg_color=unknown_bg_color, unknown_fg_color=unknown_fg_color)
         elif kind == 'medium':
             fg_colors = ['#66c2a5', '#fc8d62', '#8da0cb', '#e78ac3', '#a6d854']
             bg_colors = fg_colors
-            return cls._create_highlights(fg_colors=fg_colors, bg_colors=bg_colors,
+            return cls._create_highlights(base_node_style=base_node_style, fg_colors=fg_colors, bg_colors=bg_colors,
                                           unknown_bg_color=unknown_bg_color, unknown_fg_color=unknown_fg_color)
         elif kind == 'dark':
             fg_colors = ['#1b9e77', '#d95f02', '#7570b3', '#e7298a', '#66a61e']
             bg_colors = fg_colors
-            return cls._create_highlights(fg_colors=fg_colors, bg_colors=bg_colors,
+            return cls._create_highlights(base_node_style=base_node_style, fg_colors=fg_colors, bg_colors=bg_colors,
                                           unknown_bg_color=unknown_bg_color, unknown_fg_color=unknown_fg_color)
         else:
             raise Exception(f'kind=[{kind}] must be one of {cls.THEMES}')
 
     @classmethod
-    def _create_highlights(cls, fg_colors: List[str], bg_colors: List[str],
+    def _create_highlights(cls, base_node_style: NodeStyle, fg_colors: List[str], bg_colors: List[str],
                            unknown_fg_color: str, unknown_bg_color: str,
                            nsize: int = None) -> HighlightStyle:
         if len(fg_colors) != len(bg_colors):
@@ -655,7 +674,7 @@ class HighlightStyle:
 
         styles = []
         for i in range(0, len(fg_colors)):
-            nstyle = NodeStyle()
+            nstyle = copy.deepcopy(base_node_style)
             nstyle['fgcolor'] = fg_colors[i]
             nstyle['bgcolor'] = bg_colors[i]
             if nsize is not None:
