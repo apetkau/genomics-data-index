@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import copy
 import logging
-from typing import List, Dict, Any, Union, Iterable
+from typing import List, Dict, Any, Union, Iterable, Tuple
 
 from ete3 import Tree, NodeStyle, TreeStyle, TextFace, RectFace
 
@@ -314,8 +314,6 @@ class TreeStyler:
         :param dpi: The dots per inch.
         :return: An image/image data of the drawn tree styled according to this TreeStyler.
         """
-        if tree_style is None:
-            tree_style = self._tree_style
 
         # Set default width if no width or height specified
         # Do this here instead of as a default method value since at least one of
@@ -323,6 +321,21 @@ class TreeStyler:
         # want a default value for width if neither width nor height are set.
         if w is None and h is None:
             w = 400
+
+        tree, tree_style = self.prerender(tree_style=tree_style)
+
+        return self.draw(tree=tree, tree_style=tree_style,
+                         file_name=file_name, w=w, h=h,
+                         units=units, dpi=dpi)
+
+    def prerender(self, tree_style: TreeStyle = None) -> Tuple[Tree, TreeStyle]:
+        """
+        Pre-renders the tree, returning an ete3.Tree and ete3.TreeStyle object which can be used to draw the tree.
+        :param tree_style: The ete3.TreeStyle object (overrides the object defined by this TreeStyler).
+        :return: A tuple of <ete3.Tree, ete3.TreeStyle> with highlights/annotations added.
+        """
+        if tree_style is None:
+            tree_style = self._tree_style
 
         tree = self._tree.copy('newick')
         tree_style = copy.deepcopy(tree_style)
@@ -332,7 +345,23 @@ class TreeStyler:
             n.set_style(self._node_style)
 
         self._apply_samples_styles(tree=tree, tree_style=tree_style)
+        return tree, tree_style
 
+    @classmethod
+    def draw(cls, tree: Tree, tree_style: TreeStyle,
+             file_name: str = '%%inline', w: int = None, h: int = None,
+             units: str = 'px', dpi: int = 90):
+        """
+        Draws the passed tree with the passed styles to an image.
+        :param tree: The tree to draw.
+        :param tree_style: The ete3.TreeStyle object (overrides the object defined by this TreeStyler).
+        :param file_name: The image file name to save, use '%%inline' to draw inline in Jupyter notebooks (default).
+        :param w: The width of the image.
+        :param h: The height of the image.
+        :param units: The units of the width/height (default in pixels).
+        :param dpi: The dots per inch.
+        :return: An image/image data of the drawn tree styled according to this TreeStyler.
+        """
         return tree.render(file_name=file_name, w=w, h=h, tree_style=tree_style,
                            units=units, dpi=dpi)
 
