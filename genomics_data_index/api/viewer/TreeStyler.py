@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 DEFAULT_NODE_STYLE = NodeStyle()
 DEFAULT_NODE_STYLE['size'] = 0
 
+
 class TreeStyler:
     """
     A class used to style and render a tree and sets of samples on this tree.
@@ -680,34 +681,35 @@ class HighlightStyle:
         unknown_fg_color = default_fg_color
 
         if kind is None and colors is not None:
-            return cls._create_highlights(base_node_style=base_node_style, fg_colors=[default_fg_color]*len(colors),
+            return cls._create_highlights(base_node_style=base_node_style, fg_colors=[default_fg_color] * len(colors),
                                           bg_colors=colors, unknown_bg_color=unknown_bg_color,
                                           unknown_fg_color=unknown_fg_color)
         elif kind is None:
             kind = 'light'
 
         if kind == 'light':
-            fg_colors = [default_fg_color]*4
+            fg_colors = [default_fg_color] * 4
             bg_colors = ['#e5f5f9', '#fee8c8', '#e0ecf4', '#deebf7']
             return cls._create_highlights(base_node_style=base_node_style, fg_colors=fg_colors, bg_colors=bg_colors,
                                           unknown_bg_color=unknown_bg_color, unknown_fg_color=unknown_fg_color)
         elif kind == 'light_hn':
             fg_colors = ['#41ae76', '#ef6548', '#8c6bb1', '#4292c6']
             bg_colors = ['#e5f5f9', '#fee8c8', '#e0ecf4', '#deebf7']
-            return cls._create_highlights(base_node_style=base_node_style, fg_colors=fg_colors, bg_colors=bg_colors, nsize=20,
+            return cls._create_highlights(base_node_style=base_node_style, fg_colors=fg_colors, bg_colors=bg_colors,
+                                          nsize=20,
                                           unknown_bg_color=unknown_bg_color, unknown_fg_color=unknown_fg_color)
         elif kind == 'pastel':
-            fg_colors = [default_fg_color]*5
+            fg_colors = [default_fg_color] * 5
             bg_colors = ['#fbb4ae', '#b3cde3', '#ccebc5', '#decbe4', '#fed9a6']
             return cls._create_highlights(base_node_style=base_node_style, fg_colors=fg_colors, bg_colors=bg_colors,
                                           unknown_bg_color=unknown_bg_color, unknown_fg_color=unknown_fg_color)
         elif kind == 'medium':
-            fg_colors = [default_fg_color]*5
+            fg_colors = [default_fg_color] * 5
             bg_colors = ['#66c2a5', '#fc8d62', '#8da0cb', '#e78ac3', '#a6d854']
             return cls._create_highlights(base_node_style=base_node_style, fg_colors=fg_colors, bg_colors=bg_colors,
                                           unknown_bg_color=unknown_bg_color, unknown_fg_color=unknown_fg_color)
         elif kind == 'dark':
-            fg_colors = [default_fg_color]*5
+            fg_colors = [default_fg_color] * 5
             bg_colors = ['#1b9e77', '#d95f02', '#7570b3', '#e7298a', '#66a61e']
             return cls._create_highlights(base_node_style=base_node_style, fg_colors=fg_colors, bg_colors=bg_colors,
                                           unknown_bg_color=unknown_bg_color, unknown_fg_color=unknown_fg_color)
