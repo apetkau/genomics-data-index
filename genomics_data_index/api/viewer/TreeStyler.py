@@ -719,7 +719,7 @@ class HighlightStyle:
             if nsize is not None:
                 nstyle['size'] = nsize
 
-            unknown_nstyle = NodeStyle()
+            unknown_nstyle = copy.deepcopy(base_node_style)
             unknown_nstyle['fgcolor'] = unknown_fg_color
             unknown_nstyle['bgcolor'] = unknown_bg_color
             if nsize is not None:
