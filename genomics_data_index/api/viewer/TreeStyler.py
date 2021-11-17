@@ -715,7 +715,7 @@ class HighlightStyle:
             raise Exception(f'fg_colors={fg_colors} and bg_colors={bg_colors} do not have the same length')
 
         styles = []
-        for i in range(0, len(fg_colors)):
+        for i in range(0, len(bg_colors)):
             nstyle = copy.deepcopy(base_node_style)
             nstyle['fgcolor'] = fg_colors[i]
             nstyle['bgcolor'] = bg_colors[i]
@@ -731,7 +731,7 @@ class HighlightStyle:
             styles.append({
                 'present_nstyle': nstyle,
                 'unknown_nstyle': unknown_nstyle,
-                'legend_color': fg_colors[i]
+                'legend_color': bg_colors[i]
             })
 
         return HighlightStyle(styles, index=0)
