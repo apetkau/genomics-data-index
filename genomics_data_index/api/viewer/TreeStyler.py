@@ -303,7 +303,8 @@ class TreeStyler:
             samples_style.apply_visual(tree=tree, tree_style=tree_style)
 
     def render(self, file_name: str = '%%inline', w: int = None, h: int = None,
-               tree_style: TreeStyle = None, units: str = 'px', dpi: int = 90):
+               tree_style: TreeStyle = None, units: str = 'px', dpi: int = 90,
+               ladderize: bool = False):
         """
         Renders the tree with the styles defined by this TreeStyler object to an image.
         :param file_name: The image file name to save, use '%%inline' to draw inline in Jupyter notebooks (default).
@@ -312,6 +313,7 @@ class TreeStyler:
         :param tree_style: The ete3.TreeStyle object (overrides the object defined by this TreeStyler).
         :param units: The units of the width/height (default in pixels).
         :param dpi: The dots per inch.
+        :param ladderize: Runs ete3.Tree.ladderize() to sort branches of a given tree according to size.
         :return: An image/image data of the drawn tree styled according to this TreeStyler.
         """
 
@@ -322,16 +324,17 @@ class TreeStyler:
         if w is None and h is None:
             w = 400
 
-        tree, tree_style = self.prerender(tree_style=tree_style)
+        tree, tree_style = self.prerender(tree_style=tree_style, ladderize=ladderize)
 
         return self.draw(tree=tree, tree_style=tree_style,
                          file_name=file_name, w=w, h=h,
                          units=units, dpi=dpi)
 
-    def prerender(self, tree_style: TreeStyle = None) -> Tuple[Tree, TreeStyle]:
+    def prerender(self, tree_style: TreeStyle = None, ladderize: bool = False) -> Tuple[Tree, TreeStyle]:
         """
         Pre-renders the tree, returning an ete3.Tree and ete3.TreeStyle object which can be used to draw the tree.
         :param tree_style: The ete3.TreeStyle object (overrides the object defined by this TreeStyler).
+        :param ladderize: Runs ete3.Tree.ladderize() to sort branches of a given tree according to size.
         :return: A tuple of <ete3.Tree, ete3.TreeStyle> with highlights/annotations added.
         """
         if tree_style is None:
@@ -345,6 +348,10 @@ class TreeStyler:
             n.set_style(self._node_style)
 
         self._apply_samples_styles(tree=tree, tree_style=tree_style)
+
+        if ladderize:
+            tree.ladderize()
+
         return tree, tree_style
 
     @classmethod
