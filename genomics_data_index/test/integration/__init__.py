@@ -88,6 +88,10 @@ snpeff_sample_vcfs = {
     'SH14-014': snpeff_data_dir / 'SH14-014.vcf.gz',
 }
 
+snpeff_sarscov2_vcfs = {
+    'USA/CA-CDPH-3000143037/2021': snpeff_data_dir / 'USA__CA-CDPH-3000143037__2021.vcf.gz'
+}
+
 snpeff_sample_vcfs_fake_dup = {
     'SH10-014-dup-gene-variant': snpeff_data_dir / 'SH10-014-dup-gene-variant.vcf.gz',
     'SH10-014-dup-gene-variant-2': snpeff_data_dir / 'SH10-014-dup-gene-variant-2.vcf.gz',
