@@ -664,21 +664,24 @@ class HighlightStyle:
         :param base_node_style: The base node style to use.
         :return: A new HighlightStyle.
         """
-        unknown_fg_color = 'lightgray'
         unknown_bg_color = 'lightgray'
 
         if base_node_style is None:
             base_node_style = DEFAULT_NODE_STYLE
 
+        default_fg_color = base_node_style['fgcolor']
+        unknown_fg_color = default_fg_color
+
         if kind is None and colors is not None:
-            return cls._create_highlights(base_node_style=base_node_style, fg_colors=colors, bg_colors=colors,
-                                          unknown_bg_color=unknown_bg_color, unknown_fg_color=unknown_fg_color)
+            return cls._create_highlights(base_node_style=base_node_style, fg_colors=[default_fg_color]*len(colors),
+                                          bg_colors=colors, unknown_bg_color=unknown_bg_color,
+                                          unknown_fg_color=unknown_fg_color)
         elif kind is None:
             kind = 'light'
 
         if kind == 'light':
-            fg_colors = ['#e5f5f9', '#fee8c8', '#e0ecf4', '#deebf7']
-            bg_colors = fg_colors
+            fg_colors = [default_fg_color]*4
+            bg_colors = ['#e5f5f9', '#fee8c8', '#e0ecf4', '#deebf7']
             return cls._create_highlights(base_node_style=base_node_style, fg_colors=fg_colors, bg_colors=bg_colors,
                                           unknown_bg_color=unknown_bg_color, unknown_fg_color=unknown_fg_color)
         elif kind == 'light_hn':
@@ -687,18 +690,18 @@ class HighlightStyle:
             return cls._create_highlights(base_node_style=base_node_style, fg_colors=fg_colors, bg_colors=bg_colors, nsize=20,
                                           unknown_bg_color=unknown_bg_color, unknown_fg_color=unknown_fg_color)
         elif kind == 'pastel':
-            fg_colors = ['#fbb4ae', '#b3cde3', '#ccebc5', '#decbe4', '#fed9a6']
-            bg_colors = fg_colors
+            fg_colors = [default_fg_color]*5
+            bg_colors = ['#fbb4ae', '#b3cde3', '#ccebc5', '#decbe4', '#fed9a6']
             return cls._create_highlights(base_node_style=base_node_style, fg_colors=fg_colors, bg_colors=bg_colors,
                                           unknown_bg_color=unknown_bg_color, unknown_fg_color=unknown_fg_color)
         elif kind == 'medium':
-            fg_colors = ['#66c2a5', '#fc8d62', '#8da0cb', '#e78ac3', '#a6d854']
-            bg_colors = fg_colors
+            fg_colors = [default_fg_color]*5
+            bg_colors = ['#66c2a5', '#fc8d62', '#8da0cb', '#e78ac3', '#a6d854']
             return cls._create_highlights(base_node_style=base_node_style, fg_colors=fg_colors, bg_colors=bg_colors,
                                           unknown_bg_color=unknown_bg_color, unknown_fg_color=unknown_fg_color)
         elif kind == 'dark':
-            fg_colors = ['#1b9e77', '#d95f02', '#7570b3', '#e7298a', '#66a61e']
-            bg_colors = fg_colors
+            fg_colors = [default_fg_color]*5
+            bg_colors = ['#1b9e77', '#d95f02', '#7570b3', '#e7298a', '#66a61e']
             return cls._create_highlights(base_node_style=base_node_style, fg_colors=fg_colors, bg_colors=bg_colors,
                                           unknown_bg_color=unknown_bg_color, unknown_fg_color=unknown_fg_color)
         else:
