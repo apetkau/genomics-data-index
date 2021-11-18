@@ -469,19 +469,6 @@ def test_read_features_snpeff(snpeff_parser):
             'c.1119_1123delTCGCGinsCCACA', 'p.ArgAla374HisThr'] == sample_10_014_varD[
                sample_10_014_varD['ANN.Annotation'] == 'missense_variant'].iloc[0].tolist()
 
-    # SARS-CoV-2 test case
-    assert ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE', 'VARIANT_ID',
-            'ANN.Allele', 'ANN.Annotation', 'ANN.Annotation_Impact', 'ANN.Gene_Name', 'ANN.Gene_ID',
-            'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p'] == list(sample_sarscov2_1.columns)
-    assert 31 == len(sample_sarscov2_1)
-
-    # proper snpeff annotation for SARS-CoV-2 ORF1ab region
-    sample_sarscov2_1_varA = sample_sarscov2_1[sample_sarscov2_1['POS'] == 3948]
-    assert 1 == len(sample_sarscov2_1_varA)
-    assert ['USA/CA-CDPH-3000143037/2021', 'NC_045512.2', 3948, 'A', 'G', 'SNP', 'USA__CA-CDPH-3000143037__2021.vcf.gz',
-            'NC_045512.2:3948:A:G', 'G', 'missense_variant', 'MODERATE', 'ORF1ab', 'GU280_gp01', 'transcript',
-            'protein_coding', 'c.3683A>G', 'p.D1228G'] == sample_sarscov2_1_varA.iloc[0].tolist()
-
     assert 115 == len(sample_14_001)
     assert ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE', 'VARIANT_ID',
             'ANN.Allele', 'ANN.Annotation', 'ANN.Annotation_Impact', 'ANN.Gene_Name', 'ANN.Gene_ID',
@@ -506,6 +493,24 @@ def test_read_features_snpeff(snpeff_parser):
         ['ANN.Transcript_BioType', 'ANN.HGVS.p'], axis='columns').iloc[0].tolist()
     assert {True} == set(sample_14_014_var[sample_14_014_var['ANN.Annotation'] == 'intergenic_region'] \
                              [['ANN.Transcript_BioType', 'ANN.HGVS.p']].iloc[0].isna().tolist())
+
+
+def test_read_features_snpeff_sars_cov_2(snpeff_parser):
+    sample_sarscov2_1 = VariationFile(
+        snpeff_sarscov2_vcfs['USA/CA-CDPH-3000143037/2021']
+        ).read_features('USA/CA-CDPH-3000143037/2021', snpeff_parser=snpeff_parser).sort_values('POS')
+
+    assert ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE', 'VARIANT_ID',
+            'ANN.Allele', 'ANN.Annotation', 'ANN.Annotation_Impact', 'ANN.Gene_Name', 'ANN.Gene_ID',
+            'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p'] == list(sample_sarscov2_1.columns)
+    assert 31 == len(sample_sarscov2_1)
+
+    # proper snpeff annotation for SARS-CoV-2 ORF1ab region
+    sample_sarscov2_1_varA = sample_sarscov2_1[sample_sarscov2_1['POS'] == 3948]
+    assert 1 == len(sample_sarscov2_1_varA)
+    assert ['USA/CA-CDPH-3000143037/2021', 'NC_045512.2', 3948, 'A', 'G', 'SNP', 'USA__CA-CDPH-3000143037__2021.vcf.gz',
+            'NC_045512.2:3948:A:G', 'G', 'missense_variant', 'MODERATE', 'ORF1ab', 'GU280_gp01', 'transcript',
+            'protein_coding', 'c.3683A>G', 'p.D1228G'] == sample_sarscov2_1_varA.iloc[0].tolist()
 
 
 def test_annotate(snpeff_parser):
