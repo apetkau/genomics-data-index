@@ -89,7 +89,8 @@ snpeff_sample_vcfs = {
 }
 
 snpeff_sarscov2_vcfs = {
-    'USA/CA-CDPH-3000143037/2021': snpeff_data_dir / 'USA__CA-CDPH-3000143037__2021.vcf.gz'
+    'USA/CA-CDPH-3000143037/2021': snpeff_data_dir / 'USA__CA-CDPH-3000143037__2021.vcf.gz',
+    'USA/CA-CDPH-3000143037/2021.noann': snpeff_data_dir / 'USA__CA-CDPH-3000143037__2021.noann.vcf.gz'
 }
 
 snpeff_sample_vcfs_fake_dup = {
