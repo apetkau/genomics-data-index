@@ -166,7 +166,7 @@ class VcfSnpEffAnnotationParser:
         else:
             logger.log(TRACE_LEVEL, 'vcf_df has no snpeff annotations, will set all annotations as NA')
             vcf_df_with_keys = vcf_df_with_keys.reset_index().reindex(
-                columns=self.ANNOTATION_COLUMNS + self.EXTRA_ANNOTATION_COLUMNS + ['original_index', 'VARIANT_ID'])\
+                columns=self.ANNOTATION_COLUMNS + self.EXTRA_ANNOTATION_COLUMNS + ['original_index', 'VARIANT_ID']) \
                 .set_index('original_index')
 
         return vcf_df_with_keys

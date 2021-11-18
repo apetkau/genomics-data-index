@@ -495,7 +495,7 @@ def test_read_features_snpeff(snpeff_parser):
 def test_read_features_snpeff_sars_cov_2(snpeff_parser):
     sample_sarscov2_1 = VariationFile(
         snpeff_sarscov2_vcfs['USA/CA-CDPH-3000143037/2021']
-        ).read_features('USA/CA-CDPH-3000143037/2021', snpeff_parser=snpeff_parser).sort_values('POS')
+    ).read_features('USA/CA-CDPH-3000143037/2021', snpeff_parser=snpeff_parser).sort_values('POS')
 
     assert ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE', 'VARIANT_ID',
             'ANN.Allele', 'ANN.Annotation', 'ANN.Annotation_Impact', 'ANN.Gene_Name', 'ANN.Gene_ID',
@@ -522,21 +522,24 @@ def test_read_features_snpeff_sars_cov_2(snpeff_parser):
     # ORF1ab (ORF1b region)
     sample_sarscov2_1_var = sample_sarscov2_1[sample_sarscov2_1['POS'] == 19220]
     assert 1 == len(sample_sarscov2_1_var)
-    assert ['USA/CA-CDPH-3000143037/2021', 'NC_045512.2', 19220, 'C', 'T', 'SNP', 'USA__CA-CDPH-3000143037__2021.vcf.gz',
+    assert ['USA/CA-CDPH-3000143037/2021', 'NC_045512.2', 19220, 'C', 'T', 'SNP',
+            'USA__CA-CDPH-3000143037__2021.vcf.gz',
             'NC_045512.2:19220:C:T', 'T', 'missense_variant', 'MODERATE', 'ORF1ab', 'GU280_gp01', 'transcript',
             'protein_coding', 'c.18956C>T', 'p.A6319V'] == sample_sarscov2_1_var.iloc[0].tolist()
 
     # S
     sample_sarscov2_1_var = sample_sarscov2_1[sample_sarscov2_1['POS'] == 22917]
     assert 1 == len(sample_sarscov2_1_var)
-    assert ['USA/CA-CDPH-3000143037/2021', 'NC_045512.2', 22917, 'T', 'G', 'SNP', 'USA__CA-CDPH-3000143037__2021.vcf.gz',
+    assert ['USA/CA-CDPH-3000143037/2021', 'NC_045512.2', 22917, 'T', 'G', 'SNP',
+            'USA__CA-CDPH-3000143037__2021.vcf.gz',
             'NC_045512.2:22917:T:G', 'G', 'missense_variant', 'MODERATE', 'S', 'GU280_gp02', 'transcript',
             'protein_coding', 'c.1355T>G', 'p.L452R'] == sample_sarscov2_1_var.iloc[0].tolist()
 
     # ORF7b
     sample_sarscov2_1_var = sample_sarscov2_1[sample_sarscov2_1['POS'] == 27874]
     assert 1 == len(sample_sarscov2_1_var)
-    assert ['USA/CA-CDPH-3000143037/2021', 'NC_045512.2', 27874, 'C', 'T', 'SNP', 'USA__CA-CDPH-3000143037__2021.vcf.gz',
+    assert ['USA/CA-CDPH-3000143037/2021', 'NC_045512.2', 27874, 'C', 'T', 'SNP',
+            'USA__CA-CDPH-3000143037__2021.vcf.gz',
             'NC_045512.2:27874:C:T', 'T', 'missense_variant', 'MODERATE', 'ORF7b', 'GU280_gp08', 'transcript',
             'protein_coding', 'c.119C>T', 'p.T40I'] == sample_sarscov2_1_var.iloc[0].tolist()
 
@@ -551,7 +554,7 @@ def test_read_features_snpeff_sars_cov_2(snpeff_parser):
 def test_read_features_sars_cov_2_no_snpeff_annotation(snpeff_parser):
     sample_sarscov2_1 = VariationFile(
         snpeff_sarscov2_vcfs['USA/CA-CDPH-3000143037/2021.noann']
-        ).read_features('USA/CA-CDPH-3000143037/2021', snpeff_parser=snpeff_parser).sort_values('POS')
+    ).read_features('USA/CA-CDPH-3000143037/2021', snpeff_parser=snpeff_parser).sort_values('POS')
 
     ann_columns = ['ANN.Allele', 'ANN.Annotation', 'ANN.Annotation_Impact', 'ANN.Gene_Name', 'ANN.Gene_ID',
                    'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p']
