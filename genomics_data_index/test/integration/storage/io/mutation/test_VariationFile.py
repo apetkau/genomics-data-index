@@ -427,9 +427,6 @@ def test_read_features_snpeff(snpeff_parser):
         snpeff_sample_vcfs['SH14-001']).read_features('SH14-001', snpeff_parser=snpeff_parser).sort_values('POS')
     sample_14_014 = VariationFile(
         snpeff_sample_vcfs['SH14-014']).read_features('SH14-014', snpeff_parser=snpeff_parser).sort_values('POS')
-    sample_sarscov2_1 = VariationFile(
-        snpeff_sarscov2_vcfs['USA/CA-CDPH-3000143037/2021']
-        ).read_features('USA/CA-CDPH-3000143037/2021', snpeff_parser=snpeff_parser).sort_values('POS')
 
     assert 139 == len(sample_10_014)
     assert ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE', 'VARIANT_ID',

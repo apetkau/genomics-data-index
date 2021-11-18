@@ -18,6 +18,10 @@ class InvalidSnpEffVcfError(Exception):
 class VcfSnpEffAnnotationParser:
     ANNOTATION_COLUMNS = ['ANN.Allele', 'ANN.Annotation', 'ANN.Annotation_Impact', 'ANN.Gene_Name', 'ANN.Gene_ID',
                           'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p']
+
+    # Extra annotation columns are those used internally but aren't going to be stored in the database
+    EXTRA_ANNOTATION_COLUMNS = ['ANN.cDNA.pos / cDNA.length']
+
     IMPACT_TYPE = CategoricalDtype(categories=['HIGH', 'MODERATE', 'LOW', 'MODIFIER'], ordered=True)
 
     # Order of categories derived from list provided in <http://pcingola.github.io/SnpEff/adds/VCFannotationformat_v1.0.pdf>
@@ -153,7 +157,8 @@ class VcfSnpEffAnnotationParser:
             vcf_df_with_keys = vcf_df_with_keys.merge(ann_df, left_index=True, right_index=True).set_index(
                 'original_index')
 
-            vcf_df_with_keys = vcf_df_with_keys[self.ANNOTATION_COLUMNS + ['VARIANT_ID']]
+            vcf_df_with_keys = vcf_df_with_keys[
+                self.ANNOTATION_COLUMNS + self.EXTRA_ANNOTATION_COLUMNS + ['VARIANT_ID']]
 
             # Fill NA with '' and convert '' back to NA because a straight conversion of '' to NA
             # fails in cases where a column has a mixture of '' and NA values.
@@ -161,9 +166,26 @@ class VcfSnpEffAnnotationParser:
         else:
             logger.log(TRACE_LEVEL, 'vcf_df has no snpeff annotations, will set all annotations as NA')
             vcf_df_with_keys = vcf_df_with_keys.reset_index().reindex(
-                columns=self.ANNOTATION_COLUMNS + ['original_index', 'VARIANT_ID']).set_index('original_index')
+                columns=self.ANNOTATION_COLUMNS + self.EXTRA_ANNOTATION_COLUMNS + ['original_index', 'VARIANT_ID'])\
+                .set_index('original_index')
 
         return vcf_df_with_keys
+
+    def _split_annotations_by_cDNA(self, vcf_df: pd.DataFrame) -> pd.DataFrame:
+        vcf_df_nona = vcf_df[~vcf_df['ANN.cDNA.pos / cDNA.length'].isna()]
+
+        if len(vcf_df_nona) > 0:
+            vcf_cdna_split = vcf_df_nona['ANN.cDNA.pos / cDNA.length'].str.split('/', expand=True).rename(
+                {0: 'ANN.cDNA.pos', 1: 'ANN.cDNA.length'}, axis='columns')
+
+            vcf_df = vcf_df.merge(vcf_cdna_split, how='left', left_index=True, right_index=True)
+        else:
+            vcf_df = vcf_df.copy()
+
+            vcf_df['ANN.cDNA.pos'] = pd.NA
+            vcf_df['ANN.cDNA.length'] = pd.NA
+
+        return vcf_df
 
     def select_variant_annotations(self, vcf_df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -172,7 +194,7 @@ class VcfSnpEffAnnotationParser:
         :return: A new dataframe containing only rows with the selected annotations.
         """
         non_annotation_columns = ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE', 'VARIANT_ID']
-        expected_columns_set = set(non_annotation_columns + self.ANNOTATION_COLUMNS)
+        expected_columns_set = set(non_annotation_columns + self.ANNOTATION_COLUMNS + self.EXTRA_ANNOTATION_COLUMNS)
         actual_columns_set = set(vcf_df.columns.tolist())
         if expected_columns_set != actual_columns_set:
             raise Exception(f'Invalid columns for passed vcf_df.'
@@ -194,9 +216,16 @@ class VcfSnpEffAnnotationParser:
         vcf_df_with_annotations = vcf_df_with_annotations[
             vcf_df_with_annotations['ANN.Allele'] == vcf_df_with_annotations['ALT']]
 
+        # Add columns for ANN.cDNA.pos and ANN.cDNA.length
+        vcf_df_with_annotations = self._split_annotations_by_cDNA(vcf_df_with_annotations)
+
         # Order and select first entry (use nth() instead of first() so that NA values are handled properly)
+        # I order by ANN.cDNA.length in descending order so that I pick the largest cDNA.length first
+        # (this solves issues with picking the correct annotation for ORF1ab and SARS-CoV-2
+        # but should work for other organisms as well).
         vcf_df_with_annotations = vcf_df_with_annotations.sort_values(
-            ['ANN.Annotation_Impact', 'ANN.Annotation', 'ANN.HGVS.c']).groupby('VARIANT_ID').nth(0).reset_index()
+            ['ANN.Annotation_Impact', 'ANN.Annotation', 'ANN.cDNA.length'],
+            ascending=[True, True, False]).groupby('VARIANT_ID').nth(0).reset_index()
 
         # Merge back with original dataframe of variants to make sure I include those without annotations
         all_vcf_entries_grouped = vcf_df[non_annotation_columns].groupby('VARIANT_ID').first()
