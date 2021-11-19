@@ -169,6 +169,50 @@ def mock_vcf_df_multiple_sample_annotations() -> pd.DataFrame:
 
 
 @pytest.fixture
+def mock_vcf_df_single_sample_annotations_sars_cov_2() -> pd.DataFrame:
+    return pd.DataFrame([
+        ['SampleA', 'NC_045512.2', 3948, 'A', 'G', 'SNP', 'SampleA.vcf', 'NC_045512.2:3948:A:G',
+         'G', 'missense_variant', 'MODERATE', 'ORF1ab', 'GU280_gp01', 'transcript', 'protein_coding',
+         'c.3683A>G', 'p.D1228G', '3683/21291'],
+        ['SampleA', 'NC_045512.2', 3948, 'A', 'G', 'SNP', 'SampleA.vcf', 'NC_045512.2:3948:A:G',
+         'G', 'missense_variant', 'MODERATE', 'ORF1ab', 'GU280_gp01', 'transcript', 'protein_coding',
+         'c.3683A>G', 'p.D1228G', '3683/13218'],
+        ['SampleA', 'NC_045512.2', 3948, 'A', 'G', 'SNP', 'SampleA.vcf', 'NC_045512.2:3948:A:G',
+         'G', 'missense_variant', 'MODERATE', 'ORF1ab', 'GU280_gp01', 'transcript', 'protein_coding',
+         'c.1229A>G', 'p.D410G', '1229/5835'],
+        ['SampleA', 'NC_045512.2', 3948, 'A', 'G', 'SNP', 'SampleA.vcf', 'NC_045512.2:3948:A:G',
+         'G', 'missense_variant', 'MODERATE', 'ORF1ab', 'GU280_gp01', 'transcript', 'protein_coding',
+         'c.1229A>G', 'p.D410G', '1229/5835'],
+    ], columns=['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE', 'VARIANT_ID',
+                'ANN.Allele', 'ANN.Annotation', 'ANN.Annotation_Impact', 'ANN.Gene_Name', 'ANN.Gene_ID',
+                'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p',
+                'ANN.cDNA.pos / cDNA.length',
+                ])
+
+
+@pytest.fixture
+def mock_vcf_df_single_sample_annotations_rv_sars_cov_2() -> pd.DataFrame:
+    return pd.DataFrame([
+        ['SampleA', 'NC_045512.2', 3948, 'A', 'G', 'SNP', 'SampleA.vcf', 'NC_045512.2:3948:A:G',
+         'G', 'missense_variant', 'MODERATE', 'ORF1ab', 'GU280_gp01', 'transcript', 'protein_coding',
+         'c.1229A>G', 'p.D410G', '1229/5835'],
+        ['SampleA', 'NC_045512.2', 3948, 'A', 'G', 'SNP', 'SampleA.vcf', 'NC_045512.2:3948:A:G',
+         'G', 'missense_variant', 'MODERATE', 'ORF1ab', 'GU280_gp01', 'transcript', 'protein_coding',
+         'c.1229A>G', 'p.D410G', '1229/5835'],
+        ['SampleA', 'NC_045512.2', 3948, 'A', 'G', 'SNP', 'SampleA.vcf', 'NC_045512.2:3948:A:G',
+         'G', 'missense_variant', 'MODERATE', 'ORF1ab', 'GU280_gp01', 'transcript', 'protein_coding',
+         'c.3683A>G', 'p.D1228G', '3683/13218'],
+        ['SampleA', 'NC_045512.2', 3948, 'A', 'G', 'SNP', 'SampleA.vcf', 'NC_045512.2:3948:A:G',
+         'G', 'missense_variant', 'MODERATE', 'ORF1ab', 'GU280_gp01', 'transcript', 'protein_coding',
+         'c.3683A>G', 'p.D1228G', '3683/21291'],
+    ], columns=['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE', 'VARIANT_ID',
+                'ANN.Allele', 'ANN.Annotation', 'ANN.Annotation_Impact', 'ANN.Gene_Name', 'ANN.Gene_ID',
+                'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p',
+                'ANN.cDNA.pos / cDNA.length',
+                ])
+
+
+@pytest.fixture
 def mock_vcf_df_multiple_sample_one_empty() -> pd.DataFrame:
     return pd.DataFrame([
         ['SampleA', 'NC_011083', 140658, 'C', 'A', 'snp', 'SampleA.vcf', 'NC_011083:140658:C:A',
@@ -434,6 +478,34 @@ def test_select_variant_annotations_some_na_values(vcf_snpeff_annotation_parser:
     assert ['SampleA', 'NC_011083', 140658, 'C', 'A', 'snp', 'SampleA.vcf', 'NC_011083:140658:C:A',
             'A', 'missense_variant', 'MODERATE', 'murF', 'SEHA_RS01180', 'transcript', 'NA',
             'c.497C>A', 'p.Ala166Glu'] == list(ann_entries_df.iloc[0].fillna('NA'))
+
+
+def test_select_variant_annotations_single_sample_sars_cov_2(vcf_snpeff_annotation_parser: VcfSnpEffAnnotationParser,
+                                                             mock_vcf_df_single_sample_annotations_sars_cov_2: pd.DataFrame):
+    ann_entries_df = vcf_snpeff_annotation_parser.select_variant_annotations(
+        mock_vcf_df_single_sample_annotations_sars_cov_2)
+    assert ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE', 'VARIANT_ID',
+            'ANN.Allele', 'ANN.Annotation', 'ANN.Annotation_Impact', 'ANN.Gene_Name', 'ANN.Gene_ID',
+            'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p'] == list(
+        ann_entries_df.columns)
+    assert 1 == len(ann_entries_df)
+    assert ['SampleA', 'NC_045512.2', 3948, 'A', 'G', 'SNP', 'SampleA.vcf', 'NC_045512.2:3948:A:G',
+            'G', 'missense_variant', 'MODERATE', 'ORF1ab', 'GU280_gp01', 'transcript', 'protein_coding',
+            'c.3683A>G', 'p.D1228G'] == list(ann_entries_df.iloc[0])
+
+
+def test_select_variant_annotations_rv_single_sample_sars_cov_2(vcf_snpeff_annotation_parser: VcfSnpEffAnnotationParser,
+                                                             mock_vcf_df_single_sample_annotations_rv_sars_cov_2: pd.DataFrame):
+    ann_entries_df = vcf_snpeff_annotation_parser.select_variant_annotations(
+        mock_vcf_df_single_sample_annotations_rv_sars_cov_2)
+    assert ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE', 'VARIANT_ID',
+            'ANN.Allele', 'ANN.Annotation', 'ANN.Annotation_Impact', 'ANN.Gene_Name', 'ANN.Gene_ID',
+            'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p'] == list(
+        ann_entries_df.columns)
+    assert 1 == len(ann_entries_df)
+    assert ['SampleA', 'NC_045512.2', 3948, 'A', 'G', 'SNP', 'SampleA.vcf', 'NC_045512.2:3948:A:G',
+            'G', 'missense_variant', 'MODERATE', 'ORF1ab', 'GU280_gp01', 'transcript', 'protein_coding',
+            'c.3683A>G', 'p.D1228G'] == list(ann_entries_df.iloc[0])
 
 
 def test_select_variant_annotations_multiple_sample(vcf_snpeff_annotation_parser: VcfSnpEffAnnotationParser,

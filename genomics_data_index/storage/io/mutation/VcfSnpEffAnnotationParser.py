@@ -177,6 +177,8 @@ class VcfSnpEffAnnotationParser:
         if len(vcf_df_nona) > 0:
             vcf_cdna_split = vcf_df_nona['ANN.cDNA.pos / cDNA.length'].str.split('/', expand=True).rename(
                 {0: 'ANN.cDNA.pos', 1: 'ANN.cDNA.length'}, axis='columns')
+            vcf_cdna_split['ANN.cDNA.pos'] = pd.to_numeric(vcf_cdna_split['ANN.cDNA.pos'])
+            vcf_cdna_split['ANN.cDNA.length'] = pd.to_numeric(vcf_cdna_split['ANN.cDNA.length'])
 
             vcf_df = vcf_df.merge(vcf_cdna_split, how='left', left_index=True, right_index=True)
         else:
