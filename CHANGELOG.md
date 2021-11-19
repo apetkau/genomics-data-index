@@ -9,6 +9,7 @@
 * [api]: Changed default NodeStyle for rendering trees such that nodes have size 0, which avoids inflating distances when many samples have distance 0 (0.4.0.dev2).
 * [api]: Adding ability to more easily set highlight colours and adjusted default node colours for highlights (0.4.0.dev2).
 * [api]: Added ability to pre-render a tree and included additional parameters for rendering (0.4.0.dev2).
+* [analysis]: Fixed issue where incorrect snpEff annotation was being loaded for ORF1ab in SARS-CoV-2 (0.4.0.dev3).
 
 # 0.3.0
 
