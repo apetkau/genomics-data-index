@@ -495,7 +495,7 @@ def test_select_variant_annotations_single_sample_sars_cov_2(vcf_snpeff_annotati
 
 
 def test_select_variant_annotations_rv_single_sample_sars_cov_2(vcf_snpeff_annotation_parser: VcfSnpEffAnnotationParser,
-                                                             mock_vcf_df_single_sample_annotations_rv_sars_cov_2: pd.DataFrame):
+                                                                mock_vcf_df_single_sample_annotations_rv_sars_cov_2: pd.DataFrame):
     ann_entries_df = vcf_snpeff_annotation_parser.select_variant_annotations(
         mock_vcf_df_single_sample_annotations_rv_sars_cov_2)
     assert ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE', 'VARIANT_ID',
