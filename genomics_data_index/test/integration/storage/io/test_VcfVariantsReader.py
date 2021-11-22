@@ -17,7 +17,7 @@ from genomics_data_index.storage.io.mutation.variants_processor.VcfVariantsTable
 from genomics_data_index.storage.io.processor.SerialSampleFilesProcessor import SerialSampleFilesProcessor
 from genomics_data_index.test.integration import data_dir
 from genomics_data_index.test.integration import data_dir_empty
-from genomics_data_index.test.integration import snpeff_sample_vcfs
+from genomics_data_index.test.integration import snpeff_sample_vcfs, snpeff_sarscov2_vcfs
 
 serial_variants_processor_factory = SerialVcfVariantsTableProcessorFactory()
 
@@ -85,6 +85,24 @@ def variants_reader_snpeff_annotations_single_sample() -> VcfVariantsReader:
 
     vcfs_map = {
         'SH10-014': snpeff_sample_vcfs['SH10-014']
+    }
+
+    data_package = NucleotideSampleDataPackage.create_from_vcf_masks(sample_vcf_map=vcfs_map,
+                                                                     masked_genomic_files_map=None,
+                                                                     sample_files_processor=file_processor)
+    processed_data_package = cast(NucleotideSampleDataPackage, data_package.process_all_data())
+    processed_files = processed_data_package.get_sample_data()
+    return VcfVariantsReader.create(processed_files, variants_processor_factory=serial_variants_processor_factory,
+                                    include_masked_regions=False)
+
+
+@pytest.fixture
+def variants_reader_snpeff_annotations_single_sample_sars_cov_2() -> VcfVariantsReader:
+    tmp_dir = Path(tempfile.mkdtemp())
+    file_processor = SerialSampleFilesProcessor(tmp_dir)
+
+    vcfs_map = {
+        'USA/CA-CDPH-3000143037/2021': snpeff_sarscov2_vcfs['USA/CA-CDPH-3000143037/2021']
     }
 
     data_package = NucleotideSampleDataPackage.create_from_vcf_masks(sample_vcf_map=vcfs_map,
@@ -458,3 +476,63 @@ def test_get_variants_table_snpeff_annotations_multiple_samples(
             'protein_coding',
             'c.429_464delCGACCACGACCACGACCACGACCACGACCACGACCA', 'p.Asp144_His155del'] == vcf_df_varA.loc[
                'SH14-014'].tolist()
+
+
+def test_get_variants_table_snpeff_annotations_sars_cov_2(
+        variants_reader_snpeff_annotations_single_sample_sars_cov_2: VcfVariantsReader):
+    vr = variants_reader_snpeff_annotations_single_sample_sars_cov_2
+    vcf_df = vr.get_features_table()
+
+    assert 31 == len(vcf_df)
+    assert ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'FILE', 'VARIANT_ID',
+            'ANN.Allele', 'ANN.Annotation', 'ANN.Annotation_Impact', 'ANN.Gene_Name', 'ANN.Gene_ID',
+            'ANN.Feature_Type', 'ANN.Transcript_BioType', 'ANN.HGVS.c', 'ANN.HGVS.p'] == list(
+        vcf_df.columns)
+
+    # Get rid of 'FILE' since these are processed files
+    vcf_df = vcf_df.drop(columns='FILE')
+
+    vcf_df['ANN.Annotation'] = vcf_df['ANN.Annotation'].astype(str)
+    vcf_df['ANN.Annotation_Impact'] = vcf_df['ANN.Annotation_Impact'].astype(str)
+
+    # ORF1ab (ORF1a region)
+    sample_sarscov2_1_var = vcf_df[vcf_df['POS'] == 3948]
+    assert 1 == len(sample_sarscov2_1_var)
+    assert ['USA/CA-CDPH-3000143037/2021', 'NC_045512.2', 3948, 'A', 'G', 'SNP',
+            'NC_045512.2:3948:A:G', 'G', 'missense_variant', 'MODERATE', 'ORF1ab', 'GU280_gp01', 'transcript',
+            'protein_coding', 'c.3683A>G', 'p.D1228G'] == sample_sarscov2_1_var.iloc[0].tolist()
+
+    # ORF1ab (ORF1a region)
+    sample_sarscov2_1_var = vcf_df[vcf_df['POS'] == 3037]
+    assert 1 == len(sample_sarscov2_1_var)
+    assert ['USA/CA-CDPH-3000143037/2021', 'NC_045512.2', 3037, 'C', 'T', 'SNP',
+            'NC_045512.2:3037:C:T', 'T', 'synonymous_variant', 'LOW', 'ORF1ab', 'GU280_gp01', 'transcript',
+            'protein_coding', 'c.2772C>T', 'p.F924F'] == sample_sarscov2_1_var.iloc[0].tolist()
+
+    # ORF1ab (ORF1b region)
+    sample_sarscov2_1_var = vcf_df[vcf_df['POS'] == 19220]
+    assert 1 == len(sample_sarscov2_1_var)
+    assert ['USA/CA-CDPH-3000143037/2021', 'NC_045512.2', 19220, 'C', 'T', 'SNP',
+            'NC_045512.2:19220:C:T', 'T', 'missense_variant', 'MODERATE', 'ORF1ab', 'GU280_gp01', 'transcript',
+            'protein_coding', 'c.18956C>T', 'p.A6319V'] == sample_sarscov2_1_var.iloc[0].tolist()
+
+    # S
+    sample_sarscov2_1_var = vcf_df[vcf_df['POS'] == 22917]
+    assert 1 == len(sample_sarscov2_1_var)
+    assert ['USA/CA-CDPH-3000143037/2021', 'NC_045512.2', 22917, 'T', 'G', 'SNP',
+            'NC_045512.2:22917:T:G', 'G', 'missense_variant', 'MODERATE', 'S', 'GU280_gp02', 'transcript',
+            'protein_coding', 'c.1355T>G', 'p.L452R'] == sample_sarscov2_1_var.iloc[0].tolist()
+
+    # ORF7b
+    sample_sarscov2_1_var = vcf_df[vcf_df['POS'] == 27874]
+    assert 1 == len(sample_sarscov2_1_var)
+    assert ['USA/CA-CDPH-3000143037/2021', 'NC_045512.2', 27874, 'C', 'T', 'SNP',
+            'NC_045512.2:27874:C:T', 'T', 'missense_variant', 'MODERATE', 'ORF7b', 'GU280_gp08', 'transcript',
+            'protein_coding', 'c.119C>T', 'p.T40I'] == sample_sarscov2_1_var.iloc[0].tolist()
+
+    # intergenic
+    sample_sarscov2_1_var = vcf_df[vcf_df['POS'] == 210].fillna('<NA>')
+    assert 1 == len(sample_sarscov2_1_var)
+    assert ['USA/CA-CDPH-3000143037/2021', 'NC_045512.2', 210, 'G', 'T', 'SNP',
+            'NC_045512.2:210:G:T', 'T', 'intergenic_region', 'MODIFIER', 'CHR_START-ORF1ab', 'CHR_START-GU280_gp01',
+            'intergenic_region', '<NA>', 'n.210G>T', '<NA>'] == sample_sarscov2_1_var.iloc[0].tolist()

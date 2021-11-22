@@ -99,6 +99,8 @@ class TreeSamplesQueryFactory:
         if kind not in self.BUILD_TREE_KINDS:
             raise Exception(f'Invalid kind=[{kind}]. Must be one of {self.BUILD_TREE_KINDS}.')
 
+        tree = tree.copy(method='newick')
+
         leaf_names = tree.get_leaf_names()
         samples_set = SampleSet(database_connection.sample_service.find_sample_name_ids(leaf_names).values())
 

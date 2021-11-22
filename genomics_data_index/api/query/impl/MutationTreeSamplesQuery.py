@@ -56,6 +56,20 @@ class MutationTreeSamplesQuery(TreeSamplesQuery):
         """
         return self._reference_included
 
+    def _get_samples_to_keep_from_query(self, query: SamplesQuery,
+                                        include_present: bool,
+                                        include_unknown: bool,
+                                        include_absent: bool,
+                                        ) -> List[str]:
+        sample_names_from_query = super()._get_samples_to_keep_from_query(query=query,
+                                                                          include_present=include_present,
+                                                                          include_unknown=include_unknown,
+                                                                          include_absent=include_absent)
+        if self.reference_included:
+            return sample_names_from_query + [self.reference_name]
+        else:
+            return sample_names_from_query
+
     def _create_from_tree_internal(self, tree: Tree) -> SamplesQuery:
         return MutationTreeSamplesQuery(connection=self._query_connection,
                                         wrapped_query=self._wrapped_query,
