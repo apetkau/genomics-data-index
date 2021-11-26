@@ -93,11 +93,10 @@ class PipelineExecutor(abc.ABC):
         restored_data = restored_data[data_columns_to_keep]
         return restored_data
 
-    def create_input_sample_files(self, input_files: List[Path], skip_samples: Set[str] = None) -> pd.DataFrame:
+    def create_input_sample_files(self, input_files: List[Path]) -> pd.DataFrame:
         """
         Create a dataframe which associates the given files with a sample entry.
         :param input_files: The list of files.
-        :param skip_samples: An optional set of sample names to skip.
         :return: A pandas.DataFrame which has one sample per row associated with the input files.
         """
         assemblies = {}
@@ -180,10 +179,7 @@ class PipelineExecutor(abc.ABC):
             else:
                 raise Exception(f'Invalid number of files for sample [{sample}], files={reads[sample]}')
 
-        samples_df = pd.DataFrame(data, columns=self.INPUT_SAMPLE_FILE_COLUMNS)
-        samples_df = self.skip_samples_from_input_files(samples_df, skip_samples=skip_samples)
-
-        return samples_df
+        return pd.DataFrame(data, columns=self.INPUT_SAMPLE_FILE_COLUMNS)
 
     def skip_samples_from_input_files(self, samples_df: pd.DataFrame, skip_samples: Set[str] = None):
         if not (skip_samples is None or len(skip_samples) == 0):

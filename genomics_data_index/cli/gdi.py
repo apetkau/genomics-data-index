@@ -495,7 +495,8 @@ def input_command(ctx, skip_existing_samples: bool, absolute: bool, input_genome
             samples_set = set(GenomicsDataIndex.connect(project=project).sample_names())
 
     pipeline_executor = SnakemakePipelineExecutor()
-    sample_files_df = pipeline_executor.create_input_sample_files(input_files=genome_paths, skip_samples=samples_set)
+    sample_files_df = pipeline_executor.create_input_sample_files(input_files=genome_paths)
+    sample_files_df = pipeline_executor.skip_samples_from_input_files(sample_files_df, skip_samples=samples_set)
 
     # Defaults to writing to stdout
     pipeline_executor.write_input_sample_files(input_sample_files=sample_files_df, abolute_paths=absolute)
