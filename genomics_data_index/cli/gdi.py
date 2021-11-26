@@ -429,9 +429,20 @@ def list_samples(ctx):
     click.echo('\n'.join(samples))
 
 
-def read_genomes_from_file(input_file: Path) -> List[Path]:
+def read_genomes_from_file(input_file: Path, skip_missing: bool) -> List[Path]:
     with open(input_file, 'r') as fh:
-        genome_paths = [Path(l.strip()) for l in fh.readlines()]
+        genome_paths = []
+        skipped = 0
+        for line in fh.readlines():
+            line = line.strip()
+            genome_path = Path(line)
+            if skip_missing and not genome_path.exists():
+                logger.log(TRACE_LEVEL, f'Genome {genome_path} does not exist, skipping...')
+                skipped += 1
+            else:
+                genome_paths.append(genome_path)
+        if skipped > 0:
+            logger.warning(f'Skipped {skipped} genome paths which do not exist from file {input_file}')
         return genome_paths
 
 
@@ -442,13 +453,15 @@ def read_genomes_from_file(input_file: Path) -> List[Path]:
                    ' to passing genomes as arguments on the command-line',
               type=click.Path(exists=True),
               required=False)
+@click.option('--skip-missing/--no-skip-missing', help='Skip files that are missing/don\'t exist in input file',
+              default=True)
 @click.argument('genomes', type=click.Path(exists=True), nargs=-1)
-def input_command(absolute: bool, input_genomes_file: str, genomes: List[str]):
+def input_command(absolute: bool, input_genomes_file: str, skip_missing: bool, genomes: List[str]):
     if input_genomes_file is not None:
         if len(genomes) > 0:
             logger.warning(f'--input-genomes-file=[{input_genomes_file}] is specified so will ignore genomes '
                            f'passed on the command-line.')
-        genome_paths = read_genomes_from_file(Path(input_genomes_file))
+        genome_paths = read_genomes_from_file(Path(input_genomes_file), skip_missing=skip_missing)
     elif len(genomes) > 0:
         genome_paths = [Path(f) for f in genomes]
     else:
