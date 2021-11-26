@@ -641,7 +641,8 @@ def analysis(ctx, reference_file: str, load_data: bool, index_unknown: bool, cle
              reads_mincov: int, reads_minqual: int,
              kmer_size: List[int], kmer_scaled: int,
              batch_size: int, sample_batch_size: int,
-             input_genomes_file: str, input_structured_genomes_file: str, check_files_exist: bool,
+             input_genomes_file: str, input_structured_genomes_file: str,
+             check_files_exist: bool,
              skip_existing_samples: bool,
              genomes: List[str]):
     project = get_project_exit_on_error(ctx)
@@ -698,6 +699,13 @@ def analysis(ctx, reference_file: str, load_data: bool, index_unknown: bool, cle
         existing_samples = set(GenomicsDataIndex.connect(project=project).sample_names())
         sample_files = pipeline_executor.skip_samples_from_input_files(sample_files, skip_samples=existing_samples)
 
+    if check_files_exist:
+        sample_files = pipeline_executor.skip_missing_sample_files(sample_files)
+
+    if len(sample_files) == 0:
+        logger.info('No samples to process, exiting.')
+        sys.exit(0)
+        
     logger.info(f'Processing {len(sample_files)} genomes to identify mutations')
     results = pipeline_executor.execute(sample_files=sample_files,
                                         reference_file=Path(reference_file),
