@@ -429,14 +429,14 @@ def list_samples(ctx):
     click.echo('\n'.join(samples))
 
 
-def read_genomes_from_file(input_file: Path, skip_missing: bool) -> List[Path]:
+def read_genomes_from_file(input_file: Path, check_files_exist: bool) -> List[Path]:
     with open(input_file, 'r') as fh:
         genome_paths = []
         skipped = 0
         for line in fh.readlines():
             line = line.strip()
             genome_path = Path(line)
-            if skip_missing and not genome_path.exists():
+            if check_files_exist and not genome_path.exists():
                 logger.log(TRACE_LEVEL, f'Genome {genome_path} does not exist, skipping...')
                 skipped += 1
             else:
@@ -453,15 +453,16 @@ def read_genomes_from_file(input_file: Path, skip_missing: bool) -> List[Path]:
                    ' to passing genomes as arguments on the command-line',
               type=click.Path(exists=True),
               required=False)
-@click.option('--skip-missing/--no-skip-missing', help='Skip files that are missing/don\'t exist in input file',
+@click.option('--check-files-exist/--no-check-files-exist',
+              help='Check that the passed files in the input genomes file exist',
               default=True)
 @click.argument('genomes', type=click.Path(exists=True), nargs=-1)
-def input_command(absolute: bool, input_genomes_file: str, skip_missing: bool, genomes: List[str]):
+def input_command(absolute: bool, input_genomes_file: str, check_files_exist: bool, genomes: List[str]):
     if input_genomes_file is not None:
         if len(genomes) > 0:
             logger.warning(f'--input-genomes-file=[{input_genomes_file}] is specified so will ignore genomes '
                            f'passed on the command-line.')
-        genome_paths = read_genomes_from_file(Path(input_genomes_file), skip_missing=skip_missing)
+        genome_paths = read_genomes_from_file(Path(input_genomes_file), check_files_exist=check_files_exist)
     elif len(genomes) > 0:
         genome_paths = [Path(f) for f in genomes]
     else:
