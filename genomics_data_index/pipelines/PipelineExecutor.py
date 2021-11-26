@@ -93,10 +93,12 @@ class PipelineExecutor(abc.ABC):
         restored_data = restored_data[data_columns_to_keep]
         return restored_data
 
-    def create_input_sample_files(self, input_files: List[Path]) -> pd.DataFrame:
+    def create_input_sample_files(self, input_files: List[Path], skip_samples: Set[str] = None) -> pd.DataFrame:
         """
-
-        :rtype: object
+        Create a dataframe which associates the given files with a sample entry.
+        :param input_files: The list of files.
+        :param skip_samples: An optional set of sample names to skip.
+        :return: A pandas.DataFrame which has one sample per row associated with the input files.
         """
         assemblies = {}
         reads = {}
@@ -178,7 +180,15 @@ class PipelineExecutor(abc.ABC):
             else:
                 raise Exception(f'Invalid number of files for sample [{sample}], files={reads[sample]}')
 
-        return pd.DataFrame(data, columns=self.INPUT_SAMPLE_FILE_COLUMNS)
+        samples_df = pd.DataFrame(data, columns=self.INPUT_SAMPLE_FILE_COLUMNS)
+
+        if not (skip_samples is None or len(skip_samples) == 0):
+            full_length = len(samples_df)
+            samples_df = samples_df.loc[~samples_df['Sample'].isin(skip_samples)]
+            reduced_length = len(samples_df)
+            logger.debug(f'Skipping {full_length - reduced_length} samples since they are already indexed')
+
+        return samples_df
 
     def write_input_sample_files(self, input_sample_files: pd.DataFrame,
                                  output_file: Union[Path, io.TextIOWrapper] = sys.stdout,
