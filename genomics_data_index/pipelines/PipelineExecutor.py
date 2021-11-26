@@ -181,13 +181,17 @@ class PipelineExecutor(abc.ABC):
                 raise Exception(f'Invalid number of files for sample [{sample}], files={reads[sample]}')
 
         samples_df = pd.DataFrame(data, columns=self.INPUT_SAMPLE_FILE_COLUMNS)
+        samples_df = self.skip_samples_from_input_files(samples_df, skip_samples=skip_samples)
 
+        return samples_df
+
+    def skip_samples_from_input_files(self, samples_df: pd.DataFrame, skip_samples: Set[str] = None):
         if not (skip_samples is None or len(skip_samples) == 0):
             full_length = len(samples_df)
             samples_df = samples_df.loc[~samples_df['Sample'].isin(skip_samples)]
             reduced_length = len(samples_df)
-            logger.debug(f'Skipping {full_length - reduced_length} samples since they are already indexed')
-
+            logger.info(f'Skipping {full_length - reduced_length}/{full_length} samples '
+                         f'since they are already indexed')
         return samples_df
 
     def write_input_sample_files(self, input_sample_files: pd.DataFrame,

@@ -627,6 +627,10 @@ def input_split_file(absolute: bool, output_dir: str, output_samples_file: str, 
 @click.option('--check-files-exist/--no-check-files-exist',
               help='Check that the passed files in the input genomes file exist',
               default=True)
+@click.option('--skip-existing-samples/--no-skip-existing-samples',
+              help='Skip samples that already exist in the index. Attempts to automatically detect sample names'
+                   ' from file names if necessary.',
+              default=False)
 @click.argument('genomes', type=click.Path(exists=True), nargs=-1)
 def analysis(ctx, reference_file: str, load_data: bool, index_unknown: bool, clean: bool, build_tree: bool,
              align_type: str,
@@ -637,6 +641,7 @@ def analysis(ctx, reference_file: str, load_data: bool, index_unknown: bool, cle
              kmer_size: List[int], kmer_scaled: int,
              batch_size: int, sample_batch_size: int,
              input_genomes_file: str, input_structured_genomes_file: str, check_files_exist: bool,
+             skip_existing_samples: bool,
              genomes: List[str]):
     project = get_project_exit_on_error(ctx)
     data_index_connection = project.create_connection()
@@ -687,6 +692,10 @@ def analysis(ctx, reference_file: str, load_data: bool, index_unknown: bool, cle
     if sample_files is None:
         logger.info(f'Automatically structuring {len(genome_paths)} input files into assemblies/reads')
         sample_files = pipeline_executor.create_input_sample_files(genome_paths)
+
+    if skip_existing_samples:
+        existing_samples = set(GenomicsDataIndex.connect(project=project).sample_names())
+        sample_files = pipeline_executor.skip_samples_from_input_files(sample_files, skip_samples=existing_samples)
 
     logger.info(f'Processing {len(sample_files)} genomes to identify mutations')
     results = pipeline_executor.execute(sample_files=sample_files,
