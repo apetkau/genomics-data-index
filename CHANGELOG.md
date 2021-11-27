@@ -1,3 +1,8 @@
+# 0.5.0
+
+* [cli]: Support for skipping non-existent paths in input file (0.5.0.dev1).
+* [cli]: Support for skipping samples already in an index during the data analysis (0.5.0.dev1).
+
 # 0.4.0
 
 * [analysis]: Switched all steps to use conda in Snakemake pipeline (0.3.1).

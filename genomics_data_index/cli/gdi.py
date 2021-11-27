@@ -8,7 +8,7 @@ from functools import partial
 from os import getcwd, mkdir
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import List, cast, Tuple
+from typing import List, cast, Tuple, Optional
 
 import click
 import click_config_file
@@ -74,6 +74,15 @@ def get_project_exit_on_error(ctx) -> Project:
                      f'with --project-dir')
         logger.debug(e, exc_info=True)
         sys.exit(1)
+
+
+def get_project_no_exit_on_error(ctx) -> Optional[Project]:
+    project_dir = ctx.obj['project_dir']
+    try:
+        project = Project(project_dir)
+        return project
+    except ProjectConfigurationError as e:
+        return None
 
 
 def get_genomics_index(ctx) -> GenomicsDataIndex:
@@ -429,37 +438,70 @@ def list_samples(ctx):
     click.echo('\n'.join(samples))
 
 
-def read_genomes_from_file(input_file: Path) -> List[Path]:
+def read_genomes_from_file(input_file: Path, check_files_exist: bool) -> List[Path]:
     with open(input_file, 'r') as fh:
-        genome_paths = [Path(l.strip()) for l in fh.readlines()]
+        genome_paths = []
+        skipped = 0
+        total = 0
+        for line in fh.readlines():
+            line = line.strip()
+            genome_path = Path(line)
+            if check_files_exist and not genome_path.exists():
+                logger.log(TRACE_LEVEL, f'Genome {genome_path} does not exist, skipping...')
+                skipped += 1
+            else:
+                genome_paths.append(genome_path)
+            total += 1
+        if skipped > 0:
+            logger.warning(f'Skipped {skipped}/{total} genome paths which do not exist from file {input_file}')
         return genome_paths
 
 
 @main.command(name='input')
+@click.pass_context
+@click.option('--skip-existing-samples/--no-skip-existing-samples',
+              help='Skip samples that already exist in the index. Attempts to automatically detect sample names'
+                   ' from file names.',
+              default=True)
 @click.option('--absolute/--no-absolute', help='Convert paths to absolute paths', required=False)
 @click.option('--input-genomes-file',
               help='A file listing the genomes to process, one per line. This is an alternative'
                    ' to passing genomes as arguments on the command-line',
               type=click.Path(exists=True),
               required=False)
+@click.option('--check-files-exist/--no-check-files-exist',
+              help='Check that the passed files in the input genomes file exist',
+              default=True)
 @click.argument('genomes', type=click.Path(exists=True), nargs=-1)
-def input_command(absolute: bool, input_genomes_file: str, genomes: List[str]):
+def input_command(ctx, skip_existing_samples: bool, absolute: bool, input_genomes_file: str, check_files_exist: bool,
+                  genomes: List[str]):
+    project = get_project_no_exit_on_error(ctx)
+
     if input_genomes_file is not None:
         if len(genomes) > 0:
             logger.warning(f'--input-genomes-file=[{input_genomes_file}] is specified so will ignore genomes '
                            f'passed on the command-line.')
-        genome_paths = read_genomes_from_file(Path(input_genomes_file))
+        genome_paths = read_genomes_from_file(Path(input_genomes_file), check_files_exist=check_files_exist)
     elif len(genomes) > 0:
         genome_paths = [Path(f) for f in genomes]
     else:
         logger.error('Must pass a list of genome files or use --input-genomes-file')
         sys.exit(1)
 
+    samples_set = set()
+    if skip_existing_samples:
+        if project is None:
+            logger.warning(f'--skip-existing-samples is enabled but no --project-dir is set. '
+                           f'Will not skip existing samples.')
+        else:
+            samples_set = set(GenomicsDataIndex.connect(project=project).sample_names())
+
     pipeline_executor = SnakemakePipelineExecutor()
-    sample_files = pipeline_executor.create_input_sample_files(input_files=genome_paths)
+    sample_files_df = pipeline_executor.create_input_sample_files(input_files=genome_paths)
+    sample_files_df = pipeline_executor.skip_samples_from_input_files(sample_files_df, skip_samples=samples_set)
 
     # Defaults to writing to stdout
-    pipeline_executor.write_input_sample_files(input_sample_files=sample_files, abolute_paths=absolute)
+    pipeline_executor.write_input_sample_files(input_sample_files=sample_files_df, abolute_paths=absolute)
 
 
 @main.command(name='input-split-file')
@@ -585,6 +627,13 @@ def input_split_file(absolute: bool, output_dir: str, output_samples_file: str, 
                    ' to passing genomes as arguments on the command-line.',
               type=click.Path(exists=True),
               required=False)
+@click.option('--check-files-exist/--no-check-files-exist',
+              help='Check that the passed files in the input genomes file exist',
+              default=True)
+@click.option('--skip-existing-samples/--no-skip-existing-samples',
+              help='Skip samples that already exist in the index. Attempts to automatically detect sample names'
+                   ' from file names if necessary.',
+              default=False)
 @click.argument('genomes', type=click.Path(exists=True), nargs=-1)
 def analysis(ctx, reference_file: str, load_data: bool, index_unknown: bool, clean: bool, build_tree: bool,
              align_type: str,
@@ -594,7 +643,10 @@ def analysis(ctx, reference_file: str, load_data: bool, index_unknown: bool, cle
              reads_mincov: int, reads_minqual: int,
              kmer_size: List[int], kmer_scaled: int,
              batch_size: int, sample_batch_size: int,
-             input_genomes_file: str, input_structured_genomes_file: str, genomes: List[str]):
+             input_genomes_file: str, input_structured_genomes_file: str,
+             check_files_exist: bool,
+             skip_existing_samples: bool,
+             genomes: List[str]):
     project = get_project_exit_on_error(ctx)
     data_index_connection = project.create_connection()
     kmer_service = data_index_connection.kmer_service
@@ -613,7 +665,7 @@ def analysis(ctx, reference_file: str, load_data: bool, index_unknown: bool, cle
         sample_files = SnakemakePipelineExecutor().read_input_sample_files(Path(input_structured_genomes_file))
     elif input_genomes_file is not None:
         logger.debug(f'Using --input-genomes-file=[{input_genomes_file}]')
-        genome_paths = read_genomes_from_file(Path(input_genomes_file))
+        genome_paths = read_genomes_from_file(Path(input_genomes_file), check_files_exist=check_files_exist)
     else:
         logger.debug(f'Using {len(genomes)} files passed as command-line arguments')
         genome_paths = [Path(f) for f in genomes]
@@ -644,6 +696,17 @@ def analysis(ctx, reference_file: str, load_data: bool, index_unknown: bool, cle
     if sample_files is None:
         logger.info(f'Automatically structuring {len(genome_paths)} input files into assemblies/reads')
         sample_files = pipeline_executor.create_input_sample_files(genome_paths)
+
+    if skip_existing_samples:
+        existing_samples = set(GenomicsDataIndex.connect(project=project).sample_names())
+        sample_files = pipeline_executor.skip_samples_from_input_files(sample_files, skip_samples=existing_samples)
+
+    if check_files_exist:
+        sample_files = pipeline_executor.skip_missing_sample_files(sample_files)
+
+    if len(sample_files) == 0:
+        logger.info('No samples to process, exiting.')
+        sys.exit(0)
 
     logger.info(f'Processing {len(sample_files)} genomes to identify mutations')
     results = pipeline_executor.execute(sample_files=sample_files,
