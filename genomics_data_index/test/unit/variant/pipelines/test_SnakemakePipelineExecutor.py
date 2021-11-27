@@ -175,7 +175,6 @@ def test_skip_missing_sample_files():
         assert ['B', f1, 'NA', 'NA'] == df.iloc[1].tolist()
         assert ['C', 'NA', f1, f1] == df.iloc[2].tolist()
 
-
         input_samples = pd.DataFrame([
             ['A', f1, pd.NA, pd.NA],
             ['B', Path('file2.fasta'), pd.NA, pd.NA],
@@ -187,7 +186,6 @@ def test_skip_missing_sample_files():
         assert ['Sample', 'Assemblies', 'Reads1', 'Reads2'] == df.columns.tolist()
         assert 1 == len(df)
         assert ['A', f1, 'NA', 'NA'] == df.iloc[0].tolist()
-
 
         input_samples = pd.DataFrame([
             ['A', f1, pd.NA, pd.NA],
@@ -201,7 +199,6 @@ def test_skip_missing_sample_files():
         assert 2 == len(df)
         assert ['A', f1, 'NA', 'NA'] == df.iloc[0].tolist()
         assert ['B', f1, 'NA', 'NA'] == df.iloc[1].tolist()
-
 
         input_samples = pd.DataFrame([
             ['A', f1, pd.NA, pd.NA],
@@ -215,7 +212,6 @@ def test_skip_missing_sample_files():
         assert 2 == len(df)
         assert ['A', f1, 'NA', 'NA'] == df.iloc[0].tolist()
         assert ['B', f1, 'NA', 'NA'] == df.iloc[1].tolist()
-
 
         input_samples = pd.DataFrame([
             ['A', f1, pd.NA, pd.NA],

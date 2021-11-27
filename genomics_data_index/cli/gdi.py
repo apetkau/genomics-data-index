@@ -8,7 +8,7 @@ from functools import partial
 from os import getcwd, mkdir
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import List, cast, Tuple, Optional, Set
+from typing import List, cast, Tuple, Optional
 
 import click
 import click_config_file
@@ -705,7 +705,7 @@ def analysis(ctx, reference_file: str, load_data: bool, index_unknown: bool, cle
     if len(sample_files) == 0:
         logger.info('No samples to process, exiting.')
         sys.exit(0)
-        
+
     logger.info(f'Processing {len(sample_files)} genomes to identify mutations')
     results = pipeline_executor.execute(sample_files=sample_files,
                                         reference_file=Path(reference_file),

@@ -184,7 +184,8 @@ class PipelineExecutor(abc.ABC):
     def skip_missing_sample_files(self, samples_df: pd.DataFrame) -> pd.DataFrame:
         all_samples = len(samples_df)
         for file_col in ['Assemblies', 'Reads1', 'Reads2']:
-            files_not_na_and_exist = samples_df.loc[~samples_df[file_col].isna(), file_col].apply(lambda x: Path(x).exists())
+            files_not_na_and_exist = samples_df.loc[~samples_df[file_col].isna(), file_col].apply(
+                lambda x: Path(x).exists())
             samples_df = samples_df.loc[samples_df[file_col].isna() | files_not_na_and_exist]
 
         reduced_samples = len(samples_df)
@@ -202,7 +203,7 @@ class PipelineExecutor(abc.ABC):
             skipped_length = full_length - reduced_length
             if skipped_length > 0:
                 logger.warning(f'Skipping {skipped_length}/{full_length} samples '
-                             'since they are already indexed')
+                               'since they are already indexed')
         return samples_df
 
     def write_input_sample_files(self, input_sample_files: pd.DataFrame,
