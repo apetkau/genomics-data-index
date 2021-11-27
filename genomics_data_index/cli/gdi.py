@@ -442,6 +442,7 @@ def read_genomes_from_file(input_file: Path, check_files_exist: bool) -> List[Pa
     with open(input_file, 'r') as fh:
         genome_paths = []
         skipped = 0
+        total = 0
         for line in fh.readlines():
             line = line.strip()
             genome_path = Path(line)
@@ -450,8 +451,9 @@ def read_genomes_from_file(input_file: Path, check_files_exist: bool) -> List[Pa
                 skipped += 1
             else:
                 genome_paths.append(genome_path)
+            total += 1
         if skipped > 0:
-            logger.warning(f'Skipped {skipped} genome paths which do not exist from file {input_file}')
+            logger.warning(f'Skipped {skipped}/{total} genome paths which do not exist from file {input_file}')
         return genome_paths
 
 
