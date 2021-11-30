@@ -2,6 +2,7 @@
 
 * [cli]: Support for skipping non-existent paths in input file (0.5.0.dev1).
 * [cli]: Support for skipping samples already in an index during the data analysis (0.5.0.dev1).
+* [analysis]: Changed `--indel-bias` in `bcftools mpileup` for assembly analysis from default **1.00** to **1.1**. This was done since I found I was missing a small number of indels in SARS-CoV-2 analyses (they were being identified as missing/unknown instead).
 
 # 0.4.0
 
