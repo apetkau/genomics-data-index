@@ -115,11 +115,11 @@ rule assembly_variant_all:
         "envs/bcftools.yaml"
     threads: 1
     params:
-        qual=10,
+        qual=8,
 	
 	# Changed --indel-bias in bcftools mpileup from default of 1.00 since 
 	# otherwise I was missing a small number of indels in SARS-CoV-2
-	indel_bias=1.1,
+	indel_bias=5,
     log:
         mpileup="logs/assembly_variant_all.{sample}.mpileup.log",
         call="logs/assembly_variant_all.{sample}.call.log",
