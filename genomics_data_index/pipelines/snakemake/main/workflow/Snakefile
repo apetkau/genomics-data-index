@@ -127,7 +127,7 @@ rule assembly_variant_all:
         filter="logs/assembly_variant_all.{sample}.view.log",
         tags="logs/assembly_variant_all.{sample}.tags.log",
     shell:
-        "bcftools mpileup -a DP --min-ireads 1 --indel-bias {indel_bias} --threads {threads} -Ou -f {input.reference} {input.bam} 2> {log.mpileup} | "
+        "bcftools mpileup -a DP --min-ireads 1 --indel-bias {params.indel_bias} --threads {threads} -Ou -f {input.reference} {input.bam} 2> {log.mpileup} | "
         "bcftools call --threads {threads} --ploidy 1 -Ou --multiallelic-caller 2> {log.call} | "
         "bcftools norm -f {input.reference} --threads {threads} --old-rec-tag -Ou 2> {log.norm} | "
         "bcftools view --include 'QUAL>{params.qual}' -Ou 2> {log.filter} | "
