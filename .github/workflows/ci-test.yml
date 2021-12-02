@@ -34,7 +34,7 @@ jobs:
           conda config --add channels defaults
           conda config --add channels conda-forge
           conda config --add channels bioconda
-          conda install mamba setuptools=57 htslib bcftools>=1.13 samtools>=1.13 bamtools minimap2 bedtools fasttree iqtree perl==5.22.0.1 mlst pyqt snpeff -y
+          conda install mamba setuptools=57 htslib bcftools>=1.13 samtools>=1.13 openssl=1.0 bamtool minimap2 bedtools fasttree iqtree perl==5.22.0.1 mlst pyqt snpeff -y
 
       - name: Setup python packages
         shell: bash -l {0}
