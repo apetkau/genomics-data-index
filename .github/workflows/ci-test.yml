@@ -26,6 +26,12 @@ jobs:
           activate-environment: test
           python-version: ${{ matrix.python-version }}
 
+      - name: Install additional dependencies
+        shell: bash -l {0}
+        run: |
+          sudo apt update
+          sudo apt install libssl1.0.0
+
       - name: Install conda packages
         shell: bash -l {0}
         run: |
@@ -35,7 +41,6 @@ jobs:
           conda config --add channels conda-forge
           conda config --add channels bioconda
           conda install mamba setuptools=57 htslib bcftools>=1.13 samtools>=1.13 bamtools minimap2 bedtools fasttree iqtree perl==5.22.0.1 mlst pyqt snpeff -y
-          sudo apt install libssl1.0.0
 
       - name: Setup python packages
         shell: bash -l {0}
