@@ -9,7 +9,7 @@ dependencies:
   - bedtools
   - fasttree
   - iqtree
-  - bcftools
+  - bcftools >= 1.13
   - htslib
   - jupyterlab
   - matplotlib

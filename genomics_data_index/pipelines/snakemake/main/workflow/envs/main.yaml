@@ -6,6 +6,6 @@ dependencies:
   - python=3
   - biopython
   - samtools
-  - bcftools
+  - bcftools >= 1.13
   - htslib
   - cat
