@@ -116,6 +116,7 @@ rule assembly_variant_all:
     threads: 1
     params:
         qual=8,
+	depth_cov=1,
 	
 	# Changed --indel-bias in bcftools mpileup from default of 1.00 since 
 	# otherwise I was missing a small number of indels in SARS-CoV-2
@@ -130,7 +131,7 @@ rule assembly_variant_all:
         "bcftools mpileup -a DP --min-ireads 1 --indel-bias {params.indel_bias} --threads {threads} -Ou -f {input.reference} {input.bam} 2> {log.mpileup} | "
         "bcftools call --threads {threads} --ploidy 1 -Ou --multiallelic-caller 2> {log.call} | "
         "bcftools norm -f {input.reference} --threads {threads} --old-rec-tag -Ou 2> {log.norm} | "
-        "bcftools view --include 'QUAL>{params.qual}' -Ou 2> {log.filter} | "
+        "bcftools view --include 'QUAL>={params.qual} & DP>={params.depth_cov}' -Ou 2> {log.filter} | "
         "bcftools plugin fill-tags -Oz -o {output.vcf} -- -t TYPE 2> {log.tags}"
 
 

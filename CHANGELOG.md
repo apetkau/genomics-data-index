@@ -4,6 +4,7 @@
 * [cli]: Support for skipping samples already in an index during the data analysis (0.5.0.dev1).
 * [analysis]: Increased `--indel-bias` in `bcftools mpileup` for assembly analysis from default **1.00**. This was done since I found I was missing a small number of indels in SARS-CoV-2 analyses (they were being identified as missing/unknown instead). Also decreased quality score filtering from `10` for the same reason (0.5.0.dev2).
     * This requires bcftools >= 1.13.
+* [analysis]: Decreased quality score to a minimum of `1` and added a depth of coverage check (minimum of `1`) to the assemblies pipeline to not exclude some regions.
 
 # 0.4.0
 
