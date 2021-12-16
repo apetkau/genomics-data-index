@@ -255,16 +255,19 @@ class SamplesQueryIndex(SamplesQuery):
 
     def features_summary(self, kind: str = 'mutations', selection: str = 'all',
                          include_present_features: bool = True, include_unknown_features: bool = False,
+                         include_unknown_samples: bool = True,
                          **kwargs) -> pd.DataFrame:
         if kind == 'mutations':
             features_summarizier = MutationFeaturesFromIndexComparator(connection=self._query_connection,
                                                                        include_unknown=include_unknown_features,
                                                                        include_present=include_present_features,
+                                                                       include_unknown_samples=include_unknown_samples,
                                                                        **kwargs)
         elif kind == 'mlst':
             features_summarizier = MLSTFeaturesComparator(connection=self._query_connection,
                                                           include_unknown=include_unknown_features,
                                                           include_present=include_present_features,
+                                                          include_unknown_samples=include_unknown_samples,
                                                           **kwargs)
         else:
             raise Exception(f'Unsupported value kind=[{kind}]. Must be one of {self.SUMMARY_FEATURES_KINDS}.')

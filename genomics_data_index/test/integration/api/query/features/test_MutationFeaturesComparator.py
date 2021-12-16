@@ -22,8 +22,10 @@ def test_summary_all(loaded_database_genomic_data_store: GenomicsDataIndex):
         'Insertion': 'first',
         'Mutation': 'count',
     }).rename(columns={'Mutation': 'Count'}).sort_index()
+    expected_df['Unknown Count'] = 0
     expected_df['Total'] = 9
     expected_df['Percent'] = 100 * (expected_df['Count'] / expected_df['Total'])
+    expected_df['Unknown Percent'] = 100 * (expected_df['Unknown Count'] / expected_df['Total'])
 
     present_set = SampleSet(all_sample_ids)
     mutations_summarizer = MutationFeaturesComparator(connection=loaded_database_genomic_data_store.connection,
@@ -31,14 +33,17 @@ def test_summary_all(loaded_database_genomic_data_store: GenomicsDataIndex):
 
     mutations_df = mutations_summarizer.summary(present_set)
     mutations_df['Percent'] = mutations_df['Percent'].astype(int)  # Convert to int for easier comparison
+    mutations_df['Unknown Percent'] = mutations_df['Unknown Percent'].astype(int)  # Convert to int for easier comparison
     mutations_df = mutations_df.sort_index()
 
     assert len(expected_df) == len(mutations_df)
     assert list(expected_df.columns) == list(mutations_df.columns)
     assert list(expected_df.index) == list(mutations_df.index)
     assert list(expected_df['Count']) == list(mutations_df['Count'])
+    assert list(expected_df['Unknown Count']) == list(mutations_df['Unknown Count'])
     assert list(expected_df['Total']) == list(mutations_df['Total'])
     assert 22 == mutations_df.loc['reference:619:G:C', 'Percent']
+    assert 0 == mutations_df.loc['reference:619:G:C', 'Unknown Percent']
 
 
 def test_summary_unique(loaded_database_genomic_data_store: GenomicsDataIndex):

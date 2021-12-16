@@ -24,15 +24,20 @@ def test_summary_all(loaded_database_genomic_data_store: GenomicsDataIndex):
         'Type': 'first',
         'Mutation': 'count',
     }).rename(columns={'Mutation': 'Count'}).sort_index()
+    expected_df['Unknown Count'] = '<NA>'
     expected_df['Total'] = 9
     expected_df['Percent'] = 100 * (expected_df['Count'] / expected_df['Total'])
+    expected_df['Unknown Percent'] = '<NA>'
 
     present_set = SampleSet(all_sample_ids)
     mutations_summarizer = MutationFeaturesFromIndexComparator(connection=loaded_database_genomic_data_store.connection,
+                                                               include_unknown_samples=False,
                                                                ignore_annotations=True)
 
     mutations_df = mutations_summarizer.summary(present_set)
     mutations_df['Percent'] = mutations_df['Percent'].astype(int)  # Convert to int for easier comparison
+    mutations_df['Unknown Percent'] = mutations_df['Unknown Percent'].fillna('<NA>')
+    mutations_df['Unknown Count'] = mutations_df['Unknown Count'].fillna('<NA>')
     mutations_df = mutations_df.sort_index()
 
     assert len(expected_df) == len(mutations_df)
@@ -40,16 +45,22 @@ def test_summary_all(loaded_database_genomic_data_store: GenomicsDataIndex):
     assert list(expected_df.index) == list(mutations_df.index)
     assert list(expected_df['Deletion']) == list(mutations_df['Deletion'])
     assert list(expected_df['Count']) == list(mutations_df['Count'])
+    assert list(expected_df['Unknown Count']) == list(mutations_df['Unknown Count'])
     assert list(expected_df['Total']) == list(mutations_df['Total'])
     assert list(expected_df['Type']) == list(mutations_df['Type'])
     assert 22 == mutations_df.loc['reference:619:G:C', 'Percent']
+    assert '<NA>' == mutations_df.loc['reference:619:G:C', 'Unknown Percent']
     assert 11 == mutations_df.loc['reference:461:AAAT:G', 'Percent']
+    assert '<NA>' == mutations_df.loc['reference:461:AAAT:G', 'Unknown Percent']
 
-    # Test with unknown
+    # Test with unknown features
     mutations_summarizer = MutationFeaturesFromIndexComparator(connection=loaded_database_genomic_data_store.connection,
+                                                               include_unknown_samples=False,
                                                                ignore_annotations=True, include_unknown=True)
     mutations_df = mutations_summarizer.summary(present_set)
     mutations_df['Percent'] = mutations_df['Percent'].astype(int)  # Convert to int for easier comparison
+    mutations_df['Unknown Percent'] = mutations_df['Unknown Percent'].fillna('<NA>')
+    mutations_df['Unknown Count'] = mutations_df['Unknown Count'].fillna('<NA>')
     mutations_df = mutations_df.sort_index()
 
     assert 112 + 440 == len(mutations_df)
@@ -69,12 +80,15 @@ def test_summary_all(loaded_database_genomic_data_store: GenomicsDataIndex):
     assert 1 == mutations_df.loc['reference:210:C:?', 'Count']
     assert 'UNKNOWN_MISSING' == mutations_df.loc['reference:210:C:?', 'Type']
 
-    # Test only include unknown
+    # Test only include unknown features
     mutations_summarizer = MutationFeaturesFromIndexComparator(connection=loaded_database_genomic_data_store.connection,
                                                                ignore_annotations=True, include_unknown=True,
+                                                               include_unknown_samples=False,
                                                                include_present=False)
     mutations_df = mutations_summarizer.summary(present_set)
     mutations_df['Percent'] = mutations_df['Percent'].astype(int)  # Convert to int for easier comparison
+    mutations_df['Unknown Percent'] = mutations_df['Unknown Percent'].fillna('<NA>')
+    mutations_df['Unknown Count'] = mutations_df['Unknown Count'].fillna('<NA>')
     mutations_df = mutations_df.sort_index()
 
     assert 440 == len(mutations_df)
@@ -89,9 +103,12 @@ def test_summary_all(loaded_database_genomic_data_store: GenomicsDataIndex):
 
     # Test with different id type where deletion is int instead of sequence
     mutations_summarizer = MutationFeaturesFromIndexComparator(connection=loaded_database_genomic_data_store.connection,
+                                                               include_unknown_samples=False,
                                                                ignore_annotations=True, id_type='spdi')
     mutations_df = mutations_summarizer.summary(present_set)
     mutations_df['Percent'] = mutations_df['Percent'].astype(int)  # Convert to int for easier comparison
+    mutations_df['Unknown Percent'] = mutations_df['Unknown Percent'].fillna('<NA>')
+    mutations_df['Unknown Count'] = mutations_df['Unknown Count'].fillna('<NA>')
     mutations_df = mutations_df.sort_index()
 
     assert 112 == len(mutations_df)
@@ -105,12 +122,15 @@ def test_summary_all(loaded_database_genomic_data_store: GenomicsDataIndex):
     assert 1 == mutations_df.loc['reference:866:9:G', 'Count']
     assert 'INDEL' == mutations_df.loc['reference:866:9:G', 'Type']
 
-    # Test with different id type include unknown
+    # Test with different id type include unknown features
     mutations_summarizer = MutationFeaturesFromIndexComparator(connection=loaded_database_genomic_data_store.connection,
                                                                ignore_annotations=True, id_type='spdi',
+                                                               include_unknown_samples=False,
                                                                include_unknown=True)
     mutations_df = mutations_summarizer.summary(present_set)
     mutations_df['Percent'] = mutations_df['Percent'].astype(int)  # Convert to int for easier comparison
+    mutations_df['Unknown Percent'] = mutations_df['Unknown Percent'].fillna('<NA>')
+    mutations_df['Unknown Count'] = mutations_df['Unknown Count'].fillna('<NA>')
     mutations_df = mutations_df.sort_index()
 
     assert 112 + 440 == len(mutations_df)

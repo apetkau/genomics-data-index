@@ -1,4 +1,4 @@
-from typing import List, Any, cast
+from typing import List, Any, cast, Optional
 
 import pandas as pd
 
@@ -17,8 +17,9 @@ class MutationFeaturesFromIndexComparator(FeaturesFromIndexComparator):
 
     def __init__(self, connection: DataIndexConnection, ignore_annotations: bool = False,
                  include_present: bool = True, include_unknown: bool = False,
+                 include_unknown_samples: bool = True,
                  mutation_type: str = 'all', id_type: str = 'spdi_ref'):
-        super().__init__(connection=connection)
+        super().__init__(connection=connection, include_unknown_samples=include_unknown_samples)
         self._ignore_annotations = ignore_annotations
         self._mutation_type = mutation_type
         self._include_present = include_present
@@ -39,11 +40,14 @@ class MutationFeaturesFromIndexComparator(FeaturesFromIndexComparator):
 
     def _create_feature_sample_count_row(self, feature_id: str, feature: FeatureSamples,
                                          feature_samples: SampleSet,
+                                         feature_samples_unknown: Optional[SampleSet],
                                          total: int,
                                          feature_samples_summarizer: FeatureSamplesSummarizer) -> List[Any]:
         if isinstance(feature, NucleotideVariantsSamples):
             feature = cast(NucleotideVariantsSamples, feature)
-            summary_data = feature_samples_summarizer.summary_data(samples=feature_samples, total=total)
+            summary_data = feature_samples_summarizer.summary_data(samples=feature_samples,
+                                                                   unknown_samples=feature_samples_unknown,
+                                                                   total=total)
             query_feature_id = QueryFeatureMutationSPDI(
                 feature_id)  # Use this since db deletion is an int (not sequence)
             return [feature_id, feature.sequence, feature.position,
