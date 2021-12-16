@@ -1,3 +1,6 @@
+from pathlib import Path
+from typing import List
+
 import pandas as pd
 
 from genomics_data_index.api.query.GenomicsDataIndex import GenomicsDataIndex
@@ -8,14 +11,9 @@ from genomics_data_index.storage.model.db import Sample
 from genomics_data_index.test.integration import snippy_all_dataframes
 
 
-def test_summary_all(loaded_database_genomic_data_store: GenomicsDataIndex):
-    db = loaded_database_genomic_data_store.connection.database
-    all_sample_ids = {s.id for s in db.get_session().query(Sample).all()}
-
-    dfA = pd.read_csv(snippy_all_dataframes['SampleA'], sep='\t')
-    dfB = pd.read_csv(snippy_all_dataframes['SampleB'], sep='\t')
-    dfC = pd.read_csv(snippy_all_dataframes['SampleC'], sep='\t')
-    expected_df = pd.concat([dfA, dfB, dfC])
+def read_expected_snippy_df(snippy_mutations: List[Path]) -> pd.DataFrame:
+    snippy_dfs = [pd.read_csv(p, sep='\t') for p in snippy_mutations]
+    expected_df = pd.concat(snippy_dfs)
     expected_df = expected_df.groupby('Mutation').agg({
         'Sequence': 'first',
         'Position': 'first',
@@ -28,6 +26,15 @@ def test_summary_all(loaded_database_genomic_data_store: GenomicsDataIndex):
     expected_df['Total'] = 9
     expected_df['Percent'] = 100 * (expected_df['Count'] / expected_df['Total'])
     expected_df['Unknown Percent'] = '<NA>'
+
+    return expected_df
+
+
+def test_summary_all(loaded_database_genomic_data_store: GenomicsDataIndex):
+    db = loaded_database_genomic_data_store.connection.database
+    all_sample_ids = {s.id for s in db.get_session().query(Sample).all()}
+
+    expected_df = read_expected_snippy_df(list(snippy_all_dataframes.values()))
 
     present_set = SampleSet(all_sample_ids)
     mutations_summarizer = MutationFeaturesFromIndexComparator(connection=loaded_database_genomic_data_store.connection,
