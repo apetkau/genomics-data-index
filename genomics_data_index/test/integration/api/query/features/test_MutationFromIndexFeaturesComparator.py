@@ -313,8 +313,7 @@ def test_summary_annotations_unknown(loaded_database_genomic_data_store_annotati
             'HGVS.c', 'HGVS.p', 'ID_HGVS.c', 'ID_HGVS.p', 'ID_HGVS_GN.c', 'ID_HGVS_GN.p'] == list(mutations_df.columns)
     assert 177 == len(mutations_df)
     mutations_df['Percent'] = mutations_df['Percent'].astype(int)  # easier to compare percents in assert
-    mutations_df['Unknown Count'] = mutations_df['Unknown Count'].fillna('<NA>')
-    mutations_df['Unknown Percent'] = mutations_df['Unknown Percent'].fillna('<NA>')
+    mutations_df = mutations_df.fillna('<NA>')
     mutations_df['Unknown Count'] = mutations_df['Unknown Count'].astype(int)
     mutations_df['Unknown Percent'] = mutations_df['Unknown Percent'].astype(int)
 
@@ -329,11 +328,11 @@ def test_summary_annotations_unknown(loaded_database_genomic_data_store_annotati
     # Intergenic variant (1/3, 2/3)
     assert ['NC_011083', 4555461, 'T', 'TC', 'INDEL', 1, 2, 3, 33, 66,
             'intergenic_region', 'MODIFIER', 'SEHA_RS22510-SEHA_RS26685', 'SEHA_RS22510-SEHA_RS26685',
-            'intergenic_region', 'NA',
-            'n.4555461_4555462insC', 'NA',
-            'hgvs:NC_011083:n.4555461_4555462insC', 'NA',
-            'hgvs_gn:NC_011083:n.4555461_4555462insC', 'NA'] == list(
-        mutations_df.loc['NC_011083:4555461:T:TC'].fillna('NA'))
+            'intergenic_region', '<NA>',
+            'n.4555461_4555462insC', '<NA>',
+            'hgvs:NC_011083:n.4555461_4555462insC', '<NA>',
+            'hgvs_gn:NC_011083:n.4555461_4555462insC', '<NA>'] == list(
+        mutations_df.loc['NC_011083:4555461:T:TC'])
 
     # MNP variant (2/3, 1/3)
     assert ['NC_011083', 3535698, 'GCC', 'CAT', 'MNP', 2, 1, 3, 66, 33,
@@ -353,6 +352,9 @@ def test_summary_annotations_unknown(loaded_database_genomic_data_store_annotati
             'hgvs_gn:NC_011083:oadA:c.1092_1101delGGCAGGCATTinsCGCCGGGATA',
             'hgvs_gn:NC_011083:oadA:p.368'] == list(
         mutations_df.loc['NC_011083:3535143:AATGCCTGCC:TATCCCGGCG'])
+
+    # All unknown (should not exist in table)
+    assert 'NC_011083:1:A:C' not in mutations_df
 
 
 def test_features_comparison(loaded_database_genomic_data_store: GenomicsDataIndex):
