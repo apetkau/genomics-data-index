@@ -11,9 +11,13 @@ from genomics_data_index.storage.model.db import Sample
 from genomics_data_index.test.integration import snippy_all_dataframes
 
 
-def read_expected_snippy_df(snippy_mutations: Union[Path, List[Path]], total: int) -> pd.DataFrame:
+def read_expected_snippy_df(snippy_mutations: Union[Path, List[Path]], total: int,
+                            mutations_not_in: Union[Path, List[Path]] = None) -> pd.DataFrame:
     if isinstance(snippy_mutations, Path):
         snippy_mutations = [snippy_mutations]
+
+    if isinstance(mutations_not_in, Path):
+        mutations_not_in = [mutations_not_in]
 
     snippy_dfs = [pd.read_csv(p, sep='\t') for p in snippy_mutations]
     expected_df = pd.concat(snippy_dfs)
@@ -29,6 +33,10 @@ def read_expected_snippy_df(snippy_mutations: Union[Path, List[Path]], total: in
     expected_df['Total'] = total
     expected_df['Percent'] = 100 * (expected_df['Count'] / expected_df['Total'])
     expected_df['Unknown Percent'] = '<NA>'
+
+    if mutations_not_in is not None:
+        notin_dfs = pd.concat([pd.read_csv(p, sep='\t') for p in mutations_not_in])
+        expected_df = expected_df.loc[~expected_df.index.isin(list(notin_dfs['Mutation']))]
 
     return expected_df
 
@@ -172,10 +180,6 @@ def test_summary_unique(loaded_database_genomic_data_store: GenomicsDataIndex):
                                                                include_unknown_samples=False,
                                                                ignore_annotations=True)
 
-    dfA = pd.read_csv(snippy_all_dataframes['SampleA'], sep='\t')
-    dfB = pd.read_csv(snippy_all_dataframes['SampleB'], sep='\t')
-    dfC = pd.read_csv(snippy_all_dataframes['SampleC'], sep='\t')
-
     # Unique to A
     present_set = SampleSet({sampleA.id})
     other_set = SampleSet(all_sample_ids - {sampleA.id})
@@ -198,18 +202,10 @@ def test_summary_unique(loaded_database_genomic_data_store: GenomicsDataIndex):
     other_set = SampleSet(all_sample_ids - {sampleB.id})
     mutations_df = mutations_summarizer.unique_summary(present_set, other_set=other_set).sort_index()
 
-    dfAC = pd.concat([dfA, dfC])
-    expected_df = dfB[~dfB['Mutation'].isin(list(dfAC['Mutation']))]
-    expected_df = expected_df.groupby('Mutation').agg({
-        'Sequence': 'first',
-        'Position': 'first',
-        'Deletion': 'first',
-        'Insertion': 'first',
-        'Type': 'first',
-        'Mutation': 'count',
-    }).rename(columns={'Mutation': 'Count'}).sort_index()
-    expected_df['Total'] = 1
-    expected_df['Percent'] = 100 * (expected_df['Count'] / expected_df['Total'])
+    expected_df = read_expected_snippy_df(snippy_all_dataframes['SampleB'],
+                                          mutations_not_in=[snippy_all_dataframes['SampleA'],
+                                                            snippy_all_dataframes['SampleC']],
+                                          total=1)
 
     mutations_df['Percent'] = mutations_df['Percent'].astype(int)  # Convert to int for easier comparison
 
@@ -224,18 +220,10 @@ def test_summary_unique(loaded_database_genomic_data_store: GenomicsDataIndex):
     other_set = SampleSet(all_sample_ids - {sampleB.id, sampleC.id})
     mutations_df = mutations_summarizer.unique_summary(present_set, other_set=other_set).sort_index()
 
-    dfBC = pd.concat([dfB, dfC])
-    expected_df = dfBC[~dfBC['Mutation'].isin(list(dfA['Mutation']))]
-    expected_df = expected_df.groupby('Mutation').agg({
-        'Sequence': 'first',
-        'Position': 'first',
-        'Deletion': 'first',
-        'Insertion': 'first',
-        'Type': 'first',
-        'Mutation': 'count',
-    }).rename(columns={'Mutation': 'Count'}).sort_index()
-    expected_df['Total'] = 2
-    expected_df['Percent'] = 100 * (expected_df['Count'] / expected_df['Total'])
+    expected_df = read_expected_snippy_df([snippy_all_dataframes['SampleB'],
+                                           snippy_all_dataframes['SampleC']],
+                                          mutations_not_in=[snippy_all_dataframes['SampleA']],
+                                          total=2)
 
     mutations_df['Percent'] = mutations_df['Percent'].astype(int)  # Convert to int for easier comparison
 
