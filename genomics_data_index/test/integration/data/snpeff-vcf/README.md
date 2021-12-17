@@ -14,5 +14,5 @@ I ran snpeff myself instead of through snippy so that the default snpeff annotat
 
 ## missing/unknown BED files
 
-I downloaded the `salmonella-project.zip` archive from <https://github.com/apetkau/genomics-data-index-examples>, which contains processed files (by snippy). I copied over the corresponding `*.bed.gz` files containing unknown/missing positions from this archive.
+I downloaded the `salmonella-project.zip` archive from <https://github.com/apetkau/genomics-data-index-examples>, which contains processed files (by snippy). I copied over the corresponding `*.bed.gz` files containing unknown/missing positions from this archive. I also changed `NC_011083.1` in the BED files to `NC_011083` to match the VCF files.
 
