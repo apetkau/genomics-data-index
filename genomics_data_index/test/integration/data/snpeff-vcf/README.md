@@ -11,3 +11,8 @@ This data is for testing parsing the `ANN` field of [snpeff](http://pcingola.git
 7. Copied data over.
 
 I ran snpeff myself instead of through snippy so that the default snpeff annotations show up in `ANN` (so I can make sure I handle these cases).
+
+## missing/unknown BED files
+
+I downloaded the `salmonella-project.zip` archive from <https://github.com/apetkau/genomics-data-index-examples>, which contains processed files (by snippy). I copied over the corresponding `*.bed.gz` files containing unknown/missing positions from this archive.
+
