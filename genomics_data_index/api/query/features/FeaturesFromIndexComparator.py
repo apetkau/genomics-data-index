@@ -82,11 +82,20 @@ class FeatureSamplesMultipleCategorySummarizer(FeatureSamplesSummarizer):
                               + [f'{c}_{compare_kind}' for c in category_prefixes] \
                               + [f'{c}_total' for c in category_prefixes]
 
-    def summary_data(self, samples: SampleSet, total: int) -> List[Any]:
+    def summary_data(self, samples: SampleSet, unknown_samples: Optional[SampleSet], total: int) -> List[Any]:
         data = [total]
         for sample_category, sample_category_total in self._sample_categories_and_totals:
             samples_in_category = samples.intersection(sample_category)
             category_count = len(samples_in_category)
+
+            if unknown_samples is not None:
+                unknown_samples_in_category = unknown_samples.intersection(sample_category)
+                unknown_sample_count = len(unknown_samples_in_category)
+                unknown_percent = (unknown_sample_count / total) * 100
+            else:
+                unknown_sample_count = pd.NA
+                unknown_percent = pd.NA
+
             if self._use_count:
                 data.append(category_count)
             else:
