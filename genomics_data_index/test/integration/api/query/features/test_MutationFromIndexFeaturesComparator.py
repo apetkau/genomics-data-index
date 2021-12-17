@@ -344,6 +344,16 @@ def test_summary_annotations_unknown(loaded_database_genomic_data_store_annotati
             'hgvs_gn:NC_011083:oadA:c.544_546delGGCinsATG', 'hgvs_gn:NC_011083:oadA:p.Gly182Met'] == list(
         mutations_df.loc['NC_011083:3535698:GCC:CAT'])
 
+    # Long MNP variant (2/3, 1/3)
+    assert ['NC_011083', 3535143, 'AATGCCTGCC', 'TATCCCGGCG', 'MNP', 2, 1, 3, 66, 33,
+            'synonymous_variant', 'LOW', 'oadA', 'SEHA_RS17780', 'transcript', 'protein_coding',
+            'c.1092_1101delGGCAGGCATTinsCGCCGGGATA', 'p.368',
+            'hgvs:NC_011083:SEHA_RS17780:c.1092_1101delGGCAGGCATTinsCGCCGGGATA',
+            'hgvs:NC_011083:SEHA_RS17780:p.368',
+            'hgvs_gn:NC_011083:oadA:c.1092_1101delGGCAGGCATTinsCGCCGGGATA',
+            'hgvs_gn:NC_011083:oadA:p.368'] == list(
+        mutations_df.loc['NC_011083:3535143:AATGCCTGCC:TATCCCGGCG'])
+
 
 def test_features_comparison(loaded_database_genomic_data_store: GenomicsDataIndex):
     db = loaded_database_genomic_data_store.connection.database
