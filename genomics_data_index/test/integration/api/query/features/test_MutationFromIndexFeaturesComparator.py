@@ -353,6 +353,14 @@ def test_summary_annotations_unknown(loaded_database_genomic_data_store_annotati
             'hgvs_gn:NC_011083:oadA:p.368'] == list(
         mutations_df.loc['NC_011083:3535143:AATGCCTGCC:TATCCCGGCG'])
 
+    # synonymous variant, no unknown (1/3, 0/3)
+    assert ['NC_011083', 508378, 'C', 'T', 'SNP', 1, 0, 3, 33, 0,
+            'synonymous_variant', 'LOW', 'tgt', 'SEHA_RS02965', 'transcript', 'protein_coding',
+            'c.423C>T', 'p.Ile141Ile',
+            'hgvs:NC_011083:SEHA_RS02965:c.423C>T', 'hgvs:NC_011083:SEHA_RS02965:p.Ile141Ile',
+            'hgvs_gn:NC_011083:tgt:c.423C>T', 'hgvs_gn:NC_011083:tgt:p.Ile141Ile'] == list(
+        mutations_df.loc['NC_011083:508378:C:T'])
+
     # All unknown (should not exist in table)
     assert 'NC_011083:1:A:C' not in mutations_df
 
