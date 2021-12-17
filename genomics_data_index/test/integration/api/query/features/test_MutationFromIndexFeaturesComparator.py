@@ -242,6 +242,7 @@ def test_summary_annotations(loaded_database_genomic_data_store_annotations: Gen
 
     mutations_summarizer = MutationFeaturesFromIndexComparator(
         connection=loaded_database_genomic_data_store_annotations.connection,
+        include_unknown_samples=False,
         ignore_annotations=False)
 
     sample_sh14_001 = db.get_session().query(Sample).filter(Sample.name == 'SH14-001').one()
@@ -253,14 +254,17 @@ def test_summary_annotations(loaded_database_genomic_data_store_annotations: Gen
     mutations_df = mutations_summarizer.summary(present_set)
 
     assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type',
-            'Count', 'Total', 'Percent', 'Annotation', 'Annotation_Impact',
+            'Count', 'Unknown Count', 'Total', 'Percent', 'Unknown Percent',
+            'Annotation', 'Annotation_Impact',
             'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
             'HGVS.c', 'HGVS.p', 'ID_HGVS.c', 'ID_HGVS.p', 'ID_HGVS_GN.c', 'ID_HGVS_GN.p'] == list(mutations_df.columns)
     assert 177 == len(mutations_df)
     mutations_df['Percent'] = mutations_df['Percent'].astype(int)  # easier to compare percents in assert
+    mutations_df['Unknown Count'] = mutations_df['Unknown Count'].fillna('<NA>')
+    mutations_df['Unknown Percent'] = mutations_df['Unknown Percent'].fillna('<NA>')
 
     # missense variant (3/3)
-    assert ['NC_011083', 140658, 'C', 'A', 'SNP', 3, 3, 100,
+    assert ['NC_011083', 140658, 'C', 'A', 'SNP', 3, '<NA>', 3, 100, '<NA>',
             'missense_variant', 'MODERATE', 'murF', 'SEHA_RS01180', 'transcript', 'protein_coding',
             'c.497C>A', 'p.Ala166Glu',
             'hgvs:NC_011083:SEHA_RS01180:c.497C>A', 'hgvs:NC_011083:SEHA_RS01180:p.Ala166Glu',
@@ -268,7 +272,7 @@ def test_summary_annotations(loaded_database_genomic_data_store_annotations: Gen
         mutations_df.loc['NC_011083:140658:C:A'])
 
     # Intergenic variant (1/3)
-    assert ['NC_011083', 4555461, 'T', 'TC', 'INDEL', 1, 3, 33,
+    assert ['NC_011083', 4555461, 'T', 'TC', 'INDEL', 1, '<NA>', 3, 33, '<NA>',
             'intergenic_region', 'MODIFIER', 'SEHA_RS22510-SEHA_RS26685', 'SEHA_RS22510-SEHA_RS26685',
             'intergenic_region', 'NA',
             'n.4555461_4555462insC', 'NA',
@@ -277,7 +281,7 @@ def test_summary_annotations(loaded_database_genomic_data_store_annotations: Gen
         mutations_df.loc['NC_011083:4555461:T:TC'].fillna('NA'))
 
     # MNP variant (1/3)
-    assert ['NC_011083', 3535698, 'GCC', 'CAT', 'MNP', 2, 3, 66,
+    assert ['NC_011083', 3535698, 'GCC', 'CAT', 'MNP', 2, '<NA>', 3, 66, '<NA>',
             'missense_variant', 'MODERATE', 'oadA', 'SEHA_RS17780',
             'transcript', 'protein_coding',
             'c.544_546delGGCinsATG', 'p.Gly182Met',
