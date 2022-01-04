@@ -399,6 +399,67 @@ def test_summary_no_annotations_unknown(
         mutations_df.loc['NC_011083:4555461:T:TC'])
 
 
+def test_summary_annotations_unknown_column_unknown_rows(loaded_database_genomic_data_store_annotations_include_unknown: GenomicsDataIndex):
+    db = loaded_database_genomic_data_store_annotations_include_unknown.connection.database
+
+    mutations_summarizer = MutationFeaturesFromIndexComparator(
+        connection=loaded_database_genomic_data_store_annotations_include_unknown.connection,
+        include_unknown_samples=True,
+        include_unknown=True,
+        ignore_annotations=False)
+
+    sample_sh14_001 = db.get_session().query(Sample).filter(Sample.name == 'SH14-001').one()
+    sample_sh14_014 = db.get_session().query(Sample).filter(Sample.name == 'SH14-014').one()
+    sample_sh10_014 = db.get_session().query(Sample).filter(Sample.name == 'SH10-014').one()
+    three_samples = {sample_sh14_001.id, sample_sh14_014.id, sample_sh10_014.id}
+
+    present_set = SampleSet(three_samples)
+    mutations_df = mutations_summarizer.summary(present_set)
+
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type',
+            'Count', 'Unknown Count', 'Total', 'Percent', 'Unknown Percent',
+            'Annotation', 'Annotation_Impact',
+            'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
+            'HGVS.c', 'HGVS.p', 'ID_HGVS.c', 'ID_HGVS.p', 'ID_HGVS_GN.c', 'ID_HGVS_GN.p'] == list(mutations_df.columns)
+    assert 645 == len(mutations_df)
+    mutations_df['Percent'] = mutations_df['Percent'].astype(int)  # easier to compare percents in assert
+    mutations_df = mutations_df.fillna('<NA>')
+    mutations_df['Unknown Count'] = mutations_df['Unknown Count'].astype(int)
+    mutations_df['Unknown Percent'] = mutations_df['Unknown Percent'].astype(int)
+
+    # missense variant (3/3, 0/3)
+    assert ['NC_011083', 140658, 'C', 'A', 'SNP', 3, 0, 3, 100, 0,
+            'missense_variant', 'MODERATE', 'murF', 'SEHA_RS01180', 'transcript', 'protein_coding',
+            'c.497C>A', 'p.Ala166Glu',
+            'hgvs:NC_011083:SEHA_RS01180:c.497C>A', 'hgvs:NC_011083:SEHA_RS01180:p.Ala166Glu',
+            'hgvs_gn:NC_011083:murF:c.497C>A', 'hgvs_gn:NC_011083:murF:p.Ala166Glu'] == list(
+        mutations_df.loc['NC_011083:140658:C:A'])
+
+    # Intergenic variant (1/3, 2/3)
+    assert ['NC_011083', 4555461, 'T', 'TC', 'INDEL', 1, 2, 3, 33, 66,
+            'intergenic_region', 'MODIFIER', 'SEHA_RS22510-SEHA_RS26685', 'SEHA_RS22510-SEHA_RS26685',
+            'intergenic_region', '<NA>',
+            'n.4555461_4555462insC', '<NA>',
+            'hgvs:NC_011083:n.4555461_4555462insC', '<NA>',
+            'hgvs_gn:NC_011083:n.4555461_4555462insC', '<NA>'] == list(
+        mutations_df.loc['NC_011083:4555461:T:TC'])
+
+    # Long deletion
+    assert ['NC_011083', 3167187, 'AACCACGACCACGACCACGACCACGACCACGACCACG', 'A', 'INDEL', 2, 0, 3, 66, 0,
+            'disruptive_inframe_deletion', 'MODERATE', 'SEHA_RS15905', 'SEHA_RS15905',
+            'transcript', 'protein_coding',
+            'c.429_464delCGACCACGACCACGACCACGACCACGACCACGACCA', 'p.Asp144_His155del',
+            'hgvs:NC_011083:SEHA_RS15905:c.429_464delCGACCACGACCACGACCACGACCACGACCACGACCA',
+            'hgvs:NC_011083:SEHA_RS15905:p.Asp144_His155del',
+            'hgvs_gn:NC_011083:SEHA_RS15905:c.429_464delCGACCACGACCACGACCACGACCACGACCACGACCA',
+            'hgvs_gn:NC_011083:SEHA_RS15905:p.Asp144_His155del'] == list(
+        mutations_df.loc['NC_011083:3167187:AACCACGACCACGACCACGACCACGACCACGACCACG:A'])
+
+    # Unknown position
+    assert ['NC_011083', 145096, 'A', '?', 'UNKNOWN_MISSING', 1, '<NA>', 3, 33, '<NA>'] + 12 * ['<NA>'] == list(
+        mutations_df.loc['NC_011083:145096:A:?'])
+
+
 def test_features_comparison(loaded_database_genomic_data_store: GenomicsDataIndex):
     db = loaded_database_genomic_data_store.connection.database
     sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
