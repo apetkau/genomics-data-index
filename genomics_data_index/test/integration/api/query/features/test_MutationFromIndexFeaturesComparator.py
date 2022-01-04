@@ -365,6 +365,40 @@ def test_summary_annotations_unknown(loaded_database_genomic_data_store_annotati
     assert 'NC_011083:1:A:C' not in mutations_df
 
 
+def test_summary_no_annotations_unknown(
+        loaded_database_genomic_data_store_annotations_include_unknown: GenomicsDataIndex):
+    db = loaded_database_genomic_data_store_annotations_include_unknown.connection.database
+
+    mutations_summarizer = MutationFeaturesFromIndexComparator(
+        connection=loaded_database_genomic_data_store_annotations_include_unknown.connection,
+        include_unknown_samples=True,
+        ignore_annotations=True)
+
+    sample_sh14_001 = db.get_session().query(Sample).filter(Sample.name == 'SH14-001').one()
+    sample_sh14_014 = db.get_session().query(Sample).filter(Sample.name == 'SH14-014').one()
+    sample_sh10_014 = db.get_session().query(Sample).filter(Sample.name == 'SH10-014').one()
+    three_samples = {sample_sh14_001.id, sample_sh14_014.id, sample_sh10_014.id}
+
+    present_set = SampleSet(three_samples)
+    mutations_df = mutations_summarizer.summary(present_set)
+
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type',
+            'Count', 'Unknown Count', 'Total', 'Percent', 'Unknown Percent'] == list(mutations_df.columns)
+    assert 177 == len(mutations_df)
+    mutations_df['Percent'] = mutations_df['Percent'].astype(int)  # easier to compare percents in assert
+    mutations_df = mutations_df.fillna('<NA>')
+    mutations_df['Unknown Count'] = mutations_df['Unknown Count'].astype(int)
+    mutations_df['Unknown Percent'] = mutations_df['Unknown Percent'].astype(int)
+
+    # missense variant (3/3, 0/3)
+    assert ['NC_011083', 140658, 'C', 'A', 'SNP', 3, 0, 3, 100, 0] == list(
+        mutations_df.loc['NC_011083:140658:C:A'])
+
+    # Intergenic variant (1/3, 2/3)
+    assert ['NC_011083', 4555461, 'T', 'TC', 'INDEL', 1, 2, 3, 33, 66] == list(
+        mutations_df.loc['NC_011083:4555461:T:TC'])
+
+
 def test_features_comparison(loaded_database_genomic_data_store: GenomicsDataIndex):
     db = loaded_database_genomic_data_store.connection.database
     sampleA = db.get_session().query(Sample).filter(Sample.name == 'SampleA').one()
