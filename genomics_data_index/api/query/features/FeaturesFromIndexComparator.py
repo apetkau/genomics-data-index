@@ -26,7 +26,8 @@ class FeatureSamplesSummarizer(abc.ABC):
 
 
 class FeatureSamplesSingleCategorySummarizer(FeatureSamplesSummarizer):
-    SUMMARY_NAMES = ['Count', 'Unknown Count', 'Total', 'Percent', 'Unknown Percent']
+    SUMMARY_NAMES = ['Count', 'Unknown Count', 'Present and Unknown Count',
+                     'Total', 'Percent', 'Unknown Percent', 'Present and Unknown Percent']
 
     def __init__(self):
         super().__init__()
@@ -36,13 +37,18 @@ class FeatureSamplesSingleCategorySummarizer(FeatureSamplesSummarizer):
 
         if unknown_samples is not None:
             unknown_sample_count = len(unknown_samples)
+            present_and_unknown_sample_count = sample_count + unknown_sample_count
             unknown_percent = (unknown_sample_count / total) * 100
+            present_and_unknown_percent = (present_and_unknown_sample_count / total) * 100
         else:
             unknown_sample_count = pd.NA
+            present_and_unknown_sample_count = pd.NA
             unknown_percent = pd.NA
+            present_and_unknown_percent = pd.NA
 
         percent = (sample_count / total) * 100
-        return [sample_count, unknown_sample_count, total, percent, unknown_percent]
+        return [sample_count, unknown_sample_count, present_and_unknown_sample_count, total,
+                percent, unknown_percent, present_and_unknown_percent]
 
     def summary_names(self) -> List[str]:
         return self.SUMMARY_NAMES
