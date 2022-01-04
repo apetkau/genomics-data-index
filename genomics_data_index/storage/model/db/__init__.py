@@ -14,6 +14,7 @@ from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.NucleotideMutationTranslater import NucleotideMutationTranslater
 from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
 from genomics_data_index.storage.model.db.DatabasePathTranslator import DatabasePathTranslator
+from genomics_data_index.storage.model import NUCLEOTIDE_UNKNOWN_TYPE, MLST_UNKNOWN_ALLELE
 
 Base = declarative_base()
 
@@ -53,6 +54,10 @@ class FeatureSamples:
         raise NotImplementedError()
 
     def query_id(self) -> str:
+        raise NotImplementedError()
+
+    @hybrid_property
+    def is_unknown(self) -> bool:
         raise NotImplementedError()
 
     def update_sample_ids(self, other: FeatureSamples) -> None:
@@ -117,6 +122,10 @@ class NucleotideVariantsSamples(Base, FeatureSamples):
     @property
     def id(self) -> str:
         return self.spdi
+
+    @property
+    def is_unknown(self) -> bool:
+        return self.var_type == NUCLEOTIDE_UNKNOWN_TYPE
 
     @property
     def query_id(self) -> str:
@@ -333,6 +342,10 @@ class MLSTAllelesSamples(Base, FeatureSamples):
     @hybrid_property
     def id(self) -> str:
         return self.sla
+
+    @property
+    def is_unknown(self) -> bool:
+        return self.allele == MLST_UNKNOWN_ALLELE
 
     @property
     def query_id(self) -> str:

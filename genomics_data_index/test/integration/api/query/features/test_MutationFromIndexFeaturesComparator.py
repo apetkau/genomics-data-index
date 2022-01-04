@@ -423,6 +423,8 @@ def test_summary_annotations_unknown_column_unknown_rows(loaded_database_genomic
             'HGVS.c', 'HGVS.p', 'ID_HGVS.c', 'ID_HGVS.p', 'ID_HGVS_GN.c', 'ID_HGVS_GN.p'] == list(mutations_df.columns)
     assert 645 == len(mutations_df)
     mutations_df['Percent'] = mutations_df['Percent'].astype(int)  # easier to compare percents in assert
+    mutations_df['Unknown Count'] = mutations_df['Unknown Count'].fillna(-1)
+    mutations_df['Unknown Percent'] = mutations_df['Unknown Percent'].fillna(-1)
     mutations_df = mutations_df.fillna('<NA>')
     mutations_df['Unknown Count'] = mutations_df['Unknown Count'].astype(int)
     mutations_df['Unknown Percent'] = mutations_df['Unknown Percent'].astype(int)
@@ -456,7 +458,7 @@ def test_summary_annotations_unknown_column_unknown_rows(loaded_database_genomic
         mutations_df.loc['NC_011083:3167187:AACCACGACCACGACCACGACCACGACCACGACCACG:A'])
 
     # Unknown position
-    assert ['NC_011083', 145096, 'A', '?', 'UNKNOWN_MISSING', 1, '<NA>', 3, 33, '<NA>'] + 12 * ['<NA>'] == list(
+    assert ['NC_011083', 145096, 'A', '?', 'UNKNOWN_MISSING', 1, -1, 3, 33, -1] + 12 * ['<NA>'] == list(
         mutations_df.loc['NC_011083:145096:A:?'])
 
 

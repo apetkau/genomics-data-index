@@ -75,3 +75,19 @@ def test_query_id():
     v1 = MLSTAllelesSamples(sla='ecoli:abc:1', sample_ids=s1)
 
     assert v1.query_id == 'mlst:ecoli:abc:1'
+
+
+def test_samples_is_unknown():
+    s1 = SampleSet([1])
+    v1 = MLSTAllelesSamples(sla='ecoli:abc:1', sample_ids=s1)
+
+    s2 = SampleSet([2])
+    v2 = MLSTAllelesSamples(sla='ecoli:abc:?', sample_ids=s2)
+
+    # v1 should not be unknown
+    assert v1.id == 'ecoli:abc:1'
+    assert not v1.is_unknown
+
+    # v2 should be unknown
+    assert v2.id == 'ecoli:abc:?'
+    assert v2.is_unknown

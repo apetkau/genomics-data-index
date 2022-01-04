@@ -138,7 +138,7 @@ class FeaturesFromIndexComparator(FeaturesComparator, abc.ABC):
             samples_in_feature = present_samples.intersection(feature.sample_ids)
             sample_count = len(samples_in_feature)
 
-            if self._include_unknown_samples:
+            if self._include_unknown_samples and not feature.is_unknown:
                 query_feature = QueryFeatureFactory.instance().create_feature(feature.query_id)
                 unknown_samples_dict = self._connection.sample_service.find_unknown_sample_sets_by_features(
                     [query_feature])
