@@ -10,8 +10,9 @@ from genomics_data_index.storage.SampleSet import SampleSet
 class MutationFeaturesComparator(FeaturesComparator):
 
     def __init__(self, connection: DataIndexConnection, ignore_annotations: bool = False,
+                 include_unknown_samples: bool = True,
                  ncores: int = 1, batch_size: int = 500, mutation_type: str = 'all'):
-        super().__init__(connection=connection)
+        super().__init__(connection=connection, include_unknown_samples=include_unknown_samples)
         self._ignore_annotations = ignore_annotations
         self._ncores = ncores
         self._batch_size = batch_size
@@ -32,6 +33,7 @@ class MutationFeaturesComparator(FeaturesComparator):
     def features_comparison(self, selected_samples: SampleSet,
                             sample_categories: List[SampleSet],
                             category_prefixes: List[str] = None,
+                            category_samples_threshold: int = None,
                             unit: str = 'percent') -> pd.DataFrame:
         raise NotImplementedError()
 
