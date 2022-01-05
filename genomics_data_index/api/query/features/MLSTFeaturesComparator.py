@@ -1,4 +1,4 @@
-from typing import List, Any
+from typing import List, Any, Optional
 
 import pandas as pd
 
@@ -16,9 +16,10 @@ class MLSTFeaturesComparator(FeaturesFromIndexComparator):
     def __init__(self, connection: DataIndexConnection,
                  scheme: str = None,
                  locus: str = None,
+                 include_unknown_samples: bool = True,
                  include_present: bool = True,
                  include_unknown: bool = False):
-        super().__init__(connection=connection)
+        super().__init__(connection=connection, include_unknown_samples=include_unknown_samples)
         self._scheme = scheme
         self._locus = locus
         self._include_present = include_present
@@ -38,10 +39,12 @@ class MLSTFeaturesComparator(FeaturesFromIndexComparator):
 
     def _create_feature_sample_count_row(self, feature_id: str, feature: FeatureSamples,
                                          feature_samples: SampleSet,
+                                         feature_samples_unknown: Optional[SampleSet],
                                          total: int,
                                          feature_samples_summarizer: FeatureSamplesSummarizer) -> List[Any]:
         if isinstance(feature, MLSTAllelesSamples):
-            summary_data = feature_samples_summarizer.summary_data(samples=feature_samples, total=total)
+            summary_data = feature_samples_summarizer.summary_data(samples=feature_samples, total=total,
+                                                                   unknown_samples=feature_samples_unknown)
             return [feature.query_id, feature.scheme, feature.locus, feature.allele] + summary_data
         else:
             raise Exception(f'feature={feature} is not of type {MLSTAllelesSamples.__name__}')
