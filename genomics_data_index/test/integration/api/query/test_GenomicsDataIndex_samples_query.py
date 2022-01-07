@@ -3487,23 +3487,30 @@ def test_summary_features_kindmutations_unique(loaded_database_connection: DataI
             'Count', 'Total', 'Percent'] == list(mutations_df.columns)
 
 
-def test_summary_features_kindmutations_annotations(loaded_database_connection_annotations: DataIndexConnection):
-    q = query(loaded_database_connection_annotations)
+def test_summary_features_kindmutations_annotations(loaded_database_connection_annotations_unknown: DataIndexConnection):
+    q = query(loaded_database_connection_annotations_unknown)
 
     # 1 sample
     mutations_df = q.isa('SH10-014').features_summary(ignore_annotations=False)
 
     assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type',
-            'Count', 'Total', 'Percent', 'Annotation', 'Annotation_Impact',
+            'Count', 'Unknown Count', 'Present and Unknown Count', 'Total',
+            'Percent', 'Unknown Percent', 'Present and Unknown Percent',
+            'Annotation', 'Annotation_Impact',
             'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
             'HGVS.c', 'HGVS.p', 'ID_HGVS.c', 'ID_HGVS.p', 'ID_HGVS_GN.c', 'ID_HGVS_GN.p'] == list(mutations_df.columns)
     assert 139 == len(mutations_df)
 
     ## Convert percent to int to make it easier to compare in assert statements
     mutations_df['Percent'] = mutations_df['Percent'].astype(int)
+    mutations_df = mutations_df.fillna('NA')
+    mutations_df['Unknown Count'] = mutations_df['Unknown Count'].astype(int)
+    mutations_df['Unknown Percent'] = mutations_df['Unknown Percent'].astype(int)
+    mutations_df['Present and Unknown Count'] = mutations_df['Present and Unknown Count'].astype(int)
+    mutations_df['Present and Unknown Percent'] = mutations_df['Present and Unknown Percent'].astype(int)
 
     ## missense variant
-    assert ['NC_011083', 140658, 'C', 'A', 'SNP', 1, 1, 100,
+    assert ['NC_011083', 140658, 'C', 'A', 'SNP', 1, 0, 1, 1, 100, 0, 100,
             'missense_variant', 'MODERATE', 'murF', 'SEHA_RS01180', 'transcript', 'protein_coding',
             'c.497C>A', 'p.Ala166Glu',
             'hgvs:NC_011083:SEHA_RS01180:c.497C>A', 'hgvs:NC_011083:SEHA_RS01180:p.Ala166Glu',
@@ -3511,7 +3518,7 @@ def test_summary_features_kindmutations_annotations(loaded_database_connection_a
         mutations_df.loc['NC_011083:140658:C:A'])
 
     ## inframe deletion
-    assert ['NC_011083', 4465400, 'GGCCGAA', 'G', 'INDEL', 1, 1, 100,
+    assert ['NC_011083', 4465400, 'GGCCGAA', 'G', 'INDEL', 1, 0, 1, 1, 100, 0, 100,
             'conservative_inframe_deletion', 'MODERATE', 'tyrB', 'SEHA_RS22180', 'transcript', 'protein_coding',
             'c.157_162delGAAGCC', 'p.Glu53_Ala54del',
             'hgvs:NC_011083:SEHA_RS22180:c.157_162delGAAGCC', 'hgvs:NC_011083:SEHA_RS22180:p.Glu53_Ala54del',
@@ -3519,7 +3526,7 @@ def test_summary_features_kindmutations_annotations(loaded_database_connection_a
         mutations_df.loc['NC_011083:4465400:GGCCGAA:G'])
 
     ## Intergenic variant (with some NA values in fields)
-    assert ['NC_011083', 4555461, 'T', 'TC', 'INDEL', 1, 1, 100,
+    assert ['NC_011083', 4555461, 'T', 'TC', 'INDEL', 1, 0, 1, 1, 100, 0, 100,
             'intergenic_region', 'MODIFIER', 'SEHA_RS22510-SEHA_RS26685', 'SEHA_RS22510-SEHA_RS26685',
             'intergenic_region', 'NA',
             'n.4555461_4555462insC', 'NA',
@@ -3532,15 +3539,22 @@ def test_summary_features_kindmutations_annotations(loaded_database_connection_a
 
     ## Convert percent to int to make it easier to compare in assert statements
     mutations_df['Percent'] = mutations_df['Percent'].astype(int)
+    mutations_df = mutations_df.fillna('NA')
+    mutations_df['Unknown Count'] = mutations_df['Unknown Count'].astype(int)
+    mutations_df['Unknown Percent'] = mutations_df['Unknown Percent'].astype(int)
+    mutations_df['Present and Unknown Count'] = mutations_df['Present and Unknown Count'].astype(int)
+    mutations_df['Present and Unknown Percent'] = mutations_df['Present and Unknown Percent'].astype(int)
 
     assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type',
-            'Count', 'Total', 'Percent', 'Annotation', 'Annotation_Impact',
+            'Count', 'Unknown Count', 'Present and Unknown Count', 'Total',
+            'Percent', 'Unknown Percent', 'Present and Unknown Percent',
+            'Annotation', 'Annotation_Impact',
             'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
             'HGVS.c', 'HGVS.p', 'ID_HGVS.c', 'ID_HGVS.p', 'ID_HGVS_GN.c', 'ID_HGVS_GN.p'] == list(mutations_df.columns)
     assert 177 == len(mutations_df)
 
     ## missense variant (3/3)
-    assert ['NC_011083', 140658, 'C', 'A', 'SNP', 3, 3, 100,
+    assert ['NC_011083', 140658, 'C', 'A', 'SNP', 3, 0, 3, 3, 100, 0, 100,
             'missense_variant', 'MODERATE', 'murF', 'SEHA_RS01180', 'transcript', 'protein_coding',
             'c.497C>A', 'p.Ala166Glu',
             'hgvs:NC_011083:SEHA_RS01180:c.497C>A', 'hgvs:NC_011083:SEHA_RS01180:p.Ala166Glu',
@@ -3548,7 +3562,7 @@ def test_summary_features_kindmutations_annotations(loaded_database_connection_a
         mutations_df.loc['NC_011083:140658:C:A'])
 
     ## Intergenic variant (1/3)
-    assert ['NC_011083', 4555461, 'T', 'TC', 'INDEL', 1, 3, 33,
+    assert ['NC_011083', 4555461, 'T', 'TC', 'INDEL', 1, 2, 3, 3, 33, 66, 100,
             'intergenic_region', 'MODIFIER', 'SEHA_RS22510-SEHA_RS26685', 'SEHA_RS22510-SEHA_RS26685',
             'intergenic_region', 'NA',
             'n.4555461_4555462insC', 'NA',
@@ -3560,7 +3574,8 @@ def test_summary_features_kindmutations_annotations(loaded_database_connection_a
     mutations_df = q.isin(['SH10-014', 'SH14-001', 'SH14-014']).features_summary(ignore_annotations=True)
 
     assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type',
-            'Count', 'Total', 'Percent'] == list(mutations_df.columns)
+            'Count', 'Unknown Count', 'Present and Unknown Count', 'Total',
+            'Percent', 'Unknown Percent', 'Present and Unknown Percent'] == list(mutations_df.columns)
     assert 177 == len(mutations_df)
 
     ## Test unique
@@ -3568,9 +3583,16 @@ def test_summary_features_kindmutations_annotations(loaded_database_connection_a
 
     ## Convert percent to int to make it easier to compare in assert statements
     mutations_df['Percent'] = mutations_df['Percent'].astype(int)
+    mutations_df = mutations_df.fillna('NA')
+    mutations_df['Unknown Count'] = mutations_df['Unknown Count'].astype(int)
+    mutations_df['Unknown Percent'] = mutations_df['Unknown Percent'].astype(int)
+    mutations_df['Present and Unknown Count'] = mutations_df['Present and Unknown Count'].astype(int)
+    mutations_df['Present and Unknown Percent'] = mutations_df['Present and Unknown Percent'].astype(int)
 
     assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type',
-            'Count', 'Total', 'Percent', 'Annotation', 'Annotation_Impact',
+            'Count', 'Unknown Count', 'Present and Unknown Count', 'Total',
+            'Percent', 'Unknown Percent', 'Present and Unknown Percent',
+            'Annotation', 'Annotation_Impact',
             'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
             'HGVS.c', 'HGVS.p', 'ID_HGVS.c', 'ID_HGVS.p', 'ID_HGVS_GN.c', 'ID_HGVS_GN.p'] == list(mutations_df.columns)
     assert 60 == len(mutations_df)
