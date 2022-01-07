@@ -3262,25 +3262,43 @@ def test_summary_features_kindmutations(loaded_database_connection: DataIndexCon
         'Type': 'first',
         'Mutation': 'count',
     }).rename(columns={'Mutation': 'Count'}).sort_index()
+    expected_df['Unknown Count'] = '<NA>'
+    expected_df['Present and Unknown Count'] = '<NA>'
     expected_df['Total'] = 9
     expected_df['Percent'] = 100 * (expected_df['Count'] / expected_df['Total'])
+    expected_df['Unknown Percent'] = '<NA>'
+    expected_df['Present and Unknown Percent'] = '<NA>'
 
-    mutations_df = query(loaded_database_connection).features_summary(ignore_annotations=True)
+    mutations_df = query(loaded_database_connection).features_summary(ignore_annotations=True,
+                                                                      include_unknown_samples=False)
+    mutations_df['Unknown Percent'] = mutations_df['Unknown Percent'].fillna('<NA>')
+    mutations_df['Unknown Count'] = mutations_df['Unknown Count'].fillna('<NA>')
+    mutations_df['Present and Unknown Percent'] = mutations_df['Present and Unknown Percent'].fillna('<NA>')
+    mutations_df['Present and Unknown Count'] = mutations_df['Present and Unknown Count'].fillna('<NA>')
     mutations_df = mutations_df.sort_index()
 
     assert len(expected_df) == len(mutations_df)
     assert list(expected_df.columns) == list(mutations_df.columns)
     assert list(expected_df.index) == list(mutations_df.index)
     assert list(expected_df['Count']) == list(mutations_df['Count'])
+    assert list(expected_df['Unknown Count']) == list(mutations_df['Unknown Count'])
+    assert list(expected_df['Present and Unknown Count']) == list(mutations_df['Present and Unknown Count'])
     assert list(expected_df['Total']) == list(mutations_df['Total'])
     assert list(expected_df['Type']) == list(mutations_df['Type'])
     assert math.isclose(100 * (2 / 9), mutations_df.loc['reference:619:G:C', 'Percent'])
     assert math.isclose(100 * (1 / 9), mutations_df.loc['reference:461:AAAT:G', 'Percent'])
+    assert list(expected_df['Unknown Percent']) == list(mutations_df['Unknown Percent'])
+    assert list(expected_df['Present and Unknown Percent']) == list(mutations_df['Present and Unknown Percent'])
 
-    # Test including unknowns
+    # Test including unknown features
     mutations_df = query(loaded_database_connection).features_summary(ignore_annotations=True,
-                                                                      include_unknown_features=True)
+                                                                      include_unknown_features=True,
+                                                                      include_unknown_samples=False)
     mutations_df['Percent'] = mutations_df['Percent'].astype(int)  # Convert to int for easier comparison
+    mutations_df['Unknown Percent'] = mutations_df['Unknown Percent'].fillna('<NA>')
+    mutations_df['Unknown Count'] = mutations_df['Unknown Count'].fillna('<NA>')
+    mutations_df['Present and Unknown Percent'] = mutations_df['Present and Unknown Percent'].fillna('<NA>')
+    mutations_df['Present and Unknown Count'] = mutations_df['Present and Unknown Count'].fillna('<NA>')
     mutations_df = mutations_df.sort_index()
 
     assert 112 + 440 == len(mutations_df)
@@ -3294,12 +3312,21 @@ def test_summary_features_kindmutations(loaded_database_connection: DataIndexCon
     assert 'UNKNOWN_MISSING' == mutations_df.loc['reference:90:T:?', 'Type']
     assert 2 == mutations_df.loc['reference:190:A:?', 'Count']
     assert 1 == mutations_df.loc['reference:210:C:?', 'Count']
+    assert {'<NA>'} == set(mutations_df['Unknown Count'])
+    assert {'<NA>'} == set(mutations_df['Present and Unknown Count'])
+    assert {'<NA>'} == set(mutations_df['Unknown Percent'])
+    assert {'<NA>'} == set(mutations_df['Present and Unknown Percent'])
 
-    # Test only include unknowns
+    # Test only include unknown features
     mutations_df = query(loaded_database_connection).features_summary(ignore_annotations=True,
                                                                       include_unknown_features=True,
-                                                                      include_present_features=False)
+                                                                      include_present_features=False,
+                                                                      include_unknown_samples=False)
     mutations_df['Percent'] = mutations_df['Percent'].astype(int)  # Convert to int for easier comparison
+    mutations_df['Unknown Percent'] = mutations_df['Unknown Percent'].fillna('<NA>')
+    mutations_df['Unknown Count'] = mutations_df['Unknown Count'].fillna('<NA>')
+    mutations_df['Present and Unknown Percent'] = mutations_df['Present and Unknown Percent'].fillna('<NA>')
+    mutations_df['Present and Unknown Count'] = mutations_df['Present and Unknown Count'].fillna('<NA>')
     mutations_df = mutations_df.sort_index()
 
     assert 440 == len(mutations_df)
@@ -3309,6 +3336,11 @@ def test_summary_features_kindmutations(loaded_database_connection: DataIndexCon
     assert 2 == mutations_df.loc['reference:190:A:?', 'Count']
     assert 1 == mutations_df.loc['reference:210:C:?', 'Count']
     assert 'reference:619:G:C' not in mutations_df
+
+    assert {'<NA>'} == set(mutations_df['Unknown Count'])
+    assert {'<NA>'} == set(mutations_df['Present and Unknown Count'])
+    assert {'<NA>'} == set(mutations_df['Unknown Percent'])
+    assert {'<NA>'} == set(mutations_df['Present and Unknown Percent'])
 
 
 def test_summary_features_kindmutations_unique(loaded_database_connection: DataIndexConnection):
