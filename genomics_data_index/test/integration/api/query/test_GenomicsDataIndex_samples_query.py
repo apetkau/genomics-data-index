@@ -3596,19 +3596,31 @@ def test_summary_features_two(loaded_database_connection: DataIndexConnection):
         'Type': 'first',
         'Mutation': 'count',
     }).rename(columns={'Mutation': 'Count'}).sort_index()
+    expected_df['Unknown Count'] = '<NA>'
+    expected_df['Present and Unknown Count'] = '<NA>'
     expected_df['Total'] = 2
     expected_df['Percent'] = 100 * (expected_df['Count'] / expected_df['Total'])
+    expected_df['Unknown Percent'] = '<NA>'
+    expected_df['Present and Unknown Percent'] = '<NA>'
 
     mutations_df = query(loaded_database_connection).hasa(
-        'reference:839:C:G', kind='mutation').features_summary()
+        'reference:839:C:G', kind='mutation').features_summary(include_unknown_samples=False)
+    mutations_df['Unknown Percent'] = mutations_df['Unknown Percent'].fillna('<NA>')
+    mutations_df['Unknown Count'] = mutations_df['Unknown Count'].fillna('<NA>')
+    mutations_df['Present and Unknown Percent'] = mutations_df['Present and Unknown Percent'].fillna('<NA>')
+    mutations_df['Present and Unknown Count'] = mutations_df['Present and Unknown Count'].fillna('<NA>')
     mutations_df = mutations_df.sort_index()
 
     assert len(expected_df) == len(mutations_df)
     assert list(expected_df.index) == list(mutations_df.index)
     assert list(expected_df['Count']) == list(mutations_df['Count'])
+    assert list(expected_df['Unknown Count']) == list(mutations_df['Unknown Count'])
+    assert list(expected_df['Present and Unknown Count']) == list(mutations_df['Present and Unknown Count'])
     assert list(expected_df['Type']) == list(mutations_df['Type'])
     assert list(expected_df['Total']) == list(mutations_df['Total'])
     assert math.isclose(100 * (2 / 2), mutations_df.loc['reference:839:C:G', 'Percent'])
+    assert list(expected_df['Unknown Percent']) == list(mutations_df['Unknown Percent'])
+    assert list(expected_df['Present and Unknown Percent']) == list(mutations_df['Present and Unknown Percent'])
 
 
 def test_summary_features_kindmlst(loaded_database_connection: DataIndexConnection):
