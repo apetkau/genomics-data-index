@@ -3578,7 +3578,7 @@ def test_summary_features_kindmutations_annotations(loaded_database_connection_a
             'Percent', 'Unknown Percent', 'Present and Unknown Percent'] == list(mutations_df.columns)
     assert 177 == len(mutations_df)
 
-    ## Test unique
+    # Test unique, not including unknown with no present samples
     mutations_df = q.isa('SH10-014').features_summary(selection='unique', ignore_annotations=False)
 
     ## Convert percent to int to make it easier to compare in assert statements
@@ -3598,12 +3598,52 @@ def test_summary_features_kindmutations_annotations(loaded_database_connection_a
     assert 60 == len(mutations_df)
 
     ## missense variant
-    assert ['NC_011083', 2049576, 'A', 'C', 'SNP', 1, 1, 100,
+    assert ['NC_011083', 2049576, 'A', 'C', 'SNP', 1, 0, 1, 1, 100, 0, 100,
             'missense_variant', 'MODERATE', 'cutC', 'SEHA_RS10675', 'transcript', 'protein_coding',
             'c.536T>G', 'p.Val179Gly',
             'hgvs:NC_011083:SEHA_RS10675:c.536T>G', 'hgvs:NC_011083:SEHA_RS10675:p.Val179Gly',
             'hgvs_gn:NC_011083:cutC:c.536T>G', 'hgvs_gn:NC_011083:cutC:p.Val179Gly'] == list(
         mutations_df.loc['NC_011083:2049576:A:C'])
+
+    ## variant that's present in one (SH10-014) and unknown in others
+    assert ['NC_011083', 4555461, 'T', 'TC', 'INDEL', 1, 0, 1, 1, 100, 0, 100,
+            'intergenic_region', 'MODIFIER', 'SEHA_RS22510-SEHA_RS26685', 'SEHA_RS22510-SEHA_RS26685',
+            'intergenic_region', 'NA',
+            'n.4555461_4555462insC', 'NA',
+            'hgvs:NC_011083:n.4555461_4555462insC', 'NA',
+            'hgvs_gn:NC_011083:n.4555461_4555462insC', 'NA'] == list(
+        mutations_df.loc['NC_011083:4555461:T:TC'].fillna('NA'))
+
+    # Test unique, including unknown with no present samples
+    mutations_df = q.isa('SH10-014').features_summary(selection='unique', ignore_annotations=False,
+                                                      include_unknown_no_present_samples=True)
+
+    ## Convert percent to int to make it easier to compare in assert statements
+    mutations_df['Percent'] = mutations_df['Percent'].astype(int)
+    mutations_df = mutations_df.fillna('NA')
+    mutations_df['Unknown Count'] = mutations_df['Unknown Count'].astype(int)
+    mutations_df['Unknown Percent'] = mutations_df['Unknown Percent'].astype(int)
+    mutations_df['Present and Unknown Count'] = mutations_df['Present and Unknown Count'].astype(int)
+    mutations_df['Present and Unknown Percent'] = mutations_df['Present and Unknown Percent'].astype(int)
+
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type',
+            'Count', 'Unknown Count', 'Present and Unknown Count', 'Total',
+            'Percent', 'Unknown Percent', 'Present and Unknown Percent',
+            'Annotation', 'Annotation_Impact',
+            'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
+            'HGVS.c', 'HGVS.p', 'ID_HGVS.c', 'ID_HGVS.p', 'ID_HGVS_GN.c', 'ID_HGVS_GN.p'] == list(mutations_df.columns)
+    assert 59 == len(mutations_df)
+
+    ## missense variant
+    assert ['NC_011083', 2049576, 'A', 'C', 'SNP', 1, 0, 1, 1, 100, 0, 100,
+            'missense_variant', 'MODERATE', 'cutC', 'SEHA_RS10675', 'transcript', 'protein_coding',
+            'c.536T>G', 'p.Val179Gly',
+            'hgvs:NC_011083:SEHA_RS10675:c.536T>G', 'hgvs:NC_011083:SEHA_RS10675:p.Val179Gly',
+            'hgvs_gn:NC_011083:cutC:c.536T>G', 'hgvs_gn:NC_011083:cutC:p.Val179Gly'] == list(
+        mutations_df.loc['NC_011083:2049576:A:C'])
+
+    ## variant that's present in one (SH10-014) and unknown in others
+    assert 'NC_011083:4555461:T:TC' not in mutations_df
 
 
 def test_summary_features_two(loaded_database_connection: DataIndexConnection):
