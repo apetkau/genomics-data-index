@@ -7,21 +7,18 @@ from typing import List, Union
 
 import pandas as pd
 from ete3 import Tree
-from genomics_data_index.api.query.features.MutationFeaturesFromIndexComparator import \
-    MutationFeaturesFromIndexComparator
-
-from genomics_data_index.api.query.features.MLSTFeaturesComparator import MLSTFeaturesComparator
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
+from genomics_data_index.api.query.features.MLSTFeaturesComparator import MLSTFeaturesComparator
+from genomics_data_index.api.query.features.MutationFeaturesFromIndexComparator import \
+    MutationFeaturesFromIndexComparator
 from genomics_data_index.api.query.impl.DataFrameSamplesQuery import DataFrameSamplesQuery
 from genomics_data_index.api.query.impl.SamplesQueryIndex import SamplesQueryIndex
 from genomics_data_index.api.query.impl.TreeSamplesQueryFactory import TreeSamplesQueryFactory
 from genomics_data_index.configuration.Project import Project
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
 from genomics_data_index.storage.SampleSet import SampleSet
-from genomics_data_index.storage.model.NucleotideMutationTranslater import NucleotideMutationTranslater
 from genomics_data_index.storage.service import EntityExistsError
-from genomics_data_index.storage.service.VariationService import VariationService
 
 logger = logging.getLogger(__name__)
 
@@ -188,7 +185,8 @@ class GenomicsDataIndex:
         :return: A summary of all features in this index as a DataFrame.
         """
         if kind == 'mutations' or kind == 'mutation':
-            return self._mutations_summary_internal(reference_name=scope, include_present_features=include_present_features,
+            return self._mutations_summary_internal(reference_name=scope,
+                                                    include_present_features=include_present_features,
                                                     include_unknown_features=include_unknown_features,
                                                     include_unknown_samples=include_unknown_samples,
                                                     include_unknown_no_present_samples=include_unknown_no_present_samples,

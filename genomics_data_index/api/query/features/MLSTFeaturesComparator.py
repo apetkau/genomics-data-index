@@ -6,7 +6,7 @@ from genomics_data_index.api.query.features.FeaturesFromIndexComparator import F
 from genomics_data_index.api.query.features.FeaturesFromIndexComparator import FeatureSamplesSummarizer
 from genomics_data_index.api.query.features.FeaturesFromIndexComparator import FeaturesFromIndexComparator
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
-from genomics_data_index.storage.SampleSet import SampleSet, AllSampleSet
+from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.db import FeatureSamples, MLSTAllelesSamples
 from genomics_data_index.storage.service.MLSTService import MLSTService
 
