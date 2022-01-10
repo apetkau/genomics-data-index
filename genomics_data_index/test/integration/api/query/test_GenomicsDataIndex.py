@@ -278,8 +278,8 @@ def test_summaries_mlst_data(loaded_database_genomic_data_store: GenomicsDataInd
     assert 10 == len(summary_df)
 
 
-def test_summaries_variant_annotations(loaded_database_genomic_data_store_annotations: GenomicsDataIndex):
-    gds = loaded_database_genomic_data_store_annotations
+def test_summaries_variant_annotations(loaded_database_genomic_data_store_annotations_include_unknown: GenomicsDataIndex):
+    gds = loaded_database_genomic_data_store_annotations_include_unknown
 
     # Samples
     assert 3 == gds.count_samples()
@@ -297,15 +297,21 @@ def test_summaries_variant_annotations(loaded_database_genomic_data_store_annota
     assert 177 == len(ms)
     assert 'Mutation' == ms.index.name
     assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type',
-            'Count', 'Total', 'Percent', 'Annotation', 'Annotation_Impact',
+            'Count', 'Unknown Count', 'Present and Unknown Count', 'Total',
+            'Percent', 'Unknown Percent', 'Present and Unknown Percent',
+            'Annotation', 'Annotation_Impact',
             'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
             'HGVS.c', 'HGVS.p', 'ID_HGVS.c', 'ID_HGVS.p', 'ID_HGVS_GN.c', 'ID_HGVS_GN.p'] == list(ms.columns)
 
     ## Convert percent to int to make it easier to compare in assert statements
     ms['Percent'] = ms['Percent'].astype(int)
+    ms['Unknown Count'] = ms['Unknown Count'].fillna(-1).astype(int)
+    ms['Present and Unknown Count'] = ms['Present and Unknown Count'].fillna(-1).astype(int)
+    ms['Unknown Percent'] = ms['Unknown Percent'].fillna(-1).astype(int)
+    ms['Present and Unknown Percent'] = ms['Present and Unknown Percent'].fillna(-1).astype(int)
 
     ## missense variant
-    assert ['NC_011083', 140658, 1, 'A', 'SNP', 3, 3, 100,
+    assert ['NC_011083', 140658, 1, 'A', 'SNP', 3, 0, 3, 3, 100, 0, 100,
             'missense_variant', 'MODERATE', 'murF', 'SEHA_RS01180', 'transcript', 'protein_coding',
             'c.497C>A', 'p.Ala166Glu',
             'hgvs:NC_011083:SEHA_RS01180:c.497C>A', 'hgvs:NC_011083:SEHA_RS01180:p.Ala166Glu',
@@ -313,7 +319,7 @@ def test_summaries_variant_annotations(loaded_database_genomic_data_store_annota
         ms.loc['NC_011083:140658:1:A'])
 
     ## inframe deletion
-    assert ['NC_011083', 4465400, len('GGCCGAA'), 'G', 'INDEL', 3, 3, 100,
+    assert ['NC_011083', 4465400, len('GGCCGAA'), 'G', 'INDEL', 3, 0, 3, 3, 100, 0, 100,
             'conservative_inframe_deletion', 'MODERATE', 'tyrB', 'SEHA_RS22180', 'transcript', 'protein_coding',
             'c.157_162delGAAGCC', 'p.Glu53_Ala54del',
             'hgvs:NC_011083:SEHA_RS22180:c.157_162delGAAGCC', 'hgvs:NC_011083:SEHA_RS22180:p.Glu53_Ala54del',
@@ -321,7 +327,7 @@ def test_summaries_variant_annotations(loaded_database_genomic_data_store_annota
         ms.loc['NC_011083:4465400:7:G'])
 
     ## Intergenic variant (with some NA values in fields)
-    assert ['NC_011083', 4555461, len('T'), 'TC', 'INDEL', 1, 3, 33,
+    assert ['NC_011083', 4555461, len('T'), 'TC', 'INDEL', 1, 2, 3, 3, 33, 66, 100,
             'intergenic_region', 'MODIFIER', 'SEHA_RS22510-SEHA_RS26685', 'SEHA_RS22510-SEHA_RS26685',
             'intergenic_region', 'NA',
             'n.4555461_4555462insC', 'NA',
@@ -333,15 +339,21 @@ def test_summaries_variant_annotations(loaded_database_genomic_data_store_annota
     assert 177 == len(ms)
     assert 'Mutation' == ms.index.name
     assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type',
-            'Count', 'Total', 'Percent', 'Annotation', 'Annotation_Impact',
+            'Count', 'Unknown Count', 'Present and Unknown Count', 'Total',
+            'Percent', 'Unknown Percent', 'Present and Unknown Percent',
+            'Annotation', 'Annotation_Impact',
             'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
             'HGVS.c', 'HGVS.p', 'ID_HGVS.c', 'ID_HGVS.p', 'ID_HGVS_GN.c', 'ID_HGVS_GN.p'] == list(ms.columns)
 
     ## Convert percent to int to make it easier to compare in assert statements
     ms['Percent'] = ms['Percent'].astype(int)
+    ms['Unknown Count'] = ms['Unknown Count'].fillna(-1).astype(int)
+    ms['Present and Unknown Count'] = ms['Present and Unknown Count'].fillna(-1).astype(int)
+    ms['Unknown Percent'] = ms['Unknown Percent'].fillna(-1).astype(int)
+    ms['Present and Unknown Percent'] = ms['Present and Unknown Percent'].fillna(-1).astype(int)
 
     ## missense variant
-    assert ['NC_011083', 140658, 'C', 'A', 'SNP', 3, 3, 100,
+    assert ['NC_011083', 140658, 'C', 'A', 'SNP', 3, 0, 3, 3, 100, 0, 100,
             'missense_variant', 'MODERATE', 'murF', 'SEHA_RS01180', 'transcript', 'protein_coding',
             'c.497C>A', 'p.Ala166Glu',
             'hgvs:NC_011083:SEHA_RS01180:c.497C>A', 'hgvs:NC_011083:SEHA_RS01180:p.Ala166Glu',
@@ -349,7 +361,7 @@ def test_summaries_variant_annotations(loaded_database_genomic_data_store_annota
         ms.loc['NC_011083:140658:C:A'])
 
     ## inframe deletion
-    assert ['NC_011083', 4465400, 'GGCCGAA', 'G', 'INDEL', 3, 3, 100,
+    assert ['NC_011083', 4465400, 'GGCCGAA', 'G', 'INDEL', 3, 0, 3, 3, 100, 0, 100,
             'conservative_inframe_deletion', 'MODERATE', 'tyrB', 'SEHA_RS22180', 'transcript', 'protein_coding',
             'c.157_162delGAAGCC', 'p.Glu53_Ala54del',
             'hgvs:NC_011083:SEHA_RS22180:c.157_162delGAAGCC', 'hgvs:NC_011083:SEHA_RS22180:p.Glu53_Ala54del',
@@ -357,7 +369,7 @@ def test_summaries_variant_annotations(loaded_database_genomic_data_store_annota
         ms.loc['NC_011083:4465400:GGCCGAA:G'])
 
     ## Intergenic variant (with some NA values in fields)
-    assert ['NC_011083', 4555461, 'T', 'TC', 'INDEL', 1, 3, 33,
+    assert ['NC_011083', 4555461, 'T', 'TC', 'INDEL', 1, 2, 3, 3, 33, 66, 100,
             'intergenic_region', 'MODIFIER', 'SEHA_RS22510-SEHA_RS26685', 'SEHA_RS22510-SEHA_RS26685',
             'intergenic_region', 'NA',
             'n.4555461_4555462insC', 'NA',
