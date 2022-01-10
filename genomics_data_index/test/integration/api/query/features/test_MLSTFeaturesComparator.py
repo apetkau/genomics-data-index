@@ -115,13 +115,29 @@ def test_unique_summary(loaded_database_genomic_data_store: GenomicsDataIndex):
     summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
     summary_df['Unknown Percent'] = summary_df['Unknown Percent'].astype(int)
     summary_df['Present and Unknown Percent'] = summary_df['Present and Unknown Percent'].astype(int)
-    print(summary_df.iloc[0])
     assert 2 == len(summary_df)
     assert 'MLST Feature' == summary_df.index.name
     assert ['Scheme', 'Locus', 'Allele', 'Count', 'Unknown Count', 'Present and Unknown Count',
             'Total', 'Percent', 'Unknown Percent', 'Present and Unknown Percent'] == list(summary_df.columns)
     assert ['lmonocytogenes', 'lhkA', '4', 1, 0, 1, 2, 50, 0, 50] == summary_df.loc['mlst:lmonocytogenes:lhkA:4'].tolist()
     assert ['campylobacter', 'uncA', '6', 1, 0, 1, 2, 50, 0, 50] == summary_df.loc['mlst:campylobacter:uncA:6'].tolist()
+
+    # Test unique across schemes, include unknown features when no samples present
+    mlst_summarizier = MLSTFeaturesComparator(connection=loaded_database_genomic_data_store.connection,
+                                              include_unknown_no_present_features=True)
+
+    present_set = SampleSet({sample_CFSAN002349.id, sample_2014D_0068.id})
+    complement_set = SampleSet(all_sample_ids - {sample_CFSAN002349.id, sample_2014D_0068.id})
+    summary_df = mlst_summarizier.unique_summary(present_set, other_set=complement_set)
+
+    summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
+    summary_df['Unknown Percent'] = summary_df['Unknown Percent'].astype(int)
+    summary_df['Present and Unknown Percent'] = summary_df['Present and Unknown Percent'].astype(int)
+    assert 1 == len(summary_df)
+    assert 'MLST Feature' == summary_df.index.name
+    assert ['Scheme', 'Locus', 'Allele', 'Count', 'Unknown Count', 'Present and Unknown Count',
+            'Total', 'Percent', 'Unknown Percent', 'Present and Unknown Percent'] == list(summary_df.columns)
+    assert ['lmonocytogenes', 'lhkA', '4', 1, 0, 1, 2, 50, 0, 50] == summary_df.loc['mlst:lmonocytogenes:lhkA:4'].tolist()
 
     # Test unique only unknown
     mlst_summarizier = MLSTFeaturesComparator(connection=loaded_database_genomic_data_store.connection,

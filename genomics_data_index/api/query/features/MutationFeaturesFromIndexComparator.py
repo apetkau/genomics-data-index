@@ -18,8 +18,10 @@ class MutationFeaturesFromIndexComparator(FeaturesFromIndexComparator):
     def __init__(self, connection: DataIndexConnection, ignore_annotations: bool = False,
                  include_present: bool = True, include_unknown: bool = False,
                  include_unknown_samples: bool = True,
+                 include_unknown_no_present_features=False,
                  mutation_type: str = 'all', id_type: str = 'spdi_ref'):
-        super().__init__(connection=connection, include_unknown_samples=include_unknown_samples)
+        super().__init__(connection=connection, include_unknown_samples=include_unknown_samples,
+                         include_unknown_no_present_features=include_unknown_no_present_features)
         self._ignore_annotations = ignore_annotations
         self._mutation_type = mutation_type
         self._include_present = include_present

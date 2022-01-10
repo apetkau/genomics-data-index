@@ -10,9 +10,11 @@ from genomics_data_index.storage.SampleSet import SampleSet
 class FeaturesComparator(abc.ABC):
     FEATURES_SELECTIONS = ['all', 'unique']
 
-    def __init__(self, connection: DataIndexConnection, include_unknown_samples: bool):
+    def __init__(self, connection: DataIndexConnection, include_unknown_samples: bool,
+                 include_unknown_no_present_features: bool):
         self._connection = connection
         self._include_unknown_samples = include_unknown_samples
+        self._include_unknown_no_present_features = include_unknown_no_present_features
 
     @property
     @abc.abstractmethod
