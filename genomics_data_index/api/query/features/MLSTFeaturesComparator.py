@@ -6,7 +6,7 @@ from genomics_data_index.api.query.features.FeaturesFromIndexComparator import F
 from genomics_data_index.api.query.features.FeaturesFromIndexComparator import FeatureSamplesSummarizer
 from genomics_data_index.api.query.features.FeaturesFromIndexComparator import FeaturesFromIndexComparator
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
-from genomics_data_index.storage.SampleSet import SampleSet
+from genomics_data_index.storage.SampleSet import SampleSet, AllSampleSet
 from genomics_data_index.storage.model.db import FeatureSamples, MLSTAllelesSamples
 from genomics_data_index.storage.service.MLSTService import MLSTService
 
@@ -26,6 +26,12 @@ class MLSTFeaturesComparator(FeaturesFromIndexComparator):
         self._locus = locus
         self._include_present = include_present
         self._include_unknown = include_unknown
+
+    def _get_total(self, samples: SampleSet) -> int:
+        if self._scheme is None:
+            return super()._get_total(samples)
+        else:
+            return self._connection.sample_service.count_samples_associated_with_mlst_scheme(self._scheme)
 
     @property
     def summary_columns(self) -> List[str]:
