@@ -5,6 +5,7 @@
 * [analysis]: Increased `--indel-bias` in `bcftools mpileup` for assembly analysis from default **1.00**. This was done since I found I was missing a small number of indels in SARS-CoV-2 analyses (they were being identified as missing/unknown instead). Also decreased quality score filtering from `10` for the same reason (0.5.0.dev2).
     * This requires bcftools >= 1.13.
 * [install]: Fixed broken dependencies on installation (0.5.0.dev3).
+* [api]: Added support for listing counts of samples with unknown features in `summary()` of features (or unique summaries of features) (0.5.0.dev4).
 
 # 0.4.0
 
