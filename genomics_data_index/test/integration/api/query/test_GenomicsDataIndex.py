@@ -67,7 +67,7 @@ def test_summaries_loaded_data(loaded_database_genomic_data_store: GenomicsDataI
     assert ['reference', 3897, 5, 'G', 'INDEL', 2, -1, -1, 3, 66, -1, -1] == ms.loc['reference:3897:5:G'].values.tolist()
 
     # Mutations include unknown spdi
-    ms = gds.mutations_summary('genome', id_type='spdi', ignore_annotations=True, include_unknown=True)
+    ms = gds.mutations_summary('genome', id_type='spdi', ignore_annotations=True, include_unknown_features=True)
     assert 112 + 440 == len(ms)
     assert 'Mutation' == ms.index.name
     assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type',
@@ -111,7 +111,7 @@ def test_summaries_loaded_data(loaded_database_genomic_data_store: GenomicsDataI
     assert ['reference', 3897, 'GCGCA', 'G', 'INDEL', 2, -1, -1, 3, 66, -1, -1] == ms.loc['reference:3897:GCGCA:G'].values.tolist()
 
     # Mutations spdi ref include unknowns
-    ms = gds.mutations_summary('genome', id_type='spdi_ref', ignore_annotations=True, include_unknown=True)
+    ms = gds.mutations_summary('genome', id_type='spdi_ref', ignore_annotations=True, include_unknown_features=True)
     assert 112 + 440 == len(ms)
     assert 'Mutation' == ms.index.name
     assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type',
@@ -176,13 +176,13 @@ def test_summaries_loaded_data(loaded_database_genomic_data_store: GenomicsDataI
     assert ['reference', 3897, 5, 'G', 'INDEL', 2, -1, -1, 3, 66, -1, -1] == ms.loc['reference:3897:5:G'].values.tolist()
 
     # Test case of only including unknowns
-    ms = gds.mutations_summary('genome', id_type='spdi', include_present=False, include_unknown=True)
+    ms = gds.mutations_summary('genome', id_type='spdi', include_present_features=False, include_unknown_features=True)
     assert 440 == len(ms)
     assert 'reference:649:1:?' in set(ms.index.tolist())
     assert 'reference:839:1:G' not in (ms.index.tolist())
 
     # Test case of no present or unknowns
-    ms = gds.mutations_summary('genome', id_type='spdi', include_present=False, include_unknown=False)
+    ms = gds.mutations_summary('genome', id_type='spdi', include_present_features=False, include_unknown_features=False)
     assert 0 == len(ms)
 
 
@@ -207,7 +207,7 @@ def test_summaries_mlst_data(loaded_database_genomic_data_store: GenomicsDataInd
     assert ['lmonocytogenes', 'ldh', '5', 4, 1, 5, 5, 80, 20, 100] == summary_df.loc['mlst:lmonocytogenes:ldh:5'].tolist()
 
     # MLST summaries for lmonocytogenes include unknown
-    summary_df = gds.features_summary(kind='mlst', scope='lmonocytogenes', include_unknown=True)
+    summary_df = gds.features_summary(kind='mlst', scope='lmonocytogenes', include_unknown_features=True)
     summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
     summary_df['Unknown Count'] = summary_df['Unknown Count'].fillna(-1).astype(int)
     summary_df['Present and Unknown Count'] = summary_df['Present and Unknown Count'].fillna(-1).astype(int)
@@ -239,7 +239,7 @@ def test_summaries_mlst_data(loaded_database_genomic_data_store: GenomicsDataInd
     assert ['lmonocytogenes', 'bglA', '52', 2, 0, 2, 5, 40, 0, 40] == summary_df.loc['mlst:lmonocytogenes:bglA:52'].tolist()
 
     # MLST summaries for lmonocytogenes include unknown and not present
-    summary_df = gds.features_summary(kind='mlst', scope='lmonocytogenes', include_present=False, include_unknown=True)
+    summary_df = gds.features_summary(kind='mlst', scope='lmonocytogenes', include_present_features=False, include_unknown_features=True)
     summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
     summary_df['Unknown Count'] = summary_df['Unknown Count'].fillna(-1).astype(int)
     summary_df['Present and Unknown Count'] = summary_df['Present and Unknown Count'].fillna(-1).astype(int)
@@ -252,7 +252,7 @@ def test_summaries_mlst_data(loaded_database_genomic_data_store: GenomicsDataInd
     assert ['lmonocytogenes', 'ldh', '?', 1, -1, -1, 5, 20, -1, -1] == summary_df.loc['mlst:lmonocytogenes:ldh:?'].tolist()
 
     # MLST summaries for lmonocytogenes not include present or unknown
-    summary_df = gds.features_summary(kind='mlst', scope='lmonocytogenes', include_present=False, include_unknown=False)
+    summary_df = gds.features_summary(kind='mlst', scope='lmonocytogenes', include_present_features=False, include_unknown_features=False)
     summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
     summary_df['Unknown Count'] = summary_df['Unknown Count'].fillna(-1).astype(int)
     summary_df['Present and Unknown Count'] = summary_df['Present and Unknown Count'].fillna(-1).astype(int)
