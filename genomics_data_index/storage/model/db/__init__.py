@@ -11,10 +11,10 @@ from sqlalchemy.orm import relationship
 
 from genomics_data_index.storage.MaskedGenomicRegions import MaskedGenomicRegions
 from genomics_data_index.storage.SampleSet import SampleSet
+from genomics_data_index.storage.model import NUCLEOTIDE_UNKNOWN_TYPE, MLST_UNKNOWN_ALLELE
 from genomics_data_index.storage.model.NucleotideMutationTranslater import NucleotideMutationTranslater
 from genomics_data_index.storage.model.QueryFeatureMLST import QueryFeatureMLST
 from genomics_data_index.storage.model.db.DatabasePathTranslator import DatabasePathTranslator
-from genomics_data_index.storage.model import NUCLEOTIDE_UNKNOWN_TYPE, MLST_UNKNOWN_ALLELE
 
 Base = declarative_base()
 

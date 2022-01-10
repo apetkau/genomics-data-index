@@ -88,7 +88,6 @@ snpeff_sample_vcfs = {
     'SH14-014': snpeff_data_dir / 'SH14-014.vcf.gz',
 }
 
-
 snpeff_sample_beds = {
     'SH10-014': snpeff_data_dir / 'SH10-014.bed.gz',
     'SH14-001': snpeff_data_dir / 'SH14-001.bed.gz',

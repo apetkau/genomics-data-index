@@ -3487,7 +3487,8 @@ def test_summary_features_kindmutations_unique(loaded_database_connection: DataI
             'Count', 'Total', 'Percent'] == list(mutations_df.columns)
 
 
-def test_summary_features_kindmutations_annotations(loaded_database_connection_annotations_unknown: DataIndexConnection):
+def test_summary_features_kindmutations_annotations(
+        loaded_database_connection_annotations_unknown: DataIndexConnection):
     q = query(loaded_database_connection_annotations_unknown)
 
     # 1 sample
@@ -3696,8 +3697,10 @@ def test_summary_features_kindmlst(loaded_database_connection: DataIndexConnecti
     assert 'MLST Feature' == summary_df.index.name
     assert ['Scheme', 'Locus', 'Allele', 'Count', 'Unknown Count', 'Present and Unknown Count',
             'Total', 'Percent', 'Unknown Percent', 'Present and Unknown Percent'] == list(summary_df.columns)
-    assert ['lmonocytogenes', 'abcZ', '1', 1, 0, 1, 1, 100, 0, 100] == summary_df.loc['mlst:lmonocytogenes:abcZ:1'].tolist()
-    assert ['lmonocytogenes', 'bglA', '51', 1, 0, 1, 1, 100, 0, 100] == summary_df.loc['mlst:lmonocytogenes:bglA:51'].tolist()
+    assert ['lmonocytogenes', 'abcZ', '1', 1, 0, 1, 1, 100, 0, 100] == summary_df.loc[
+        'mlst:lmonocytogenes:abcZ:1'].tolist()
+    assert ['lmonocytogenes', 'bglA', '51', 1, 0, 1, 1, 100, 0, 100] == summary_df.loc[
+        'mlst:lmonocytogenes:bglA:51'].tolist()
 
     # Test samples across multiple schemes
     summary_df = query(loaded_database_connection).isin(['SampleA', 'SampleB', 'CFSAN002349',
@@ -3708,12 +3711,18 @@ def test_summary_features_kindmlst(loaded_database_connection: DataIndexConnecti
     assert 'MLST Feature' == summary_df.index.name
     assert ['Scheme', 'Locus', 'Allele', 'Count', 'Unknown Count', 'Present and Unknown Count',
             'Total', 'Percent', 'Unknown Percent', 'Present and Unknown Percent'] == list(summary_df.columns)
-    assert ['lmonocytogenes', 'abcZ', '1', 3, 0, 3, 4, 75, 0, 75] == summary_df.loc['mlst:lmonocytogenes:abcZ:1'].tolist()
-    assert ['lmonocytogenes', 'bglA', '51', 2, 0, 2, 4, 50, 0, 50] == summary_df.loc['mlst:lmonocytogenes:bglA:51'].tolist()
-    assert ['lmonocytogenes', 'bglA', '52', 1, 0, 1, 4, 25, 0, 25] == summary_df.loc['mlst:lmonocytogenes:bglA:52'].tolist()
-    assert ['lmonocytogenes', 'ldh', '5', 2, 1, 3, 4, 50, 25, 75] == summary_df.loc['mlst:lmonocytogenes:ldh:5'].tolist()
-    assert ['lmonocytogenes', 'lhkA', '5', 2, 0, 2, 4, 50, 0, 50] == summary_df.loc['mlst:lmonocytogenes:lhkA:5'].tolist()
-    assert ['lmonocytogenes', 'lhkA', '4', 1, 0, 1, 4, 25, 0, 25] == summary_df.loc['mlst:lmonocytogenes:lhkA:4'].tolist()
+    assert ['lmonocytogenes', 'abcZ', '1', 3, 0, 3, 4, 75, 0, 75] == summary_df.loc[
+        'mlst:lmonocytogenes:abcZ:1'].tolist()
+    assert ['lmonocytogenes', 'bglA', '51', 2, 0, 2, 4, 50, 0, 50] == summary_df.loc[
+        'mlst:lmonocytogenes:bglA:51'].tolist()
+    assert ['lmonocytogenes', 'bglA', '52', 1, 0, 1, 4, 25, 0, 25] == summary_df.loc[
+        'mlst:lmonocytogenes:bglA:52'].tolist()
+    assert ['lmonocytogenes', 'ldh', '5', 2, 1, 3, 4, 50, 25, 75] == summary_df.loc[
+        'mlst:lmonocytogenes:ldh:5'].tolist()
+    assert ['lmonocytogenes', 'lhkA', '5', 2, 0, 2, 4, 50, 0, 50] == summary_df.loc[
+        'mlst:lmonocytogenes:lhkA:5'].tolist()
+    assert ['lmonocytogenes', 'lhkA', '4', 1, 0, 1, 4, 25, 0, 25] == summary_df.loc[
+        'mlst:lmonocytogenes:lhkA:4'].tolist()
     assert ['campylobacter', 'aspA', '2', 1, 0, 1, 4, 25, 0, 25] == summary_df.loc['mlst:campylobacter:aspA:2'].tolist()
     assert ['campylobacter', 'glyA', '3', 1, 0, 1, 4, 25, 0, 25] == summary_df.loc['mlst:campylobacter:glyA:3'].tolist()
     assert ['campylobacter', 'uncA', '6', 0, 1, 1, 4, 0, 25, 25] == summary_df.loc['mlst:campylobacter:uncA:6'].tolist()
@@ -3738,8 +3747,10 @@ def test_summary_features_kindmlst(loaded_database_connection: DataIndexConnecti
     assert 'MLST Feature' == summary_df.index.name
     assert ['Scheme', 'Locus', 'Allele', 'Count', 'Unknown Count', 'Present and Unknown Count',
             'Total', 'Percent', 'Unknown Percent', 'Present and Unknown Percent'] == list(summary_df.columns)
-    assert ['lmonocytogenes', 'ldh', '?', 1, -1, -1, 4, 25, -1, -1] == summary_df.loc['mlst:lmonocytogenes:ldh:?'].tolist()
-    assert ['campylobacter', 'uncA', '?', 1, -1, -1, 4, 25, -1, -1] == summary_df.loc['mlst:campylobacter:uncA:?'].tolist()
+    assert ['lmonocytogenes', 'ldh', '?', 1, -1, -1, 4, 25, -1, -1] == summary_df.loc[
+        'mlst:lmonocytogenes:ldh:?'].tolist()
+    assert ['campylobacter', 'uncA', '?', 1, -1, -1, 4, 25, -1, -1] == summary_df.loc[
+        'mlst:campylobacter:uncA:?'].tolist()
 
     # Test only unknown, restrict scheme
     summary_df = query(loaded_database_connection).isin(
@@ -3760,7 +3771,8 @@ def test_summary_features_kindmlst(loaded_database_connection: DataIndexConnecti
     assert 'MLST Feature' == summary_df.index.name
     assert ['Scheme', 'Locus', 'Allele', 'Count', 'Unknown Count', 'Present and Unknown Count',
             'Total', 'Percent', 'Unknown Percent', 'Present and Unknown Percent'] == list(summary_df.columns)
-    assert ['lmonocytogenes', 'ldh', '?', 1, -1, -1, 4, 25, -1, -1] == summary_df.loc['mlst:lmonocytogenes:ldh:?'].tolist()
+    assert ['lmonocytogenes', 'ldh', '?', 1, -1, -1, 4, 25, -1, -1] == summary_df.loc[
+        'mlst:lmonocytogenes:ldh:?'].tolist()
 
 
 def test_features_comparison_kindmutations_annotations(loaded_database_connection_annotations: DataIndexConnection):

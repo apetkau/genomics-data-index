@@ -7,8 +7,8 @@ from genomics_data_index.api.query.features.FeaturesComparator import FeaturesCo
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.QueryFeature import QueryFeature
-from genomics_data_index.storage.model.db import FeatureSamples
 from genomics_data_index.storage.model.QueryFeatureFactory import QueryFeatureFactory
+from genomics_data_index.storage.model.db import FeatureSamples
 
 
 class FeatureSamplesSummarizer(abc.ABC):

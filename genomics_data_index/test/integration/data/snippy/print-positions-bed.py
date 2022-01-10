@@ -14,4 +14,3 @@ for i in bed:
     stop = i.stop + 1
     for pos in range(start, stop):
         print(f'{i.chrom}\t{pos}')
-

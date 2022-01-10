@@ -421,7 +421,8 @@ def test_summary_no_annotations_unknown(
         mutations_df.loc['NC_011083:4555461:T:TC'])
 
 
-def test_summary_annotations_unknown_column_unknown_rows(loaded_database_genomic_data_store_annotations_include_unknown: GenomicsDataIndex):
+def test_summary_annotations_unknown_column_unknown_rows(
+        loaded_database_genomic_data_store_annotations_include_unknown: GenomicsDataIndex):
     db = loaded_database_genomic_data_store_annotations_include_unknown.connection.database
 
     mutations_summarizer = MutationFeaturesFromIndexComparator(
