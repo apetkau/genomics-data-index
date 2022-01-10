@@ -36,7 +36,6 @@ class MLSTFeaturesComparator(FeaturesFromIndexComparator):
             else:
                 return len(samples)
 
-
     @property
     def summary_columns(self) -> List[str]:
         return self.feature_id_columns + FeatureSamplesSingleCategorySummarizer.SUMMARY_NAMES
