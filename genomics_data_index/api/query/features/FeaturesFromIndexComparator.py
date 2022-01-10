@@ -124,9 +124,9 @@ class FeatureSamplesMultipleCategorySummarizer(FeatureSamplesSummarizer):
 class FeaturesFromIndexComparator(FeaturesComparator, abc.ABC):
 
     def __init__(self, connection: DataIndexConnection, include_unknown_samples: bool,
-                 include_unknown_no_present_features: bool):
+                 include_unknown_no_present_samples: bool):
         super().__init__(connection=connection, include_unknown_samples=include_unknown_samples,
-                         include_unknown_no_present_features=include_unknown_no_present_features)
+                         include_unknown_no_present_samples=include_unknown_no_present_samples)
 
     def _get_samples_or_empty(self, feature: QueryFeature,
                               feature_id_set_dict: Dict[str, SampleSet]) -> SampleSet:
@@ -157,7 +157,7 @@ class FeaturesFromIndexComparator(FeaturesComparator, abc.ABC):
                 samples_unknown_in_feature = None
                 sample_unknown_count = None
 
-            if sample_count > 0 or (self._include_unknown_no_present_features and
+            if sample_count > 0 or (self._include_unknown_no_present_samples and
                                     sample_unknown_count is not None and sample_unknown_count > 0):
                 data.append(self._create_feature_sample_count_row(feature_id,
                                                                   feature=feature,

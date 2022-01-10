@@ -17,11 +17,11 @@ class MLSTFeaturesComparator(FeaturesFromIndexComparator):
                  scheme: str = None,
                  locus: str = None,
                  include_unknown_samples: bool = True,
-                 include_unknown_no_present_features=False,
+                 include_unknown_no_present_samples=False,
                  include_present: bool = True,
                  include_unknown: bool = False):
         super().__init__(connection=connection, include_unknown_samples=include_unknown_samples,
-                         include_unknown_no_present_features=include_unknown_no_present_features)
+                         include_unknown_no_present_samples=include_unknown_no_present_samples)
         self._scheme = scheme
         self._locus = locus
         self._include_present = include_present

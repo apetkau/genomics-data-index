@@ -124,7 +124,7 @@ def test_unique_summary(loaded_database_genomic_data_store: GenomicsDataIndex):
 
     # Test unique across schemes, include unknown features when no samples present
     mlst_summarizier = MLSTFeaturesComparator(connection=loaded_database_genomic_data_store.connection,
-                                              include_unknown_no_present_features=True)
+                                              include_unknown_no_present_samples=True)
 
     present_set = SampleSet({sample_CFSAN002349.id, sample_2014D_0068.id})
     complement_set = SampleSet(all_sample_ids - {sample_CFSAN002349.id, sample_2014D_0068.id})
