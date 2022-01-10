@@ -7,6 +7,7 @@ from typing import List, Union
 
 import pandas as pd
 from ete3 import Tree
+from genomics_data_index.api.query.features.MLSTFeaturesComparator import MLSTFeaturesComparator
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.api.query.impl.DataFrameSamplesQuery import DataFrameSamplesQuery
@@ -17,7 +18,6 @@ from genomics_data_index.configuration.connector.DataIndexConnection import Data
 from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.NucleotideMutationTranslater import NucleotideMutationTranslater
 from genomics_data_index.storage.service import EntityExistsError
-from genomics_data_index.storage.service.MLSTService import MLSTService
 from genomics_data_index.storage.service.VariationService import VariationService
 
 logger = logging.getLogger(__name__)
@@ -180,26 +180,14 @@ class GenomicsDataIndex:
         :param include_unknown: Whether or not unknown MLST alleles should be included.
         :return: A summary of all MLST alleles in this index as a DataFrame.
         """
-        mlst_service: MLSTService = self._connection.mlst_service
-        mlst_features = mlst_service.get_features(scheme_name, locus=locus,
-                                                  include_present=include_present,
-                                                  include_unknown=include_unknown)
-        total_samples = self._connection.sample_service.count_samples_associated_with_mlst_scheme(scheme_name)
-
-        data = []
-        for mlst_feature_id in mlst_features:
-            mlst_feature = mlst_features[mlst_feature_id]
-            count = len(mlst_feature.sample_ids)
-            data.append([mlst_feature.query_id, mlst_feature.scheme, mlst_feature.locus, mlst_feature.allele, count,
-                         total_samples])
-
-        features_df = pd.DataFrame(data,
-                                   columns=['MLST Feature', 'Scheme', 'Locus',
-                                            'Allele', 'Count', 'Total']).set_index('MLST Feature')
-
-        features_df['Percent'] = 100 * (features_df['Count'] / features_df['Total'])
-
-        return features_df
+        features_summarizier = MLSTFeaturesComparator(connection=self._connection,
+                                                      scheme=scheme_name,
+                                                      locus=locus,
+                                                      include_unknown=include_unknown,
+                                                      include_present=include_present,
+                                                      include_unknown_samples=True,
+                                                      include_unknown_no_present_samples=False)
+        return features_summarizier.summary(SampleSet.create_all())
 
     def _mutations_summary_internal(self, reference_name: str, id_type: str = 'spdi_ref',
                                     include_present: bool = True,

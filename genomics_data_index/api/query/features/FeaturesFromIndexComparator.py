@@ -139,7 +139,7 @@ class FeaturesFromIndexComparator(FeaturesComparator, abc.ABC):
                            present_samples: SampleSet,
                            feature_samples_summarizer: FeatureSamplesSummarizer) -> pd.DataFrame:
         data = []
-        total = len(present_samples)
+        total = self._get_total(present_samples)
         for feature_id in present_features:
             feature = present_features[feature_id]
 

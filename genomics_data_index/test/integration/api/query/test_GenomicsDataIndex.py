@@ -155,52 +155,77 @@ def test_summaries_mlst_data(loaded_database_genomic_data_store: GenomicsDataInd
 
     # MLST summaries for lmonocytogenes
     summary_df = gds.features_summary(kind='mlst', scope='lmonocytogenes')
-    summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
+    summary_df['Percent'] = summary_df['Percent'].astype(int) # Convert to int for easier comparison
+    summary_df['Unknown Count'] = summary_df['Unknown Count'].fillna(-1).astype(int)
+    summary_df['Present and Unknown Count'] = summary_df['Present and Unknown Count'].fillna(-1).astype(int)
+    summary_df['Unknown Percent'] = summary_df['Unknown Percent'].fillna(-1).astype(int)
+    summary_df['Present and Unknown Percent'] = summary_df['Present and Unknown Percent'].fillna(-1).astype(int)
     assert 10 == len(summary_df)
     assert 'MLST Feature' == summary_df.index.name
-    assert ['Scheme', 'Locus', 'Allele', 'Count', 'Total', 'Percent'] == list(summary_df.columns)
-    assert ['lmonocytogenes', 'abcZ', '1', 5, 5, 100] == summary_df.loc['mlst:lmonocytogenes:abcZ:1'].tolist()
-    assert ['lmonocytogenes', 'bglA', '51', 3, 5, 60] == summary_df.loc['mlst:lmonocytogenes:bglA:51'].tolist()
-    assert ['lmonocytogenes', 'lhkA', '4', 1, 5, 20] == summary_df.loc['mlst:lmonocytogenes:lhkA:4'].tolist()
-    assert ['lmonocytogenes', 'lhkA', '5', 4, 5, 80] == summary_df.loc['mlst:lmonocytogenes:lhkA:5'].tolist()
-    assert ['lmonocytogenes', 'ldh', '5', 4, 5, 80] == summary_df.loc['mlst:lmonocytogenes:ldh:5'].tolist()
+    assert ['Scheme', 'Locus', 'Allele', 'Count', 'Unknown Count', 'Present and Unknown Count',
+            'Total', 'Percent', 'Unknown Percent', 'Present and Unknown Percent'] == list(summary_df.columns)
+    assert ['lmonocytogenes', 'abcZ', '1', 5, 0, 5, 5, 100, 0, 100] == summary_df.loc['mlst:lmonocytogenes:abcZ:1'].tolist()
+    assert ['lmonocytogenes', 'bglA', '51', 3, 0, 3, 5, 60, 0, 60] == summary_df.loc['mlst:lmonocytogenes:bglA:51'].tolist()
+    assert ['lmonocytogenes', 'lhkA', '4', 1, 0, 1, 5, 20, 0, 20] == summary_df.loc['mlst:lmonocytogenes:lhkA:4'].tolist()
+    assert ['lmonocytogenes', 'lhkA', '5', 4, 0, 4, 5, 80, 0, 80] == summary_df.loc['mlst:lmonocytogenes:lhkA:5'].tolist()
+    assert ['lmonocytogenes', 'ldh', '5', 4, 1, 5, 80, 0, 100] == summary_df.loc['mlst:lmonocytogenes:ldh:5'].tolist()
 
     # MLST summaries for lmonocytogenes include unknown
     summary_df = gds.features_summary(kind='mlst', scope='lmonocytogenes', include_unknown=True)
     summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
+    summary_df['Unknown Count'] = summary_df['Unknown Count'].fillna(-1).astype(int)
+    summary_df['Present and Unknown Count'] = summary_df['Present and Unknown Count'].fillna(-1).astype(int)
+    summary_df['Unknown Percent'] = summary_df['Unknown Percent'].fillna(-1).astype(int)
+    summary_df['Present and Unknown Percent'] = summary_df['Present and Unknown Percent'].fillna(-1).astype(int)
     assert 11 == len(summary_df)
     assert 'MLST Feature' == summary_df.index.name
-    assert ['Scheme', 'Locus', 'Allele', 'Count', 'Total', 'Percent'] == list(summary_df.columns)
-    assert ['lmonocytogenes', 'abcZ', '1', 5, 5, 100] == summary_df.loc['mlst:lmonocytogenes:abcZ:1'].tolist()
-    assert ['lmonocytogenes', 'bglA', '51', 3, 5, 60] == summary_df.loc['mlst:lmonocytogenes:bglA:51'].tolist()
-    assert ['lmonocytogenes', 'lhkA', '4', 1, 5, 20] == summary_df.loc['mlst:lmonocytogenes:lhkA:4'].tolist()
-    assert ['lmonocytogenes', 'lhkA', '5', 4, 5, 80] == summary_df.loc['mlst:lmonocytogenes:lhkA:5'].tolist()
-    assert ['lmonocytogenes', 'ldh', '5', 4, 5, 80] == summary_df.loc['mlst:lmonocytogenes:ldh:5'].tolist()
-    assert ['lmonocytogenes', 'ldh', '?', 1, 5, 20] == summary_df.loc['mlst:lmonocytogenes:ldh:?'].tolist()
+    assert ['Scheme', 'Locus', 'Allele', 'Count', 'Unknown Count', 'Present and Unknown Count',
+            'Total', 'Percent', 'Unknown Percent', 'Present and Unknown Percent'] == list(summary_df.columns)
+    assert ['lmonocytogenes', 'abcZ', '1', 5, 0, 5, 5, 100, 0, 100] == summary_df.loc['mlst:lmonocytogenes:abcZ:1'].tolist()
+    assert ['lmonocytogenes', 'bglA', '51', 3, 0, 3, 5, 60, 0, 60] == summary_df.loc['mlst:lmonocytogenes:bglA:51'].tolist()
+    assert ['lmonocytogenes', 'lhkA', '4', 1, 0, 1, 5, 20, 0, 20] == summary_df.loc['mlst:lmonocytogenes:lhkA:4'].tolist()
+    assert ['lmonocytogenes', 'lhkA', '5', 4, 0, 4, 5, 80, 0, 80] == summary_df.loc['mlst:lmonocytogenes:lhkA:5'].tolist()
+    assert ['lmonocytogenes', 'ldh', '5', 4, 1, 5, 5, 80, 0, 100] == summary_df.loc['mlst:lmonocytogenes:ldh:5'].tolist()
+    assert ['lmonocytogenes', 'ldh', '?', 1, -1, -1, 5, 20, -1, -1] == summary_df.loc['mlst:lmonocytogenes:ldh:?'].tolist()
 
     # MLST summaries for lmonocytogenes with specific locus id
     summary_df = gds.features_summary(kind='mlst', scope='lmonocytogenes', locus='bglA')
     summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
+    summary_df['Unknown Count'] = summary_df['Unknown Count'].fillna(-1).astype(int)
+    summary_df['Present and Unknown Count'] = summary_df['Present and Unknown Count'].fillna(-1).astype(int)
+    summary_df['Unknown Percent'] = summary_df['Unknown Percent'].fillna(-1).astype(int)
+    summary_df['Present and Unknown Percent'] = summary_df['Present and Unknown Percent'].fillna(-1).astype(int)
     assert 2 == len(summary_df)
     assert 'MLST Feature' == summary_df.index.name
-    assert ['Scheme', 'Locus', 'Allele', 'Count', 'Total', 'Percent'] == list(summary_df.columns)
-    assert ['lmonocytogenes', 'bglA', '51', 3, 5, 60] == summary_df.loc['mlst:lmonocytogenes:bglA:51'].tolist()
-    assert ['lmonocytogenes', 'bglA', '52', 2, 5, 40] == summary_df.loc['mlst:lmonocytogenes:bglA:52'].tolist()
+    assert ['Scheme', 'Locus', 'Allele', 'Count', 'Unknown Count', 'Present and Unknown Count',
+            'Total', 'Percent', 'Unknown Percent', 'Present and Unknown Percent'] == list(summary_df.columns)
+    assert ['lmonocytogenes', 'bglA', '51', 3, 0, 3, 5, 60, 0, 60] == summary_df.loc['mlst:lmonocytogenes:bglA:51'].tolist()
+    assert ['lmonocytogenes', 'bglA', '52', 2, 0, 2, 5, 40, 0, 40] == summary_df.loc['mlst:lmonocytogenes:bglA:52'].tolist()
 
     # MLST summaries for lmonocytogenes include unknown and not present
     summary_df = gds.features_summary(kind='mlst', scope='lmonocytogenes', include_present=False, include_unknown=True)
     summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
+    summary_df['Unknown Count'] = summary_df['Unknown Count'].fillna(-1).astype(int)
+    summary_df['Present and Unknown Count'] = summary_df['Present and Unknown Count'].fillna(-1).astype(int)
+    summary_df['Unknown Percent'] = summary_df['Unknown Percent'].fillna(-1).astype(int)
+    summary_df['Present and Unknown Percent'] = summary_df['Present and Unknown Percent'].fillna(-1).astype(int)
     assert 1 == len(summary_df)
     assert 'MLST Feature' == summary_df.index.name
-    assert ['Scheme', 'Locus', 'Allele', 'Count', 'Total', 'Percent'] == list(summary_df.columns)
-    assert ['lmonocytogenes', 'ldh', '?', 1, 5, 20] == summary_df.loc['mlst:lmonocytogenes:ldh:?'].tolist()
+    assert ['Scheme', 'Locus', 'Allele', 'Count', 'Unknown Count', 'Present and Unknown Count',
+            'Total', 'Percent', 'Unknown Percent', 'Present and Unknown Percent'] == list(summary_df.columns)
+    assert ['lmonocytogenes', 'ldh', '?', 1, -1, -1, 5, 20, -1, -1] == summary_df.loc['mlst:lmonocytogenes:ldh:?'].tolist()
 
     # MLST summaries for lmonocytogenes not include present or unknown
     summary_df = gds.features_summary(kind='mlst', scope='lmonocytogenes', include_present=False, include_unknown=False)
     summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
+    summary_df['Unknown Count'] = summary_df['Unknown Count'].fillna(-1).astype(int)
+    summary_df['Present and Unknown Count'] = summary_df['Present and Unknown Count'].fillna(-1).astype(int)
+    summary_df['Unknown Percent'] = summary_df['Unknown Percent'].fillna(-1).astype(int)
+    summary_df['Present and Unknown Percent'] = summary_df['Present and Unknown Percent'].fillna(-1).astype(int)
     assert 0 == len(summary_df)
     assert 'MLST Feature' == summary_df.index.name
-    assert ['Scheme', 'Locus', 'Allele', 'Count', 'Total', 'Percent'] == list(summary_df.columns)
+    assert ['Scheme', 'Locus', 'Allele', 'Count', 'Unknown Count', 'Present and Unknown Count',
+            'Total', 'Percent', 'Unknown Percent', 'Present and Unknown Percent'] == list(summary_df.columns)
 
     # Summaries using 'mlst_summery()'
     summary_df = gds.mlst_summary(scheme_name='lmonocytogenes')
