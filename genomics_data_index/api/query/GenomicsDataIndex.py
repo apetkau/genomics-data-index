@@ -195,7 +195,10 @@ class GenomicsDataIndex:
                                                     **kwargs)
         elif kind == 'mlst':
             return self._mlst_summary_internal(scheme_name=scope, include_present_features=include_present_features,
-                                               include_unknown_features=include_unknown_features, **kwargs)
+                                               include_unknown_features=include_unknown_features,
+                                               include_unknown_samples=include_unknown_samples,
+                                               include_unknown_no_present_samples=include_unknown_no_present_samples,
+                                               **kwargs)
         else:
             raise Exception(f'Unknown value for kind=[{kind}]. Must be one of {self.FEAUTRE_KINDS}.')
 
