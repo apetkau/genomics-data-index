@@ -251,6 +251,30 @@ def test_summary_selections(loaded_database_genomic_data_store: GenomicsDataInde
     summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
     summary_df['Unknown Percent'] = summary_df['Unknown Percent'].astype(int)
     summary_df['Present and Unknown Percent'] = summary_df['Present and Unknown Percent'].astype(int)
+    assert 15 == len(summary_df)
+    assert {'lmonocytogenes', 'campylobacter'} == set(summary_df['Scheme'].tolist())
+    assert 'MLST Feature' == summary_df.index.name
+    assert ['Scheme', 'Locus', 'Allele', 'Count', 'Unknown Count', 'Present and Unknown Count',
+            'Total', 'Percent', 'Unknown Percent', 'Present and Unknown Percent'] == list(summary_df.columns)
+    assert ['lmonocytogenes', 'abcZ', '1', 3, 0, 3, 4, 75, 0, 75] == summary_df.loc['mlst:lmonocytogenes:abcZ:1'].tolist()
+    assert ['lmonocytogenes', 'bglA', '51', 2, 0, 2, 4, 50, 0, 50] == summary_df.loc['mlst:lmonocytogenes:bglA:51'].tolist()
+    assert ['lmonocytogenes', 'bglA', '52', 1, 0, 1, 4, 25, 0, 25] == summary_df.loc['mlst:lmonocytogenes:bglA:52'].tolist()
+    assert ['lmonocytogenes', 'ldh', '5', 2, 1, 3, 4, 50, 25, 75] == summary_df.loc['mlst:lmonocytogenes:ldh:5'].tolist()
+    assert ['lmonocytogenes', 'lhkA', '5', 2, 0, 2, 4, 50, 0, 50] == summary_df.loc['mlst:lmonocytogenes:lhkA:5'].tolist()
+    assert ['lmonocytogenes', 'lhkA', '4', 1, 0, 1, 4, 25, 0, 25] == summary_df.loc['mlst:lmonocytogenes:lhkA:4'].tolist()
+    assert ['campylobacter', 'aspA', '2', 1, 0, 1, 4, 25, 0, 25] == summary_df.loc['mlst:campylobacter:aspA:2'].tolist()
+    assert ['campylobacter', 'glyA', '3', 1, 0, 1, 4, 25, 0, 25] == summary_df.loc['mlst:campylobacter:glyA:3'].tolist()
+    assert 6 == len(summary_df[summary_df['Scheme'] == 'campylobacter'])
+
+    # Test multiple schemes, include unknown no present samples
+    mlst_summarizer = MLSTFeaturesComparator(connection=loaded_database_genomic_data_store.connection,
+                                             include_unknown_no_present_samples=True)
+    present_set = SampleSet([sampleA.id, sampleB.id, sample_CFSAN002349.id, sample_2014D_0067.id])
+    summary_df = mlst_summarizer.summary(present_set)
+
+    summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
+    summary_df['Unknown Percent'] = summary_df['Unknown Percent'].astype(int)
+    summary_df['Present and Unknown Percent'] = summary_df['Present and Unknown Percent'].astype(int)
     assert 16 == len(summary_df)
     assert {'lmonocytogenes', 'campylobacter'} == set(summary_df['Scheme'].tolist())
     assert 'MLST Feature' == summary_df.index.name
@@ -307,21 +331,17 @@ def test_summary_selections(loaded_database_genomic_data_store: GenomicsDataInde
     assert ['lmonocytogenes', 'bglA', '51', 2, 0, 2, 4, 50, 0, 50] == summary_df.loc['mlst:lmonocytogenes:bglA:51'].tolist()
     assert ['lmonocytogenes', 'bglA', '52', 1, 0, 1, 4, 25, 0, 25] == summary_df.loc['mlst:lmonocytogenes:bglA:52'].tolist()
 
-    # Test multiple schemes, include unknown
+    # Test multiple schemes, include unknown, include unknown no present samples
     present_set = SampleSet([sampleA.id, sampleB.id, sample_CFSAN002349.id, sample_2014D_0067.id])
     mlst_summarizer = MLSTFeaturesComparator(connection=loaded_database_genomic_data_store.connection,
-                                             include_unknown=True)
+                                             include_unknown=True, include_unknown_no_present_samples=True)
     summary_df = mlst_summarizer.summary(present_set)
 
     summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
-    summary_df['Unknown Count'] = summary_df['Unknown Count'].fillna(-1)
-    summary_df['Unknown Count'] = summary_df['Unknown Count'].astype(int)
-    summary_df['Present and Unknown Count'] = summary_df['Present and Unknown Count'].fillna(-1)
-    summary_df['Present and Unknown Count'] = summary_df['Present and Unknown Count'].astype(int)
-    summary_df['Unknown Percent'] = summary_df['Unknown Percent'].fillna(-1)
-    summary_df['Unknown Percent'] = summary_df['Unknown Percent'].astype(int)
-    summary_df['Present and Unknown Percent'] = summary_df['Present and Unknown Percent'].fillna(-1)
-    summary_df['Present and Unknown Percent'] = summary_df['Present and Unknown Percent'].astype(int)
+    summary_df['Unknown Count'] = summary_df['Unknown Count'].fillna(-1).astype(int)
+    summary_df['Present and Unknown Count'] = summary_df['Present and Unknown Count'].fillna(-1).astype(int)
+    summary_df['Unknown Percent'] = summary_df['Unknown Percent'].fillna(-1).astype(int)
+    summary_df['Present and Unknown Percent'] = summary_df['Present and Unknown Percent'].fillna(-1).astype(int)
     assert 18 == len(summary_df)
     assert {'lmonocytogenes', 'campylobacter'} == set(summary_df['Scheme'].tolist())
     assert 'MLST Feature' == summary_df.index.name
@@ -338,6 +358,34 @@ def test_summary_selections(loaded_database_genomic_data_store: GenomicsDataInde
     assert ['campylobacter', 'glyA', '3', 1, 0, 1, 4, 25, 0, 25] == summary_df.loc['mlst:campylobacter:glyA:3'].tolist()
     assert ['campylobacter', 'uncA', '6', 0, 1, 1, 4, 0, 25, 25] == summary_df.loc['mlst:campylobacter:uncA:6'].tolist()
     assert ['campylobacter', 'uncA', '?', 1, -1, -1, 4, 25, -1, -1] == summary_df.loc['mlst:campylobacter:uncA:?'].tolist()
+
+    # Test multiple schemes, include unknown, no include unknown no present samples
+    present_set = SampleSet([sampleA.id, sampleB.id, sample_CFSAN002349.id, sample_2014D_0067.id])
+    mlst_summarizer = MLSTFeaturesComparator(connection=loaded_database_genomic_data_store.connection,
+                                             include_unknown=True, include_unknown_no_present_samples=False)
+    summary_df = mlst_summarizer.summary(present_set)
+
+    summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
+    summary_df['Unknown Count'] = summary_df['Unknown Count'].fillna(-1).astype(int)
+    summary_df['Present and Unknown Count'] = summary_df['Present and Unknown Count'].fillna(-1).astype(int)
+    summary_df['Unknown Percent'] = summary_df['Unknown Percent'].fillna(-1).astype(int)
+    summary_df['Present and Unknown Percent'] = summary_df['Present and Unknown Percent'].fillna(-1).astype(int)
+    assert 17 == len(summary_df)
+    assert {'lmonocytogenes', 'campylobacter'} == set(summary_df['Scheme'].tolist())
+    assert 'MLST Feature' == summary_df.index.name
+    assert ['Scheme', 'Locus', 'Allele', 'Count', 'Unknown Count', 'Present and Unknown Count',
+            'Total', 'Percent', 'Unknown Percent', 'Present and Unknown Percent'] == list(summary_df.columns)
+    assert ['lmonocytogenes', 'abcZ', '1', 3, 0, 3, 4, 75, 0, 75] == summary_df.loc['mlst:lmonocytogenes:abcZ:1'].tolist()
+    assert ['lmonocytogenes', 'bglA', '51', 2, 0, 2, 4, 50, 0, 50] == summary_df.loc['mlst:lmonocytogenes:bglA:51'].tolist()
+    assert ['lmonocytogenes', 'bglA', '52', 1, 0, 1, 4, 25, 0, 25] == summary_df.loc['mlst:lmonocytogenes:bglA:52'].tolist()
+    assert ['lmonocytogenes', 'ldh', '5', 2, 1, 3, 4, 50, 25, 75] == summary_df.loc['mlst:lmonocytogenes:ldh:5'].tolist()
+    assert ['lmonocytogenes', 'ldh', '?', 1, -1, -1, 4, 25, -1, -1] == summary_df.loc['mlst:lmonocytogenes:ldh:?'].tolist()
+    assert ['lmonocytogenes', 'lhkA', '5', 2, 0, 2, 4, 50, 0, 50] == summary_df.loc['mlst:lmonocytogenes:lhkA:5'].tolist()
+    assert ['lmonocytogenes', 'lhkA', '4', 1, 0, 1, 4, 25, 0, 25] == summary_df.loc['mlst:lmonocytogenes:lhkA:4'].tolist()
+    assert ['campylobacter', 'aspA', '2', 1, 0, 1, 4, 25, 0, 25] == summary_df.loc['mlst:campylobacter:aspA:2'].tolist()
+    assert ['campylobacter', 'glyA', '3', 1, 0, 1, 4, 25, 0, 25] == summary_df.loc['mlst:campylobacter:glyA:3'].tolist()
+    assert ['campylobacter', 'uncA', '?', 1, -1, -1, 4, 25, -1, -1] == summary_df.loc['mlst:campylobacter:uncA:?'].tolist()
+    assert 'mlst:campylobacter:uncA:6' not in summary_df
 
     # Test multiple schemes, only unknown
     present_set = SampleSet([sampleA.id, sampleB.id, sample_CFSAN002349.id, sample_2014D_0067.id])
