@@ -7,6 +7,9 @@ from typing import List, Union
 
 import pandas as pd
 from ete3 import Tree
+from genomics_data_index.api.query.features.MutationFeaturesFromIndexComparator import \
+    MutationFeaturesFromIndexComparator
+
 from genomics_data_index.api.query.features.MLSTFeaturesComparator import MLSTFeaturesComparator
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
@@ -204,41 +207,19 @@ class GenomicsDataIndex:
 
         :return: A summary of all mutations in this index as a DataFrame.
         """
-        rs = self._connection.reference_service
-        if id_type not in self.MUTATION_ID_TYPES:
-            raise Exception(f'id_type={id_type} must be one of {self.MUTATION_ID_TYPES}')
-
-        vs: VariationService = self._connection.variation_service
-        mutations = vs.get_variants_on_reference(reference_name, include_present=include_present,
-                                                 include_unknown=include_unknown)
-
-        if id_type == 'spdi_ref':
-            translated_ids = rs.translate_spdi(mutations.keys(), to=id_type)
-            mutations = {translated_ids[m]: mutations[m] for m in mutations}
-            convert_deletion = False
+        features_summarizier = MutationFeaturesFromIndexComparator(connection=self._connection,
+                                                                   include_unknown=include_unknown,
+                                                                   include_present=include_present,
+                                                                   include_unknown_samples=False,
+                                                                   include_unknown_no_present_samples=False,
+                                                                   id_type=id_type,
+                                                                   ignore_annotations=ignore_annotations)
+        if reference_name is None:
+            sample_set = SampleSet.create_all()
         else:
-            convert_deletion = True
+            sample_set = self._connection.sample_service.get_samples_set_associated_with_reference(reference_name)
 
-        total_samples = self._connection.sample_service.count_samples_associated_with_reference(reference_name)
-
-        data = []
-        for mutation in mutations:
-            seq, pos, deletion, insertion = NucleotideMutationTranslater.from_spdi(mutation,
-                                                                                   convert_deletion=convert_deletion)
-            mutation_obj = mutations[mutation]
-            count = len(mutation_obj.sample_ids)
-            data.append([mutation, seq, pos, deletion, insertion, mutation_obj.var_type, count, total_samples])
-
-        features_df = pd.DataFrame(data,
-                                   columns=['Mutation', 'Sequence', 'Position',
-                                            'Deletion', 'Insertion', 'Type', 'Count', 'Total']).set_index('Mutation')
-
-        features_df['Percent'] = 100 * (features_df['Count'] / features_df['Total'])
-
-        if not ignore_annotations:
-            features_df = vs.append_mutation_annotations(features_df)
-
-        return features_df
+        return features_summarizier.summary(sample_set)
 
     def db_size(self, unit: str = 'B') -> pd.DataFrame:
         """
