@@ -388,6 +388,14 @@ def test_summary_annotations_unknown(loaded_database_genomic_data_store_annotati
             'hgvs_gn:NC_011083:yiaK:c.591C>A', 'hgvs_gn:NC_011083:yiaK:p.Gly197Gly'] == list(
         mutations_df.loc['NC_011083:3869320:C:A'])
 
+    # deletion where there is an overlap with present and unknown, (present 3/3, unknown 1/3, overlap 1676762)
+    assert ['NC_011083', 1676762, 'CA', 'C', 'INDEL', 2, 1, 3, 3, 66, 33, 100,
+            'intergenic_region', 'MODIFIER', 'SEHA_RS26130-SEHA_RS08880', 'SEHA_RS26130-SEHA_RS08880', 'intergenic_region', '<NA>',
+            'n.1676763delA', '<NA>',
+            'hgvs:NC_011083:n.1676763delA', '<NA>',
+            'hgvs_gn:NC_011083:n.1676763delA', '<NA>'] == list(
+        mutations_df.loc['NC_011083:1676762:CA:C'])
+
     # All unknown (should not exist in table)
     assert 'NC_011083:1:A:C' not in mutations_df
 
