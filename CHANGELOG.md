@@ -6,6 +6,7 @@
     * This requires bcftools >= 1.13.
 * [install]: Fixed broken dependencies on installation (0.5.0.dev3).
 * [api]: Added support for listing counts of samples with unknown features in `summary()` of features (or unique summaries of features) (0.5.0.dev4).
+* [api]: Renamed parameters `include_present` and `include_unknown` to `include_present_features` and `include_unknown_features` for `SamplesQuery.features_summary()` and `GenomicsDataIndex.features_summary()` to help differentiate it from `include_unknown_samples` (0.5.0.dev4).
 
 # 0.4.0
 
