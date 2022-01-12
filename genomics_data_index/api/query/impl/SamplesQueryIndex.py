@@ -653,7 +653,7 @@ class SamplesQueryIndex(SamplesQuery):
                      queries_collection: QueriesCollection) -> SamplesQuery:
 
         last_query = queries_collection.last
-        extra_msg = f'following the query "{last_query}'
+        extra_msg = f' following the query "{last_query}'
         sample_set = FeaturesFromIndexComparator.remove_unknowns_from_present_samples(
             sample_set=sample_set,
             unknown_set=unknown_set,

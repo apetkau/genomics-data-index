@@ -158,10 +158,13 @@ class FeaturesFromIndexComparator(FeaturesComparator, abc.ABC):
                     self._get_samples_or_empty(query_feature, unknown_samples_dict))
                 sample_unknown_count = len(samples_unknown_in_feature)
 
-                samples_in_feature = FeaturesFromIndexComparator.remove_unknowns_from_present_samples(
+                extra_msg = f' for feature {query_feature}'
+                samples_in_feature = self.remove_unknowns_from_present_samples(
                     sample_set=samples_in_feature,
                     unknown_set=samples_unknown_in_feature,
-                    sample_service=self._connection.sample_service)
+                    sample_service=self._connection.sample_service,
+                    extra_message=extra_msg,
+                )
             else:
                 samples_unknown_in_feature = None
                 sample_unknown_count = None
@@ -236,7 +239,7 @@ class FeaturesFromIndexComparator(FeaturesComparator, abc.ABC):
                 msg = f'names=[{", ".join(common_names)}, ...]'
             else:
                 msg = f'names={common_names}'
-            logger.warning(f'There are {len(common_unknown_found_set)} samples ({msg}) that are both unknown and found '
+            logger.warning(f'There are {len(common_unknown_found_set)} samples ({msg}) that are both unknown and found'
                            f'{extra_message}. Will set these samples to unknown.')
             sample_set = sample_set.minus(common_unknown_found_set)
 
