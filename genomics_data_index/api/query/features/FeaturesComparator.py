@@ -4,14 +4,23 @@ from typing import List
 import pandas as pd
 
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
-from genomics_data_index.storage.SampleSet import SampleSet
+from genomics_data_index.storage.SampleSet import SampleSet, AllSampleSet
 
 
 class FeaturesComparator(abc.ABC):
     FEATURES_SELECTIONS = ['all', 'unique']
 
-    def __init__(self, connection: DataIndexConnection):
+    def __init__(self, connection: DataIndexConnection, include_unknown_samples: bool,
+                 include_unknown_no_present_samples: bool):
         self._connection = connection
+        self._include_unknown_samples = include_unknown_samples
+        self._include_unknown_no_present_samples = include_unknown_no_present_samples
+
+    def _get_total(self, samples: SampleSet) -> int:
+        if isinstance(samples, AllSampleSet):
+            return self._connection.sample_service.count_samples()
+        else:
+            return len(samples)
 
     @property
     @abc.abstractmethod

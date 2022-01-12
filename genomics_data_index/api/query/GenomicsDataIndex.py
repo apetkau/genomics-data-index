@@ -9,16 +9,16 @@ import pandas as pd
 from ete3 import Tree
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
+from genomics_data_index.api.query.features.MLSTFeaturesComparator import MLSTFeaturesComparator
+from genomics_data_index.api.query.features.MutationFeaturesFromIndexComparator import \
+    MutationFeaturesFromIndexComparator
 from genomics_data_index.api.query.impl.DataFrameSamplesQuery import DataFrameSamplesQuery
 from genomics_data_index.api.query.impl.SamplesQueryIndex import SamplesQueryIndex
 from genomics_data_index.api.query.impl.TreeSamplesQueryFactory import TreeSamplesQueryFactory
 from genomics_data_index.configuration.Project import Project
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
 from genomics_data_index.storage.SampleSet import SampleSet
-from genomics_data_index.storage.model.NucleotideMutationTranslater import NucleotideMutationTranslater
 from genomics_data_index.storage.service import EntityExistsError
-from genomics_data_index.storage.service.MLSTService import MLSTService
-from genomics_data_index.storage.service.VariationService import VariationService
 
 logger = logging.getLogger(__name__)
 
@@ -113,144 +113,156 @@ class GenomicsDataIndex:
         return self._connection.variation_service.count_on_reference(reference_genome,
                                                                      include_unknown=include_unknown)
 
-    def mutations_summary(self, reference_name: str, id_type: str = 'spdi_ref', include_present: bool = True,
-                          include_unknown: bool = False, ignore_annotations: bool = False) -> pd.DataFrame:
+    def mutations_summary(self, reference_name: str, id_type: str = 'spdi_ref', include_present_features: bool = True,
+                          include_unknown_features: bool = False,
+                          include_unknown_samples: bool = True,
+                          include_unknown_no_present_samples: bool = False,
+                          ignore_annotations: bool = False) -> pd.DataFrame:
         """
         Summarizes all mutations stored in this index relative to a string for the passed scope.
         Shorthand for features_summary(kind='mutations', ...)
 
         :param reference_name: The reference genome name.
         :param id_type: The type of identifier to use.
-        :param include_present: Whether or not mutation features present in this index (i.e., not unknown/missing)
+        :param include_present_features: Whether or not mutation features present in this index (i.e., not unknown/missing)
                                 should be included.
-        :param include_unknown: Whether or not unknown mutations should be included.
+        :param include_unknown_features: Whether or not unknown mutations should be included.
+        :param include_unknown_samples: Whether or not counts for those samples where it is unknown if they have a
+                                        a feature should be included.
+        :param include_unknown_no_present_samples: Whether or not counts for features where there are some unknowns but
+                                                   no present samples should be included.
         :param ignore_annotations: Whether or not mutation annotations should be ignored.
         :return: A summary of all mutations in this index as a DataFrame.
         """
         return self.features_summary(kind='mutations', scope=reference_name,
-                                     include_present=include_present, include_unknown=include_unknown,
+                                     include_present_features=include_present_features,
+                                     include_unknown_features=include_unknown_features,
+                                     include_unknown_samples=include_unknown_samples,
+                                     include_unknown_no_present_samples=include_unknown_no_present_samples,
                                      id_type=id_type, ignore_annotations=ignore_annotations)
 
-    def mlst_summary(self, scheme_name: str, locus: str = None, include_present: bool = True,
-                     include_unknown: bool = False) -> pd.DataFrame:
+    def mlst_summary(self, scheme_name: str, locus: str = None, include_present_features: bool = True,
+                     include_unknown_features: bool = False,
+                     include_unknown_samples: bool = True,
+                     include_unknown_no_present_samples: bool = False) -> pd.DataFrame:
         """
         Summarizes all MLST alleles stored in this index relative to the passed scheme name.
         Shorthand for features_summary(kind='mlst', ...)
 
         :param scheme_name: The MLST scheme to summarize.
         :param locus: The locus id to restrict summaries to. Defaults to all locus IDs.
-        :param include_present: Whether or not MLST features present in this index (i.e., not unknown/missing)
+        :param include_present_features: Whether or not MLST features present in this index (i.e., not unknown/missing)
                                 should be included.
-        :param include_unknown: Whether or not unknown MLST alleles should be included.
+        :param include_unknown_features: Whether or not unknown MLST alleles should be included.
+        :param include_unknown_samples: Whether or not counts for those samples where it is unknown if they have a
+                                        a feature should be included.
+        :param include_unknown_no_present_samples: Whether or not counts for features where there are some unknowns but
+                                                   no present samples should be included.
         :return: A summary of all MLST alleles in this index as a DataFrame.
         """
-        return self.features_summary(kind='mlst', scope=scheme_name, include_present=include_present,
-                                     include_unknown=include_unknown, locus=locus)
+        return self.features_summary(kind='mlst', scope=scheme_name, include_present_features=include_present_features,
+                                     include_unknown_features=include_unknown_features,
+                                     include_unknown_samples=include_unknown_samples,
+                                     include_unknown_no_present_samples=include_unknown_no_present_samples,
+                                     locus=locus)
 
     def features_summary(self, kind: str = 'mutations', scope: str = None,
-                         include_present: bool = True, include_unknown: bool = False, **kwargs) -> pd.DataFrame:
+                         include_present_features: bool = True, include_unknown_features: bool = False,
+                         include_unknown_samples: bool = True, include_unknown_no_present_samples: bool = False,
+                         **kwargs) -> pd.DataFrame:
         """
         Summarizes all features stored in this index relative to a string for the passed scope.
 
         :param kind: The kind of feature (e.g., 'mutations' or 'mlst').
         :param scope: The scope (e.g., reference genome or MLST scheme).
-        :param include_present: Whether or not features present in this index (i.e., not unknown/missing)
+        :param include_present_features: Whether or not features present in this index (i.e., not unknown/missing)
                                 should be included.
-        :param include_unknown: Whether or not unknown/missing features should be included.
+        :param include_unknown_features: Whether or not unknown/missing features should be included.
+        :param include_unknown_samples: Whether or not counts for those samples where it is unknown if they have a
+                                        a feature should be included.
+        :param include_unknown_no_present_samples: Whether or not counts for features where there are some unknowns but
+                                                   no present samples should be included.
         :return: A summary of all features in this index as a DataFrame.
         """
         if kind == 'mutations' or kind == 'mutation':
-            return self._mutations_summary_internal(reference_name=scope, include_present=include_present,
-                                                    include_unknown=include_unknown, **kwargs)
+            return self._mutations_summary_internal(reference_name=scope,
+                                                    include_present_features=include_present_features,
+                                                    include_unknown_features=include_unknown_features,
+                                                    include_unknown_samples=include_unknown_samples,
+                                                    include_unknown_no_present_samples=include_unknown_no_present_samples,
+                                                    **kwargs)
         elif kind == 'mlst':
-            return self._mlst_summary_internal(scheme_name=scope, include_present=include_present,
-                                               include_unknown=include_unknown, **kwargs)
+            return self._mlst_summary_internal(scheme_name=scope, include_present_features=include_present_features,
+                                               include_unknown_features=include_unknown_features,
+                                               include_unknown_samples=include_unknown_samples,
+                                               include_unknown_no_present_samples=include_unknown_no_present_samples,
+                                               **kwargs)
         else:
             raise Exception(f'Unknown value for kind=[{kind}]. Must be one of {self.FEAUTRE_KINDS}.')
 
-    def _mlst_summary_internal(self, scheme_name: str, locus: str = None, include_present: bool = True,
-                               include_unknown: bool = False) -> pd.DataFrame:
+    def _mlst_summary_internal(self, scheme_name: str, locus: str = None, include_present_features: bool = True,
+                               include_unknown_features: bool = False,
+                               include_unknown_samples: bool = True,
+                               include_unknown_no_present_samples: bool = False
+                               ) -> pd.DataFrame:
         """
         Summarizes all MLST alleles stored in this index relative to the passed scheme name.
 
         :param scheme_name: The MLST scheme to summarize.
         :param locus: The locus id to restrict summaries to. Defaults to all locus IDs.
-        :param include_present: Whether or not MLST features present in this index (i.e., not unknown/missing)
+        :param include_present_features: Whether or not MLST features present in this index (i.e., not unknown/missing)
                                 should be included.
-        :param include_unknown: Whether or not unknown MLST alleles should be included.
+        :param include_unknown_features: Whether or not unknown MLST alleles should be included.
+        :param include_unknown_samples: Whether or not counts for those samples where it is unknown if they have a
+                                        a feature should be included.
+        :param include_unknown_no_present_samples: Whether or not counts for features where there are some unknowns but
+                                                   no present samples should be included.
         :return: A summary of all MLST alleles in this index as a DataFrame.
         """
-        mlst_service: MLSTService = self._connection.mlst_service
-        mlst_features = mlst_service.get_features(scheme_name, locus=locus,
-                                                  include_present=include_present,
-                                                  include_unknown=include_unknown)
-        total_samples = self._connection.sample_service.count_samples_associated_with_mlst_scheme(scheme_name)
-
-        data = []
-        for mlst_feature_id in mlst_features:
-            mlst_feature = mlst_features[mlst_feature_id]
-            count = len(mlst_feature.sample_ids)
-            data.append([mlst_feature.query_id, mlst_feature.scheme, mlst_feature.locus, mlst_feature.allele, count,
-                         total_samples])
-
-        features_df = pd.DataFrame(data,
-                                   columns=['MLST Feature', 'Scheme', 'Locus',
-                                            'Allele', 'Count', 'Total']).set_index('MLST Feature')
-
-        features_df['Percent'] = 100 * (features_df['Count'] / features_df['Total'])
-
-        return features_df
+        features_summarizier = MLSTFeaturesComparator(connection=self._connection,
+                                                      scheme=scheme_name,
+                                                      locus=locus,
+                                                      include_unknown=include_unknown_features,
+                                                      include_present=include_present_features,
+                                                      include_unknown_samples=include_unknown_samples,
+                                                      include_unknown_no_present_samples=include_unknown_no_present_samples)
+        return features_summarizier.summary(SampleSet.create_all())
 
     def _mutations_summary_internal(self, reference_name: str, id_type: str = 'spdi_ref',
-                                    include_present: bool = True,
-                                    include_unknown: bool = False, ignore_annotations: bool = False) -> pd.DataFrame:
+                                    include_present_features: bool = True,
+                                    include_unknown_features: bool = False,
+                                    include_unknown_samples: bool = True,
+                                    include_unknown_no_present_samples: bool = False,
+                                    ignore_annotations: bool = False) -> pd.DataFrame:
         """
         Summarizes all mutations stored in this index relative to the passed reference genome.
 
         :param reference_name: The reference genome.
         :param id_type: The type of identifier to use.
-        :param include_present: Whether or not mutation features present in this index (i.e., not unknown/missing)
+        :param include_present_features: Whether or not mutation features present in this index (i.e., not unknown/missing)
                                 should be included.
-        :param include_unknown: Whether or not unknown mutations should be included.
+        :param include_unknown_features: Whether or not unknown mutations should be included.
+        :param include_unknown_samples: Whether or not counts for those samples where it is unknown if they have a
+                                        a feature should be included.
+        :param include_unknown_no_present_samples: Whether or not counts for features where there are some unknowns but
+                                                   no present samples should be included.
         :param ignore_annotations: Whether or not mutation annotations should be ignored.
 
         :return: A summary of all mutations in this index as a DataFrame.
         """
-        rs = self._connection.reference_service
-        if id_type not in self.MUTATION_ID_TYPES:
-            raise Exception(f'id_type={id_type} must be one of {self.MUTATION_ID_TYPES}')
-
-        vs: VariationService = self._connection.variation_service
-        mutations = vs.get_variants_on_reference(reference_name, include_present=include_present,
-                                                 include_unknown=include_unknown)
-
-        if id_type == 'spdi_ref':
-            translated_ids = rs.translate_spdi(mutations.keys(), to=id_type)
-            mutations = {translated_ids[m]: mutations[m] for m in mutations}
-            convert_deletion = False
+        features_summarizier = MutationFeaturesFromIndexComparator(connection=self._connection,
+                                                                   include_unknown=include_unknown_features,
+                                                                   include_present=include_present_features,
+                                                                   include_unknown_samples=include_unknown_samples,
+                                                                   include_unknown_no_present_samples=include_unknown_no_present_samples,
+                                                                   id_type=id_type,
+                                                                   ignore_annotations=ignore_annotations)
+        if reference_name is None:
+            sample_set = SampleSet.create_all()
         else:
-            convert_deletion = True
+            sample_set = self._connection.sample_service.get_samples_set_associated_with_reference(reference_name)
 
-        total_samples = self._connection.sample_service.count_samples_associated_with_reference(reference_name)
-
-        data = []
-        for mutation in mutations:
-            seq, pos, deletion, insertion = NucleotideMutationTranslater.from_spdi(mutation,
-                                                                                   convert_deletion=convert_deletion)
-            mutation_obj = mutations[mutation]
-            count = len(mutation_obj.sample_ids)
-            data.append([mutation, seq, pos, deletion, insertion, mutation_obj.var_type, count, total_samples])
-
-        features_df = pd.DataFrame(data,
-                                   columns=['Mutation', 'Sequence', 'Position',
-                                            'Deletion', 'Insertion', 'Type', 'Count', 'Total']).set_index('Mutation')
-
-        features_df['Percent'] = 100 * (features_df['Count'] / features_df['Total'])
-
-        if not ignore_annotations:
-            features_df = vs.append_mutation_annotations(features_df)
-
-        return features_df
+        return features_summarizier.summary(sample_set)
 
     def db_size(self, unit: str = 'B') -> pd.DataFrame:
         """

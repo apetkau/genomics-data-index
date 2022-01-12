@@ -9,6 +9,7 @@ import pandas as pd
 from ete3 import Tree
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
+from genomics_data_index.api.query.features.FeaturesFromIndexComparator import FeaturesFromIndexComparator
 from genomics_data_index.api.query.features.MLSTFeaturesComparator import MLSTFeaturesComparator
 from genomics_data_index.api.query.features.MutationFeaturesFromIndexComparator import \
     MutationFeaturesFromIndexComparator
@@ -255,16 +256,21 @@ class SamplesQueryIndex(SamplesQuery):
 
     def features_summary(self, kind: str = 'mutations', selection: str = 'all',
                          include_present_features: bool = True, include_unknown_features: bool = False,
+                         include_unknown_samples: bool = True, include_unknown_no_present_samples: bool = False,
                          **kwargs) -> pd.DataFrame:
         if kind == 'mutations':
             features_summarizier = MutationFeaturesFromIndexComparator(connection=self._query_connection,
                                                                        include_unknown=include_unknown_features,
                                                                        include_present=include_present_features,
+                                                                       include_unknown_samples=include_unknown_samples,
+                                                                       include_unknown_no_present_samples=include_unknown_no_present_samples,
                                                                        **kwargs)
         elif kind == 'mlst':
             features_summarizier = MLSTFeaturesComparator(connection=self._query_connection,
                                                           include_unknown=include_unknown_features,
                                                           include_present=include_present_features,
+                                                          include_unknown_samples=include_unknown_samples,
+                                                          include_unknown_no_present_samples=include_unknown_no_present_samples,
                                                           **kwargs)
         else:
             raise Exception(f'Unsupported value kind=[{kind}]. Must be one of {self.SUMMARY_FEATURES_KINDS}.')
@@ -646,22 +652,13 @@ class SamplesQueryIndex(SamplesQuery):
     def _create_from(self, sample_set: SampleSet, universe_set: SampleSet, unknown_set: SampleSet,
                      queries_collection: QueriesCollection) -> SamplesQuery:
 
-        # Handle situations where a sample is both found and unknown
-        # This should not occur (unless there's bugs) but this will warn you if it does
-        common_unknown_found_set = sample_set.intersection(unknown_set)
-        if len(common_unknown_found_set) > 0:
-            # Some of the code here is to only print the top "max" number of sample names in the warning message
-            max = 10
-            common_ids = list(common_unknown_found_set)[:max]
-            common_names = [s.name for s in self._query_connection.sample_service.find_samples_by_ids(common_ids)]
-            if len(common_unknown_found_set) > max:
-                msg = f'names=[{", ".join(common_names)}, ...]'
-            else:
-                msg = f'names={common_names}'
-            last_query = queries_collection.last
-            logger.warning(f'There are {len(common_unknown_found_set)} samples ({msg}) that are both unknown and found '
-                           f'following the query "{last_query}". Will set these samples to unknown.')
-            sample_set = sample_set.minus(common_unknown_found_set)
+        last_query = queries_collection.last
+        extra_msg = f' following the query "{last_query}'
+        sample_set = FeaturesFromIndexComparator.remove_unknowns_from_present_samples(
+            sample_set=sample_set,
+            unknown_set=unknown_set,
+            sample_service=self._query_connection.sample_service,
+            extra_message=extra_msg)
 
         return SamplesQueryIndex(connection=self._query_connection,
                                  universe_set=universe_set,

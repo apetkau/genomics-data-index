@@ -1,4 +1,4 @@
-from typing import List, Any
+from typing import List, Any, Optional
 
 import pandas as pd
 
@@ -6,7 +6,7 @@ from genomics_data_index.api.query.features.FeaturesFromIndexComparator import F
 from genomics_data_index.api.query.features.FeaturesFromIndexComparator import FeatureSamplesSummarizer
 from genomics_data_index.api.query.features.FeaturesFromIndexComparator import FeaturesFromIndexComparator
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
-from genomics_data_index.storage.SampleSet import SampleSet
+from genomics_data_index.storage.SampleSet import SampleSet, AllSampleSet
 from genomics_data_index.storage.model.db import FeatureSamples, MLSTAllelesSamples
 from genomics_data_index.storage.service.MLSTService import MLSTService
 
@@ -16,13 +16,25 @@ class MLSTFeaturesComparator(FeaturesFromIndexComparator):
     def __init__(self, connection: DataIndexConnection,
                  scheme: str = None,
                  locus: str = None,
+                 include_unknown_samples: bool = True,
+                 include_unknown_no_present_samples=False,
                  include_present: bool = True,
                  include_unknown: bool = False):
-        super().__init__(connection=connection)
+        super().__init__(connection=connection, include_unknown_samples=include_unknown_samples,
+                         include_unknown_no_present_samples=include_unknown_no_present_samples)
         self._scheme = scheme
         self._locus = locus
         self._include_present = include_present
         self._include_unknown = include_unknown
+
+    def _get_total(self, samples: SampleSet) -> int:
+        if self._scheme is None:
+            return super()._get_total(samples)
+        else:
+            if isinstance(samples, AllSampleSet):
+                return self._connection.sample_service.count_samples_associated_with_mlst_scheme(self._scheme)
+            else:
+                return len(samples)
 
     @property
     def summary_columns(self) -> List[str]:
@@ -38,10 +50,12 @@ class MLSTFeaturesComparator(FeaturesFromIndexComparator):
 
     def _create_feature_sample_count_row(self, feature_id: str, feature: FeatureSamples,
                                          feature_samples: SampleSet,
+                                         feature_samples_unknown: Optional[SampleSet],
                                          total: int,
                                          feature_samples_summarizer: FeatureSamplesSummarizer) -> List[Any]:
         if isinstance(feature, MLSTAllelesSamples):
-            summary_data = feature_samples_summarizer.summary_data(samples=feature_samples, total=total)
+            summary_data = feature_samples_summarizer.summary_data(samples=feature_samples, total=total,
+                                                                   unknown_samples=feature_samples_unknown)
             return [feature.query_id, feature.scheme, feature.locus, feature.allele] + summary_data
         else:
             raise Exception(f'feature={feature} is not of type {MLSTAllelesSamples.__name__}')
