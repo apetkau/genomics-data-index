@@ -3571,7 +3571,7 @@ def test_summary_features_kindmutations_annotations(
             'Annotation', 'Annotation_Impact',
             'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
             'HGVS.c', 'HGVS.p', 'ID_HGVS.c', 'ID_HGVS.p', 'ID_HGVS_GN.c', 'ID_HGVS_GN.p'] == list(mutations_df.columns)
-    assert 139 == len(mutations_df)
+    assert 138 == len(mutations_df)
 
     ## Convert percent to int to make it easier to compare in assert statements
     mutations_df['Percent'] = mutations_df['Percent'].astype(int)
