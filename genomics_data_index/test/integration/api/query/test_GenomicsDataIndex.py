@@ -363,6 +363,33 @@ def test_summaries_variant_annotations(
             'hgvs:NC_011083:n.4555461_4555462insC', 'NA',
             'hgvs_gn:NC_011083:n.4555461_4555462insC', 'NA'] == list(ms.loc['NC_011083:4555461:1:TC'].fillna('NA'))
 
+    ## MNP variant (2/3, 1/3)
+    assert ['NC_011083', 3535698, len('GCC'), 'CAT', 'MNP', 2, 1, 3, 3, 66, 33, 100,
+            'missense_variant', 'MODERATE', 'oadA', 'SEHA_RS17780',
+            'transcript', 'protein_coding',
+            'c.544_546delGGCinsATG', 'p.Gly182Met',
+            'hgvs:NC_011083:SEHA_RS17780:c.544_546delGGCinsATG', 'hgvs:NC_011083:SEHA_RS17780:p.Gly182Met',
+            'hgvs_gn:NC_011083:oadA:c.544_546delGGCinsATG', 'hgvs_gn:NC_011083:oadA:p.Gly182Met'] == list(
+        ms.loc['NC_011083:3535698:3:CAT'])
+
+    ## Long MNP variant (2/3, 1/3)
+    assert ['NC_011083', 3535143, len('AATGCCTGCC'), 'TATCCCGGCG', 'MNP', 2, 1, 3, 3, 66, 33, 100,
+            'synonymous_variant', 'LOW', 'oadA', 'SEHA_RS17780', 'transcript', 'protein_coding',
+            'c.1092_1101delGGCAGGCATTinsCGCCGGGATA', 'p.368',
+            'hgvs:NC_011083:SEHA_RS17780:c.1092_1101delGGCAGGCATTinsCGCCGGGATA',
+            'hgvs:NC_011083:SEHA_RS17780:p.368',
+            'hgvs_gn:NC_011083:oadA:c.1092_1101delGGCAGGCATTinsCGCCGGGATA',
+            'hgvs_gn:NC_011083:oadA:p.368'] == list(
+        ms.loc[f'NC_011083:3535143:{len("AATGCCTGCC")}:TATCCCGGCG'])
+
+    ## synonymous variant, no unknown (1/3, 0/3)
+    assert ['NC_011083', 508378, len('C'), 'T', 'SNP', 1, 0, 1, 3, 33, 0, 33,
+            'synonymous_variant', 'LOW', 'tgt', 'SEHA_RS02965', 'transcript', 'protein_coding',
+            'c.423C>T', 'p.Ile141Ile',
+            'hgvs:NC_011083:SEHA_RS02965:c.423C>T', 'hgvs:NC_011083:SEHA_RS02965:p.Ile141Ile',
+            'hgvs_gn:NC_011083:tgt:c.423C>T', 'hgvs_gn:NC_011083:tgt:p.Ile141Ile'] == list(
+        ms.loc['NC_011083:508378:1:T'])
+
     # spdi_ref
     ms = gds.mutations_summary('NC_011083', id_type='spdi_ref')
     assert 177 == len(ms)
@@ -404,6 +431,33 @@ def test_summaries_variant_annotations(
             'n.4555461_4555462insC', 'NA',
             'hgvs:NC_011083:n.4555461_4555462insC', 'NA',
             'hgvs_gn:NC_011083:n.4555461_4555462insC', 'NA'] == list(ms.loc['NC_011083:4555461:T:TC'].fillna('NA'))
+
+    ## MNP variant (2/3, 1/3)
+    assert ['NC_011083', 3535698, 'GCC', 'CAT', 'MNP', 2, 1, 3, 3, 66, 33, 100,
+            'missense_variant', 'MODERATE', 'oadA', 'SEHA_RS17780',
+            'transcript', 'protein_coding',
+            'c.544_546delGGCinsATG', 'p.Gly182Met',
+            'hgvs:NC_011083:SEHA_RS17780:c.544_546delGGCinsATG', 'hgvs:NC_011083:SEHA_RS17780:p.Gly182Met',
+            'hgvs_gn:NC_011083:oadA:c.544_546delGGCinsATG', 'hgvs_gn:NC_011083:oadA:p.Gly182Met'] == list(
+        ms.loc['NC_011083:3535698:GCC:CAT'])
+
+    ## Long MNP variant (2/3, 1/3)
+    assert ['NC_011083', 3535143, 'AATGCCTGCC', 'TATCCCGGCG', 'MNP', 2, 1, 3, 3, 66, 33, 100,
+            'synonymous_variant', 'LOW', 'oadA', 'SEHA_RS17780', 'transcript', 'protein_coding',
+            'c.1092_1101delGGCAGGCATTinsCGCCGGGATA', 'p.368',
+            'hgvs:NC_011083:SEHA_RS17780:c.1092_1101delGGCAGGCATTinsCGCCGGGATA',
+            'hgvs:NC_011083:SEHA_RS17780:p.368',
+            'hgvs_gn:NC_011083:oadA:c.1092_1101delGGCAGGCATTinsCGCCGGGATA',
+            'hgvs_gn:NC_011083:oadA:p.368'] == list(
+        ms.loc['NC_011083:3535143:AATGCCTGCC:TATCCCGGCG'])
+
+    ## synonymous variant, no unknown (1/3, 0/3)
+    assert ['NC_011083', 508378, 'C', 'T', 'SNP', 1, 0, 1, 3, 33, 0, 33,
+            'synonymous_variant', 'LOW', 'tgt', 'SEHA_RS02965', 'transcript', 'protein_coding',
+            'c.423C>T', 'p.Ile141Ile',
+            'hgvs:NC_011083:SEHA_RS02965:c.423C>T', 'hgvs:NC_011083:SEHA_RS02965:p.Ile141Ile',
+            'hgvs_gn:NC_011083:tgt:c.423C>T', 'hgvs_gn:NC_011083:tgt:p.Ile141Ile'] == list(
+        ms.loc['NC_011083:508378:C:T'])
 
 
 def test_connect_to_project_from_dir():
