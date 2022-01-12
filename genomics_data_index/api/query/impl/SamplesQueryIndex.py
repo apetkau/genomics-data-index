@@ -9,10 +9,10 @@ import pandas as pd
 from ete3 import Tree
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
+from genomics_data_index.api.query.features.FeaturesFromIndexComparator import FeaturesFromIndexComparator
 from genomics_data_index.api.query.features.MLSTFeaturesComparator import MLSTFeaturesComparator
 from genomics_data_index.api.query.features.MutationFeaturesFromIndexComparator import \
     MutationFeaturesFromIndexComparator
-from genomics_data_index.api.query.features.FeaturesFromIndexComparator import FeaturesFromIndexComparator
 from genomics_data_index.api.query.impl.DataFrameSamplesQuery import DataFrameSamplesQuery
 from genomics_data_index.api.query.impl.QueriesCollection import QueriesCollection
 from genomics_data_index.api.query.impl.TreeSamplesQueryFactory import TreeSamplesQueryFactory

@@ -1,7 +1,7 @@
 import abc
+import logging
 from typing import Dict, List, Any, Optional
 
-import logging
 import pandas as pd
 
 from genomics_data_index.api.query.features.FeaturesComparator import FeaturesComparator
@@ -11,7 +11,6 @@ from genomics_data_index.storage.model.QueryFeature import QueryFeature
 from genomics_data_index.storage.model.QueryFeatureFactory import QueryFeatureFactory
 from genomics_data_index.storage.model.db import FeatureSamples
 from genomics_data_index.storage.service.SampleService import SampleService
-
 
 logger = logging.getLogger(__name__)
 
@@ -226,7 +225,7 @@ class FeaturesFromIndexComparator(FeaturesComparator, abc.ABC):
 
     @classmethod
     def remove_unknowns_from_present_samples(cls, sample_set: SampleSet, unknown_set: SampleSet,
-                                      sample_service: SampleService, extra_message: str = '') -> SampleSet:
+                                             sample_service: SampleService, extra_message: str = '') -> SampleSet:
         # Handle situations where a sample is both found and unknown
         # This should not occur (unless there's bugs) but this will warn you if it does
         common_unknown_found_set = sample_set.intersection(unknown_set)
