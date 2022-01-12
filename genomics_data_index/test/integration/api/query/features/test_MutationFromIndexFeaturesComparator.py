@@ -453,7 +453,7 @@ def test_summary_annotations_unknown_column_unknown_rows(
             'Annotation', 'Annotation_Impact',
             'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
             'HGVS.c', 'HGVS.p', 'ID_HGVS.c', 'ID_HGVS.p', 'ID_HGVS_GN.c', 'ID_HGVS_GN.p'] == list(mutations_df.columns)
-    assert 645 == len(mutations_df)
+    assert 646 == len(mutations_df)
     mutations_df['Percent'] = mutations_df['Percent'].astype(int)  # easier to compare percents in assert
     mutations_df['Unknown Count'] = mutations_df['Unknown Count'].fillna(-1)
     mutations_df['Unknown Percent'] = mutations_df['Unknown Percent'].fillna(-1)
@@ -493,7 +493,19 @@ def test_summary_annotations_unknown_column_unknown_rows(
             'hgvs_gn:NC_011083:SEHA_RS15905:p.Asp144_His155del'] == list(
         mutations_df.loc['NC_011083:3167187:AACCACGACCACGACCACGACCACGACCACGACCACG:A'])
 
-    # Unknown position
+    # variant where there is an overlap with present and unknown, (present 2/3, unknown 1/3, overlap 3869320)
+    assert ['NC_011083', 3869320, 'C', 'A', 'SNP', 1, 1, 2, 3, 33, 33, 66,
+            'synonymous_variant', 'LOW', 'yiaK', 'SEHA_RS19360', 'transcript', 'protein_coding',
+            'c.591C>A', 'p.Gly197Gly',
+            'hgvs:NC_011083:SEHA_RS19360:c.591C>A', 'hgvs:NC_011083:SEHA_RS19360:p.Gly197Gly',
+            'hgvs_gn:NC_011083:yiaK:c.591C>A', 'hgvs_gn:NC_011083:yiaK:p.Gly197Gly'] == list(
+        mutations_df.loc['NC_011083:3869320:C:A'])
+
+    # The unknown feature for the above case
+    assert ['NC_011083', 3869320, 'C', '?', 'UNKNOWN_MISSING', 1, -1, -1, 3, 33, -1, -1] + 12 * ['<NA>'] == list(
+        mutations_df.loc['NC_011083:3869320:C:?'])
+
+    # Another Unknown position
     assert ['NC_011083', 145096, 'A', '?', 'UNKNOWN_MISSING', 1, -1, -1, 3, 33, -1, -1] + 12 * ['<NA>'] == list(
         mutations_df.loc['NC_011083:145096:A:?'])
 

@@ -1,6 +1,7 @@
 import abc
 from typing import Dict, List, Any, Optional
 
+import logging
 import pandas as pd
 
 from genomics_data_index.api.query.features.FeaturesComparator import FeaturesComparator
@@ -9,6 +10,10 @@ from genomics_data_index.storage.SampleSet import SampleSet
 from genomics_data_index.storage.model.QueryFeature import QueryFeature
 from genomics_data_index.storage.model.QueryFeatureFactory import QueryFeatureFactory
 from genomics_data_index.storage.model.db import FeatureSamples
+from genomics_data_index.storage.service.SampleService import SampleService
+
+
+logger = logging.getLogger(__name__)
 
 
 class FeatureSamplesSummarizer(abc.ABC):
@@ -144,7 +149,6 @@ class FeaturesFromIndexComparator(FeaturesComparator, abc.ABC):
             feature = present_features[feature_id]
 
             samples_in_feature = present_samples.intersection(feature.sample_ids)
-            sample_count = len(samples_in_feature)
 
             if self._include_unknown_samples and not feature.is_unknown:
                 query_feature = QueryFeatureFactory.instance().create_feature(feature.query_id)
@@ -153,9 +157,16 @@ class FeaturesFromIndexComparator(FeaturesComparator, abc.ABC):
                 samples_unknown_in_feature = present_samples.intersection(
                     self._get_samples_or_empty(query_feature, unknown_samples_dict))
                 sample_unknown_count = len(samples_unknown_in_feature)
+
+                samples_in_feature = FeaturesFromIndexComparator.remove_unknowns_from_present_samples(
+                    sample_set=samples_in_feature,
+                    unknown_set=samples_unknown_in_feature,
+                    sample_service=self._connection.sample_service)
             else:
                 samples_unknown_in_feature = None
                 sample_unknown_count = None
+
+            sample_count = len(samples_in_feature)
 
             if sample_count > 0 or (self._include_unknown_no_present_samples and
                                     sample_unknown_count is not None and sample_unknown_count > 0):
@@ -209,3 +220,24 @@ class FeaturesFromIndexComparator(FeaturesComparator, abc.ABC):
                                          total: int,
                                          feature_samples_summarizer: FeatureSamplesSummarizer) -> List[Any]:
         pass
+
+    @classmethod
+    def remove_unknowns_from_present_samples(cls, sample_set: SampleSet, unknown_set: SampleSet,
+                                      sample_service: SampleService, extra_message: str = '') -> SampleSet:
+        # Handle situations where a sample is both found and unknown
+        # This should not occur (unless there's bugs) but this will warn you if it does
+        common_unknown_found_set = sample_set.intersection(unknown_set)
+        if len(common_unknown_found_set) > 0:
+            # Some of the code here is to only print the top "max" number of sample names in the warning message
+            max = 10
+            common_ids = list(common_unknown_found_set)[:max]
+            common_names = [s.name for s in sample_service.find_samples_by_ids(common_ids)]
+            if len(common_unknown_found_set) > max:
+                msg = f'names=[{", ".join(common_names)}, ...]'
+            else:
+                msg = f'names={common_names}'
+            logger.warning(f'There are {len(common_unknown_found_set)} samples ({msg}) that are both unknown and found '
+                           f'{extra_message}. Will set these samples to unknown.')
+            sample_set = sample_set.minus(common_unknown_found_set)
+
+        return sample_set
