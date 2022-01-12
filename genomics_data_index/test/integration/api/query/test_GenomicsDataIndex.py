@@ -390,8 +390,9 @@ def test_summaries_variant_annotations(
             'hgvs_gn:NC_011083:tgt:c.423C>T', 'hgvs_gn:NC_011083:tgt:p.Ile141Ile'] == list(
         ms.loc['NC_011083:508378:1:T'])
 
-    # deletion where there is an overlap with present and unknown, (present 3/3, unknown 1/3, overlap 1676762)
-    assert ['NC_011083', 1676762, len('CA'), 'C', 'INDEL', 2, 1, 3, 3, 66, 33, 100,
+    # deletion where there is an overlap with present and unknown, (present 3/3, unknown 2/3,
+    # overlap 1676762 and 1676763)
+    assert ['NC_011083', 1676762, len('CA'), 'C', 'INDEL', 1, 2, 3, 3, 33, 66, 100,
             'intergenic_region', 'MODIFIER', 'SEHA_RS26130-SEHA_RS08880', 'SEHA_RS26130-SEHA_RS08880', 'intergenic_region', '<NA>',
             'n.1676763delA', '<NA>',
             'hgvs:NC_011083:n.1676763delA', '<NA>',
@@ -467,8 +468,9 @@ def test_summaries_variant_annotations(
             'hgvs_gn:NC_011083:tgt:c.423C>T', 'hgvs_gn:NC_011083:tgt:p.Ile141Ile'] == list(
         ms.loc['NC_011083:508378:C:T'])
 
-    # deletion where there is an overlap with present and unknown, (present 3/3, unknown 1/3, overlap 1676762)
-    assert ['NC_011083', 1676762, 'CA', 'C', 'INDEL', 2, 1, 3, 3, 66, 33, 100,
+    # deletion where there is an overlap with present and unknown, (present 3/3, unknown 2/3,
+    # overlap 1676762 and 1676763)
+    assert ['NC_011083', 1676762, 'CA', 'C', 'INDEL', 1, 2, 3, 3, 33, 66, 100,
             'intergenic_region', 'MODIFIER', 'SEHA_RS26130-SEHA_RS08880', 'SEHA_RS26130-SEHA_RS08880', 'intergenic_region', '<NA>',
             'n.1676763delA', '<NA>',
             'hgvs:NC_011083:n.1676763delA', '<NA>',

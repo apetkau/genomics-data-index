@@ -388,8 +388,9 @@ def test_summary_annotations_unknown(loaded_database_genomic_data_store_annotati
             'hgvs_gn:NC_011083:yiaK:c.591C>A', 'hgvs_gn:NC_011083:yiaK:p.Gly197Gly'] == list(
         mutations_df.loc['NC_011083:3869320:C:A'])
 
-    # deletion where there is an overlap with present and unknown, (present 3/3, unknown 1/3, overlap 1676762)
-    assert ['NC_011083', 1676762, 'CA', 'C', 'INDEL', 2, 1, 3, 3, 66, 33, 100,
+    # deletion where there is an overlap with present and unknown, (present 3/3, unknown 2/3,
+    # overlap 1676762 and 1676763)
+    assert ['NC_011083', 1676762, 'CA', 'C', 'INDEL', 1, 2, 3, 3, 33, 66, 100,
             'intergenic_region', 'MODIFIER', 'SEHA_RS26130-SEHA_RS08880', 'SEHA_RS26130-SEHA_RS08880', 'intergenic_region', '<NA>',
             'n.1676763delA', '<NA>',
             'hgvs:NC_011083:n.1676763delA', '<NA>',
@@ -461,7 +462,7 @@ def test_summary_annotations_unknown_column_unknown_rows(
             'Annotation', 'Annotation_Impact',
             'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
             'HGVS.c', 'HGVS.p', 'ID_HGVS.c', 'ID_HGVS.p', 'ID_HGVS_GN.c', 'ID_HGVS_GN.p'] == list(mutations_df.columns)
-    assert 646 == len(mutations_df)
+    assert 648 == len(mutations_df)
     mutations_df['Percent'] = mutations_df['Percent'].astype(int)  # easier to compare percents in assert
     mutations_df['Unknown Count'] = mutations_df['Unknown Count'].fillna(-1)
     mutations_df['Unknown Percent'] = mutations_df['Unknown Percent'].fillna(-1)
@@ -508,6 +509,15 @@ def test_summary_annotations_unknown_column_unknown_rows(
             'hgvs:NC_011083:SEHA_RS19360:c.591C>A', 'hgvs:NC_011083:SEHA_RS19360:p.Gly197Gly',
             'hgvs_gn:NC_011083:yiaK:c.591C>A', 'hgvs_gn:NC_011083:yiaK:p.Gly197Gly'] == list(
         mutations_df.loc['NC_011083:3869320:C:A'])
+
+    # deletion where there is an overlap with present and unknown, (present 3/3, unknown 2/3,
+    # overlap 1676762 and 1676763)
+    assert ['NC_011083', 1676762, 'CA', 'C', 'INDEL', 1, 2, 3, 3, 33, 66, 100,
+            'intergenic_region', 'MODIFIER', 'SEHA_RS26130-SEHA_RS08880', 'SEHA_RS26130-SEHA_RS08880', 'intergenic_region', '<NA>',
+            'n.1676763delA', '<NA>',
+            'hgvs:NC_011083:n.1676763delA', '<NA>',
+            'hgvs_gn:NC_011083:n.1676763delA', '<NA>'] == list(
+        mutations_df.loc['NC_011083:1676762:CA:C'])
 
     # The unknown feature for the above case
     assert ['NC_011083', 3869320, 'C', '?', 'UNKNOWN_MISSING', 1, -1, -1, 3, 33, -1, -1] + 12 * ['<NA>'] == list(
