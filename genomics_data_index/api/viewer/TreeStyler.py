@@ -9,6 +9,8 @@ from ete3 import Tree, NodeStyle, TreeStyle, TextFace, RectFace
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.api.viewer.TreeSamplesVisual import TreeSamplesVisual
 from genomics_data_index.api.viewer.samples_visuals.AnnotateTreeSamplesVisual import AnnotateTreeSamplesVisual
+from genomics_data_index.api.viewer.samples_visuals.AnnotationSpacingTreeSamplesVisual import \
+    AnnotationSpacingTreeSamplesVisual
 from genomics_data_index.api.viewer.samples_visuals.HighlightTreeSamplesVisual import HighlightTreeSamplesVisual
 
 logger = logging.getLogger(__name__)
@@ -109,6 +111,51 @@ class TreeStyler:
         self._annotate_kind = annotate_kind
 
         self._samples_styles_list = samples_styles_list
+
+    def add_spacing(self, width: int = None, height: int = None, color: str = None) -> TreeStyler:
+        """
+        Adds an empty column in the annotation table as additional space.
+        :param width: The width of the spacing (default: annotation column width).
+        :param height: The height of each annotation block used for spacing (default: annotation column block height).
+        :param color: The color of the spacing (default: no color).
+        :return: A new TreeStyler object with the spacing added in.
+        """
+        if width is None:
+            width = self._annotate_box_width
+        if height is None:
+            height = self._annotate_box_height
+
+        samples_visual = AnnotationSpacingTreeSamplesVisual(width=width,
+                                                            height=height,
+                                                            annotate_column=self._annotate_column,
+                                                            color=color)
+
+        samples_styles_list_new = copy.copy(self._samples_styles_list)
+        samples_styles_list_new.append(samples_visual)
+
+        return TreeStyler(self._tree, default_highlight_styles=self._default_highlight_styles,
+                          tree_style=self._tree_style,
+                          node_style=self._node_style,
+                          samples_styles_list=samples_styles_list_new,
+                          legend_fsize=self._legend_fsize, legend_nsize=self._legend_nsize,
+                          annotate_column=self._annotate_column + 1,
+                          annotate_color_present=self._annotate_color_present,
+                          annotate_color_absent=self._annotate_color_absent,
+                          annotate_color_unknown=self._annotate_color_unknown,
+                          annotate_opacity_present=self._annotate_opacity_present,
+                          annotate_opacity_absent=self._annotate_opacity_absent,
+                          annotate_opacity_unknown=self._annotate_opacity_unknown,
+                          annotate_border_color=self._annotate_border_color,
+                          annotate_kind=self._annotate_kind,
+                          annotate_box_width=self._annotate_box_width,
+                          annotate_box_height=self._annotate_box_height,
+                          annotate_border_width=self._annotate_border_width,
+                          annotate_margin=self._annotate_margin,
+                          include_unknown=self._include_unknown,
+                          annotate_show_box_label=self._annotate_show_box_label,
+                          annotate_box_label_color=self._annotate_box_label_color,
+                          annotate_label_fontsize=self._annotate_label_fontsize,
+                          legend_columns=self._legend_columns)
 
     def annotate(self, samples: Union[SamplesQuery, Iterable[str]],
                  box_label: Union[str, Dict[str, Any]] = None,
