@@ -48,7 +48,8 @@ class TreeStyler:
                  annotate_show_box_label: bool = False,
                  annotate_box_label_color: str = 'white',
                  annotate_label_fontsize: int = 12,
-                 show_leaf_names: bool = True):
+                 show_leaf_names: bool = True,
+                 leaf_name_fontsize: int = 12):
         """
         Creates a new TreeStyler with the given default settings.
         :param tree: The tree to style and render.
@@ -80,6 +81,7 @@ class TreeStyler:
         :param annotate_box_label_color: The color of the labels in the annotation boxes.
         :param annotate_label_fontsize: The font size of the annotation labels.
         :param show_leaf_names: Whether or not to show leaf names.
+        :param leaf_name_fontsize: The font size of leaf names.
         :return: A new TreeStyler object.
         """
         self._tree = tree
@@ -115,6 +117,7 @@ class TreeStyler:
         self._samples_styles_list = samples_styles_list
 
         self._show_leaf_names = show_leaf_names
+        self._leaf_name_fontsize = leaf_name_fontsize
 
     def add_spacing(self, width: int = None, height: int = None, color: str = None,
                     border_width: int = None, border_color: str = None) -> TreeStyler:
@@ -167,7 +170,8 @@ class TreeStyler:
                           annotate_box_label_color=self._annotate_box_label_color,
                           annotate_label_fontsize=self._annotate_label_fontsize,
                           legend_columns=self._legend_columns,
-                          show_leaf_names=self._show_leaf_names)
+                          show_leaf_names=self._show_leaf_names,
+                          leaf_name_fontsize=self._leaf_name_fontsize)
 
     def annotate(self, samples: Union[SamplesQuery, Iterable[str]],
                  box_label: Union[str, Dict[str, Any]] = None,
@@ -292,7 +296,8 @@ class TreeStyler:
                           annotate_box_label_color=self._annotate_box_label_color,
                           annotate_label_fontsize=self._annotate_label_fontsize,
                           legend_columns=self._legend_columns,
-                          show_leaf_names=self._show_leaf_names)
+                          show_leaf_names=self._show_leaf_names,
+                          leaf_name_fontsize=self._leaf_name_fontsize)
 
     def highlight(self, samples: Union[SamplesQuery, Iterable[str]],
                   present_node_style: NodeStyle = None, unknown_node_style: NodeStyle = None,
@@ -358,7 +363,8 @@ class TreeStyler:
                           annotate_box_label_color=self._annotate_box_label_color,
                           annotate_label_fontsize=self._annotate_label_fontsize,
                           legend_columns=self._legend_columns,
-                          show_leaf_names=self._show_leaf_names)
+                          show_leaf_names=self._show_leaf_names,
+                          leaf_name_fontsize=self._leaf_name_fontsize)
 
     def _apply_samples_styles(self, tree: Tree, tree_style: TreeStyle) -> None:
         for samples_style in self._samples_styles_list:
@@ -394,7 +400,7 @@ class TreeStyler:
 
     def _add_node_name(self, node: TreeNode) -> None:
         node_name = node.name
-        tf = TextFace(node_name, fsize=12)
+        tf = TextFace(node_name, fsize=self._leaf_name_fontsize)
         node.add_face(tf, 0, position='branch-right')
 
     def prerender(self, tree_style: TreeStyle = None, ladderize: bool = False) -> Tuple[Tree, TreeStyle]:
@@ -494,6 +500,7 @@ class TreeStyler:
                annotate_arc_span: int = 350,
                annotate_label_fontsize: int = 12,
                show_leaf_names: bool = True,
+               leaf_name_fontsize: int = 12,
                include_unknown: bool = True,
                show_legend_type_labels: bool = True,
                legend_type_label_present: str = 'Pr.',
@@ -542,6 +549,7 @@ class TreeStyler:
         :param annotate_label_fontsize: The font size of the annotation labels.
         :param include_unknown: Whether or not to include unknown samples in highlight/annotation boxes.
         :param show_leaf_names: True if leaf names should be shown on the tree, False otherwise.
+        :param leaf_name_fontsize: The font size of leaf names.
         :param show_legend_type_labels: Whether or not to show labels for legend types/categories (present or unknown).
         :param legend_type_label_present: Text to show above legend color for present items.
         :param legend_type_label_unknown: Text to show above legend color for unknown items.
@@ -568,7 +576,8 @@ class TreeStyler:
                 logger.warning(
                     f'Both initial_style=[{initial_style}] and one of parameters {tree_style_elements.keys()}'
                     f' are set. Will ignore these listed parameters.')
-            ts = initial_style
+            ts = copy.deepcopy(initial_style)
+            ts.show_leaf_name = False
         else:
             ts = TreeStyle()
             ts.arc_span = annotate_arc_span
@@ -691,7 +700,8 @@ class TreeStyler:
                           annotate_show_box_label=annotate_show_box_label,
                           annotate_box_label_color=annotate_box_label_color,
                           annotate_label_fontsize=annotate_label_fontsize,
-                          show_leaf_names=show_leaf_names)
+                          show_leaf_names=show_leaf_names,
+                          leaf_name_fontsize=leaf_name_fontsize)
 
 
 class HighlightStyle:

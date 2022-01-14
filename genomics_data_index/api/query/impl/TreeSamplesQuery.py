@@ -215,6 +215,7 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
                     annotate_label_fontsize: int = 12,
                     include_unknown: bool = True,
                     show_leaf_names: bool = True,
+                    leaf_name_fontsize: int = 12,
                     show_legend_type_labels: bool = True,
                     legend_type_label_present: str = 'Pr.',
                     legend_type_label_unknown: str = 'Un.',
@@ -261,6 +262,7 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
         :param annotate_label_fontsize: The font size of the annotation labels.
         :param include_unknown: Whether or not to include unknowns in annotations/highlights.
         :param show_leaf_names: True if leaf names should be shown on the tree, False otherwise.
+        :param leaf_name_fontsize: The font size of leaf names.
         :param show_legend_type_labels: Whether or not to show labels for legend types/categories (present or unknown).
         :param legend_type_label_present: Text to show above legend color for present items.
         :param legend_type_label_unknown: Text to show above legend color for unknown items.
@@ -305,6 +307,7 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
                                  annotate_label_fontsize=annotate_label_fontsize,
                                  include_unknown=include_unknown,
                                  show_leaf_names=show_leaf_names,
+                                 leaf_name_fontsize=leaf_name_fontsize,
                                  show_legend_type_labels=show_legend_type_labels,
                                  legend_type_label_present=legend_type_label_present,
                                  legend_type_label_unknown=legend_type_label_unknown,
