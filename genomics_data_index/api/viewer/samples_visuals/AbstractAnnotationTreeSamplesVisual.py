@@ -15,6 +15,8 @@ class AbstractAnnotationTreeSamplesVisual(TreeSamplesVisual, abc.ABC):
     A tree style for adding annotations (columns next to leaves of a tree).
     """
 
+    ANNOTATE_KINDS = TreeSamplesVisual.LEGEND_FACE_KINDS
+
     def __init__(self, samples: Union[SamplesQuery, Iterable[str]],
                  legend_nodesize: int,
                  legend_fontsize: int,
@@ -28,7 +30,11 @@ class AbstractAnnotationTreeSamplesVisual(TreeSamplesVisual, abc.ABC):
                          legend_fontsize=legend_fontsize,
                          legend_columns=legend_columns)
 
-        self._annotate_kind = annotate_kind
+        if annotate_kind not in self.ANNOTATE_KINDS:
+            raise Exception(f'annotate_kind=[{annotate_kind}] is invalid. Must be one of {self.ANNOTATE_KINDS}')
+        else:
+            self._annotate_kind = annotate_kind
+
         self._annotate_border_width = annotate_border_width,
         self._annotate_margin = annotate_margin
 
