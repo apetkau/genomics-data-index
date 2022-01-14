@@ -22,7 +22,7 @@ class AnnotationSpacingTreeSamplesVisual(AbstractAnnotationTreeSamplesVisual):
                          legend_fontsize=0,
                          legend_columns={},
                          annotate_kind='r',
-                         annotate_border_width=0,
+                         annotate_border_width=None,
                          annotate_margin=0)
         self._box_width = width
         self._box_height = height
