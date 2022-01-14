@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import copy
 import logging
-from typing import List, Dict, Any, Union, Iterable, Tuple
+from typing import List, Dict, Any, Union, Iterable, Tuple, Callable
 
 from ete3 import Tree, TreeNode, NodeStyle, TreeStyle, TextFace, RectFace
+import pandas as pd
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.api.viewer.TreeSamplesVisual import TreeSamplesVisual
@@ -49,7 +50,9 @@ class TreeStyler:
                  annotate_box_label_color: str = 'white',
                  annotate_label_fontsize: int = 12,
                  show_leaf_names: bool = True,
-                 leaf_name_fontsize: int = 12):
+                 leaf_name_fontsize: int = 12,
+                 leaf_name_func: Callable[[str, pd.Series], str] = None,
+                 sample_metadata: pd.DataFrame = None):
         """
         Creates a new TreeStyler with the given default settings.
         :param tree: The tree to style and render.
@@ -82,6 +85,15 @@ class TreeStyler:
         :param annotate_label_fontsize: The font size of the annotation labels.
         :param show_leaf_names: Whether or not to show leaf names.
         :param leaf_name_fontsize: The font size of leaf names.
+        :param leaf_name_func: A function which lets you create custom leaf names to display.
+                               The function should look like: func(name: str, metadata: pd.Series) -> str.
+                               That is it takes as input the leaf name and a pandas.Series of metadata for the
+                               particular sample (derived from the query.toframe() set of data).
+                               For example: leaf_name_func=lambda name, metadata: f'{name}_{metadata["Location"]}'
+                               This would display a label like "SampleX_Canada" for each sample (assumes that "Location"
+                               is a column name in the table produced by query.toframe()).
+        :param sample_metadata: A dataframe of sample metadata indexed by Sample Name.
+                                This needs to be set if leaf_name_func is set.
         :return: A new TreeStyler object.
         """
         self._tree = tree
@@ -118,6 +130,12 @@ class TreeStyler:
 
         self._show_leaf_names = show_leaf_names
         self._leaf_name_fontsize = leaf_name_fontsize
+        self._leaf_name_func = leaf_name_func
+
+        if self._leaf_name_func is not None and sample_metadata is None:
+            raise Exception(f'leaf_name_func is not None but sample_metadata is None')
+
+        self._sample_metadata = sample_metadata
 
     def add_spacing(self, width: int = None, height: int = None, color: str = None,
                     border_width: int = None, border_color: str = None) -> TreeStyler:
@@ -171,7 +189,9 @@ class TreeStyler:
                           annotate_label_fontsize=self._annotate_label_fontsize,
                           legend_columns=self._legend_columns,
                           show_leaf_names=self._show_leaf_names,
-                          leaf_name_fontsize=self._leaf_name_fontsize)
+                          leaf_name_fontsize=self._leaf_name_fontsize,
+                          leaf_name_func=self._leaf_name_func,
+                          sample_metadata=self._sample_metadata)
 
     def annotate(self, samples: Union[SamplesQuery, Iterable[str]],
                  box_label: Union[str, Dict[str, Any]] = None,
@@ -297,7 +317,9 @@ class TreeStyler:
                           annotate_label_fontsize=self._annotate_label_fontsize,
                           legend_columns=self._legend_columns,
                           show_leaf_names=self._show_leaf_names,
-                          leaf_name_fontsize=self._leaf_name_fontsize)
+                          leaf_name_fontsize=self._leaf_name_fontsize,
+                          leaf_name_func=self._leaf_name_func,
+                          sample_metadata=self._sample_metadata)
 
     def highlight(self, samples: Union[SamplesQuery, Iterable[str]],
                   present_node_style: NodeStyle = None, unknown_node_style: NodeStyle = None,
@@ -364,7 +386,9 @@ class TreeStyler:
                           annotate_label_fontsize=self._annotate_label_fontsize,
                           legend_columns=self._legend_columns,
                           show_leaf_names=self._show_leaf_names,
-                          leaf_name_fontsize=self._leaf_name_fontsize)
+                          leaf_name_fontsize=self._leaf_name_fontsize,
+                          leaf_name_func=self._leaf_name_func,
+                          sample_metadata=self._sample_metadata)
 
     def _apply_samples_styles(self, tree: Tree, tree_style: TreeStyle) -> None:
         for samples_style in self._samples_styles_list:
@@ -399,7 +423,11 @@ class TreeStyler:
                          units=units, dpi=dpi)
 
     def _add_node_name(self, node: TreeNode) -> None:
-        node_name = node.name
+        if self._leaf_name_func is not None and node.name in self._sample_metadata.index:
+                sample_metadata_s = self._sample_metadata.loc[node.name]
+                node_name = self._leaf_name_func(node.name, sample_metadata_s)
+        else:
+            node_name = node.name
         tf = TextFace(node_name, fsize=self._leaf_name_fontsize)
         node.add_face(tf, 0, position='branch-right')
 
@@ -416,7 +444,7 @@ class TreeStyler:
         tree = self._tree.copy('newick')
         tree_style = copy.deepcopy(tree_style)
 
-        # Sets default node style for all nodes in the tree
+        # Sets default node style for all nodes in the tree and adds the leaf label
         for n in tree.traverse():
             n.set_style(self._node_style)
 
@@ -501,6 +529,8 @@ class TreeStyler:
                annotate_label_fontsize: int = 12,
                show_leaf_names: bool = True,
                leaf_name_fontsize: int = 12,
+               leaf_name_func: Callable[[str, pd.Series], str] = None,
+               sample_metadata: pd.DataFrame = None,
                include_unknown: bool = True,
                show_legend_type_labels: bool = True,
                legend_type_label_present: str = 'Pr.',
@@ -550,6 +580,15 @@ class TreeStyler:
         :param include_unknown: Whether or not to include unknown samples in highlight/annotation boxes.
         :param show_leaf_names: True if leaf names should be shown on the tree, False otherwise.
         :param leaf_name_fontsize: The font size of leaf names.
+        :param leaf_name_func: A function which lets you create custom leaf names to display.
+                               The function should look like: func(name: str, metadata: pd.Series) -> str.
+                               That is it takes as input the leaf name and a pandas.Series of metadata for the
+                               particular sample (derived from the query.toframe() set of data).
+                               For example: leaf_name_func=lambda name, metadata: f'{name}_{metadata["Location"]}'
+                               This would display a label like "SampleX_Canada" for each sample (assumes that "Location"
+                               is a column name in the table produced by query.toframe()).
+        :param sample_metadata: A dataframe of sample metadata indexed by Sample Name.
+                                This needs to be set if leaf_name_func is set.
         :param show_legend_type_labels: Whether or not to show labels for legend types/categories (present or unknown).
         :param legend_type_label_present: Text to show above legend color for present items.
         :param legend_type_label_unknown: Text to show above legend color for unknown items.
@@ -675,6 +714,9 @@ class TreeStyler:
             tf = TextFace(title, fsize=title_fsize)
             ts.title.add_face(tf, column=0)
 
+        if leaf_name_func is not None and sample_metadata is None:
+            raise Exception(f'leaf_name_func is not None but sample_metadata is None')
+
         return TreeStyler(tree=tree,
                           default_highlight_styles=highlight_style,
                           tree_style=ts,
@@ -701,7 +743,9 @@ class TreeStyler:
                           annotate_box_label_color=annotate_box_label_color,
                           annotate_label_fontsize=annotate_label_fontsize,
                           show_leaf_names=show_leaf_names,
-                          leaf_name_fontsize=leaf_name_fontsize)
+                          leaf_name_fontsize=leaf_name_fontsize,
+                          leaf_name_func=leaf_name_func,
+                          sample_metadata=sample_metadata)
 
 
 class HighlightStyle:
