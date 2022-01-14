@@ -222,6 +222,7 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
                     allow_face_overlap: bool = False,
                     show_branch_length: bool = False,
                     show_branch_support: bool = False,
+                    tree_line_width: int = None,
                     tree_scale: float = None) -> TreeStyler:
         """
         Constructs a new :py:class:`genomics_data_index.api.viewer.TreeStyler` object used to style and visualize trees.
@@ -267,6 +268,8 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
         :param allow_face_overlap: Allow overlap in node faces for circular images.
         :param show_branch_length: Show branch lengths.
         :param show_branch_support: Show branch supports.
+        :param tree_line_width: The line width for the tree. Overrides 'hz_line_width' and 'vt_line_width'
+                                in node_style. Default: None (no overriding of line width in node_style).
         :param tree_scale: A scale factor for the tree.
         :return: A new :py:class:`genomics_data_index.api.viewer.TreeStyler` object used to style and visualize trees.
         """
@@ -309,6 +312,7 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
                                  allow_face_overlap=allow_face_overlap,
                                  show_branch_length=show_branch_length,
                                  show_branch_support=show_branch_support,
+                                 tree_line_width=tree_line_width,
                                  tree_scale=tree_scale)
 
     @property
