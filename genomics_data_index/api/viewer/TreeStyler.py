@@ -112,23 +112,30 @@ class TreeStyler:
 
         self._samples_styles_list = samples_styles_list
 
-    def add_spacing(self, width: int = None, height: int = None, color: str = None) -> TreeStyler:
+    def add_spacing(self, width: int = None, height: int = None, color: str = None,
+                    border_width: int = None, border_color: str = None) -> TreeStyler:
         """
         Adds an empty column in the annotation table as additional space.
         :param width: The width of the spacing (default: annotation column width).
         :param height: The height of each annotation block used for spacing (default: annotation column block height).
         :param color: The color of the spacing (default: no color).
+        :param border_width: Specify the width of the border (default: None for no border).
+        :param border_color: Specify the border color (default: default border color of other annotation elements).
         :return: A new TreeStyler object with the spacing added in.
         """
         if width is None:
             width = self._annotate_box_width
         if height is None:
             height = self._annotate_box_height
+        if border_color is None:
+            border_color = self._annotate_border_color
 
         samples_visual = AnnotationSpacingTreeSamplesVisual(width=width,
                                                             height=height,
                                                             annotate_column=self._annotate_column,
-                                                            color=color)
+                                                            color=color,
+                                                            border_width=border_width,
+                                                            border_color=border_color)
 
         samples_styles_list_new = copy.copy(self._samples_styles_list)
         samples_styles_list_new.append(samples_visual)

@@ -16,20 +16,21 @@ class AnnotationSpacingTreeSamplesVisual(AbstractAnnotationTreeSamplesVisual):
     Creates a visual style which adds empty spaces in annotation table.
     """
 
-    def __init__(self, width: int, height: int, annotate_column: int, color: str = None):
+    def __init__(self, width: int, height: int, annotate_column: int, color: str = None,
+                 border_width: int = None, border_color: str = None):
         super().__init__(samples=set(),
                          legend_nodesize=0,
                          legend_fontsize=0,
                          legend_columns={},
                          annotate_kind='r',
-                         annotate_border_width=None,
+                         annotate_border_width=border_width,
                          annotate_margin=0)
         self._box_width = width
         self._box_height = height
         self._annotate_column = annotate_column
         self._color = color
         self._annotation_opacity = 0.0
-        self._annotate_border_color = None
+        self._annotate_border_color = border_color
 
     def apply_visual(self, tree: Tree, tree_style: TreeStyle) -> None:
         for leaf in tree.iter_leaves():
