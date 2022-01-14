@@ -29,7 +29,7 @@ class AnnotationSpacingTreeSamplesVisual(AbstractAnnotationTreeSamplesVisual):
         self._annotate_column = annotate_column
         self._color = color
         self._annotation_opacity = 0.0
-        self._annotate_border_color = 'black'
+        self._annotate_border_color = None
 
     def apply_visual(self, tree: Tree, tree_style: TreeStyle) -> None:
         for leaf in tree.iter_leaves():
