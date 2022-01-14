@@ -4,7 +4,7 @@ import copy
 import logging
 from typing import List, Dict, Any, Union, Iterable, Tuple
 
-from ete3 import Tree, NodeStyle, TreeStyle, TextFace, RectFace
+from ete3 import Tree, TreeNode, NodeStyle, TreeStyle, TextFace, RectFace
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.api.viewer.TreeSamplesVisual import TreeSamplesVisual
@@ -47,7 +47,8 @@ class TreeStyler:
                  include_unknown: bool = True,
                  annotate_show_box_label: bool = False,
                  annotate_box_label_color: str = 'white',
-                 annotate_label_fontsize: int = 12):
+                 annotate_label_fontsize: int = 12,
+                 show_leaf_names: bool = True):
         """
         Creates a new TreeStyler with the given default settings.
         :param tree: The tree to style and render.
@@ -78,6 +79,7 @@ class TreeStyler:
         :param annotate_show_box_label: True if labels should be shown in the annotation boxes, False otherwise.
         :param annotate_box_label_color: The color of the labels in the annotation boxes.
         :param annotate_label_fontsize: The font size of the annotation labels.
+        :param show_leaf_names: Whether or not to show leaf names.
         :return: A new TreeStyler object.
         """
         self._tree = tree
@@ -111,6 +113,8 @@ class TreeStyler:
         self._annotate_kind = annotate_kind
 
         self._samples_styles_list = samples_styles_list
+
+        self._show_leaf_names = show_leaf_names
 
     def add_spacing(self, width: int = None, height: int = None, color: str = None,
                     border_width: int = None, border_color: str = None) -> TreeStyler:
@@ -162,7 +166,8 @@ class TreeStyler:
                           annotate_show_box_label=self._annotate_show_box_label,
                           annotate_box_label_color=self._annotate_box_label_color,
                           annotate_label_fontsize=self._annotate_label_fontsize,
-                          legend_columns=self._legend_columns)
+                          legend_columns=self._legend_columns,
+                          show_leaf_names=self._show_leaf_names)
 
     def annotate(self, samples: Union[SamplesQuery, Iterable[str]],
                  box_label: Union[str, Dict[str, Any]] = None,
@@ -286,7 +291,8 @@ class TreeStyler:
                           annotate_show_box_label=self._annotate_show_box_label,
                           annotate_box_label_color=self._annotate_box_label_color,
                           annotate_label_fontsize=self._annotate_label_fontsize,
-                          legend_columns=self._legend_columns)
+                          legend_columns=self._legend_columns,
+                          show_leaf_names=self._show_leaf_names)
 
     def highlight(self, samples: Union[SamplesQuery, Iterable[str]],
                   present_node_style: NodeStyle = None, unknown_node_style: NodeStyle = None,
@@ -351,7 +357,8 @@ class TreeStyler:
                           annotate_show_box_label=self._annotate_show_box_label,
                           annotate_box_label_color=self._annotate_box_label_color,
                           annotate_label_fontsize=self._annotate_label_fontsize,
-                          legend_columns=self._legend_columns)
+                          legend_columns=self._legend_columns,
+                          show_leaf_names=self._show_leaf_names)
 
     def _apply_samples_styles(self, tree: Tree, tree_style: TreeStyle) -> None:
         for samples_style in self._samples_styles_list:
@@ -385,6 +392,11 @@ class TreeStyler:
                          file_name=file_name, w=w, h=h,
                          units=units, dpi=dpi)
 
+    def _add_node_name(self, node: TreeNode) -> None:
+        node_name = node.name
+        tf = TextFace(node_name, fsize=12)
+        node.add_face(tf, 0, position='branch-right')
+
     def prerender(self, tree_style: TreeStyle = None, ladderize: bool = False) -> Tuple[Tree, TreeStyle]:
         """
         Pre-renders the tree, returning an ete3.Tree and ete3.TreeStyle object which can be used to draw the tree.
@@ -401,6 +413,9 @@ class TreeStyler:
         # Sets default node style for all nodes in the tree
         for n in tree.traverse():
             n.set_style(self._node_style)
+
+            if self._show_leaf_names and n.is_leaf():
+                self._add_node_name(n)
 
         self._apply_samples_styles(tree=tree, tree_style=tree_style)
 
@@ -543,7 +558,7 @@ class TreeStyler:
             tree_style_elements = {'mode': mode, 'annotate_guiding_lines': annotate_guiding_lines,
                                    'figure_margin': figure_margin, 'show_border': show_border,
                                    'title': title, 'legend_title': legend_title, 'title_fsize': title_fsize,
-                                   'annotate_arc_span': annotate_arc_span, 'show_leaf_names': show_leaf_names,
+                                   'annotate_arc_span': annotate_arc_span,
                                    'tree_scale': tree_scale, 'rotation': rotation,
                                    'allow_face_overlap': allow_face_overlap, 'show_branch_length': show_branch_length,
                                    'show_branch_support': show_branch_support}
@@ -557,7 +572,6 @@ class TreeStyler:
         else:
             ts = TreeStyle()
             ts.arc_span = annotate_arc_span
-            ts.show_leaf_name = show_leaf_names
             ts.rotation = rotation
             ts.allow_face_overlap = allow_face_overlap
             ts.show_branch_length = show_branch_length
@@ -580,6 +594,11 @@ class TreeStyler:
             ts.margin_left = figure_margin
             ts.margin_right = figure_margin
             ts.scale = tree_scale
+
+            # ete3 includes a built-in method to show leaf names, but I need more control over the text to display
+            # and font sizes. So instead of using the default method I implement my own (and so always set
+            # show_leaf_names to False).
+            ts.show_leaf_name = False
 
         if include_unknown:
             legend_columns = {
@@ -671,7 +690,8 @@ class TreeStyler:
                           include_unknown=include_unknown,
                           annotate_show_box_label=annotate_show_box_label,
                           annotate_box_label_color=annotate_box_label_color,
-                          annotate_label_fontsize=annotate_label_fontsize)
+                          annotate_label_fontsize=annotate_label_fontsize,
+                          show_leaf_names=show_leaf_names)
 
 
 class HighlightStyle:
