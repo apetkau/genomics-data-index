@@ -35,7 +35,7 @@ class AbstractAnnotationTreeSamplesVisual(TreeSamplesVisual, abc.ABC):
         else:
             self._annotate_kind = annotate_kind
 
-        self._annotate_border_width = annotate_border_width,
+        self._annotate_border_width = annotate_border_width
         self._annotate_margin = annotate_margin
 
     def _build_annotate_face(self, width: int, height: int, border_color: str, bgcolor: str,
