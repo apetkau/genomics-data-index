@@ -605,6 +605,8 @@ class TreeStyler:
             highlight_style = HighlightStyle.create('pastel', base_node_style=node_style)
         elif isinstance(highlight_style, str):
             highlight_style = HighlightStyle.create(highlight_style, base_node_style=node_style)
+        elif tree_line_width is not None:
+            highlight_style = highlight_style.copy_and_update(tree_line_width=tree_line_width)
 
         if legend_title is not None:
             margin_bottom = 10
@@ -725,17 +727,35 @@ class HighlightStyle:
         new_index = (self._index + 1) % len(self._node_styles)
         return HighlightStyle(self._node_styles, index=new_index)
 
+    def copy_and_update(self, tree_line_width: int = None) -> HighlightStyle:
+        """
+        Copies the entire list of highlight styles and updates with the given parameters. Used to update
+        certain style elements after the highlight styles are created.
+        :param tree_line_width: The width of the lines used to draw the tree. Default: None (do not update).
+        :return: A new HighlightStyle with the passed style elements updated.
+        """
+        node_styles_copy = copy.deepcopy(self._node_styles)
+
+        if tree_line_width is not None:
+            for style_dict in node_styles_copy:
+                style_dict['present_nstyle']['hz_line_width'] = tree_line_width
+                style_dict['present_nstyle']['vt_line_width'] = tree_line_width
+                style_dict['unknown_nstyle']['hz_line_width'] = tree_line_width
+                style_dict['unknown_nstyle']['vt_line_width'] = tree_line_width
+
+        return HighlightStyle(node_styles=node_styles_copy, index=self._index)
+
     @classmethod
-    def create(cls, kind: str = None, colors: List[str] = None, base_node_style: NodeStyle = None) -> HighlightStyle:
+    def create(cls, kind: str = None, colors: List[str] = None, unknown_bg_color: str = 'lightgray',
+               base_node_style: NodeStyle = None) -> HighlightStyle:
         """
         Creates a new pre-defined HighlightStyle.
         :param kind: The kind (name) of the pre-defined HighlightStyle to create.
         :param colors: A list of colors to use for highlights (unused if kind is set).
+        :param unknown_bg_color: The color for unknown nodes.
         :param base_node_style: The base node style to use.
         :return: A new HighlightStyle.
         """
-        unknown_bg_color = 'lightgray'
-
         if base_node_style is None:
             base_node_style = DEFAULT_NODE_STYLE
 
