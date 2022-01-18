@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import cast, List, Optional
+from typing import cast, List, Optional, Set
 
 from ete3 import Tree, ClusterTree
 
@@ -32,30 +32,58 @@ class TreeSamplesQueryFactory:
     def __init__(self):
         pass
 
+    def _prune_tree_to_database_samples(self, tree: Tree,
+                                        leaf_names: Set[str],
+                                        leaf_names_in_database: Set[str],
+                                        reference_name: Optional[str]) -> Tree:
+        include_reference = reference_name is not None
+        leaves_missing_in_database = leaf_names - leaf_names_in_database
+
+        if len(leaves_missing_in_database) == 0:
+            if include_reference:
+                logger.warning(f'Reference genome name [{reference_name}] is the same as a sample name already '
+                               f'in the database.')
+            return tree
+        else:
+            if include_reference and leaves_missing_in_database == set(reference_name):
+                return tree
+            else:
+                if include_reference:
+                    leaves_to_prune = leaf_names_in_database.copy()
+                    leaves_to_prune.add(reference_name)
+
+                    leaves_missing_not_reference = leaves_missing_in_database.copy()
+
+                    if reference_name in leaves_missing_not_reference:
+                        leaves_missing_not_reference.remove(reference_name)
+                else:
+                    leaves_to_prune = leaf_names_in_database
+                    leaves_missing_not_reference = leaves_missing_in_database
+
+                logger.warning(
+                    f'Passed tree has {len(leaf_names)} leaves, but {len(leaves_missing_not_reference)} '
+                    f'({leaves_missing_not_reference}) are not found in the database '
+                    f'(and not the reference genome name). '
+                    f'Pruning tree to match samples in system.')
+
+                tree = tree.copy(method='newick')
+                tree.prune(leaves_to_prune, preserve_branch_length=True)
+
+                return tree
+
     def _join_tree_mutations(self, tree: Tree, kind: str, database_connection: DataIndexConnection,
                              wrapped_query: SamplesQuery,
-                             leaf_names: List[str],
+                             leaf_names: Set[str],
+                             leaf_names_in_database: Set[str],
                              alignment_length: int,
                              reference_name: str = None) -> TreeSamplesQuery:
         if alignment_length is None:
             raise Exception(f'Must set alignment_length for mutation tree.')
         else:
-            include_reference = reference_name is not None
-            samples_set = wrapped_query.sample_set
-            expected_leaves_number = len(samples_set)
-
-            if include_reference:
-                expected_leaves_number += 1
-
-            if len(leaf_names) != expected_leaves_number:
-                logger.warning(
-                    f'Passed tree has {len(leaf_names)} leaves, but only {expected_leaves_number} match samples in the '
-                    f'system. Pruning tree to match samples in system.')
-                sample_name_ids = database_connection.sample_service.find_sample_name_ids(leaf_names)
-                sample_names = list(sample_name_ids.keys())
-                if include_reference:
-                    sample_names = sample_names + [reference_name]
-                tree.prune(sample_names)
+            tree = self._prune_tree_to_database_samples(tree=tree,
+                                                        leaf_names=leaf_names,
+                                                        leaf_names_in_database=leaf_names_in_database,
+                                                        reference_name=reference_name)
 
             return self._create_tree_samples_query_from_tree(kind=kind,
                                                              connection=database_connection,
@@ -63,20 +91,16 @@ class TreeSamplesQueryFactory:
                                                              tree=tree,
                                                              alignment_length=alignment_length,
                                                              reference_name=reference_name,
-                                                             include_reference=include_reference)
+                                                             include_reference=reference_name is not None)
 
     def _join_tree_kmers(self, tree: Tree, kind: str, database_connection: DataIndexConnection,
                          wrapped_query: SamplesQuery,
-                         leaf_names: List[str]) -> TreeSamplesQuery:
-        samples_set = wrapped_query.sample_set
-        expected_leaves_number = len(samples_set)
-        if len(leaf_names) != expected_leaves_number:
-            logger.warning(
-                f'Passed tree has {len(leaf_names)} leaves, but only {expected_leaves_number} match samples in the '
-                f'system. Pruning tree to match samples in system.')
-            sample_name_ids = database_connection.sample_service.find_sample_name_ids(leaf_names)
-            sample_names = list(sample_name_ids.keys())
-            tree.prune(sample_names)
+                         leaf_names: Set[str],
+                         leaf_names_in_database: Set[str]) -> TreeSamplesQuery:
+        tree = self._prune_tree_to_database_samples(tree=tree,
+                                                    leaf_names=leaf_names,
+                                                    leaf_names_in_database=leaf_names_in_database,
+                                                    reference_name=None)
 
         if not isinstance(tree, ClusterTree):
             logger.warning(f'Passed tree={tree} is not a {ClusterTree.__name__}. '
@@ -101,8 +125,10 @@ class TreeSamplesQueryFactory:
 
         tree = tree.copy(method='newick')
 
-        leaf_names = tree.get_leaf_names()
-        samples_set = SampleSet(database_connection.sample_service.find_sample_name_ids(leaf_names).values())
+        leaf_names = set(tree.get_leaf_names())
+        sample_name_ids = database_connection.sample_service.find_sample_name_ids(leaf_names)
+        samples_set = SampleSet(sample_name_ids.values())
+        leaf_names_in_database = set(sample_name_ids.keys())
 
         wrapped_query_tree_set = wrapped_query.intersect(sample_set=samples_set,
                                                          query_message=f'join_tree({len(leaf_names)} leaves)')
@@ -111,11 +137,13 @@ class TreeSamplesQueryFactory:
             return self._join_tree_mutations(tree=tree, kind=kind, database_connection=database_connection,
                                              wrapped_query=wrapped_query_tree_set,
                                              leaf_names=leaf_names,
+                                             leaf_names_in_database=leaf_names_in_database,
                                              **kwargs)
         elif kind == 'kmer' or kind == 'kmers':
             return self._join_tree_kmers(tree=tree, kind=kind, database_connection=database_connection,
                                          wrapped_query=wrapped_query_tree_set,
-                                         leaf_names=leaf_names)
+                                         leaf_names=leaf_names,
+                                         leaf_names_in_database=leaf_names_in_database)
         else:
             raise Exception(f'Invalid kind=[{kind}]. Must be one of {self.BUILD_TREE_KINDS}.')
 
