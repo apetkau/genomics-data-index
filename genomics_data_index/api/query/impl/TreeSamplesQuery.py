@@ -226,7 +226,8 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
                     show_branch_length: bool = False,
                     show_branch_support: bool = False,
                     tree_line_width: int = None,
-                    tree_scale: float = None) -> TreeStyler:
+                    tree_scale: float = None,
+                    prune_tree: bool = True) -> TreeStyler:
         """
         Constructs a new :py:class:`genomics_data_index.api.viewer.TreeStyler` object used to style and visualize trees.
         All parameters listed below are optional.
@@ -283,15 +284,24 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
         :param tree_line_width: The line width for the tree. Overrides 'hz_line_width' and 'vt_line_width'
                                 in node_style. Default: None (no overriding of line width in node_style).
         :param tree_scale: A scale factor for the tree.
+        :param prune_tree: Whether or not to prune the tree in this query before creating a
+                           TreeStyler object. Default: True.
         :return: A new :py:class:`genomics_data_index.api.viewer.TreeStyler` object used to style and visualize trees.
         """
         if show_leaf_names and leaf_name_func is not None:
-            sample_metadata = self.toframe(include_present=True, include_unknown=True, include_absent=True)
+            sample_metadata = self.toframe(include_present=True, include_unknown=True)
             sample_metadata = sample_metadata.set_index('Sample Name')
         else:
             sample_metadata = None
 
-        return TreeStyler.create(tree=self._tree,
+        if prune_tree:
+            tree = self._tree_copy_prune(preserve_branch_length=True,
+                                         include_present=True, include_unknown=True,
+                                         include_absent=False)
+        else:
+            tree = self._tree
+
+        return TreeStyler.create(tree=tree,
                                  initial_style=initial_style,
                                  mode=mode,
                                  highlight_style=highlight_style,

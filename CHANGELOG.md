@@ -10,6 +10,7 @@
 * [api]: Added `TreeStyler.add_spacing()` method to add empty columns to tree visual (0.5.0.dev5).
 * [api]: Added ability to adjust width of line used for drawing a tree (0.5.0.dev5).
 * [api]: Added the ability to adjust font size and text of leaf names in a tree (0.5.0.dev5).
+* [api]: Automatically prune tree when making `TreeStyler` object (0.5.0.dev5).
 
 # 0.4.0
 
