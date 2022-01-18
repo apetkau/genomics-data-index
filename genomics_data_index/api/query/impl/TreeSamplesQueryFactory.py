@@ -32,12 +32,12 @@ class TreeSamplesQueryFactory:
     def __init__(self):
         pass
 
-    def _prune_tree_to_database_samples(self, tree: Tree,
+    def _prune_tree_to_query_samples(self, tree: Tree,
                                         leaf_names: Set[str],
-                                        leaf_names_in_database: Set[str],
+                                        leaf_names_in_query: Set[str],
                                         reference_name: Optional[str]) -> Tree:
         include_reference = reference_name is not None
-        leaves_missing_in_database = leaf_names - leaf_names_in_database
+        leaves_missing_in_database = leaf_names - leaf_names_in_query
 
         if len(leaves_missing_in_database) == 0:
             if include_reference:
@@ -46,7 +46,7 @@ class TreeSamplesQueryFactory:
         else:
             if not include_reference or leaves_missing_in_database != {reference_name}:
                 if include_reference:
-                    leaves_to_prune = leaf_names_in_database.copy()
+                    leaves_to_prune = leaf_names_in_query.copy()
                     leaves_to_prune.add(reference_name)
 
                     leaves_missing_not_reference = leaves_missing_in_database.copy()
@@ -56,7 +56,7 @@ class TreeSamplesQueryFactory:
 
                     extra_msg = ' (and not the reference genome name)'
                 else:
-                    leaves_to_prune = leaf_names_in_database
+                    leaves_to_prune = leaf_names_in_query
                     leaves_missing_not_reference = leaves_missing_in_database
 
                     extra_msg = ''
@@ -69,8 +69,8 @@ class TreeSamplesQueryFactory:
 
                 logger.warning(
                     f'{len(leaves_missing_not_reference)}/{len(leaf_names)} leaves in the tree are'
-                    f' not found in the database{extra_msg}: [{missing_str}].'
-                    f' Pruning tree to contain only those samples in the database ('
+                    f' not found in the query{extra_msg}: [{missing_str}].'
+                    f' Pruning tree to contain only those samples in the query ('
                     f'{len(leaves_to_prune)}/{len(leaf_names)}).')
 
                 tree = tree.copy(method='newick')
@@ -81,15 +81,15 @@ class TreeSamplesQueryFactory:
     def _join_tree_mutations(self, tree: Tree, kind: str, database_connection: DataIndexConnection,
                              wrapped_query: SamplesQuery,
                              leaf_names: Set[str],
-                             leaf_names_in_database: Set[str],
+                             leaf_names_in_query: Set[str],
                              alignment_length: int,
                              reference_name: str = None) -> TreeSamplesQuery:
         if alignment_length is None:
             raise Exception(f'Must set alignment_length for mutation tree.')
         else:
-            tree = self._prune_tree_to_database_samples(tree=tree,
+            tree = self._prune_tree_to_query_samples(tree=tree,
                                                         leaf_names=leaf_names,
-                                                        leaf_names_in_database=leaf_names_in_database,
+                                                        leaf_names_in_query=leaf_names_in_query,
                                                         reference_name=reference_name)
 
             return self._create_tree_samples_query_from_tree(kind=kind,
@@ -103,10 +103,10 @@ class TreeSamplesQueryFactory:
     def _join_tree_kmers(self, tree: Tree, kind: str, database_connection: DataIndexConnection,
                          wrapped_query: SamplesQuery,
                          leaf_names: Set[str],
-                         leaf_names_in_database: Set[str]) -> TreeSamplesQuery:
-        tree = self._prune_tree_to_database_samples(tree=tree,
+                         leaf_names_in_query: Set[str]) -> TreeSamplesQuery:
+        tree = self._prune_tree_to_query_samples(tree=tree,
                                                     leaf_names=leaf_names,
-                                                    leaf_names_in_database=leaf_names_in_database,
+                                                    leaf_names_in_query=leaf_names_in_query,
                                                     reference_name=None)
 
         if not isinstance(tree, ClusterTree):
@@ -135,22 +135,23 @@ class TreeSamplesQueryFactory:
         leaf_names = set(tree.get_leaf_names())
         sample_name_ids = database_connection.sample_service.find_sample_name_ids(leaf_names)
         samples_set = SampleSet(sample_name_ids.values())
-        leaf_names_in_database = set(sample_name_ids.keys())
 
         wrapped_query_tree_set = wrapped_query.intersect(sample_set=samples_set,
                                                          query_message=f'join_tree({len(leaf_names)} leaves)')
+
+        leaf_names_in_query = wrapped_query_tree_set.toset(names=True)
 
         if kind == 'mutation' or kind == 'mutation_experimental':
             return self._join_tree_mutations(tree=tree, kind=kind, database_connection=database_connection,
                                              wrapped_query=wrapped_query_tree_set,
                                              leaf_names=leaf_names,
-                                             leaf_names_in_database=leaf_names_in_database,
+                                             leaf_names_in_query=leaf_names_in_query,
                                              **kwargs)
         elif kind == 'kmer' or kind == 'kmers':
             return self._join_tree_kmers(tree=tree, kind=kind, database_connection=database_connection,
                                          wrapped_query=wrapped_query_tree_set,
                                          leaf_names=leaf_names,
-                                         leaf_names_in_database=leaf_names_in_database)
+                                         leaf_names_in_query=leaf_names_in_query)
         else:
             raise Exception(f'Invalid kind=[{kind}]. Must be one of {self.BUILD_TREE_KINDS}.')
 
