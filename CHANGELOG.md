@@ -8,6 +8,8 @@
 * [api]: Added support for listing counts of samples with unknown features in `summary()` of features (or unique summaries of features) (0.5.0.dev4).
 * [api]: Renamed parameters `include_present` and `include_unknown` to `include_present_features` and `include_unknown_features` for `SamplesQuery.features_summary()` and `GenomicsDataIndex.features_summary()` to help differentiate it from `include_unknown_samples` (0.5.0.dev4).
 * [api]: Added `TreeStyler.add_spacing()` method to add empty columns to tree visual (0.5.0.dev5).
+* [api]: Added ability to adjust width of line used for drawing a tree (0.5.0.dev5).
+* [api]: Added the ability to adjust font size and text of leaf names in a tree (0.5.0.dev5).
 
 # 0.4.0
 
