@@ -4,8 +4,8 @@ import copy
 import logging
 from typing import List, Dict, Any, Union, Iterable, Tuple, Callable
 
-from ete3 import Tree, TreeNode, NodeStyle, TreeStyle, TextFace, RectFace
 import pandas as pd
+from ete3 import Tree, TreeNode, NodeStyle, TreeStyle, TextFace, RectFace
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.api.viewer.TreeSamplesVisual import TreeSamplesVisual
@@ -424,8 +424,8 @@ class TreeStyler:
 
     def _add_node_name(self, node: TreeNode) -> None:
         if self._leaf_name_func is not None and node.name in self._sample_metadata.index:
-                sample_metadata_s = self._sample_metadata.loc[node.name]
-                node_name = self._leaf_name_func(node.name, sample_metadata_s)
+            sample_metadata_s = self._sample_metadata.loc[node.name]
+            node_name = self._leaf_name_func(node.name, sample_metadata_s)
         else:
             node_name = node.name
         tf = TextFace(node_name, fsize=self._leaf_name_fontsize)

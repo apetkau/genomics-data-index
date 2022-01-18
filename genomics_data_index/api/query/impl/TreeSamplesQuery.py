@@ -4,8 +4,8 @@ import abc
 import logging
 from typing import Union, List, cast, Callable
 
-from ete3 import Tree, TreeStyle, NodeStyle
 import pandas as pd
+from ete3 import Tree, TreeStyle, NodeStyle
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.api.query.impl.WrappedSamplesQuery import WrappedSamplesQuery

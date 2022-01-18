@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import cast, List, Optional, Set
+from typing import cast, Optional, Set
 
 from ete3 import Tree, ClusterTree
 
@@ -33,9 +33,9 @@ class TreeSamplesQueryFactory:
         pass
 
     def _prune_tree_to_query_samples(self, tree: Tree,
-                                        leaf_names: Set[str],
-                                        leaf_names_in_query: Set[str],
-                                        reference_name: Optional[str]) -> Tree:
+                                     leaf_names: Set[str],
+                                     leaf_names_in_query: Set[str],
+                                     reference_name: Optional[str]) -> Tree:
         include_reference = reference_name is not None
         leaves_missing_in_database = leaf_names - leaf_names_in_query
 
@@ -88,9 +88,9 @@ class TreeSamplesQueryFactory:
             raise Exception(f'Must set alignment_length for mutation tree.')
         else:
             tree = self._prune_tree_to_query_samples(tree=tree,
-                                                        leaf_names=leaf_names,
-                                                        leaf_names_in_query=leaf_names_in_query,
-                                                        reference_name=reference_name)
+                                                     leaf_names=leaf_names,
+                                                     leaf_names_in_query=leaf_names_in_query,
+                                                     reference_name=reference_name)
 
             return self._create_tree_samples_query_from_tree(kind=kind,
                                                              connection=database_connection,
@@ -105,9 +105,9 @@ class TreeSamplesQueryFactory:
                          leaf_names: Set[str],
                          leaf_names_in_query: Set[str]) -> TreeSamplesQuery:
         tree = self._prune_tree_to_query_samples(tree=tree,
-                                                    leaf_names=leaf_names,
-                                                    leaf_names_in_query=leaf_names_in_query,
-                                                    reference_name=None)
+                                                 leaf_names=leaf_names,
+                                                 leaf_names_in_query=leaf_names_in_query,
+                                                 reference_name=None)
 
         if not isinstance(tree, ClusterTree):
             logger.warning(f'Passed tree={tree} is not a {ClusterTree.__name__}. '

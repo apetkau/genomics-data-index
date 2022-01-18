@@ -1,10 +1,7 @@
-import copy
 import logging
-from typing import Union, Iterable, Dict, Any
 
-from ete3 import Tree, TreeStyle, TextFace, RectFace, Face, CircleFace, TreeNode
+from ete3 import Tree, TreeStyle
 
-from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.api.viewer.samples_visuals.AbstractAnnotationTreeSamplesVisual import \
     AbstractAnnotationTreeSamplesVisual
 

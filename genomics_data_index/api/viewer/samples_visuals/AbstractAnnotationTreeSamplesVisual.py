@@ -2,7 +2,7 @@ import abc
 import logging
 from typing import Union, Iterable, Dict, Any, Optional
 
-from ete3 import Tree, TreeStyle, TextFace, RectFace, Face, CircleFace, TreeNode
+from ete3 import RectFace, Face, CircleFace
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.api.viewer.TreeSamplesVisual import TreeSamplesVisual

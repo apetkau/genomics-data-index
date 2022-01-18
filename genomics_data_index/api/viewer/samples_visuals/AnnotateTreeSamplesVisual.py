@@ -5,7 +5,8 @@ from typing import Union, Iterable, Dict, Any
 from ete3 import Tree, TreeStyle, TextFace
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
-from genomics_data_index.api.viewer.samples_visuals.AbstractAnnotationTreeSamplesVisual import AbstractAnnotationTreeSamplesVisual
+from genomics_data_index.api.viewer.samples_visuals.AbstractAnnotationTreeSamplesVisual import \
+    AbstractAnnotationTreeSamplesVisual
 
 logger = logging.getLogger(__name__)
 
