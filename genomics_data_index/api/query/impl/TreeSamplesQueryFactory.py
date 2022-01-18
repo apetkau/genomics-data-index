@@ -43,11 +43,8 @@ class TreeSamplesQueryFactory:
             if include_reference:
                 logger.warning(f'Reference genome name [{reference_name}] is the same as a sample name already '
                                f'in the database.')
-            return tree
         else:
-            if include_reference and leaves_missing_in_database == set(reference_name):
-                return tree
-            else:
+            if not include_reference or leaves_missing_in_database != {reference_name}:
                 if include_reference:
                     leaves_to_prune = leaf_names_in_database.copy()
                     leaves_to_prune.add(reference_name)
@@ -56,20 +53,30 @@ class TreeSamplesQueryFactory:
 
                     if reference_name in leaves_missing_not_reference:
                         leaves_missing_not_reference.remove(reference_name)
+
+                    extra_msg = ' (and not the reference genome name)'
                 else:
                     leaves_to_prune = leaf_names_in_database
                     leaves_missing_not_reference = leaves_missing_in_database
 
+                    extra_msg = ''
+
+                if len(leaves_missing_not_reference) > 5:
+                    missing_str = ', '.join(list(leaves_missing_not_reference)[0:5])
+                    missing_str += ', ...'
+                else:
+                    missing_str = ', '.join(list(leaves_missing_not_reference))
+
                 logger.warning(
-                    f'Passed tree has {len(leaf_names)} leaves, but {len(leaves_missing_not_reference)} '
-                    f'({leaves_missing_not_reference}) are not found in the database '
-                    f'(and not the reference genome name). '
-                    f'Pruning tree to match samples in system.')
+                    f'{len(leaves_missing_not_reference)}/{len(leaf_names)} leaves in the tree are'
+                    f' not found in the database{extra_msg}: [{missing_str}].'
+                    f' Pruning tree to contain only those samples in the database ('
+                    f'{len(leaves_to_prune)}/{len(leaf_names)}).')
 
                 tree = tree.copy(method='newick')
                 tree.prune(leaves_to_prune, preserve_branch_length=True)
 
-                return tree
+        return tree
 
     def _join_tree_mutations(self, tree: Tree, kind: str, database_connection: DataIndexConnection,
                              wrapped_query: SamplesQuery,
