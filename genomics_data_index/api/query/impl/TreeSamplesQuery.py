@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import abc
 import logging
-from typing import Union, List, cast
+from typing import Union, List, cast, Callable
 
+import pandas as pd
 from ete3 import Tree, TreeStyle, NodeStyle
 
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
@@ -215,6 +216,8 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
                     annotate_label_fontsize: int = 12,
                     include_unknown: bool = True,
                     show_leaf_names: bool = True,
+                    leaf_name_fontsize: int = 12,
+                    leaf_name_func: Callable[[str, pd.Series], str] = None,
                     show_legend_type_labels: bool = True,
                     legend_type_label_present: str = 'Pr.',
                     legend_type_label_unknown: str = 'Un.',
@@ -222,7 +225,9 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
                     allow_face_overlap: bool = False,
                     show_branch_length: bool = False,
                     show_branch_support: bool = False,
-                    tree_scale: float = None) -> TreeStyler:
+                    tree_line_width: int = None,
+                    tree_scale: float = None,
+                    prune_tree: bool = True) -> TreeStyler:
         """
         Constructs a new :py:class:`genomics_data_index.api.viewer.TreeStyler` object used to style and visualize trees.
         All parameters listed below are optional.
@@ -260,6 +265,15 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
         :param annotate_label_fontsize: The font size of the annotation labels.
         :param include_unknown: Whether or not to include unknowns in annotations/highlights.
         :param show_leaf_names: True if leaf names should be shown on the tree, False otherwise.
+        :param leaf_name_fontsize: The font size of leaf names.
+        :param leaf_name_func: A function which lets you create custom leaf names to display.
+                               The function should look like: func(name: str, metadata: pd.Series) -> str.
+                               That is it takes as input the leaf name and a pandas.Series of metadata for the
+                               particular sample (derived from the query.toframe() set of data).
+                               For example: tree_styler(...,
+                                 leaf_name_func=lambda name, metadata: f'{name}_{metadata["Location"]}')
+                               This would display a label like "SampleX_Canada" for each sample (assumes that "Location"
+                               is a column name in the table produced by query.toframe()).
         :param show_legend_type_labels: Whether or not to show labels for legend types/categories (present or unknown).
         :param legend_type_label_present: Text to show above legend color for present items.
         :param legend_type_label_unknown: Text to show above legend color for unknown items.
@@ -267,10 +281,27 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
         :param allow_face_overlap: Allow overlap in node faces for circular images.
         :param show_branch_length: Show branch lengths.
         :param show_branch_support: Show branch supports.
+        :param tree_line_width: The line width for the tree. Overrides 'hz_line_width' and 'vt_line_width'
+                                in node_style. Default: None (no overriding of line width in node_style).
         :param tree_scale: A scale factor for the tree.
+        :param prune_tree: Whether or not to prune the tree in this query before creating a
+                           TreeStyler object. Default: True.
         :return: A new :py:class:`genomics_data_index.api.viewer.TreeStyler` object used to style and visualize trees.
         """
-        return TreeStyler.create(tree=self._tree,
+        if show_leaf_names and leaf_name_func is not None:
+            sample_metadata = self.toframe(include_present=True, include_unknown=True)
+            sample_metadata = sample_metadata.set_index('Sample Name')
+        else:
+            sample_metadata = None
+
+        if prune_tree:
+            tree = self._tree_copy_prune(preserve_branch_length=True,
+                                         include_present=True, include_unknown=True,
+                                         include_absent=False)
+        else:
+            tree = self._tree
+
+        return TreeStyler.create(tree=tree,
                                  initial_style=initial_style,
                                  mode=mode,
                                  highlight_style=highlight_style,
@@ -302,6 +333,9 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
                                  annotate_label_fontsize=annotate_label_fontsize,
                                  include_unknown=include_unknown,
                                  show_leaf_names=show_leaf_names,
+                                 leaf_name_fontsize=leaf_name_fontsize,
+                                 leaf_name_func=leaf_name_func,
+                                 sample_metadata=sample_metadata,
                                  show_legend_type_labels=show_legend_type_labels,
                                  legend_type_label_present=legend_type_label_present,
                                  legend_type_label_unknown=legend_type_label_unknown,
@@ -309,6 +343,7 @@ class TreeSamplesQuery(WrappedSamplesQuery, abc.ABC):
                                  allow_face_overlap=allow_face_overlap,
                                  show_branch_length=show_branch_length,
                                  show_branch_support=show_branch_support,
+                                 tree_line_width=tree_line_width,
                                  tree_scale=tree_scale)
 
     @property
