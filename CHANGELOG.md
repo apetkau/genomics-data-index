@@ -11,6 +11,7 @@
 * [api]: Added ability to adjust width of line used for drawing a tree (0.5.0.dev5).
 * [api]: Added the ability to adjust font size and text of leaf names in a tree (0.5.0.dev5).
 * [api]: Automatically prune tree when making `TreeStyler` object (0.5.0.dev5).
+* [api]: Updates to pruning of tree when joining external tree to query (0.5.0.dev5).
 
 # 0.4.0
 
