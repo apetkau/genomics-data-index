@@ -12,6 +12,7 @@
 * [api]: Added the ability to adjust font size and text of leaf names in a tree (0.5.0.dev5).
 * [api]: Automatically prune tree when making `TreeStyler` object (0.5.0.dev5).
 * [api]: Updates to pruning of tree when joining external tree to query (0.5.0.dev5).
+* [api]: Add **Unknown** and **Present and Unknown** categories to `query.features_comparison()` output (0.5.0.dev6).
 
 # 0.4.0
 
