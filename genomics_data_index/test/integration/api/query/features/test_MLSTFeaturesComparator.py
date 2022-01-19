@@ -498,7 +498,8 @@ def test_features_comparison(loaded_database_genomic_data_store: GenomicsDataInd
                                                         unit='count')
     assert 24 == len(comparison_df)
     assert 'MLST Feature' == comparison_df.index.name
-    assert ['Scheme', 'Locus', 'Allele', 'Total', 'All_count', 'All_total'] == list(comparison_df.columns)
+    assert ['Scheme', 'Locus', 'Allele', 'Total', 'All_count', 'All_Unknown count',
+            'All_Present and Unknown count', 'All_total'] == list(comparison_df.columns)
     assert {9} == set(comparison_df['Total'].tolist())
     assert {9} == set(comparison_df['All_total'].tolist())
     assert 5 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1', 'All_count']
@@ -507,6 +508,18 @@ def test_features_comparison(loaded_database_genomic_data_store: GenomicsDataInd
     assert 2 == comparison_df.loc['mlst:ecoli:adk:100', 'All_count']
     assert 2 == comparison_df.loc['mlst:ecoli:recA:7', 'All_count']
     assert 1 == comparison_df.loc['mlst:campylobacter:uncA:6', 'All_count']
+
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1', 'All_Unknown count']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:51', 'All_Unknown count']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:52', 'All_Unknown count']
+    assert 1 == comparison_df.loc['mlst:lmonocytogenes:ldh:5', 'All_Unknown count']
+    assert 1 == comparison_df.loc['mlst:campylobacter:uncA:6', 'All_Unknown count']
+
+    assert 5 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1', 'All_Present and Unknown count']
+    assert 3 == comparison_df.loc['mlst:lmonocytogenes:bglA:51', 'All_Present and Unknown count']
+    assert 2 == comparison_df.loc['mlst:lmonocytogenes:bglA:52', 'All_Present and Unknown count']
+    assert 5 == comparison_df.loc['mlst:lmonocytogenes:ldh:5', 'All_Present and Unknown count']
+    assert 2 == comparison_df.loc['mlst:campylobacter:uncA:6', 'All_Present and Unknown count']
 
     # Test two categories: one of lmonocytogenes and one of the rest
     sample_categories = [SampleSet(lmonocytogenes), SampleSet(all_sample_ids - lmonocytogenes)]
@@ -517,7 +530,8 @@ def test_features_comparison(loaded_database_genomic_data_store: GenomicsDataInd
     assert 24 == len(comparison_df)
     assert 'MLST Feature' == comparison_df.index.name
     assert ['Scheme', 'Locus', 'Allele', 'Total',
-            'lmonocytogenes_count', 'other_count',
+            'lmonocytogenes_count', 'lmonocytogenes_Unknown count', 'lmonocytogenes_Present and Unknown count',
+            'other_count', 'other_Unknown count', 'other_Present and Unknown count',
             'lmonocytogenes_total', 'other_total'] == list(comparison_df.columns)
     assert {9} == set(comparison_df['Total'].tolist())
     assert {5} == set(comparison_df['lmonocytogenes_total'].tolist())
@@ -544,7 +558,8 @@ def test_features_comparison(loaded_database_genomic_data_store: GenomicsDataInd
     assert 24 == len(comparison_df)
     assert 'MLST Feature' == comparison_df.index.name
     assert ['Scheme', 'Locus', 'Allele', 'Total',
-            'lmonocytogenes_percent', 'other_percent',
+            'lmonocytogenes_percent', 'lmonocytogenes_Unknown percent', 'lmonocytogenes_Present and Unknown percent',
+            'other_percent', 'other_Unknown percent', 'other_Present and Unknown percent',
             'lmonocytogenes_total', 'other_total'] == list(comparison_df.columns)
     comparison_df['lmonocytogenes_percent'] = comparison_df['lmonocytogenes_percent'].astype(
         int)  # Convert to int for easier comparison
@@ -574,7 +589,8 @@ def test_features_comparison(loaded_database_genomic_data_store: GenomicsDataInd
     assert 24 == len(comparison_df)
     assert 'MLST Feature' == comparison_df.index.name
     assert ['Scheme', 'Locus', 'Allele', 'Total',
-            'lmonocytogenes_proportion', 'other_proportion',
+            'lmonocytogenes_proportion', 'lmonocytogenes_Unknown proportion', 'lmonocytogenes_Present and Unknown proportion',
+            'other_proportion', 'other_Unknown proportion', 'other_Present and Unknown proportion',
             'lmonocytogenes_total', 'other_total'] == list(comparison_df.columns)
     comparison_df['lmonocytogenes_proportion'] = (comparison_df['lmonocytogenes_proportion'] * 100).astype(
         int)  # Convert to percent as int for easier comparison
@@ -605,7 +621,8 @@ def test_features_comparison(loaded_database_genomic_data_store: GenomicsDataInd
     assert 24 == len(comparison_df)
     assert 'MLST Feature' == comparison_df.index.name
     assert ['Scheme', 'Locus', 'Allele', 'Total',
-            'lmonocytogenes_count', 'other_count',
+            'lmonocytogenes_count', 'lmonocytogenes_Unknown count', 'lmonocytogenes_Present and Unknown count',
+            'other_count', 'other_Unknown count', 'other_Present and Unknown count',
             'lmonocytogenes_total', 'other_total'] == list(comparison_df.columns)
     assert {9} == set(comparison_df['Total'].tolist())
     assert {5} == set(comparison_df['lmonocytogenes_total'].tolist())
@@ -633,7 +650,7 @@ def test_features_comparison(loaded_database_genomic_data_store: GenomicsDataInd
     assert 24 == len(comparison_df)
     assert 'MLST Feature' == comparison_df.index.name
     assert ['Scheme', 'Locus', 'Allele', 'Total',
-            'lmonocytogenes_count',
+            'lmonocytogenes_count', 'lmonocytogenes_Unknown count', 'lmonocytogenes_Present and Unknown count',
             'lmonocytogenes_total'] == list(comparison_df.columns)
     assert {9} == set(comparison_df['Total'].tolist())
     assert {5} == set(comparison_df['lmonocytogenes_total'].tolist())

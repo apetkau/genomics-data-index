@@ -41,7 +41,7 @@ class FeatureSamplesSingleCategorySummarizer(FeatureSamplesSummarizer):
 
         if unknown_samples is not None:
             unknown_sample_count = len(unknown_samples)
-            present_and_unknown_sample_count = sample_count + unknown_sample_count
+            present_and_unknown_sample_count = len(samples.union(unknown_samples))
             unknown_percent = (unknown_sample_count / total) * 100
             present_and_unknown_percent = (present_and_unknown_sample_count / total) * 100
         else:
@@ -59,6 +59,8 @@ class FeatureSamplesSingleCategorySummarizer(FeatureSamplesSummarizer):
 
 
 class FeatureSamplesMultipleCategorySummarizer(FeatureSamplesSummarizer):
+
+    COMPARE_TYPE_LABELS = ['_', '_Unknown ', '_Present and Unknown ']
 
     def __init__(self, sample_categories: List[SampleSet], category_prefixes: List[str] = None,
                  compare_kind: str = 'percent'):
@@ -89,8 +91,8 @@ class FeatureSamplesMultipleCategorySummarizer(FeatureSamplesSummarizer):
             category_prefixes = [str(c) for c in category_prefixes]
 
         self._summary_names = ['Total'] \
-                              + [f'{c}_{compare_kind}' for c in category_prefixes] \
-                              + [f'{c}_total' for c in category_prefixes]
+                            + [f'{c}{t}{compare_kind}' for c in category_prefixes for t in self.COMPARE_TYPE_LABELS] \
+                            + [f'{c}_total' for c in category_prefixes]
 
     def summary_data(self, samples: SampleSet, unknown_samples: Optional[SampleSet], total: int) -> List[Any]:
         data = [total]
@@ -101,19 +103,29 @@ class FeatureSamplesMultipleCategorySummarizer(FeatureSamplesSummarizer):
             if unknown_samples is not None:
                 unknown_samples_in_category = unknown_samples.intersection(sample_category)
                 unknown_sample_count = len(unknown_samples_in_category)
-                unknown_percent = (unknown_sample_count / total) * 100
+                present_and_unknown_sample_count = len(samples_in_category.union(unknown_samples_in_category))
             else:
                 unknown_sample_count = pd.NA
-                unknown_percent = pd.NA
+                present_and_unknown_sample_count = pd.NA
 
             if self._use_count:
-                data.append(category_count)
+                data.extend([category_count, unknown_sample_count, present_and_unknown_sample_count])
             else:
                 if sample_category_total > 0:
                     category_percent = (category_count / sample_category_total) * self._factor
+
+                    if unknown_samples is not None:
+                        unknown_sample_percent = (unknown_sample_count / sample_category_total) * self._factor
+                        present_and_unknown_sample_percent = (present_and_unknown_sample_count / sample_category_total) * self._factor
+                    else:
+                        unknown_sample_percent = pd.NA
+                        present_and_unknown_sample_percent = pd.NA
                 else:
                     category_percent = pd.NA
-                data.append(category_percent)
+                    unknown_sample_percent = pd.NA
+                    present_and_unknown_sample_percent = pd.NA
+
+                data.extend([category_percent, unknown_sample_percent, present_and_unknown_sample_percent])
 
         # Append totals for each category to end
         for sample_category, sample_category_total in self._sample_categories_and_totals:
