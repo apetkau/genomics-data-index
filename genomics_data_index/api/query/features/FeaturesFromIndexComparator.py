@@ -65,8 +65,6 @@ class FeatureSamplesMultipleCategorySummarizer(FeatureSamplesSummarizer):
     def __init__(self, sample_categories: List[SampleSet], category_prefixes: List[str] = None,
                  compare_kind: str = 'percent'):
         super().__init__()
-        sample_categories_totals = [len(c) for c in sample_categories]
-        self._sample_categories_and_totals = list(zip(sample_categories, sample_categories_totals))
 
         self._use_count = False
         self._factor = None
@@ -90,13 +88,19 @@ class FeatureSamplesMultipleCategorySummarizer(FeatureSamplesSummarizer):
             # I convert to string in case someone passes a list that's not composed of strings
             category_prefixes = [str(c) for c in category_prefixes]
 
+        self._category_prefixes = category_prefixes
+        self._prefixes_sample_categories = {p: c for p, c in zip(category_prefixes, sample_categories)}
+
         self._summary_names = ['Total'] \
-                            + [f'{c}{t}{compare_kind}' for c in category_prefixes for t in self.COMPARE_TYPE_LABELS] \
-                            + [f'{c}_total' for c in category_prefixes]
+                            + [f'{c}{t}{compare_kind}' for c in self._category_prefixes for t in self.COMPARE_TYPE_LABELS] \
+                            + [f'{c}_total' for c in self._category_prefixes]
 
     def summary_data(self, samples: SampleSet, unknown_samples: Optional[SampleSet], total: int) -> List[Any]:
         data = [total]
-        for sample_category, sample_category_total in self._sample_categories_and_totals:
+        for category_prefix in self._category_prefixes:
+            sample_category = self._prefixes_sample_categories[category_prefix]
+            sample_category_total = len(sample_category)
+
             samples_in_category = samples.intersection(sample_category)
             category_count = len(samples_in_category)
 
@@ -128,8 +132,10 @@ class FeatureSamplesMultipleCategorySummarizer(FeatureSamplesSummarizer):
                 data.extend([category_percent, unknown_sample_percent, present_and_unknown_sample_percent])
 
         # Append totals for each category to end
-        for sample_category, sample_category_total in self._sample_categories_and_totals:
-            data.append(sample_category_total)
+        for category_prefix in self._category_prefixes:
+            sample_category = self._prefixes_sample_categories[category_prefix]
+            sample_category_total = len(sample_category)
+            data.append(sample_category_total)            
 
         return data
 
