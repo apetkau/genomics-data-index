@@ -577,8 +577,9 @@ def test_features_comparison(loaded_database_genomic_data_store: GenomicsDataInd
     comparison_df = comparison_df.sort_index()
     assert comparison_df.index.name == 'Mutation'
     assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type', 'Total',
-            'A_count', 'A_Unknown count', 'A_Present and Unknown count',
-            'BC_count', 'BC_Unknown count', 'BC_Present and Unknown count',
+            'A_count', 'BC_count',
+            'A_Unknown count', 'BC_Unknown count',
+            'A_Present and Unknown count', 'BC_Present and Unknown count',
             'A_total', 'BC_total'] == comparison_df.columns.tolist()
     assert {9} == set(comparison_df['Total'].tolist())
     assert {1} == set(comparison_df['A_total'].tolist())
@@ -611,8 +612,9 @@ def test_features_comparison(loaded_database_genomic_data_store: GenomicsDataInd
     comparison_df = comparison_df.sort_index()
     assert comparison_df.index.name == 'Mutation'
     assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type', 'Total',
-            'AB_count', 'AB_Unknown count', 'AB_Present and Unknown count',
-            'C_count', 'C_Unknown count', 'C_Present and Unknown count',
+            'AB_count', 'C_count',
+            'AB_Unknown count', 'C_Unknown count',
+            'AB_Present and Unknown count', 'C_Present and Unknown count',
             'AB_total', 'C_total'] == comparison_df.columns.tolist()
     assert {9} == set(comparison_df['Total'].tolist())
     assert {2} == set(comparison_df['AB_total'].tolist())
@@ -652,9 +654,9 @@ def test_features_comparison(loaded_database_genomic_data_store: GenomicsDataInd
     comparison_df = comparison_df.sort_index()
     assert comparison_df.index.name == 'Mutation'
     assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type', 'Total',
-            'A_count', 'A_Unknown count', 'A_Present and Unknown count',
-            'B_count', 'B_Unknown count', 'B_Present and Unknown count',
-            'C_count', 'C_Unknown count', 'C_Present and Unknown count',
+            'A_count', 'B_count', 'C_count',
+            'A_Unknown count', 'B_Unknown count', 'C_Unknown count',
+            'A_Present and Unknown count', 'B_Present and Unknown count', 'C_Present and Unknown count',
             'A_total', 'B_total', 'C_total'] == comparison_df.columns.tolist()
     assert {3} == set(comparison_df['Total'].tolist())
     assert {1} == set(comparison_df['A_total'].tolist())
@@ -708,8 +710,9 @@ def test_features_comparison(loaded_database_genomic_data_store: GenomicsDataInd
     comparison_df['BC_percent'] = comparison_df['BC_percent'].astype(int)  # Convert to int for easier comparison
     assert comparison_df.index.name == 'Mutation'
     assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type', 'Total',
-            'A_percent', 'A_Unknown percent', 'A_Present and Unknown percent',
-            'BC_percent', 'BC_Unknown percent', 'BC_Present and Unknown percent',
+            'A_percent', 'BC_percent',
+            'A_Unknown percent', 'BC_Unknown percent',
+            'A_Present and Unknown percent', 'BC_Present and Unknown percent',
             'A_total', 'BC_total'] == comparison_df.columns.tolist()
     assert {9} == set(comparison_df['Total'].tolist())
     assert {1} == set(comparison_df['A_total'].tolist())
@@ -744,8 +747,9 @@ def test_features_comparison(loaded_database_genomic_data_store: GenomicsDataInd
         int)  # Convert to int for easier comparison
     assert comparison_df.index.name == 'Mutation'
     assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type', 'Total',
-            'Category1_percent', 'Category1_Unknown percent', 'Category1_Present and Unknown percent',
-            'Category2_percent', 'Category2_Unknown percent', 'Category2_Present and Unknown percent',
+            'Category1_percent', 'Category2_percent',
+            'Category1_Unknown percent', 'Category2_Unknown percent',
+            'Category1_Present and Unknown percent', 'Category2_Present and Unknown percent',
             'Category1_total', 'Category2_total'] == comparison_df.columns.tolist()
     assert {9} == set(comparison_df['Total'].tolist())
     assert {1} == set(comparison_df['Category1_total'].tolist())
@@ -822,8 +826,9 @@ def test_features_comparison_annotations(loaded_database_genomic_data_store_anno
     comparison_df = comparison_df.fillna('<NA>')
     assert comparison_df.index.name == 'Mutation'
     assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type', 'Total',
-            '10_count', '10_Unknown count', '10_Present and Unknown count',
-            '14_count', '14_Unknown count', '14_Present and Unknown count',
+            '10_count', '14_count',
+            '10_Unknown count', '14_Unknown count',
+            '10_Present and Unknown count', '14_Present and Unknown count',
             '10_total', '14_total',
             'Annotation', 'Annotation_Impact',
             'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
@@ -904,8 +909,9 @@ def test_features_comparison_annotations(loaded_database_genomic_data_store_anno
         int)  # Convert to int for easier comparison
     assert comparison_df.index.name == 'Mutation'
     assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type', 'Total',
-            'Category1_percent', 'Category1_Unknown percent', 'Category1_Present and Unknown percent',
-            'Category2_percent', 'Category2_Unknown percent', 'Category2_Present and Unknown percent',
+            'Category1_percent', 'Category2_percent',
+            'Category1_Unknown percent', 'Category2_Unknown percent',
+            'Category1_Present and Unknown percent', 'Category2_Present and Unknown percent',
             'Category1_total', 'Category2_total',
             'Annotation', 'Annotation_Impact',
             'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
@@ -969,8 +975,9 @@ def test_features_comparison_annotations(loaded_database_genomic_data_store_anno
     comparison_df = comparison_df.fillna('<NA>')
     assert comparison_df.index.name == 'Mutation'
     assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type', 'Total',
-            '10_count', '10_Unknown count', '10_Present and Unknown count',
-            '14_count', '14_Unknown count', '14_Present and Unknown count',
+            '10_count', '14_count',
+            '10_Unknown count', '14_Unknown count',
+            '10_Present and Unknown count', '14_Present and Unknown count',
             '10_total', '14_total',
             'Annotation', 'Annotation_Impact',
             'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
