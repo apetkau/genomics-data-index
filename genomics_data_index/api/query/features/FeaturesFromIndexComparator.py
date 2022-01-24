@@ -59,7 +59,6 @@ class FeatureSamplesSingleCategorySummarizer(FeatureSamplesSummarizer):
 
 
 class FeatureSamplesMultipleCategorySummarizer(FeatureSamplesSummarizer):
-
     COMPARE_TYPE_LABELS = ['_', '_Unknown ', '_Present and Unknown ']
 
     def __init__(self, sample_categories: List[SampleSet], category_prefixes: List[str] = None,
@@ -92,8 +91,9 @@ class FeatureSamplesMultipleCategorySummarizer(FeatureSamplesSummarizer):
         self._prefixes_sample_categories = {p: c for p, c in zip(category_prefixes, sample_categories)}
 
         self._summary_names = ['Total'] \
-                            + [f'{c}{t}{compare_kind}' for t in self.COMPARE_TYPE_LABELS for c in self._category_prefixes] \
-                            + [f'{c}_total' for c in self._category_prefixes]
+                              + [f'{c}{t}{compare_kind}' for t in self.COMPARE_TYPE_LABELS for c in
+                                 self._category_prefixes] \
+                              + [f'{c}_total' for c in self._category_prefixes]
 
     def summary_data(self, samples: SampleSet, unknown_samples: Optional[SampleSet], total: int) -> List[Any]:
         data = [total]
@@ -125,7 +125,8 @@ class FeatureSamplesMultipleCategorySummarizer(FeatureSamplesSummarizer):
 
                     if unknown_samples is not None:
                         unknown_sample_percent = (unknown_sample_count / sample_category_total) * self._factor
-                        present_and_unknown_sample_percent = (present_and_unknown_sample_count / sample_category_total) * self._factor
+                        present_and_unknown_sample_percent = (
+                                                                         present_and_unknown_sample_count / sample_category_total) * self._factor
                     else:
                         unknown_sample_percent = pd.NA
                         present_and_unknown_sample_percent = pd.NA

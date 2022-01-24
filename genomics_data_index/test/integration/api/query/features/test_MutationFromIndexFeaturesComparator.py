@@ -774,7 +774,8 @@ def test_features_comparison(loaded_database_genomic_data_store: GenomicsDataInd
     assert 100 == comparison_df.loc['reference:4693:C:CGA', 'Category2_Present and Unknown percent']
 
 
-def test_features_comparison_annotations(loaded_database_genomic_data_store_annotations_include_unknown: GenomicsDataIndex):
+def test_features_comparison_annotations(
+        loaded_database_genomic_data_store_annotations_include_unknown: GenomicsDataIndex):
     db = loaded_database_genomic_data_store_annotations_include_unknown.connection.database
 
     sample_sh14_001 = db.get_session().query(Sample).filter(Sample.name == 'SH14-001').one()
