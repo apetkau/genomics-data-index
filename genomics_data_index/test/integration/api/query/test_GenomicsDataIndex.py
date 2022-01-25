@@ -212,7 +212,7 @@ def test_summaries_mlst_data(loaded_database_genomic_data_store: GenomicsDataInd
     gds = loaded_database_genomic_data_store
 
     # MLST summaries for lmonocytogenes
-    summary_df = gds.features_summary(kind='mlst', scope='lmonocytogenes')
+    summary_df = gds.features_summary(kind='mlst', scope='lmonocytogenes', include_unknown_samples=True)
     summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
     summary_df['Unknown Count'] = summary_df['Unknown Count'].fillna(-1).astype(int)
     summary_df['Present and Unknown Count'] = summary_df['Present and Unknown Count'].fillna(-1).astype(int)
@@ -234,7 +234,8 @@ def test_summaries_mlst_data(loaded_database_genomic_data_store: GenomicsDataInd
         'mlst:lmonocytogenes:ldh:5'].tolist()
 
     # MLST summaries for lmonocytogenes include unknown
-    summary_df = gds.features_summary(kind='mlst', scope='lmonocytogenes', include_unknown_features=True)
+    summary_df = gds.features_summary(kind='mlst', scope='lmonocytogenes', include_unknown_features=True,
+                                      include_unknown_samples=True)
     summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
     summary_df['Unknown Count'] = summary_df['Unknown Count'].fillna(-1).astype(int)
     summary_df['Present and Unknown Count'] = summary_df['Present and Unknown Count'].fillna(-1).astype(int)
@@ -258,7 +259,7 @@ def test_summaries_mlst_data(loaded_database_genomic_data_store: GenomicsDataInd
         'mlst:lmonocytogenes:ldh:?'].tolist()
 
     # MLST summaries for lmonocytogenes with specific locus id
-    summary_df = gds.features_summary(kind='mlst', scope='lmonocytogenes', locus='bglA')
+    summary_df = gds.features_summary(kind='mlst', scope='lmonocytogenes', locus='bglA', include_unknown_samples=True)
     summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
     summary_df['Unknown Count'] = summary_df['Unknown Count'].fillna(-1).astype(int)
     summary_df['Present and Unknown Count'] = summary_df['Present and Unknown Count'].fillna(-1).astype(int)
@@ -275,7 +276,7 @@ def test_summaries_mlst_data(loaded_database_genomic_data_store: GenomicsDataInd
 
     # MLST summaries for lmonocytogenes include unknown and not present
     summary_df = gds.features_summary(kind='mlst', scope='lmonocytogenes', include_present_features=False,
-                                      include_unknown_features=True)
+                                      include_unknown_features=True, include_unknown_samples=True)
     summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
     summary_df['Unknown Count'] = summary_df['Unknown Count'].fillna(-1).astype(int)
     summary_df['Present and Unknown Count'] = summary_df['Present and Unknown Count'].fillna(-1).astype(int)
@@ -290,7 +291,7 @@ def test_summaries_mlst_data(loaded_database_genomic_data_store: GenomicsDataInd
 
     # MLST summaries for lmonocytogenes not include present or unknown
     summary_df = gds.features_summary(kind='mlst', scope='lmonocytogenes', include_present_features=False,
-                                      include_unknown_features=False)
+                                      include_unknown_features=False, include_unknown_samples=True)
     summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
     summary_df['Unknown Count'] = summary_df['Unknown Count'].fillna(-1).astype(int)
     summary_df['Present and Unknown Count'] = summary_df['Present and Unknown Count'].fillna(-1).astype(int)
