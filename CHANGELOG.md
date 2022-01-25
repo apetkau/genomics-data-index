@@ -13,6 +13,7 @@
 * [api]: Automatically prune tree when making `TreeStyler` object (0.5.0.dev5).
 * [api]: Updates to pruning of tree when joining external tree to query (0.5.0.dev5).
 * [api]: Add **Unknown** and **Present and Unknown** categories to `query.features_comparison()` output (0.5.0.dev6).
+* [api]: Added **use_only_samples_in_categories** parameter to `query.features_comparison()` (0.5.0.dev7).
 
 # 0.4.0
 

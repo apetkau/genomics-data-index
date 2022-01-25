@@ -125,8 +125,8 @@ class FeatureSamplesMultipleCategorySummarizer(FeatureSamplesSummarizer):
 
                     if unknown_samples is not None:
                         unknown_sample_percent = (unknown_sample_count / sample_category_total) * self._factor
-                        present_and_unknown_sample_percent = (
-                                                                     present_and_unknown_sample_count / sample_category_total) * self._factor
+                        present_and_unknown_sample_percent = (present_and_unknown_sample_count / sample_category_total) \
+                                                             * self._factor
                     else:
                         unknown_sample_percent = pd.NA
                         present_and_unknown_sample_percent = pd.NA
@@ -178,37 +178,43 @@ class FeaturesFromIndexComparator(FeaturesComparator, abc.ABC):
             feature = present_features[feature_id]
 
             samples_in_feature = present_samples.intersection(feature.sample_ids)
-
-            if self._include_unknown_samples and not feature.is_unknown:
-                query_feature = QueryFeatureFactory.instance().create_feature(feature.query_id)
-                unknown_samples_dict = self._connection.sample_service.find_unknown_sample_sets_by_features(
-                    [query_feature])
-                samples_unknown_in_feature = present_samples.intersection(
-                    self._get_samples_or_empty(query_feature, unknown_samples_dict))
-                sample_unknown_count = len(samples_unknown_in_feature)
-
-                extra_msg = f' for feature {query_feature}'
-                samples_in_feature = self.remove_unknowns_from_present_samples(
-                    sample_set=samples_in_feature,
-                    unknown_set=samples_unknown_in_feature,
-                    sample_service=self._connection.sample_service,
-                    extra_message=extra_msg,
-                )
-            else:
-                samples_unknown_in_feature = None
-                sample_unknown_count = None
-
             sample_count = len(samples_in_feature)
 
-            if sample_count > 0 or (self._include_unknown_no_present_samples and
-                                    sample_unknown_count is not None and sample_unknown_count > 0):
-                data.append(self._create_feature_sample_count_row(feature_id,
-                                                                  feature=feature,
-                                                                  feature_samples=samples_in_feature,
-                                                                  feature_samples_unknown=samples_unknown_in_feature,
-                                                                  total=total,
-                                                                  feature_samples_summarizer=feature_samples_summarizer)
-                            )
+            # We don't want to include results with 0 for sample count
+            # (unless we need to check for unknown sample counts)
+            if sample_count > 0 or self._include_unknown_no_present_samples:
+                if self._include_unknown_samples and not feature.is_unknown:
+                    query_feature = QueryFeatureFactory.instance().create_feature(feature.query_id)
+                    unknown_samples_dict = self._connection.sample_service.find_unknown_sample_sets_by_features(
+                        [query_feature])
+                    samples_unknown_in_feature = present_samples.intersection(
+                        self._get_samples_or_empty(query_feature, unknown_samples_dict))
+                    sample_unknown_count = len(samples_unknown_in_feature)
+
+                    extra_msg = f' for feature {query_feature}'
+                    samples_in_feature = self.remove_unknowns_from_present_samples(
+                        sample_set=samples_in_feature,
+                        unknown_set=samples_unknown_in_feature,
+                        sample_service=self._connection.sample_service,
+                        extra_message=extra_msg,
+                    )
+                else:
+                    samples_unknown_in_feature = None
+                    sample_unknown_count = None
+
+                sample_count = len(samples_in_feature)
+
+                # Since "sample_count" may have been adjusted due to unknown samples, need to check
+                # for 0 sample_count again
+                if sample_count > 0 or (self._include_unknown_no_present_samples and
+                                        sample_unknown_count is not None and sample_unknown_count > 0):
+                    data.append(self._create_feature_sample_count_row(feature_id,
+                                                                      feature=feature,
+                                                                      feature_samples=samples_in_feature,
+                                                                      feature_samples_unknown=samples_unknown_in_feature,
+                                                                      total=total,
+                                                                      feature_samples_summarizer=feature_samples_summarizer)
+                                )
         summary_df = pd.DataFrame(data,
                                   columns=[self.index_name] \
                                           + self.feature_id_columns + feature_samples_summarizer.summary_names())
@@ -222,6 +228,7 @@ class FeaturesFromIndexComparator(FeaturesComparator, abc.ABC):
                             sample_categories: List[SampleSet],
                             category_prefixes: List[str] = None,
                             category_samples_threshold: int = None,
+                            use_only_samples_in_categories: bool = True,
                             unit: str = 'percent') -> pd.DataFrame:
         sample_categories_in_selected = [c.intersection(selected_samples) for c in sample_categories]
 
@@ -236,10 +243,19 @@ class FeaturesFromIndexComparator(FeaturesComparator, abc.ABC):
             filtered_categories = sample_categories_in_selected
             filtered_category_prefixes = category_prefixes
 
+        filtered_samples_union = SampleSet.create_empty()
+
+        if use_only_samples_in_categories:
+            for sample_category in filtered_categories:
+                filtered_samples_union = filtered_samples_union.union(sample_category)
+            samples_for_summary = filtered_samples_union
+        else:
+            samples_for_summary = selected_samples
+
         samples_summarizer = FeatureSamplesMultipleCategorySummarizer(sample_categories=filtered_categories,
                                                                       category_prefixes=filtered_category_prefixes,
                                                                       compare_kind=unit)
-        return self._do_summary(sample_set=selected_samples, feature_samples_summarizer=samples_summarizer)
+        return self._do_summary(sample_set=samples_for_summary, feature_samples_summarizer=samples_summarizer)
 
     @abc.abstractmethod
     def _do_summary(self, sample_set: SampleSet, feature_samples_summarizer: FeatureSamplesSummarizer) -> pd.DataFrame:

@@ -289,16 +289,22 @@ class SamplesQueryIndex(SamplesQuery):
                             kind: str = 'mutations',
                             unit: str = 'percent',
                             category_samples_threshold: int = None,
+                            include_unknown_samples: bool = True, include_unknown_no_present_samples: bool = False,
+                            use_only_samples_in_categories: bool = True,
                             **kwargs) -> pd.DataFrame:
         if kind == 'mutations':
             features_comparator = MutationFeaturesFromIndexComparator(connection=self._query_connection,
                                                                       include_unknown=False,
                                                                       include_present=True,
+                                                                      include_unknown_samples=include_unknown_samples,
+                                                                      include_unknown_no_present_samples=include_unknown_no_present_samples,
                                                                       **kwargs)
         elif kind == 'mlst':
             features_comparator = MLSTFeaturesComparator(connection=self._query_connection,
                                                          include_unknown=False,
                                                          include_present=True,
+                                                         include_unknown_samples=include_unknown_samples,
+                                                         include_unknown_no_present_samples=include_unknown_no_present_samples,
                                                          **kwargs)
         else:
             raise Exception(f'Unsupported value kind=[{kind}]. Must be one of {self.SUMMARY_FEATURES_KINDS}.')
@@ -327,6 +333,7 @@ class SamplesQueryIndex(SamplesQuery):
                                                            sample_categories=categories,
                                                            category_prefixes=category_prefixes,
                                                            category_samples_threshold=category_samples_threshold,
+                                                           use_only_samples_in_categories=use_only_samples_in_categories,
                                                            unit=unit)
 
     def tofeaturesset(self, kind: str = 'mutations', selection: str = 'all',

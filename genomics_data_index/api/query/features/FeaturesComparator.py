@@ -45,6 +45,7 @@ class FeaturesComparator(abc.ABC):
                             sample_categories: List[SampleSet],
                             category_prefixes: List[str] = None,
                             category_samples_threshold: int = None,
+                            use_only_samples_in_categories: bool = True,
                             unit: str = 'percent') -> pd.DataFrame:
         """
         Creates a dataframe which compares different categories of samples with each other with respect to features.
@@ -72,6 +73,10 @@ class FeaturesComparator(abc.ABC):
         :param sample_categories: The different categories to compare.
         :param category_prefixes: The prefixes to use for the different categories (defaults to Category1, Category2, ...).
         :param category_samples_threshold: A threshold on the number of samples in a category for it to be considered.
+        :param use_only_samples_in_categories: Whether or not to only use samples in categories for comparison
+                                               or to use all selected samples. If all selected samples are used
+                                               then it's possible to include features in the comparison table
+                                               where no samples are found in any category.
         :param unit: The type of data to compare in each category (either 'percent', 'proportion', or 'count').
         :return: A dataframe comparing each category with respect to the differences in features.
         """

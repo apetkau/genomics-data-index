@@ -87,6 +87,8 @@ class DataFrameSamplesQuery(WrappedSamplesQuery):
                             kind: str = 'mutations',
                             unit: str = 'percent',
                             category_samples_threshold: int = None,
+                            include_unknown_samples: bool = True, include_unknown_no_present_samples: bool = False,
+                            use_only_samples_in_categories: bool = True,
                             **kwargs) -> pd.DataFrame:
         if categories_kind == 'dataframe':
             if not isinstance(sample_categories, str):
@@ -111,6 +113,9 @@ class DataFrameSamplesQuery(WrappedSamplesQuery):
                                                            kind=kind,
                                                            unit=unit,
                                                            category_samples_threshold=category_samples_threshold,
+                                                           include_unknown_samples=include_unknown_samples,
+                                                           include_unknown_no_present_samples=include_unknown_no_present_samples,
+                                                           use_only_samples_in_categories=use_only_samples_in_categories,
                                                            **kwargs)
         else:
             return super().features_comparison(sample_categories=sample_categories,
@@ -119,6 +124,9 @@ class DataFrameSamplesQuery(WrappedSamplesQuery):
                                                kind=kind,
                                                unit=unit,
                                                category_samples_threshold=category_samples_threshold,
+                                               include_unknown_samples=include_unknown_samples,
+                                               include_unknown_no_present_samples=include_unknown_no_present_samples,
+                                               use_only_samples_in_categories=use_only_samples_in_categories,
                                                **kwargs)
 
     def _isa_internal(self, data: Union[str, List[str], pd.Series, SamplesQuery, SampleSet], kind: str,
