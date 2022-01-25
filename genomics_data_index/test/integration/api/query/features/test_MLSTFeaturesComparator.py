@@ -498,7 +498,8 @@ def test_features_comparison(loaded_database_genomic_data_store: GenomicsDataInd
                                                         unit='count')
     assert 24 == len(comparison_df)
     assert 'MLST Feature' == comparison_df.index.name
-    assert ['Scheme', 'Locus', 'Allele', 'Total', 'All_count', 'All_total'] == list(comparison_df.columns)
+    assert ['Scheme', 'Locus', 'Allele', 'Total', 'All_count', 'All_Unknown count',
+            'All_Present and Unknown count', 'All_total'] == list(comparison_df.columns)
     assert {9} == set(comparison_df['Total'].tolist())
     assert {9} == set(comparison_df['All_total'].tolist())
     assert 5 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1', 'All_count']
@@ -507,6 +508,18 @@ def test_features_comparison(loaded_database_genomic_data_store: GenomicsDataInd
     assert 2 == comparison_df.loc['mlst:ecoli:adk:100', 'All_count']
     assert 2 == comparison_df.loc['mlst:ecoli:recA:7', 'All_count']
     assert 1 == comparison_df.loc['mlst:campylobacter:uncA:6', 'All_count']
+
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1', 'All_Unknown count']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:51', 'All_Unknown count']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:52', 'All_Unknown count']
+    assert 1 == comparison_df.loc['mlst:lmonocytogenes:ldh:5', 'All_Unknown count']
+    assert 1 == comparison_df.loc['mlst:campylobacter:uncA:6', 'All_Unknown count']
+
+    assert 5 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1', 'All_Present and Unknown count']
+    assert 3 == comparison_df.loc['mlst:lmonocytogenes:bglA:51', 'All_Present and Unknown count']
+    assert 2 == comparison_df.loc['mlst:lmonocytogenes:bglA:52', 'All_Present and Unknown count']
+    assert 5 == comparison_df.loc['mlst:lmonocytogenes:ldh:5', 'All_Present and Unknown count']
+    assert 2 == comparison_df.loc['mlst:campylobacter:uncA:6', 'All_Present and Unknown count']
 
     # Test two categories: one of lmonocytogenes and one of the rest
     sample_categories = [SampleSet(lmonocytogenes), SampleSet(all_sample_ids - lmonocytogenes)]
@@ -518,6 +531,8 @@ def test_features_comparison(loaded_database_genomic_data_store: GenomicsDataInd
     assert 'MLST Feature' == comparison_df.index.name
     assert ['Scheme', 'Locus', 'Allele', 'Total',
             'lmonocytogenes_count', 'other_count',
+            'lmonocytogenes_Unknown count', 'other_Unknown count',
+            'lmonocytogenes_Present and Unknown count', 'other_Present and Unknown count',
             'lmonocytogenes_total', 'other_total'] == list(comparison_df.columns)
     assert {9} == set(comparison_df['Total'].tolist())
     assert {5} == set(comparison_df['lmonocytogenes_total'].tolist())
@@ -532,8 +547,40 @@ def test_features_comparison(loaded_database_genomic_data_store: GenomicsDataInd
     assert 2 == comparison_df.loc['mlst:ecoli:adk:100', 'other_count']
     assert 0 == comparison_df.loc['mlst:ecoli:recA:7', 'lmonocytogenes_count']
     assert 2 == comparison_df.loc['mlst:ecoli:recA:7', 'other_count']
+    assert 4 == comparison_df.loc['mlst:lmonocytogenes:ldh:5', 'lmonocytogenes_count']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:ldh:5', 'other_count']
     assert 0 == comparison_df.loc['mlst:campylobacter:uncA:6', 'lmonocytogenes_count']
     assert 1 == comparison_df.loc['mlst:campylobacter:uncA:6', 'other_count']
+
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1', 'lmonocytogenes_Unknown count']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1', 'other_Unknown count']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:51', 'lmonocytogenes_Unknown count']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:51', 'other_Unknown count']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:52', 'lmonocytogenes_Unknown count']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:52', 'other_Unknown count']
+    assert 0 == comparison_df.loc['mlst:ecoli:adk:100', 'lmonocytogenes_Unknown count']
+    assert 0 == comparison_df.loc['mlst:ecoli:adk:100', 'other_Unknown count']
+    assert 0 == comparison_df.loc['mlst:ecoli:recA:7', 'lmonocytogenes_Unknown count']
+    assert 0 == comparison_df.loc['mlst:ecoli:recA:7', 'other_Unknown count']
+    assert 1 == comparison_df.loc['mlst:lmonocytogenes:ldh:5', 'lmonocytogenes_Unknown count']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:ldh:5', 'other_Unknown count']
+    assert 0 == comparison_df.loc['mlst:campylobacter:uncA:6', 'lmonocytogenes_Unknown count']
+    assert 1 == comparison_df.loc['mlst:campylobacter:uncA:6', 'other_Unknown count']
+
+    assert 5 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1', 'lmonocytogenes_Present and Unknown count']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1', 'other_Present and Unknown count']
+    assert 3 == comparison_df.loc['mlst:lmonocytogenes:bglA:51', 'lmonocytogenes_Present and Unknown count']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:51', 'other_Present and Unknown count']
+    assert 2 == comparison_df.loc['mlst:lmonocytogenes:bglA:52', 'lmonocytogenes_Present and Unknown count']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:52', 'other_Present and Unknown count']
+    assert 0 == comparison_df.loc['mlst:ecoli:adk:100', 'lmonocytogenes_Present and Unknown count']
+    assert 2 == comparison_df.loc['mlst:ecoli:adk:100', 'other_Present and Unknown count']
+    assert 0 == comparison_df.loc['mlst:ecoli:recA:7', 'lmonocytogenes_Present and Unknown count']
+    assert 2 == comparison_df.loc['mlst:ecoli:recA:7', 'other_Present and Unknown count']
+    assert 5 == comparison_df.loc['mlst:lmonocytogenes:ldh:5', 'lmonocytogenes_Present and Unknown count']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:ldh:5', 'other_Present and Unknown count']
+    assert 0 == comparison_df.loc['mlst:campylobacter:uncA:6', 'lmonocytogenes_Present and Unknown count']
+    assert 2 == comparison_df.loc['mlst:campylobacter:uncA:6', 'other_Present and Unknown count']
 
     # Test two categories percent: one of lmonocytogenes and one of the rest
     sample_categories = [SampleSet(lmonocytogenes), SampleSet(all_sample_ids - lmonocytogenes)]
@@ -545,10 +592,16 @@ def test_features_comparison(loaded_database_genomic_data_store: GenomicsDataInd
     assert 'MLST Feature' == comparison_df.index.name
     assert ['Scheme', 'Locus', 'Allele', 'Total',
             'lmonocytogenes_percent', 'other_percent',
+            'lmonocytogenes_Unknown percent', 'other_Unknown percent',
+            'lmonocytogenes_Present and Unknown percent', 'other_Present and Unknown percent',
             'lmonocytogenes_total', 'other_total'] == list(comparison_df.columns)
-    comparison_df['lmonocytogenes_percent'] = comparison_df['lmonocytogenes_percent'].astype(
-        int)  # Convert to int for easier comparison
-    comparison_df['other_percent'] = comparison_df['other_percent'].astype(int)  # Convert to int for easier comparison
+    comparison_df['lmonocytogenes_percent'] = comparison_df['lmonocytogenes_percent'].astype(int)
+    comparison_df['other_percent'] = comparison_df['other_percent'].astype(int)
+    comparison_df['lmonocytogenes_Unknown percent'] = comparison_df['lmonocytogenes_Unknown percent'].astype(int)
+    comparison_df['other_Unknown percent'] = comparison_df['other_Unknown percent'].astype(int)
+    comparison_df['lmonocytogenes_Present and Unknown percent'] = comparison_df[
+        'lmonocytogenes_Present and Unknown percent'].astype(int)
+    comparison_df['other_Present and Unknown percent'] = comparison_df['other_Present and Unknown percent'].astype(int)
     assert {9} == set(comparison_df['Total'].tolist())
     assert {5} == set(comparison_df['lmonocytogenes_total'].tolist())
     assert {4} == set(comparison_df['other_total'].tolist())
@@ -562,8 +615,40 @@ def test_features_comparison(loaded_database_genomic_data_store: GenomicsDataInd
     assert 50 == comparison_df.loc['mlst:ecoli:adk:100', 'other_percent']
     assert 0 == comparison_df.loc['mlst:ecoli:recA:7', 'lmonocytogenes_percent']
     assert 50 == comparison_df.loc['mlst:ecoli:recA:7', 'other_percent']
+    assert 80 == comparison_df.loc['mlst:lmonocytogenes:ldh:5', 'lmonocytogenes_percent']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:ldh:5', 'other_percent']
     assert 0 == comparison_df.loc['mlst:campylobacter:uncA:6', 'lmonocytogenes_percent']
     assert 25 == comparison_df.loc['mlst:campylobacter:uncA:6', 'other_percent']
+
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1', 'lmonocytogenes_Unknown percent']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1', 'other_Unknown percent']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:51', 'lmonocytogenes_Unknown percent']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:51', 'other_Unknown percent']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:52', 'lmonocytogenes_Unknown percent']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:52', 'other_Unknown percent']
+    assert 0 == comparison_df.loc['mlst:ecoli:adk:100', 'lmonocytogenes_Unknown percent']
+    assert 0 == comparison_df.loc['mlst:ecoli:adk:100', 'other_Unknown percent']
+    assert 0 == comparison_df.loc['mlst:ecoli:recA:7', 'lmonocytogenes_Unknown percent']
+    assert 0 == comparison_df.loc['mlst:ecoli:recA:7', 'other_Unknown percent']
+    assert 20 == comparison_df.loc['mlst:lmonocytogenes:ldh:5', 'lmonocytogenes_Unknown percent']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:ldh:5', 'other_Unknown percent']
+    assert 0 == comparison_df.loc['mlst:campylobacter:uncA:6', 'lmonocytogenes_Unknown percent']
+    assert 25 == comparison_df.loc['mlst:campylobacter:uncA:6', 'other_Unknown percent']
+
+    assert 100 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1', 'lmonocytogenes_Present and Unknown percent']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1', 'other_Present and Unknown percent']
+    assert 60 == comparison_df.loc['mlst:lmonocytogenes:bglA:51', 'lmonocytogenes_Present and Unknown percent']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:51', 'other_Present and Unknown percent']
+    assert 40 == comparison_df.loc['mlst:lmonocytogenes:bglA:52', 'lmonocytogenes_Present and Unknown percent']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:52', 'other_Present and Unknown percent']
+    assert 0 == comparison_df.loc['mlst:ecoli:adk:100', 'lmonocytogenes_Present and Unknown percent']
+    assert 50 == comparison_df.loc['mlst:ecoli:adk:100', 'other_Present and Unknown percent']
+    assert 0 == comparison_df.loc['mlst:ecoli:recA:7', 'lmonocytogenes_Present and Unknown percent']
+    assert 50 == comparison_df.loc['mlst:ecoli:recA:7', 'other_Present and Unknown percent']
+    assert 100 == comparison_df.loc['mlst:lmonocytogenes:ldh:5', 'lmonocytogenes_Present and Unknown percent']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:ldh:5', 'other_Present and Unknown percent']
+    assert 0 == comparison_df.loc['mlst:campylobacter:uncA:6', 'lmonocytogenes_Present and Unknown percent']
+    assert 50 == comparison_df.loc['mlst:campylobacter:uncA:6', 'other_Present and Unknown percent']
 
     # Test two categories proportion: one of lmonocytogenes and one of the rest
     sample_categories = [SampleSet(lmonocytogenes), SampleSet(all_sample_ids - lmonocytogenes)]
@@ -575,10 +660,19 @@ def test_features_comparison(loaded_database_genomic_data_store: GenomicsDataInd
     assert 'MLST Feature' == comparison_df.index.name
     assert ['Scheme', 'Locus', 'Allele', 'Total',
             'lmonocytogenes_proportion', 'other_proportion',
+            'lmonocytogenes_Unknown proportion', 'other_Unknown proportion',
+            'lmonocytogenes_Present and Unknown proportion', 'other_Present and Unknown proportion',
             'lmonocytogenes_total', 'other_total'] == list(comparison_df.columns)
-    comparison_df['lmonocytogenes_proportion'] = (comparison_df['lmonocytogenes_proportion'] * 100).astype(
-        int)  # Convert to percent as int for easier comparison
+    # Convert to percent as int for easier comparison
+    comparison_df['lmonocytogenes_proportion'] = (comparison_df['lmonocytogenes_proportion'] * 100).astype(int)
+    comparison_df['lmonocytogenes_Unknown proportion'] = (
+            comparison_df['lmonocytogenes_Unknown proportion'] * 100).astype(int)
+    comparison_df['lmonocytogenes_Present and Unknown proportion'] = (
+            comparison_df['lmonocytogenes_Present and Unknown proportion'] * 100).astype(int)
     comparison_df['other_proportion'] = (comparison_df['other_proportion'] * 100).astype(int)
+    comparison_df['other_Unknown proportion'] = (comparison_df['other_Unknown proportion'] * 100).astype(int)
+    comparison_df['other_Present and Unknown proportion'] = (
+            comparison_df['other_Present and Unknown proportion'] * 100).astype(int)
     assert {9} == set(comparison_df['Total'].tolist())
     assert {5} == set(comparison_df['lmonocytogenes_total'].tolist())
     assert {4} == set(comparison_df['other_total'].tolist())
@@ -592,8 +686,40 @@ def test_features_comparison(loaded_database_genomic_data_store: GenomicsDataInd
     assert 50 == comparison_df.loc['mlst:ecoli:adk:100', 'other_proportion']
     assert 0 == comparison_df.loc['mlst:ecoli:recA:7', 'lmonocytogenes_proportion']
     assert 50 == comparison_df.loc['mlst:ecoli:recA:7', 'other_proportion']
+    assert 80 == comparison_df.loc['mlst:lmonocytogenes:ldh:5', 'lmonocytogenes_proportion']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:ldh:5', 'other_proportion']
     assert 0 == comparison_df.loc['mlst:campylobacter:uncA:6', 'lmonocytogenes_proportion']
     assert 25 == comparison_df.loc['mlst:campylobacter:uncA:6', 'other_proportion']
+
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1', 'lmonocytogenes_Unknown proportion']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1', 'other_Unknown proportion']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:51', 'lmonocytogenes_Unknown proportion']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:51', 'other_Unknown proportion']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:52', 'lmonocytogenes_Unknown proportion']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:52', 'other_Unknown proportion']
+    assert 0 == comparison_df.loc['mlst:ecoli:adk:100', 'lmonocytogenes_Unknown proportion']
+    assert 0 == comparison_df.loc['mlst:ecoli:adk:100', 'other_Unknown proportion']
+    assert 0 == comparison_df.loc['mlst:ecoli:recA:7', 'lmonocytogenes_Unknown proportion']
+    assert 0 == comparison_df.loc['mlst:ecoli:recA:7', 'other_Unknown proportion']
+    assert 20 == comparison_df.loc['mlst:lmonocytogenes:ldh:5', 'lmonocytogenes_Unknown proportion']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:ldh:5', 'other_Unknown proportion']
+    assert 0 == comparison_df.loc['mlst:campylobacter:uncA:6', 'lmonocytogenes_Unknown proportion']
+    assert 25 == comparison_df.loc['mlst:campylobacter:uncA:6', 'other_Unknown proportion']
+
+    assert 100 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1', 'lmonocytogenes_Present and Unknown proportion']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1', 'other_Present and Unknown proportion']
+    assert 60 == comparison_df.loc['mlst:lmonocytogenes:bglA:51', 'lmonocytogenes_Present and Unknown proportion']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:51', 'other_Present and Unknown proportion']
+    assert 40 == comparison_df.loc['mlst:lmonocytogenes:bglA:52', 'lmonocytogenes_Present and Unknown proportion']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:52', 'other_Present and Unknown proportion']
+    assert 0 == comparison_df.loc['mlst:ecoli:adk:100', 'lmonocytogenes_Present and Unknown proportion']
+    assert 50 == comparison_df.loc['mlst:ecoli:adk:100', 'other_Present and Unknown proportion']
+    assert 0 == comparison_df.loc['mlst:ecoli:recA:7', 'lmonocytogenes_Present and Unknown proportion']
+    assert 50 == comparison_df.loc['mlst:ecoli:recA:7', 'other_Present and Unknown proportion']
+    assert 100 == comparison_df.loc['mlst:lmonocytogenes:ldh:5', 'lmonocytogenes_Present and Unknown proportion']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:ldh:5', 'other_Present and Unknown proportion']
+    assert 0 == comparison_df.loc['mlst:campylobacter:uncA:6', 'lmonocytogenes_Present and Unknown proportion']
+    assert 50 == comparison_df.loc['mlst:campylobacter:uncA:6', 'other_Present and Unknown proportion']
 
     # Test two categories: one of lmonocytogenes and one of the rest threshold below
     sample_categories = [SampleSet(lmonocytogenes), SampleSet(all_sample_ids - lmonocytogenes)]
@@ -606,6 +732,8 @@ def test_features_comparison(loaded_database_genomic_data_store: GenomicsDataInd
     assert 'MLST Feature' == comparison_df.index.name
     assert ['Scheme', 'Locus', 'Allele', 'Total',
             'lmonocytogenes_count', 'other_count',
+            'lmonocytogenes_Unknown count', 'other_Unknown count',
+            'lmonocytogenes_Present and Unknown count', 'other_Present and Unknown count',
             'lmonocytogenes_total', 'other_total'] == list(comparison_df.columns)
     assert {9} == set(comparison_df['Total'].tolist())
     assert {5} == set(comparison_df['lmonocytogenes_total'].tolist())
@@ -620,8 +748,40 @@ def test_features_comparison(loaded_database_genomic_data_store: GenomicsDataInd
     assert 2 == comparison_df.loc['mlst:ecoli:adk:100', 'other_count']
     assert 0 == comparison_df.loc['mlst:ecoli:recA:7', 'lmonocytogenes_count']
     assert 2 == comparison_df.loc['mlst:ecoli:recA:7', 'other_count']
+    assert 4 == comparison_df.loc['mlst:lmonocytogenes:ldh:5', 'lmonocytogenes_count']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:ldh:5', 'other_count']
     assert 0 == comparison_df.loc['mlst:campylobacter:uncA:6', 'lmonocytogenes_count']
     assert 1 == comparison_df.loc['mlst:campylobacter:uncA:6', 'other_count']
+
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1', 'lmonocytogenes_Unknown count']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1', 'other_Unknown count']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:51', 'lmonocytogenes_Unknown count']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:51', 'other_Unknown count']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:52', 'lmonocytogenes_Unknown count']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:52', 'other_Unknown count']
+    assert 0 == comparison_df.loc['mlst:ecoli:adk:100', 'lmonocytogenes_Unknown count']
+    assert 0 == comparison_df.loc['mlst:ecoli:adk:100', 'other_Unknown count']
+    assert 0 == comparison_df.loc['mlst:ecoli:recA:7', 'lmonocytogenes_Unknown count']
+    assert 0 == comparison_df.loc['mlst:ecoli:recA:7', 'other_Unknown count']
+    assert 1 == comparison_df.loc['mlst:lmonocytogenes:ldh:5', 'lmonocytogenes_Unknown count']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:ldh:5', 'other_Unknown count']
+    assert 0 == comparison_df.loc['mlst:campylobacter:uncA:6', 'lmonocytogenes_Unknown count']
+    assert 1 == comparison_df.loc['mlst:campylobacter:uncA:6', 'other_Unknown count']
+
+    assert 5 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1', 'lmonocytogenes_Present and Unknown count']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1', 'other_Present and Unknown count']
+    assert 3 == comparison_df.loc['mlst:lmonocytogenes:bglA:51', 'lmonocytogenes_Present and Unknown count']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:51', 'other_Present and Unknown count']
+    assert 2 == comparison_df.loc['mlst:lmonocytogenes:bglA:52', 'lmonocytogenes_Present and Unknown count']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:52', 'other_Present and Unknown count']
+    assert 0 == comparison_df.loc['mlst:ecoli:adk:100', 'lmonocytogenes_Present and Unknown count']
+    assert 2 == comparison_df.loc['mlst:ecoli:adk:100', 'other_Present and Unknown count']
+    assert 0 == comparison_df.loc['mlst:ecoli:recA:7', 'lmonocytogenes_Present and Unknown count']
+    assert 2 == comparison_df.loc['mlst:ecoli:recA:7', 'other_Present and Unknown count']
+    assert 5 == comparison_df.loc['mlst:lmonocytogenes:ldh:5', 'lmonocytogenes_Present and Unknown count']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:ldh:5', 'other_Present and Unknown count']
+    assert 0 == comparison_df.loc['mlst:campylobacter:uncA:6', 'lmonocytogenes_Present and Unknown count']
+    assert 2 == comparison_df.loc['mlst:campylobacter:uncA:6', 'other_Present and Unknown count']
 
     # Test two categories: one of lmonocytogenes and one of the rest threshold above
     sample_categories = [SampleSet(lmonocytogenes), SampleSet(all_sample_ids - lmonocytogenes)]
@@ -633,7 +793,7 @@ def test_features_comparison(loaded_database_genomic_data_store: GenomicsDataInd
     assert 24 == len(comparison_df)
     assert 'MLST Feature' == comparison_df.index.name
     assert ['Scheme', 'Locus', 'Allele', 'Total',
-            'lmonocytogenes_count',
+            'lmonocytogenes_count', 'lmonocytogenes_Unknown count', 'lmonocytogenes_Present and Unknown count',
             'lmonocytogenes_total'] == list(comparison_df.columns)
     assert {9} == set(comparison_df['Total'].tolist())
     assert {5} == set(comparison_df['lmonocytogenes_total'].tolist())
@@ -642,4 +802,21 @@ def test_features_comparison(loaded_database_genomic_data_store: GenomicsDataInd
     assert 2 == comparison_df.loc['mlst:lmonocytogenes:bglA:52', 'lmonocytogenes_count']
     assert 0 == comparison_df.loc['mlst:ecoli:adk:100', 'lmonocytogenes_count']
     assert 0 == comparison_df.loc['mlst:ecoli:recA:7', 'lmonocytogenes_count']
+    assert 4 == comparison_df.loc['mlst:lmonocytogenes:ldh:5', 'lmonocytogenes_count']
     assert 0 == comparison_df.loc['mlst:campylobacter:uncA:6', 'lmonocytogenes_count']
+
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1', 'lmonocytogenes_Unknown count']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:51', 'lmonocytogenes_Unknown count']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:52', 'lmonocytogenes_Unknown count']
+    assert 0 == comparison_df.loc['mlst:ecoli:adk:100', 'lmonocytogenes_Unknown count']
+    assert 0 == comparison_df.loc['mlst:ecoli:recA:7', 'lmonocytogenes_Unknown count']
+    assert 1 == comparison_df.loc['mlst:lmonocytogenes:ldh:5', 'lmonocytogenes_Unknown count']
+    assert 0 == comparison_df.loc['mlst:campylobacter:uncA:6', 'lmonocytogenes_Unknown count']
+
+    assert 5 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1', 'lmonocytogenes_Present and Unknown count']
+    assert 3 == comparison_df.loc['mlst:lmonocytogenes:bglA:51', 'lmonocytogenes_Present and Unknown count']
+    assert 2 == comparison_df.loc['mlst:lmonocytogenes:bglA:52', 'lmonocytogenes_Present and Unknown count']
+    assert 0 == comparison_df.loc['mlst:ecoli:adk:100', 'lmonocytogenes_Present and Unknown count']
+    assert 0 == comparison_df.loc['mlst:ecoli:recA:7', 'lmonocytogenes_Present and Unknown count']
+    assert 5 == comparison_df.loc['mlst:lmonocytogenes:ldh:5', 'lmonocytogenes_Present and Unknown count']
+    assert 0 == comparison_df.loc['mlst:campylobacter:uncA:6', 'lmonocytogenes_Present and Unknown count']
