@@ -470,8 +470,14 @@ class SamplesQueryIndex(SamplesQuery):
         else:
             return SampleSet.create_empty()
 
-    def hasa(self, property: Union[QueryFeature, str, pd.Series], kind='mutation') -> SamplesQuery:
-        if isinstance(property, QueryFeature):
+    def hasa(self, property: Union[QueryFeature, str, pd.Series, List[QueryFeature], List[str]],
+             kind='mutation') -> SamplesQuery:
+        if isinstance(property, list):
+            list_query = self
+            for list_property in property:
+                list_query = list_query.hasa(list_property, kind=kind)
+            return list_query
+        elif isinstance(property, QueryFeature):
             query_feature = property
         elif isinstance(property, pd.Series):
             raise Exception(f'The query type {self.__class__.__name__} cannot support querying with respect to a '

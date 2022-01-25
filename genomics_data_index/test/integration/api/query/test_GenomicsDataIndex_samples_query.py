@@ -1446,6 +1446,13 @@ def test_query_chained_mutation(loaded_database_connection: DataIndexConnection)
     assert {sampleB.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)
 
+    query_result = query(loaded_database_connection).hasa(
+        [QueryFeatureMutationSPDI('reference:839:C:G'),
+         QueryFeatureMutationSPDI('reference:5061:G:A')])
+    assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+    assert 9 == len(query_result.universe_set)
+
 
 def test_query_chained_mutation_has_mutation(loaded_database_connection: DataIndexConnection):
     db = loaded_database_connection.database
@@ -1454,6 +1461,13 @@ def test_query_chained_mutation_has_mutation(loaded_database_connection: DataInd
     query_result = query(loaded_database_connection).hasa(
         'reference:839:C:G', kind='mutation').hasa(
         'reference:5061:G:A', kind='mutation')
+    assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+    assert 9 == len(query_result.universe_set)
+
+    query_result = query(loaded_database_connection).hasa(
+        ['reference:839:C:G'
+        'reference:5061:G:A'], kind='mutation')
     assert 1 == len(query_result)
     assert {sampleB.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)
@@ -1558,6 +1572,28 @@ def test_query_chained_mlst_nucleotide(loaded_database_connection: DataIndexConn
     query_result = query(loaded_database_connection) \
         .hasa('mlst:lmonocytogenes:bglA:52', kind='mlst') \
         .hasa('reference:3319:1:G', kind='mutation')
+    assert 0 == len(query_result)
+    assert 1 == len(query_result.unknown_set)
+    assert {sampleB.id} == set(query_result.unknown_set)
+    assert 8 == len(query_result.absent_set)
+    assert all_sample_ids - {sampleB.id} == set(query_result.absent_set)
+    assert 9 == len(query_result.universe_set)
+
+    # Test query MLST then mutation that will be switched to unknown, QueryFeatures
+    query_result = query(loaded_database_connection).hasa(
+        QueryFeatureMLST('mlst:lmonocytogenes:bglA:52')).hasa(
+        QueryFeatureMutationSPDI('reference:3319:1:G'))
+    assert 0 == len(query_result)
+    assert 1 == len(query_result.unknown_set)
+    assert {sampleB.id} == set(query_result.unknown_set)
+    assert 8 == len(query_result.absent_set)
+    assert all_sample_ids - {sampleB.id} == set(query_result.absent_set)
+    assert 9 == len(query_result.universe_set)
+
+    # Test query MLST then mutation that will be switched to unknown, QueryFeatures list
+    query_result = query(loaded_database_connection).hasa(
+        [QueryFeatureMLST('mlst:lmonocytogenes:bglA:52'),
+         QueryFeatureMutationSPDI('reference:3319:1:G')])
     assert 0 == len(query_result)
     assert 1 == len(query_result.unknown_set)
     assert {sampleB.id} == set(query_result.unknown_set)

@@ -14,6 +14,7 @@
 * [api]: Updates to pruning of tree when joining external tree to query (0.5.0.dev5).
 * [api]: Add **Unknown** and **Present and Unknown** categories to `query.features_comparison()` output (0.5.0.dev6).
 * [api]: Added **use_only_samples_in_categories** parameter to `query.features_comparison()` (0.5.0.dev7).
+* [api]: Added ability to pass a list of features to a query: `query.hasa(features_list)`. This is an alternative to `query.hasa(f1).hasa(f2)...` (0.5.0.dev8).
 
 # 0.4.0
 

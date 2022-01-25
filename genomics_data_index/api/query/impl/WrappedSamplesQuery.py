@@ -133,7 +133,8 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
         return self._wrap_create(self._wrapped_query.subsample(k=k, include_unknown=include_unknown,
                                                                seed=seed))
 
-    def hasa(self, property: Union[QueryFeature, str, pd.Series], kind='mutation') -> SamplesQuery:
+    def hasa(self, property: Union[QueryFeature, str, pd.Series, List[QueryFeature], List[str]],
+             kind='mutation') -> SamplesQuery:
         return self._wrap_create(self._wrapped_query.hasa(property=property, kind=kind))
 
     def _get_has_kinds(self) -> List[str]:
