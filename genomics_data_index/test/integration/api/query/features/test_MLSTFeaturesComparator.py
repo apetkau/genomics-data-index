@@ -790,6 +790,40 @@ def test_features_comparison(loaded_database_genomic_data_store: GenomicsDataInd
                                                         category_prefixes=['lmonocytogenes', 'other'],
                                                         category_samples_threshold=5,
                                                         unit='count')
+    assert 10 == len(comparison_df)
+    assert 'MLST Feature' == comparison_df.index.name
+    assert ['Scheme', 'Locus', 'Allele', 'Total',
+            'lmonocytogenes_count', 'lmonocytogenes_Unknown count', 'lmonocytogenes_Present and Unknown count',
+            'lmonocytogenes_total'] == list(comparison_df.columns)
+    assert {5} == set(comparison_df['Total'].tolist())
+    assert {5} == set(comparison_df['lmonocytogenes_total'].tolist())
+    assert 5 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1', 'lmonocytogenes_count']
+    assert 3 == comparison_df.loc['mlst:lmonocytogenes:bglA:51', 'lmonocytogenes_count']
+    assert 2 == comparison_df.loc['mlst:lmonocytogenes:bglA:52', 'lmonocytogenes_count']
+    assert 4 == comparison_df.loc['mlst:lmonocytogenes:ldh:5', 'lmonocytogenes_count']
+
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1', 'lmonocytogenes_Unknown count']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:51', 'lmonocytogenes_Unknown count']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:52', 'lmonocytogenes_Unknown count']
+    assert 1 == comparison_df.loc['mlst:lmonocytogenes:ldh:5', 'lmonocytogenes_Unknown count']
+
+    assert 5 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1', 'lmonocytogenes_Present and Unknown count']
+    assert 3 == comparison_df.loc['mlst:lmonocytogenes:bglA:51', 'lmonocytogenes_Present and Unknown count']
+    assert 2 == comparison_df.loc['mlst:lmonocytogenes:bglA:52', 'lmonocytogenes_Present and Unknown count']
+    assert 5 == comparison_df.loc['mlst:lmonocytogenes:ldh:5', 'lmonocytogenes_Present and Unknown count']
+
+    assert 'mlst:ecoli:adk:100' not in comparison_df
+    assert 'mlst:ecoli:recA:7' not in comparison_df
+    assert 'mlst:campylobacter:uncA:6' not in comparison_df
+
+    # Test two categories: one of lmonocytogenes and one of the rest threshold above, include all selected samples
+    sample_categories = [SampleSet(lmonocytogenes), SampleSet(all_sample_ids - lmonocytogenes)]
+    comparison_df = mlst_summarizer.features_comparison(selected_samples=present_set,
+                                                        sample_categories=sample_categories,
+                                                        category_prefixes=['lmonocytogenes', 'other'],
+                                                        category_samples_threshold=5,
+                                                        use_only_samples_in_categories=False,
+                                                        unit='count')
     assert 24 == len(comparison_df)
     assert 'MLST Feature' == comparison_df.index.name
     assert ['Scheme', 'Locus', 'Allele', 'Total',
