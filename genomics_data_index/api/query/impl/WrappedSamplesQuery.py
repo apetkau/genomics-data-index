@@ -103,6 +103,7 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
                             kind: str = 'mutations',
                             unit: str = 'percent',
                             category_samples_threshold: int = None,
+                            include_unknown_samples: bool = True, include_unknown_no_present_samples: bool = False,
                             **kwargs) -> pd.DataFrame:
         return self._wrapped_query.features_comparison(sample_categories=sample_categories,
                                                        category_prefixes=category_prefixes,
@@ -110,6 +111,8 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
                                                        kind=kind,
                                                        unit=unit,
                                                        category_samples_threshold=category_samples_threshold,
+                                                       include_unknown_samples=include_unknown_samples,
+                                                       include_unknown_no_present_samples=include_unknown_no_present_samples,
                                                        **kwargs)
 
     def tofeaturesset(self, kind: str = 'mutations', selection: str = 'all',
