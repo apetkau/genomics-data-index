@@ -125,7 +125,7 @@ class FeatureSamplesMultipleCategorySummarizer(FeatureSamplesSummarizer):
 
                     if unknown_samples is not None:
                         unknown_sample_percent = (unknown_sample_count / sample_category_total) * self._factor
-                        present_and_unknown_sample_percent = (present_and_unknown_sample_count / sample_category_total)\
+                        present_and_unknown_sample_percent = (present_and_unknown_sample_count / sample_category_total) \
                                                              * self._factor
                     else:
                         unknown_sample_percent = pd.NA
@@ -214,7 +214,7 @@ class FeaturesFromIndexComparator(FeaturesComparator, abc.ABC):
                                                                       feature_samples_unknown=samples_unknown_in_feature,
                                                                       total=total,
                                                                       feature_samples_summarizer=feature_samples_summarizer)
-                            )
+                                )
         summary_df = pd.DataFrame(data,
                                   columns=[self.index_name] \
                                           + self.feature_id_columns + feature_samples_summarizer.summary_names())
