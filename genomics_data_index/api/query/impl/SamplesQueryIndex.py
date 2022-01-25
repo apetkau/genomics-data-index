@@ -289,16 +289,21 @@ class SamplesQueryIndex(SamplesQuery):
                             kind: str = 'mutations',
                             unit: str = 'percent',
                             category_samples_threshold: int = None,
+                            include_unknown_samples: bool = True, include_unknown_no_present_samples: bool = False,
                             **kwargs) -> pd.DataFrame:
         if kind == 'mutations':
             features_comparator = MutationFeaturesFromIndexComparator(connection=self._query_connection,
                                                                       include_unknown=False,
                                                                       include_present=True,
+                                                                      include_unknown_samples=include_unknown_samples,
+                                                                      include_unknown_no_present_samples=include_unknown_no_present_samples,
                                                                       **kwargs)
         elif kind == 'mlst':
             features_comparator = MLSTFeaturesComparator(connection=self._query_connection,
                                                          include_unknown=False,
                                                          include_present=True,
+                                                         include_unknown_samples=include_unknown_samples,
+                                                         include_unknown_no_present_samples=include_unknown_no_present_samples,
                                                          **kwargs)
         else:
             raise Exception(f'Unsupported value kind=[{kind}]. Must be one of {self.SUMMARY_FEATURES_KINDS}.')

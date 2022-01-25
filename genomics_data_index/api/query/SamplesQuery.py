@@ -195,6 +195,7 @@ class SamplesQuery(abc.ABC):
                             kind: str = 'mutations',
                             unit: str = 'percent',
                             category_samples_threshold: int = None,
+                            include_unknown_samples: bool = True, include_unknown_no_present_samples: bool = False,
                             **kwargs) -> pd.DataFrame:
         """
         Creates a dataframe which compares different categories of samples with each other with respect to features.
@@ -214,6 +215,11 @@ class SamplesQuery(abc.ABC):
         "Category1_total" and "Category2_total" are the total samples in each category. "Total" is the total
         samples in the overall query that form the universe from which we are defining "Category1" and "Category2".
 
+        Additional columns "Category1_Unknown percent" and "Category1_Present and Unknown percent" will be filled in if
+        include_unknown_samples=True, which represents the number of samples where this feature is "Unknown/Missing"
+        or where the feature is either "Present" or "Unknown" respectively. If include_unknown_samples=False these
+        will all be NA.
+
         Note: since categories are defined based on sample queries, there is no enforcement that categories are
         mutually exclusive (that is, "Category1_total" + "Category2_total" will not always equal "Total"). This
         is done on purpose in case the categories you wish to compare are not mutually exclusive.
@@ -225,6 +231,10 @@ class SamplesQuery(abc.ABC):
         :param category_prefixes: The prefixes to use for the different categories (defaults to 1, 2, 3, ...).
         :param unit: The type of data to compare in each category (either 'percent', 'proportion', or 'count').
         :param category_samples_threshold: A threshold on the number of samples in a category for it to be considered.
+        :param include_unknown_samples: Whether or not counts for those samples where it is unknown if they have a
+                                        a feature should be included.
+        :param include_unknown_no_present_samples: Whether or not counts for features where there are some unknowns but
+                                                   no present samples should be included.
         :param **kwargs: Additional keyword arguments. Please see the documentation for the underlying implementation.
         :return: A dataframe comparing each category with respect to the differences in features.
         """
