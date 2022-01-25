@@ -125,8 +125,8 @@ class FeatureSamplesMultipleCategorySummarizer(FeatureSamplesSummarizer):
 
                     if unknown_samples is not None:
                         unknown_sample_percent = (unknown_sample_count / sample_category_total) * self._factor
-                        present_and_unknown_sample_percent = (
-                                                                     present_and_unknown_sample_count / sample_category_total) * self._factor
+                        present_and_unknown_sample_percent = (present_and_unknown_sample_count / sample_category_total)\
+                                                             * self._factor
                     else:
                         unknown_sample_percent = pd.NA
                         present_and_unknown_sample_percent = pd.NA
