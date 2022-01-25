@@ -256,7 +256,7 @@ class SamplesQueryIndex(SamplesQuery):
 
     def features_summary(self, kind: str = 'mutations', selection: str = 'all',
                          include_present_features: bool = True, include_unknown_features: bool = False,
-                         include_unknown_samples: bool = True, include_unknown_no_present_samples: bool = False,
+                         include_unknown_samples: bool = False, include_unknown_no_present_samples: bool = False,
                          **kwargs) -> pd.DataFrame:
         if kind == 'mutations':
             features_summarizier = MutationFeaturesFromIndexComparator(connection=self._query_connection,
@@ -289,7 +289,7 @@ class SamplesQueryIndex(SamplesQuery):
                             kind: str = 'mutations',
                             unit: str = 'percent',
                             category_samples_threshold: int = None,
-                            include_unknown_samples: bool = True, include_unknown_no_present_samples: bool = False,
+                            include_unknown_samples: bool = False, include_unknown_no_present_samples: bool = False,
                             use_only_samples_in_categories: bool = True,
                             **kwargs) -> pd.DataFrame:
         if kind == 'mutations':

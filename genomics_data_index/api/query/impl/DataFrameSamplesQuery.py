@@ -87,7 +87,7 @@ class DataFrameSamplesQuery(WrappedSamplesQuery):
                             kind: str = 'mutations',
                             unit: str = 'percent',
                             category_samples_threshold: int = None,
-                            include_unknown_samples: bool = True, include_unknown_no_present_samples: bool = False,
+                            include_unknown_samples: bool = False, include_unknown_no_present_samples: bool = False,
                             use_only_samples_in_categories: bool = True,
                             **kwargs) -> pd.DataFrame:
         if categories_kind == 'dataframe':

@@ -152,7 +152,7 @@ class SamplesQuery(abc.ABC):
     @abc.abstractmethod
     def features_summary(self, kind: str = 'mutations', selection: str = 'all',
                          include_present_features: bool = True, include_unknown_features: bool = False,
-                         include_unknown_samples: bool = True, include_unknown_no_present_samples: bool = False,
+                         include_unknown_samples: bool = False, include_unknown_no_present_samples: bool = False,
                          **kwargs) -> pd.DataFrame:
         """
         Summarizes the selected features in a DataFrame. Please specify the kind of features with the kind parameter.
@@ -195,7 +195,7 @@ class SamplesQuery(abc.ABC):
                             kind: str = 'mutations',
                             unit: str = 'percent',
                             category_samples_threshold: int = None,
-                            include_unknown_samples: bool = True, include_unknown_no_present_samples: bool = False,
+                            include_unknown_samples: bool = False, include_unknown_no_present_samples: bool = False,
                             use_only_samples_in_categories: bool = True,
                             **kwargs) -> pd.DataFrame:
         """
