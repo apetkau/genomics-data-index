@@ -303,7 +303,7 @@ def test_summaries_mlst_data(loaded_database_genomic_data_store: GenomicsDataInd
             'Total', 'Percent', 'Unknown Percent', 'Present and Unknown Percent'] == list(summary_df.columns)
 
     # Summaries using 'mlst_summery()'
-    summary_df = gds.mlst_summary(scheme_name='lmonocytogenes')
+    summary_df = gds.mlst_summary(scheme_name='lmonocytogenes', include_unknown_samples=True)
     assert 10 == len(summary_df)
 
 
@@ -323,7 +323,7 @@ def test_summaries_variant_annotations(
     assert 177 == gds.count_mutations('NC_011083')
 
     # spdi
-    ms = gds.mutations_summary('NC_011083', id_type='spdi', ignore_annotations=False)
+    ms = gds.mutations_summary('NC_011083', id_type='spdi', ignore_annotations=False, include_unknown_samples=True)
     assert 177 == len(ms)
     assert 'Mutation' == ms.index.name
     assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type',
@@ -402,7 +402,7 @@ def test_summaries_variant_annotations(
         ms.loc['NC_011083:1676762:2:C'].fillna('<NA>'))
 
     # spdi_ref
-    ms = gds.mutations_summary('NC_011083', id_type='spdi_ref')
+    ms = gds.mutations_summary('NC_011083', id_type='spdi_ref', include_unknown_samples=True)
     assert 177 == len(ms)
     assert 'Mutation' == ms.index.name
     assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type',
