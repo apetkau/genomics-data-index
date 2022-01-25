@@ -3872,7 +3872,8 @@ def test_summary_features_kindmlst(loaded_database_connection: DataIndexConnecti
         'mlst:lmonocytogenes:ldh:?'].tolist()
 
 
-def test_features_comparison_kindmutations_annotations(loaded_database_connection_annotations_unknown: DataIndexConnection):
+def test_features_comparison_kindmutations_annotations(
+        loaded_database_connection_annotations_unknown: DataIndexConnection):
     q = query(loaded_database_connection_annotations_unknown)
 
     category_10 = q.isin('SH10-014')
@@ -4123,7 +4124,8 @@ def test_features_comparison_kindmlst(loaded_database_connection: DataIndexConne
     comparison_df['other_percent'] = comparison_df['other_percent'].astype(int)
     comparison_df['lmonocytogenes_Unknown percent'] = comparison_df['lmonocytogenes_Unknown percent'].astype(int)
     comparison_df['other_Unknown percent'] = comparison_df['other_Unknown percent'].astype(int)
-    comparison_df['lmonocytogenes_Present and Unknown percent'] = comparison_df['lmonocytogenes_Present and Unknown percent'].astype(int)
+    comparison_df['lmonocytogenes_Present and Unknown percent'] = comparison_df[
+        'lmonocytogenes_Present and Unknown percent'].astype(int)
     comparison_df['other_Present and Unknown percent'] = comparison_df['other_Present and Unknown percent'].astype(int)
     assert {9} == set(comparison_df['Total'].tolist())
     assert {5} == set(comparison_df['lmonocytogenes_total'].tolist())
@@ -4190,7 +4192,8 @@ def test_features_comparison_kindmlst(loaded_database_connection: DataIndexConne
     comparison_df['other_percent'] = comparison_df['other_percent'].astype(int)
     comparison_df['lmonocytogenes_Unknown percent'] = comparison_df['lmonocytogenes_Unknown percent'].astype(int)
     comparison_df['other_Unknown percent'] = comparison_df['other_Unknown percent'].astype(int)
-    comparison_df['lmonocytogenes_Present and Unknown percent'] = comparison_df['lmonocytogenes_Present and Unknown percent'].astype(int)
+    comparison_df['lmonocytogenes_Present and Unknown percent'] = comparison_df[
+        'lmonocytogenes_Present and Unknown percent'].astype(int)
     comparison_df['other_Present and Unknown percent'] = comparison_df['other_Present and Unknown percent'].astype(int)
     assert {9} == set(comparison_df['Total'].tolist())
     assert {5} == set(comparison_df['lmonocytogenes_total'].tolist())
@@ -4257,7 +4260,8 @@ def test_features_comparison_kindmlst(loaded_database_connection: DataIndexConne
     comparison_df['other_percent'] = comparison_df['other_percent'].astype(int)
     comparison_df['lmonocytogenes_Unknown percent'] = comparison_df['lmonocytogenes_Unknown percent'].astype(int)
     comparison_df['other_Unknown percent'] = comparison_df['other_Unknown percent'].astype(int)
-    comparison_df['lmonocytogenes_Present and Unknown percent'] = comparison_df['lmonocytogenes_Present and Unknown percent'].astype(int)
+    comparison_df['lmonocytogenes_Present and Unknown percent'] = comparison_df[
+        'lmonocytogenes_Present and Unknown percent'].astype(int)
     comparison_df['other_Present and Unknown percent'] = comparison_df['other_Present and Unknown percent'].astype(int)
     assert {5} == set(comparison_df['Total'].tolist())
     assert {3} == set(comparison_df['lmonocytogenes_total'].tolist())
@@ -4302,7 +4306,8 @@ def test_features_comparison_kindmlst(loaded_database_connection: DataIndexConne
     assert 0 == comparison_df.loc['mlst:lmonocytogenes:ldh:5', 'other_Present and Unknown percent']
 
 
-def test_features_comparison_kindmutations_with_dataframe(loaded_database_connection_annotations_unknown: DataIndexConnection):
+def test_features_comparison_kindmutations_with_dataframe(
+        loaded_database_connection_annotations_unknown: DataIndexConnection):
     db = loaded_database_connection_annotations_unknown.database
     sample_sh14_001 = db.get_session().query(Sample).filter(Sample.name == 'SH14-001').one()
     sample_sh14_014 = db.get_session().query(Sample).filter(Sample.name == 'SH14-014').one()
