@@ -595,9 +595,12 @@ def test_features_comparison(loaded_database_genomic_data_store: GenomicsDataInd
             'lmonocytogenes_Unknown percent', 'other_Unknown percent',
             'lmonocytogenes_Present and Unknown percent', 'other_Present and Unknown percent',
             'lmonocytogenes_total', 'other_total'] == list(comparison_df.columns)
-    comparison_df['lmonocytogenes_percent'] = comparison_df['lmonocytogenes_percent'].astype(
-        int)  # Convert to int for easier comparison
-    comparison_df['other_percent'] = comparison_df['other_percent'].astype(int)  # Convert to int for easier comparison
+    comparison_df['lmonocytogenes_percent'] = comparison_df['lmonocytogenes_percent'].astype(int)
+    comparison_df['other_percent'] = comparison_df['other_percent'].astype(int)
+    comparison_df['lmonocytogenes_Unknown percent'] = comparison_df['lmonocytogenes_Unknown percent'].astype(int)
+    comparison_df['other_Unknown percent'] = comparison_df['other_Unknown percent'].astype(int)
+    comparison_df['lmonocytogenes_Present and Unknown percent'] = comparison_df['lmonocytogenes_Present and Unknown percent'].astype(int)
+    comparison_df['other_Present and Unknown percent'] = comparison_df['other_Present and Unknown percent'].astype(int)
     assert {9} == set(comparison_df['Total'].tolist())
     assert {5} == set(comparison_df['lmonocytogenes_total'].tolist())
     assert {4} == set(comparison_df['other_total'].tolist())
