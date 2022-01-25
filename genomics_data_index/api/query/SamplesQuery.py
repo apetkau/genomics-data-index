@@ -196,6 +196,7 @@ class SamplesQuery(abc.ABC):
                             unit: str = 'percent',
                             category_samples_threshold: int = None,
                             include_unknown_samples: bool = True, include_unknown_no_present_samples: bool = False,
+                            use_only_samples_in_categories: bool = True,
                             **kwargs) -> pd.DataFrame:
         """
         Creates a dataframe which compares different categories of samples with each other with respect to features.
@@ -229,6 +230,10 @@ class SamplesQuery(abc.ABC):
         :param kind: The kind of features to compare.
         :param categories_kind: The kind of category to use ("sample_set", or "dataframe").
         :param category_prefixes: The prefixes to use for the different categories (defaults to 1, 2, 3, ...).
+        :param use_only_samples_in_categories: Whether or not to only use samples in categories for comparison
+                                               or to use all selected samples. If all selected samples are used
+                                               then it's possible to include features in the comparison table
+                                               where no samples are found in any category.
         :param unit: The type of data to compare in each category (either 'percent', 'proportion', or 'count').
         :param category_samples_threshold: A threshold on the number of samples in a category for it to be considered.
         :param include_unknown_samples: Whether or not counts for those samples where it is unknown if they have a

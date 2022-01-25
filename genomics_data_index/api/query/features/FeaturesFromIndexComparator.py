@@ -228,6 +228,7 @@ class FeaturesFromIndexComparator(FeaturesComparator, abc.ABC):
                             sample_categories: List[SampleSet],
                             category_prefixes: List[str] = None,
                             category_samples_threshold: int = None,
+                            use_only_samples_in_categories: bool = True,
                             unit: str = 'percent') -> pd.DataFrame:
         sample_categories_in_selected = [c.intersection(selected_samples) for c in sample_categories]
 
@@ -242,10 +243,19 @@ class FeaturesFromIndexComparator(FeaturesComparator, abc.ABC):
             filtered_categories = sample_categories_in_selected
             filtered_category_prefixes = category_prefixes
 
+        filtered_samples_union = SampleSet.create_empty()
+
+        if use_only_samples_in_categories:
+            for sample_category in filtered_categories:
+                filtered_samples_union = filtered_samples_union.union(sample_category)
+            samples_for_summary = filtered_samples_union
+        else:
+            samples_for_summary = selected_samples
+
         samples_summarizer = FeatureSamplesMultipleCategorySummarizer(sample_categories=filtered_categories,
                                                                       category_prefixes=filtered_category_prefixes,
                                                                       compare_kind=unit)
-        return self._do_summary(sample_set=selected_samples, feature_samples_summarizer=samples_summarizer)
+        return self._do_summary(sample_set=samples_for_summary, feature_samples_summarizer=samples_summarizer)
 
     @abc.abstractmethod
     def _do_summary(self, sample_set: SampleSet, feature_samples_summarizer: FeatureSamplesSummarizer) -> pd.DataFrame:
