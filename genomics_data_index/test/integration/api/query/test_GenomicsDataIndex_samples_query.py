@@ -1466,8 +1466,8 @@ def test_query_chained_mutation_has_mutation(loaded_database_connection: DataInd
     assert 9 == len(query_result.universe_set)
 
     query_result = query(loaded_database_connection).hasa(
-        ['reference:839:C:G'
-        'reference:5061:G:A'], kind='mutation')
+        ['reference:839:C:G',
+         'reference:5061:G:A'], kind='mutation')
     assert 1 == len(query_result)
     assert {sampleB.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)

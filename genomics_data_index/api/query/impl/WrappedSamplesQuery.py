@@ -91,10 +91,13 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
 
     def features_summary(self, kind: str = 'mutations', selection: str = 'all',
                          include_present_features: bool = False, include_unknown_features: bool = False,
+                         include_unknown_samples: bool = False, include_unknown_no_present_samples: bool = False,
                          **kwargs) -> pd.DataFrame:
         return self._wrapped_query.features_summary(kind=kind, selection=selection,
                                                     include_present_features=include_present_features,
                                                     include_unknown_features=include_unknown_features,
+                                                    include_unknown_samples=include_unknown_samples,
+                                                    include_unknown_no_present_samples=include_unknown_no_present_samples,
                                                     **kwargs)
 
     def features_comparison(self, sample_categories: Union[List[SamplesQuery], List[SampleSet], str],
