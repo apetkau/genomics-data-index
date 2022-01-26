@@ -256,7 +256,7 @@ class SamplesQueryIndex(SamplesQuery):
 
     def features_summary(self, kind: str = 'mutations', selection: str = 'all',
                          include_present_features: bool = True, include_unknown_features: bool = False,
-                         include_unknown_samples: bool = True, include_unknown_no_present_samples: bool = False,
+                         include_unknown_samples: bool = False, include_unknown_no_present_samples: bool = False,
                          **kwargs) -> pd.DataFrame:
         if kind == 'mutations':
             features_summarizier = MutationFeaturesFromIndexComparator(connection=self._query_connection,
@@ -289,7 +289,7 @@ class SamplesQueryIndex(SamplesQuery):
                             kind: str = 'mutations',
                             unit: str = 'percent',
                             category_samples_threshold: int = None,
-                            include_unknown_samples: bool = True, include_unknown_no_present_samples: bool = False,
+                            include_unknown_samples: bool = False, include_unknown_no_present_samples: bool = False,
                             use_only_samples_in_categories: bool = True,
                             **kwargs) -> pd.DataFrame:
         if kind == 'mutations':
@@ -470,8 +470,14 @@ class SamplesQueryIndex(SamplesQuery):
         else:
             return SampleSet.create_empty()
 
-    def hasa(self, property: Union[QueryFeature, str, pd.Series], kind='mutation') -> SamplesQuery:
-        if isinstance(property, QueryFeature):
+    def hasa(self, property: Union[QueryFeature, str, pd.Series, List[QueryFeature], List[str]],
+             kind='mutation') -> SamplesQuery:
+        if isinstance(property, list):
+            list_query = self
+            for list_property in property:
+                list_query = list_query.hasa(list_property, kind=kind)
+            return list_query
+        elif isinstance(property, QueryFeature):
             query_feature = property
         elif isinstance(property, pd.Series):
             raise Exception(f'The query type {self.__class__.__name__} cannot support querying with respect to a '

@@ -115,7 +115,7 @@ class GenomicsDataIndex:
 
     def mutations_summary(self, reference_name: str, id_type: str = 'spdi_ref', include_present_features: bool = True,
                           include_unknown_features: bool = False,
-                          include_unknown_samples: bool = True,
+                          include_unknown_samples: bool = False,
                           include_unknown_no_present_samples: bool = False,
                           ignore_annotations: bool = False) -> pd.DataFrame:
         """
@@ -143,7 +143,7 @@ class GenomicsDataIndex:
 
     def mlst_summary(self, scheme_name: str, locus: str = None, include_present_features: bool = True,
                      include_unknown_features: bool = False,
-                     include_unknown_samples: bool = True,
+                     include_unknown_samples: bool = False,
                      include_unknown_no_present_samples: bool = False) -> pd.DataFrame:
         """
         Summarizes all MLST alleles stored in this index relative to the passed scheme name.
@@ -168,7 +168,7 @@ class GenomicsDataIndex:
 
     def features_summary(self, kind: str = 'mutations', scope: str = None,
                          include_present_features: bool = True, include_unknown_features: bool = False,
-                         include_unknown_samples: bool = True, include_unknown_no_present_samples: bool = False,
+                         include_unknown_samples: bool = False, include_unknown_no_present_samples: bool = False,
                          **kwargs) -> pd.DataFrame:
         """
         Summarizes all features stored in this index relative to a string for the passed scope.
@@ -202,7 +202,7 @@ class GenomicsDataIndex:
 
     def _mlst_summary_internal(self, scheme_name: str, locus: str = None, include_present_features: bool = True,
                                include_unknown_features: bool = False,
-                               include_unknown_samples: bool = True,
+                               include_unknown_samples: bool = False,
                                include_unknown_no_present_samples: bool = False
                                ) -> pd.DataFrame:
         """
@@ -231,7 +231,7 @@ class GenomicsDataIndex:
     def _mutations_summary_internal(self, reference_name: str, id_type: str = 'spdi_ref',
                                     include_present_features: bool = True,
                                     include_unknown_features: bool = False,
-                                    include_unknown_samples: bool = True,
+                                    include_unknown_samples: bool = False,
                                     include_unknown_no_present_samples: bool = False,
                                     ignore_annotations: bool = False) -> pd.DataFrame:
         """

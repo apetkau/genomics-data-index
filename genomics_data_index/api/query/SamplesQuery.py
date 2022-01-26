@@ -152,7 +152,7 @@ class SamplesQuery(abc.ABC):
     @abc.abstractmethod
     def features_summary(self, kind: str = 'mutations', selection: str = 'all',
                          include_present_features: bool = True, include_unknown_features: bool = False,
-                         include_unknown_samples: bool = True, include_unknown_no_present_samples: bool = False,
+                         include_unknown_samples: bool = False, include_unknown_no_present_samples: bool = False,
                          **kwargs) -> pd.DataFrame:
         """
         Summarizes the selected features in a DataFrame. Please specify the kind of features with the kind parameter.
@@ -195,7 +195,7 @@ class SamplesQuery(abc.ABC):
                             kind: str = 'mutations',
                             unit: str = 'percent',
                             category_samples_threshold: int = None,
-                            include_unknown_samples: bool = True, include_unknown_no_present_samples: bool = False,
+                            include_unknown_samples: bool = False, include_unknown_no_present_samples: bool = False,
                             use_only_samples_in_categories: bool = True,
                             **kwargs) -> pd.DataFrame:
         """
@@ -366,21 +366,24 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def hasa(self, property: Union[QueryFeature, str, pd.Series], kind='mutation') -> SamplesQuery:
+    def hasa(self, property: Union[QueryFeature, str, pd.Series, List[QueryFeature], List[str]],
+             kind='mutation') -> SamplesQuery:
         """
         Queries for samples that have a (**hasa**) particular feature/property. That is if `A` is a SamplesQuery
         and `m` is a mutation, then A.hasa(m) selects all those samples of A that have the mutation m.
 
         :param property: The particular property/feature to query by. This can be either QueryFeature defining
         the particular feature, a string defining the feature, or a pandas Series consisting of boolean values
-        which is the result of a DataFrame selection expression.
+        which is the result of a DataFrame selection expression. A list of QueryFeature or strings can also be
+        passed, which will be interpreted as hasa(feature1) AND hasa(feature2) AND ...
         :param kind: The kind of *property* that was passed.
 
         :return: A new SamplesQuery consisting of those samples that have the passed property.
         """
         pass
 
-    def has(self, property: Union[QueryFeature, str, pd.Series], kind='mutation') -> SamplesQuery:
+    def has(self, property: Union[QueryFeature, str, pd.Series, List[QueryFeature], List[str]],
+             kind='mutation') -> SamplesQuery:
         """
         Queries for samples that have a particular property. Synonym for hasa().
         """

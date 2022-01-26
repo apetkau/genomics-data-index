@@ -1446,6 +1446,13 @@ def test_query_chained_mutation(loaded_database_connection: DataIndexConnection)
     assert {sampleB.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)
 
+    query_result = query(loaded_database_connection).hasa(
+        [QueryFeatureMutationSPDI('reference:839:C:G'),
+         QueryFeatureMutationSPDI('reference:5061:G:A')])
+    assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+    assert 9 == len(query_result.universe_set)
+
 
 def test_query_chained_mutation_has_mutation(loaded_database_connection: DataIndexConnection):
     db = loaded_database_connection.database
@@ -1454,6 +1461,13 @@ def test_query_chained_mutation_has_mutation(loaded_database_connection: DataInd
     query_result = query(loaded_database_connection).hasa(
         'reference:839:C:G', kind='mutation').hasa(
         'reference:5061:G:A', kind='mutation')
+    assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+    assert 9 == len(query_result.universe_set)
+
+    query_result = query(loaded_database_connection).hasa(
+        ['reference:839:C:G',
+         'reference:5061:G:A'], kind='mutation')
     assert 1 == len(query_result)
     assert {sampleB.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)
@@ -1558,6 +1572,28 @@ def test_query_chained_mlst_nucleotide(loaded_database_connection: DataIndexConn
     query_result = query(loaded_database_connection) \
         .hasa('mlst:lmonocytogenes:bglA:52', kind='mlst') \
         .hasa('reference:3319:1:G', kind='mutation')
+    assert 0 == len(query_result)
+    assert 1 == len(query_result.unknown_set)
+    assert {sampleB.id} == set(query_result.unknown_set)
+    assert 8 == len(query_result.absent_set)
+    assert all_sample_ids - {sampleB.id} == set(query_result.absent_set)
+    assert 9 == len(query_result.universe_set)
+
+    # Test query MLST then mutation that will be switched to unknown, QueryFeatures
+    query_result = query(loaded_database_connection).hasa(
+        QueryFeatureMLST('mlst:lmonocytogenes:bglA:52')).hasa(
+        QueryFeatureMutationSPDI('reference:3319:1:G'))
+    assert 0 == len(query_result)
+    assert 1 == len(query_result.unknown_set)
+    assert {sampleB.id} == set(query_result.unknown_set)
+    assert 8 == len(query_result.absent_set)
+    assert all_sample_ids - {sampleB.id} == set(query_result.absent_set)
+    assert 9 == len(query_result.universe_set)
+
+    # Test query MLST then mutation that will be switched to unknown, QueryFeatures list
+    query_result = query(loaded_database_connection).hasa(
+        [QueryFeatureMLST('mlst:lmonocytogenes:bglA:52'),
+         QueryFeatureMutationSPDI('reference:3319:1:G')])
     assert 0 == len(query_result)
     assert 1 == len(query_result.unknown_set)
     assert {sampleB.id} == set(query_result.unknown_set)
@@ -3563,7 +3599,7 @@ def test_summary_features_kindmutations_annotations(
     q = query(loaded_database_connection_annotations_unknown)
 
     # 1 sample
-    mutations_df = q.isa('SH10-014').features_summary(ignore_annotations=False)
+    mutations_df = q.isa('SH10-014').features_summary(ignore_annotations=False, include_unknown_samples=True)
 
     assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type',
             'Count', 'Unknown Count', 'Present and Unknown Count', 'Total',
@@ -3607,7 +3643,8 @@ def test_summary_features_kindmutations_annotations(
         mutations_df.loc['NC_011083:4555461:T:TC'].fillna('NA'))
 
     # 3 samples
-    mutations_df = q.isin(['SH10-014', 'SH14-001', 'SH14-014']).features_summary(ignore_annotations=False)
+    mutations_df = q.isin(['SH10-014', 'SH14-001', 'SH14-014']).features_summary(ignore_annotations=False,
+                                                                                 include_unknown_samples=True)
 
     ## Convert percent to int to make it easier to compare in assert statements
     mutations_df['Percent'] = mutations_df['Percent'].astype(int)
@@ -3643,7 +3680,8 @@ def test_summary_features_kindmutations_annotations(
         mutations_df.loc['NC_011083:4555461:T:TC'].fillna('NA'))
 
     # Test ignore annotations
-    mutations_df = q.isin(['SH10-014', 'SH14-001', 'SH14-014']).features_summary(ignore_annotations=True)
+    mutations_df = q.isin(['SH10-014', 'SH14-001', 'SH14-014']).features_summary(ignore_annotations=True,
+                                                                                 include_unknown_samples=True)
 
     assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type',
             'Count', 'Unknown Count', 'Present and Unknown Count', 'Total',
@@ -3651,7 +3689,8 @@ def test_summary_features_kindmutations_annotations(
     assert 177 == len(mutations_df)
 
     # Test unique, not including unknown with no present samples
-    mutations_df = q.isa('SH10-014').features_summary(selection='unique', ignore_annotations=False)
+    mutations_df = q.isa('SH10-014').features_summary(selection='unique', ignore_annotations=False,
+                                                      include_unknown_samples=True)
 
     ## Convert percent to int to make it easier to compare in assert statements
     mutations_df['Percent'] = mutations_df['Percent'].astype(int)
@@ -3688,7 +3727,8 @@ def test_summary_features_kindmutations_annotations(
 
     # Test unique, including unknown with no present samples
     mutations_df = q.isa('SH10-014').features_summary(selection='unique', ignore_annotations=False,
-                                                      include_unknown_no_present_samples=True)
+                                                      include_unknown_no_present_samples=True,
+                                                      include_unknown_samples=True)
 
     ## Convert percent to int to make it easier to compare in assert statements
     mutations_df['Percent'] = mutations_df['Percent'].astype(int)
@@ -3759,7 +3799,8 @@ def test_summary_features_two(loaded_database_connection: DataIndexConnection):
 
 def test_summary_features_kindmlst(loaded_database_connection: DataIndexConnection):
     # Test case of summary of single sample
-    summary_df = query(loaded_database_connection).isa('SampleA').features_summary(kind='mlst')
+    summary_df = query(loaded_database_connection).isa('SampleA').features_summary(kind='mlst',
+                                                                                   include_unknown_samples=True)
     summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
     summary_df['Unknown Percent'] = summary_df['Unknown Percent'].astype(int)
     summary_df['Present and Unknown Percent'] = summary_df['Present and Unknown Percent'].astype(int)
@@ -3775,7 +3816,8 @@ def test_summary_features_kindmlst(loaded_database_connection: DataIndexConnecti
 
     # Test samples across multiple schemes
     summary_df = query(loaded_database_connection).isin(['SampleA', 'SampleB', 'CFSAN002349',
-                                                         '2014D-0067']).features_summary(kind='mlst')
+                                                         '2014D-0067']).features_summary(kind='mlst',
+                                                                                         include_unknown_samples=True)
     summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
     assert 15 == len(summary_df)
     assert {'lmonocytogenes', 'campylobacter'} == set(summary_df['Scheme'].tolist())
@@ -3801,7 +3843,8 @@ def test_summary_features_kindmlst(loaded_database_connection: DataIndexConnecti
     # Test samples across multiple schemes including unknown with no present samples
     summary_df = query(loaded_database_connection).isin(['SampleA', 'SampleB', 'CFSAN002349',
                                                          '2014D-0067']).features_summary(kind='mlst',
-                                                                                         include_unknown_no_present_samples=True)
+                                                                                         include_unknown_no_present_samples=True,
+                                                                                         include_unknown_samples=True)
     summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
     assert 16 == len(summary_df)
     assert {'lmonocytogenes', 'campylobacter'} == set(summary_df['Scheme'].tolist())
@@ -3828,7 +3871,7 @@ def test_summary_features_kindmlst(loaded_database_connection: DataIndexConnecti
     # Test only unknown
     summary_df = query(loaded_database_connection).isin(
         ['SampleA', 'SampleB', 'CFSAN002349', '2014D-0067']).features_summary(
-        kind='mlst', include_present_features=False, include_unknown_features=True)
+        kind='mlst', include_present_features=False, include_unknown_features=True, include_unknown_samples=True)
     summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
     summary_df['Unknown Count'] = summary_df['Unknown Count'].fillna(-1)
     summary_df['Unknown Count'] = summary_df['Unknown Count'].astype(int)
@@ -3852,7 +3895,8 @@ def test_summary_features_kindmlst(loaded_database_connection: DataIndexConnecti
     # Test only unknown, restrict scheme
     summary_df = query(loaded_database_connection).isin(
         ['SampleA', 'SampleB', 'CFSAN002349', '2014D-0067']).features_summary(
-        kind='mlst', scheme='lmonocytogenes', include_present_features=False, include_unknown_features=True)
+        kind='mlst', scheme='lmonocytogenes', include_present_features=False, include_unknown_features=True,
+        include_unknown_samples=True)
     summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
     summary_df['Unknown Count'] = summary_df['Unknown Count'].fillna(-1)
     summary_df['Unknown Count'] = summary_df['Unknown Count'].astype(int)
@@ -3882,6 +3926,7 @@ def test_features_comparison_kindmutations_annotations(
     # Test 2 categories counts
     comparison_df = q.features_comparison(sample_categories=[category_10, category_14],
                                           category_prefixes=['10', '14'],
+                                          include_unknown_samples=True,
                                           unit='count')
     comparison_df = comparison_df.sort_index()
     comparison_df = comparison_df.fillna('<NA>')
@@ -3960,7 +4005,7 @@ def test_features_comparison_kindmutations_annotations(
     assert 'SNP' == comparison_df.loc['NC_011083:140658:C:A', 'Type']
 
     # Test 2 categories defaults
-    comparison_df = q.features_comparison(sample_categories=[category_10, category_14])
+    comparison_df = q.features_comparison(sample_categories=[category_10, category_14], include_unknown_samples=True)
     comparison_df = comparison_df.sort_index()
     comparison_df = comparison_df.fillna('<NA>')
     comparison_df['Category1_percent'] = comparison_df['Category1_percent'].astype(
@@ -4028,6 +4073,7 @@ def test_features_comparison_kindmutations_annotations(
     comparison_df = q.isin(['SH14-001', 'SH14-014']).features_comparison(
         sample_categories=[category_10, category_14],
         category_prefixes=['10', '14'],
+        include_unknown_samples=True,
         unit='percent'
     )
     comparison_df = comparison_df.sort_index()
@@ -4112,6 +4158,7 @@ def test_features_comparison_kindmlst(loaded_database_connection: DataIndexConne
     comparison_df = q.features_comparison(sample_categories=[category_lmonocytogenes, category_other],
                                           category_prefixes=['lmonocytogenes', 'other'],
                                           unit='percent',
+                                          include_unknown_samples=True,
                                           kind='mlst')
     assert 24 == len(comparison_df)
     assert 'MLST Feature' == comparison_df.index.name
@@ -4180,6 +4227,7 @@ def test_features_comparison_kindmlst(loaded_database_connection: DataIndexConne
                                                              category_other.sample_set],
                                           category_prefixes=['lmonocytogenes', 'other'],
                                           unit='percent',
+                                          include_unknown_samples=True,
                                           kind='mlst')
     assert 24 == len(comparison_df)
     assert 'MLST Feature' == comparison_df.index.name
@@ -4248,6 +4296,7 @@ def test_features_comparison_kindmlst(loaded_database_connection: DataIndexConne
     comparison_df = q_subset.features_comparison(sample_categories=[category_lmonocytogenes, category_other],
                                                  category_prefixes=['lmonocytogenes', 'other'],
                                                  unit='percent',
+                                                 include_unknown_samples=True,
                                                  kind='mlst')
     assert 16 == len(comparison_df)
     assert 'MLST Feature' == comparison_df.index.name
@@ -4328,6 +4377,7 @@ def test_features_comparison_kindmutations_with_dataframe(
     # Test 2 categories counts on dataframe query: dataframe column groupby
     comparison_df = q.features_comparison(sample_categories='Color',
                                           categories_kind='dataframe',
+                                          include_unknown_samples=True,
                                           unit='count')
     comparison_df = comparison_df.sort_index()
     comparison_df = comparison_df.fillna('<NA>')
@@ -4405,6 +4455,7 @@ def test_features_comparison_kindmutations_with_dataframe(
     # Test 2 categories counts on dataframe query: sample_query
     comparison_df = q.features_comparison(sample_categories=[category_10, category_14],
                                           category_prefixes=['10', '14'],
+                                          include_unknown_samples=True,
                                           unit='count')
     comparison_df = comparison_df.sort_index()
     comparison_df = comparison_df.fillna('<NA>')
@@ -4483,6 +4534,7 @@ def test_features_comparison_kindmutations_with_dataframe(
     comparison_df = q.features_comparison(sample_categories='Color',
                                           categories_kind='dataframe',
                                           category_samples_threshold=1,
+                                          include_unknown_samples=True,
                                           unit='count')
     comparison_df = comparison_df.sort_index()
     comparison_df = comparison_df.fillna('<NA>')
@@ -4561,6 +4613,7 @@ def test_features_comparison_kindmutations_with_dataframe(
     comparison_df = q.features_comparison(sample_categories='Color',
                                           categories_kind='dataframe',
                                           category_samples_threshold=2,
+                                          include_unknown_samples=True,
                                           unit='count')
     comparison_df = comparison_df.sort_index()
     comparison_df = comparison_df.fillna('<NA>')
@@ -4613,6 +4666,7 @@ def test_features_comparison_kindmutations_with_dataframe(
                                           categories_kind='dataframe',
                                           category_samples_threshold=2,
                                           use_only_samples_in_categories=False,
+                                          include_unknown_samples=True,
                                           unit='count')
     comparison_df = comparison_df.sort_index()
     comparison_df = comparison_df.fillna('<NA>')
@@ -4664,6 +4718,7 @@ def test_features_comparison_kindmutations_with_dataframe(
     comparison_df = q.features_comparison(sample_categories=[category_10, category_14],
                                           category_prefixes=['10', '14'],
                                           category_samples_threshold=2,
+                                          include_unknown_samples=True,
                                           unit='count')
     comparison_df = comparison_df.sort_index()
     comparison_df = comparison_df.fillna('<NA>')
@@ -4716,6 +4771,7 @@ def test_features_comparison_kindmutations_with_dataframe(
                                           category_prefixes=['10', '14'],
                                           category_samples_threshold=2,
                                           use_only_samples_in_categories=False,
+                                          include_unknown_samples=True,
                                           unit='count')
     comparison_df = comparison_df.sort_index()
     comparison_df = comparison_df.fillna('<NA>')
@@ -4773,6 +4829,7 @@ def test_features_comparison_kindmutations_with_dataframe(
               data_frame=df, sample_ids_column='Sample ID')
     comparison_df = q.features_comparison(sample_categories='Color',
                                           categories_kind='dataframe',
+                                          include_unknown_samples=True,
                                           unit='count')
     comparison_df = comparison_df.sort_index()
     comparison_df = comparison_df.fillna('<NA>')
@@ -4835,6 +4892,7 @@ def test_features_comparison_kindmutations_with_dataframe(
               data_frame=df, sample_ids_column='Sample ID')
     comparison_df = q.features_comparison(sample_categories='Color',
                                           categories_kind='dataframe',
+                                          include_unknown_samples=True,
                                           unit='count')
     comparison_df = comparison_df.sort_index()
     comparison_df = comparison_df.fillna('<NA>')
@@ -4881,6 +4939,7 @@ def test_features_comparison_kindmutations_with_dataframe(
     comparison_df = q.features_comparison(sample_categories='Color',
                                           categories_kind='dataframe',
                                           use_only_samples_in_categories=False,
+                                          include_unknown_samples=True,
                                           unit='count')
     comparison_df = comparison_df.sort_index()
     comparison_df = comparison_df.fillna('<NA>')
