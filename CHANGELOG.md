@@ -1,3 +1,21 @@
+# 0.5.0
+
+* [cli]: Support for skipping non-existent paths in input file (0.5.0.dev1).
+* [cli]: Support for skipping samples already in an index during the data analysis (0.5.0.dev1).
+* [analysis]: Increased `--indel-bias` in `bcftools mpileup` for assembly analysis from default **1.00**. This was done since I found I was missing a small number of indels in SARS-CoV-2 analyses (they were being identified as missing/unknown instead). Also decreased quality score filtering from `10` for the same reason (0.5.0.dev2).
+    * This requires bcftools >= 1.13.
+* [install]: Fixed broken dependencies on installation (0.5.0.dev3).
+* [api]: Added support for listing counts of samples with unknown features in `summary()` of features (or unique summaries of features) (0.5.0.dev4).
+* [api]: Renamed parameters `include_present` and `include_unknown` to `include_present_features` and `include_unknown_features` for `SamplesQuery.features_summary()` and `GenomicsDataIndex.features_summary()` to help differentiate it from `include_unknown_samples` (0.5.0.dev4).
+* [api]: Added `TreeStyler.add_spacing()` method to add empty columns to tree visual (0.5.0.dev5).
+* [api]: Added ability to adjust width of line used for drawing a tree (0.5.0.dev5).
+* [api]: Added the ability to adjust font size and text of leaf names in a tree (0.5.0.dev5).
+* [api]: Automatically prune tree when making `TreeStyler` object (0.5.0.dev5).
+* [api]: Updates to pruning of tree when joining external tree to query (0.5.0.dev5).
+* [api]: Add **Unknown** and **Present and Unknown** categories to `query.features_comparison()` output (0.5.0.dev6).
+* [api]: Added **use_only_samples_in_categories** parameter to `query.features_comparison()` (0.5.0.dev7).
+* [api]: Added ability to pass a list of features to a query: `query.hasa(features_list)`. This is an alternative to `query.hasa(f1).hasa(f2)...` (0.5.0.dev8).
+
 # 0.4.0
 
 * [analysis]: Switched all steps to use conda in Snakemake pipeline (0.3.1).

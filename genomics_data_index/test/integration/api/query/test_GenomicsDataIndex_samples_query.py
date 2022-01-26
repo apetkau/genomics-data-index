@@ -1446,6 +1446,13 @@ def test_query_chained_mutation(loaded_database_connection: DataIndexConnection)
     assert {sampleB.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)
 
+    query_result = query(loaded_database_connection).hasa(
+        [QueryFeatureMutationSPDI('reference:839:C:G'),
+         QueryFeatureMutationSPDI('reference:5061:G:A')])
+    assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+    assert 9 == len(query_result.universe_set)
+
 
 def test_query_chained_mutation_has_mutation(loaded_database_connection: DataIndexConnection):
     db = loaded_database_connection.database
@@ -1454,6 +1461,13 @@ def test_query_chained_mutation_has_mutation(loaded_database_connection: DataInd
     query_result = query(loaded_database_connection).hasa(
         'reference:839:C:G', kind='mutation').hasa(
         'reference:5061:G:A', kind='mutation')
+    assert 1 == len(query_result)
+    assert {sampleB.id} == set(query_result.sample_set)
+    assert 9 == len(query_result.universe_set)
+
+    query_result = query(loaded_database_connection).hasa(
+        ['reference:839:C:G',
+         'reference:5061:G:A'], kind='mutation')
     assert 1 == len(query_result)
     assert {sampleB.id} == set(query_result.sample_set)
     assert 9 == len(query_result.universe_set)
@@ -1558,6 +1572,28 @@ def test_query_chained_mlst_nucleotide(loaded_database_connection: DataIndexConn
     query_result = query(loaded_database_connection) \
         .hasa('mlst:lmonocytogenes:bglA:52', kind='mlst') \
         .hasa('reference:3319:1:G', kind='mutation')
+    assert 0 == len(query_result)
+    assert 1 == len(query_result.unknown_set)
+    assert {sampleB.id} == set(query_result.unknown_set)
+    assert 8 == len(query_result.absent_set)
+    assert all_sample_ids - {sampleB.id} == set(query_result.absent_set)
+    assert 9 == len(query_result.universe_set)
+
+    # Test query MLST then mutation that will be switched to unknown, QueryFeatures
+    query_result = query(loaded_database_connection).hasa(
+        QueryFeatureMLST('mlst:lmonocytogenes:bglA:52')).hasa(
+        QueryFeatureMutationSPDI('reference:3319:1:G'))
+    assert 0 == len(query_result)
+    assert 1 == len(query_result.unknown_set)
+    assert {sampleB.id} == set(query_result.unknown_set)
+    assert 8 == len(query_result.absent_set)
+    assert all_sample_ids - {sampleB.id} == set(query_result.absent_set)
+    assert 9 == len(query_result.universe_set)
+
+    # Test query MLST then mutation that will be switched to unknown, QueryFeatures list
+    query_result = query(loaded_database_connection).hasa(
+        [QueryFeatureMLST('mlst:lmonocytogenes:bglA:52'),
+         QueryFeatureMutationSPDI('reference:3319:1:G')])
     assert 0 == len(query_result)
     assert 1 == len(query_result.unknown_set)
     assert {sampleB.id} == set(query_result.unknown_set)
@@ -3262,25 +3298,43 @@ def test_summary_features_kindmutations(loaded_database_connection: DataIndexCon
         'Type': 'first',
         'Mutation': 'count',
     }).rename(columns={'Mutation': 'Count'}).sort_index()
+    expected_df['Unknown Count'] = '<NA>'
+    expected_df['Present and Unknown Count'] = '<NA>'
     expected_df['Total'] = 9
     expected_df['Percent'] = 100 * (expected_df['Count'] / expected_df['Total'])
+    expected_df['Unknown Percent'] = '<NA>'
+    expected_df['Present and Unknown Percent'] = '<NA>'
 
-    mutations_df = query(loaded_database_connection).features_summary(ignore_annotations=True)
+    mutations_df = query(loaded_database_connection).features_summary(ignore_annotations=True,
+                                                                      include_unknown_samples=False)
+    mutations_df['Unknown Percent'] = mutations_df['Unknown Percent'].fillna('<NA>')
+    mutations_df['Unknown Count'] = mutations_df['Unknown Count'].fillna('<NA>')
+    mutations_df['Present and Unknown Percent'] = mutations_df['Present and Unknown Percent'].fillna('<NA>')
+    mutations_df['Present and Unknown Count'] = mutations_df['Present and Unknown Count'].fillna('<NA>')
     mutations_df = mutations_df.sort_index()
 
     assert len(expected_df) == len(mutations_df)
     assert list(expected_df.columns) == list(mutations_df.columns)
     assert list(expected_df.index) == list(mutations_df.index)
     assert list(expected_df['Count']) == list(mutations_df['Count'])
+    assert list(expected_df['Unknown Count']) == list(mutations_df['Unknown Count'])
+    assert list(expected_df['Present and Unknown Count']) == list(mutations_df['Present and Unknown Count'])
     assert list(expected_df['Total']) == list(mutations_df['Total'])
     assert list(expected_df['Type']) == list(mutations_df['Type'])
     assert math.isclose(100 * (2 / 9), mutations_df.loc['reference:619:G:C', 'Percent'])
     assert math.isclose(100 * (1 / 9), mutations_df.loc['reference:461:AAAT:G', 'Percent'])
+    assert list(expected_df['Unknown Percent']) == list(mutations_df['Unknown Percent'])
+    assert list(expected_df['Present and Unknown Percent']) == list(mutations_df['Present and Unknown Percent'])
 
-    # Test including unknowns
+    # Test including unknown features
     mutations_df = query(loaded_database_connection).features_summary(ignore_annotations=True,
-                                                                      include_unknown_features=True)
+                                                                      include_unknown_features=True,
+                                                                      include_unknown_samples=False)
     mutations_df['Percent'] = mutations_df['Percent'].astype(int)  # Convert to int for easier comparison
+    mutations_df['Unknown Percent'] = mutations_df['Unknown Percent'].fillna('<NA>')
+    mutations_df['Unknown Count'] = mutations_df['Unknown Count'].fillna('<NA>')
+    mutations_df['Present and Unknown Percent'] = mutations_df['Present and Unknown Percent'].fillna('<NA>')
+    mutations_df['Present and Unknown Count'] = mutations_df['Present and Unknown Count'].fillna('<NA>')
     mutations_df = mutations_df.sort_index()
 
     assert 112 + 440 == len(mutations_df)
@@ -3294,12 +3348,21 @@ def test_summary_features_kindmutations(loaded_database_connection: DataIndexCon
     assert 'UNKNOWN_MISSING' == mutations_df.loc['reference:90:T:?', 'Type']
     assert 2 == mutations_df.loc['reference:190:A:?', 'Count']
     assert 1 == mutations_df.loc['reference:210:C:?', 'Count']
+    assert {'<NA>'} == set(mutations_df['Unknown Count'])
+    assert {'<NA>'} == set(mutations_df['Present and Unknown Count'])
+    assert {'<NA>'} == set(mutations_df['Unknown Percent'])
+    assert {'<NA>'} == set(mutations_df['Present and Unknown Percent'])
 
-    # Test only include unknowns
+    # Test only include unknown features
     mutations_df = query(loaded_database_connection).features_summary(ignore_annotations=True,
                                                                       include_unknown_features=True,
-                                                                      include_present_features=False)
+                                                                      include_present_features=False,
+                                                                      include_unknown_samples=False)
     mutations_df['Percent'] = mutations_df['Percent'].astype(int)  # Convert to int for easier comparison
+    mutations_df['Unknown Percent'] = mutations_df['Unknown Percent'].fillna('<NA>')
+    mutations_df['Unknown Count'] = mutations_df['Unknown Count'].fillna('<NA>')
+    mutations_df['Present and Unknown Percent'] = mutations_df['Present and Unknown Percent'].fillna('<NA>')
+    mutations_df['Present and Unknown Count'] = mutations_df['Present and Unknown Count'].fillna('<NA>')
     mutations_df = mutations_df.sort_index()
 
     assert 440 == len(mutations_df)
@@ -3309,6 +3372,11 @@ def test_summary_features_kindmutations(loaded_database_connection: DataIndexCon
     assert 2 == mutations_df.loc['reference:190:A:?', 'Count']
     assert 1 == mutations_df.loc['reference:210:C:?', 'Count']
     assert 'reference:619:G:C' not in mutations_df
+
+    assert {'<NA>'} == set(mutations_df['Unknown Count'])
+    assert {'<NA>'} == set(mutations_df['Present and Unknown Count'])
+    assert {'<NA>'} == set(mutations_df['Unknown Percent'])
+    assert {'<NA>'} == set(mutations_df['Present and Unknown Percent'])
 
 
 def test_summary_features_kindmutations_unique(loaded_database_connection: DataIndexConnection):
@@ -3326,21 +3394,34 @@ def test_summary_features_kindmutations_unique(loaded_database_connection: DataI
         'Type': 'first',
         'Mutation': 'count',
     }).rename(columns={'Mutation': 'Count'}).sort_index()
+    expected_df['Unknown Count'] = '<NA>'
+    expected_df['Present and Unknown Count'] = '<NA>'
     expected_df['Total'] = 1
     expected_df['Percent'] = 100 * (expected_df['Count'] / expected_df['Total'])
+    expected_df['Unknown Percent'] = '<NA>'
+    expected_df['Present and Unknown Percent'] = '<NA>'
 
     q = query(loaded_database_connection)
 
-    mutations_df = q.isa('SampleA').features_summary(selection='unique', ignore_annotations=True)
+    mutations_df = q.isa('SampleA').features_summary(selection='unique', ignore_annotations=True,
+                                                     include_unknown_samples=False)
+    mutations_df['Unknown Percent'] = mutations_df['Unknown Percent'].fillna('<NA>')
+    mutations_df['Unknown Count'] = mutations_df['Unknown Count'].fillna('<NA>')
+    mutations_df['Present and Unknown Percent'] = mutations_df['Present and Unknown Percent'].fillna('<NA>')
+    mutations_df['Present and Unknown Count'] = mutations_df['Present and Unknown Count'].fillna('<NA>')
     mutations_df = mutations_df.sort_index()
 
     assert len(expected_df) == len(mutations_df)
     assert 46 == len(mutations_df)  # Check length against independently generated length
     assert list(expected_df.index) == list(mutations_df.index)
     assert list(expected_df['Count']) == list(mutations_df['Count'])
+    assert list(expected_df['Unknown Count']) == list(mutations_df['Unknown Count'])
+    assert list(expected_df['Present and Unknown Count']) == list(mutations_df['Present and Unknown Count'])
     assert list(expected_df['Total']) == list(mutations_df['Total'])
     assert list(expected_df['Type']) == list(mutations_df['Type'])
     assert math.isclose(100 * (1 / 1), mutations_df.loc['reference:3656:CATT:C', 'Percent'])
+    assert list(expected_df['Unknown Percent']) == list(mutations_df['Unknown Percent'])
+    assert list(expected_df['Present and Unknown Percent']) == list(mutations_df['Present and Unknown Percent'])
 
     # Unique to B
     dfAC = pd.concat([dfA, dfC])
@@ -3353,18 +3434,31 @@ def test_summary_features_kindmutations_unique(loaded_database_connection: DataI
         'Type': 'first',
         'Mutation': 'count',
     }).rename(columns={'Mutation': 'Count'}).sort_index()
+    expected_df['Unknown Count'] = '<NA>'
+    expected_df['Present and Unknown Count'] = '<NA>'
     expected_df['Total'] = 1
     expected_df['Percent'] = 100 * (expected_df['Count'] / expected_df['Total'])
+    expected_df['Unknown Percent'] = '<NA>'
+    expected_df['Present and Unknown Percent'] = '<NA>'
 
-    mutations_df = q.isa('SampleB').features_summary(selection='unique', ignore_annotations=True)
+    mutations_df = q.isa('SampleB').features_summary(selection='unique', ignore_annotations=True,
+                                                     include_unknown_samples=False)
+    mutations_df['Unknown Percent'] = mutations_df['Unknown Percent'].fillna('<NA>')
+    mutations_df['Unknown Count'] = mutations_df['Unknown Count'].fillna('<NA>')
+    mutations_df['Present and Unknown Percent'] = mutations_df['Present and Unknown Percent'].fillna('<NA>')
+    mutations_df['Present and Unknown Count'] = mutations_df['Present and Unknown Count'].fillna('<NA>')
     mutations_df = mutations_df.sort_index()
 
     assert len(expected_df) == len(mutations_df)
     assert list(expected_df.index) == list(mutations_df.index)
     assert list(expected_df['Count']) == list(mutations_df['Count'])
+    assert list(expected_df['Unknown Count']) == list(mutations_df['Unknown Count'])
+    assert list(expected_df['Present and Unknown Count']) == list(mutations_df['Present and Unknown Count'])
     assert list(expected_df['Type']) == list(mutations_df['Type'])
     assert list(expected_df['Total']) == list(mutations_df['Total'])
     assert math.isclose(100 * (1 / 1), mutations_df.loc['reference:349:AAGT:A', 'Percent'])
+    assert list(expected_df['Unknown Percent']) == list(mutations_df['Unknown Percent'])
+    assert list(expected_df['Present and Unknown Percent']) == list(mutations_df['Present and Unknown Percent'])
 
     # Unique to C
     dfAB = pd.concat([dfA, dfB])
@@ -3377,18 +3471,31 @@ def test_summary_features_kindmutations_unique(loaded_database_connection: DataI
         'Type': 'first',
         'Mutation': 'count',
     }).rename(columns={'Mutation': 'Count'}).sort_index()
+    expected_df['Unknown Count'] = '<NA>'
+    expected_df['Present and Unknown Count'] = '<NA>'
     expected_df['Total'] = 1
     expected_df['Percent'] = 100 * (expected_df['Count'] / expected_df['Total'])
+    expected_df['Unknown Percent'] = '<NA>'
+    expected_df['Present and Unknown Percent'] = '<NA>'
 
-    mutations_df = q.isa('SampleC').features_summary(selection='unique', ignore_annotations=True)
+    mutations_df = q.isa('SampleC').features_summary(selection='unique', ignore_annotations=True,
+                                                     include_unknown_samples=False)
+    mutations_df['Unknown Percent'] = mutations_df['Unknown Percent'].fillna('<NA>')
+    mutations_df['Unknown Count'] = mutations_df['Unknown Count'].fillna('<NA>')
+    mutations_df['Present and Unknown Percent'] = mutations_df['Present and Unknown Percent'].fillna('<NA>')
+    mutations_df['Present and Unknown Count'] = mutations_df['Present and Unknown Count'].fillna('<NA>')
     mutations_df = mutations_df.sort_index()
 
     assert len(expected_df) == len(mutations_df)
     assert list(expected_df.index) == list(mutations_df.index)
     assert list(expected_df['Count']) == list(mutations_df['Count'])
+    assert list(expected_df['Unknown Count']) == list(mutations_df['Unknown Count'])
+    assert list(expected_df['Present and Unknown Count']) == list(mutations_df['Present and Unknown Count'])
     assert list(expected_df['Total']) == list(mutations_df['Total'])
     assert list(expected_df['Type']) == list(mutations_df['Type'])
     assert math.isclose(100 * (1 / 1), mutations_df.loc['reference:866:GCCAGATCC:G', 'Percent'])
+    assert list(expected_df['Unknown Percent']) == list(mutations_df['Unknown Percent'])
+    assert list(expected_df['Present and Unknown Percent']) == list(mutations_df['Present and Unknown Percent'])
 
     # Unique to BC
     dfBC = pd.concat([dfB, dfC])
@@ -3401,21 +3508,34 @@ def test_summary_features_kindmutations_unique(loaded_database_connection: DataI
         'Type': 'first',
         'Mutation': 'count',
     }).rename(columns={'Mutation': 'Count'}).sort_index()
+    expected_df['Unknown Count'] = '<NA>'
+    expected_df['Present and Unknown Count'] = '<NA>'
     expected_df['Total'] = 2
     expected_df['Percent'] = 100 * (expected_df['Count'] / expected_df['Total'])
+    expected_df['Unknown Percent'] = '<NA>'
+    expected_df['Present and Unknown Percent'] = '<NA>'
 
-    mutations_df = q.isin(['SampleB', 'SampleC']).features_summary(selection='unique', ignore_annotations=True)
+    mutations_df = q.isin(['SampleB', 'SampleC']).features_summary(selection='unique', ignore_annotations=True,
+                                                                   include_unknown_samples=False)
+    mutations_df['Unknown Percent'] = mutations_df['Unknown Percent'].fillna('<NA>')
+    mutations_df['Unknown Count'] = mutations_df['Unknown Count'].fillna('<NA>')
+    mutations_df['Present and Unknown Percent'] = mutations_df['Present and Unknown Percent'].fillna('<NA>')
+    mutations_df['Present and Unknown Count'] = mutations_df['Present and Unknown Count'].fillna('<NA>')
     mutations_df = mutations_df.sort_index()
 
     assert len(expected_df) == len(mutations_df)
     assert 66 == len(mutations_df)  # Check length against independently generated length
     assert list(expected_df.index) == list(mutations_df.index)
     assert list(expected_df['Count']) == list(mutations_df['Count'])
+    assert list(expected_df['Unknown Count']) == list(mutations_df['Unknown Count'])
+    assert list(expected_df['Present and Unknown Count']) == list(mutations_df['Present and Unknown Count'])
     assert list(expected_df['Total']) == list(mutations_df['Total'])
     assert list(expected_df['Type']) == list(mutations_df['Type'])
     assert math.isclose(100 * (2 / 2), mutations_df.loc['reference:619:G:C', 'Percent'])
     assert math.isclose(100 * (1 / 2), mutations_df.loc['reference:866:GCCAGATCC:G', 'Percent'])
     assert math.isclose(100 * (1 / 2), mutations_df.loc['reference:349:AAGT:A', 'Percent'])
+    assert list(expected_df['Unknown Percent']) == list(mutations_df['Unknown Percent'])
+    assert list(expected_df['Present and Unknown Percent']) == list(mutations_df['Present and Unknown Percent'])
 
     # Unique to ABC (all with mutations)
     dfABC = pd.concat([dfA, dfB, dfC])
@@ -3428,50 +3548,77 @@ def test_summary_features_kindmutations_unique(loaded_database_connection: DataI
         'Type': 'first',
         'Mutation': 'count',
     }).rename(columns={'Mutation': 'Count'}).sort_index()
+    expected_df['Unknown Count'] = '<NA>'
+    expected_df['Present and Unknown Count'] = '<NA>'
     expected_df['Total'] = 3
     expected_df['Percent'] = 100 * (expected_df['Count'] / expected_df['Total'])
+    expected_df['Unknown Percent'] = '<NA>'
+    expected_df['Present and Unknown Percent'] = '<NA>'
 
     mutations_df = q.isin(['SampleA', 'SampleB', 'SampleC']).features_summary(selection='unique',
-                                                                              ignore_annotations=True)
+                                                                              ignore_annotations=True,
+                                                                              include_unknown_samples=False)
+    mutations_df['Unknown Percent'] = mutations_df['Unknown Percent'].fillna('<NA>')
+    mutations_df['Unknown Count'] = mutations_df['Unknown Count'].fillna('<NA>')
+    mutations_df['Present and Unknown Percent'] = mutations_df['Present and Unknown Percent'].fillna('<NA>')
+    mutations_df['Present and Unknown Count'] = mutations_df['Present and Unknown Count'].fillna('<NA>')
     mutations_df = mutations_df.sort_index()
 
     assert len(expected_df) == len(mutations_df)
     assert 112 == len(mutations_df)  # Check length against independently generated length
     assert list(expected_df.index) == list(mutations_df.index)
     assert list(expected_df['Count']) == list(mutations_df['Count'])
+    assert list(expected_df['Unknown Count']) == list(mutations_df['Unknown Count'])
+    assert list(expected_df['Present and Unknown Count']) == list(mutations_df['Present and Unknown Count'])
     assert list(expected_df['Type']) == list(mutations_df['Type'])
     assert list(expected_df['Total']) == list(mutations_df['Total'])
     assert math.isclose(100 * (2 / 3), mutations_df.loc['reference:619:G:C', 'Percent'])
     assert math.isclose(100 * (1 / 3), mutations_df.loc['reference:866:GCCAGATCC:G', 'Percent'])
     assert math.isclose(100 * (1 / 3), mutations_df.loc['reference:349:AAGT:A', 'Percent'])
     assert math.isclose(100 * (1 / 3), mutations_df.loc['reference:3656:CATT:C', 'Percent'])
+    assert list(expected_df['Unknown Percent']) == list(mutations_df['Unknown Percent'])
+    assert list(expected_df['Present and Unknown Percent']) == list(mutations_df['Present and Unknown Percent'])
 
     # Unique to None
-    mutations_df = q.isin([]).features_summary(selection='unique', ignore_annotations=True)
+    mutations_df = q.isin([]).features_summary(selection='unique', ignore_annotations=True,
+                                               include_unknown_samples=False)
+    mutations_df['Unknown Percent'] = mutations_df['Unknown Percent'].fillna('<NA>')
+    mutations_df['Unknown Count'] = mutations_df['Unknown Count'].fillna('<NA>')
+    mutations_df['Present and Unknown Percent'] = mutations_df['Present and Unknown Percent'].fillna('<NA>')
+    mutations_df['Present and Unknown Count'] = mutations_df['Present and Unknown Count'].fillna('<NA>')
     mutations_df = mutations_df.sort_index()
 
     assert 0 == len(mutations_df)
     assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type',
-            'Count', 'Total', 'Percent'] == list(mutations_df.columns)
+            'Count', 'Unknown Count', 'Present and Unknown Count', 'Total',
+            'Percent', 'Unknown Percent', 'Present and Unknown Percent'] == list(mutations_df.columns)
 
 
-def test_summary_features_kindmutations_annotations(loaded_database_connection_annotations: DataIndexConnection):
-    q = query(loaded_database_connection_annotations)
+def test_summary_features_kindmutations_annotations(
+        loaded_database_connection_annotations_unknown: DataIndexConnection):
+    q = query(loaded_database_connection_annotations_unknown)
 
     # 1 sample
-    mutations_df = q.isa('SH10-014').features_summary(ignore_annotations=False)
+    mutations_df = q.isa('SH10-014').features_summary(ignore_annotations=False, include_unknown_samples=True)
 
     assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type',
-            'Count', 'Total', 'Percent', 'Annotation', 'Annotation_Impact',
+            'Count', 'Unknown Count', 'Present and Unknown Count', 'Total',
+            'Percent', 'Unknown Percent', 'Present and Unknown Percent',
+            'Annotation', 'Annotation_Impact',
             'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
             'HGVS.c', 'HGVS.p', 'ID_HGVS.c', 'ID_HGVS.p', 'ID_HGVS_GN.c', 'ID_HGVS_GN.p'] == list(mutations_df.columns)
-    assert 139 == len(mutations_df)
+    assert 138 == len(mutations_df)
 
     ## Convert percent to int to make it easier to compare in assert statements
     mutations_df['Percent'] = mutations_df['Percent'].astype(int)
+    mutations_df = mutations_df.fillna('NA')
+    mutations_df['Unknown Count'] = mutations_df['Unknown Count'].astype(int)
+    mutations_df['Unknown Percent'] = mutations_df['Unknown Percent'].astype(int)
+    mutations_df['Present and Unknown Count'] = mutations_df['Present and Unknown Count'].astype(int)
+    mutations_df['Present and Unknown Percent'] = mutations_df['Present and Unknown Percent'].astype(int)
 
     ## missense variant
-    assert ['NC_011083', 140658, 'C', 'A', 'SNP', 1, 1, 100,
+    assert ['NC_011083', 140658, 'C', 'A', 'SNP', 1, 0, 1, 1, 100, 0, 100,
             'missense_variant', 'MODERATE', 'murF', 'SEHA_RS01180', 'transcript', 'protein_coding',
             'c.497C>A', 'p.Ala166Glu',
             'hgvs:NC_011083:SEHA_RS01180:c.497C>A', 'hgvs:NC_011083:SEHA_RS01180:p.Ala166Glu',
@@ -3479,7 +3626,7 @@ def test_summary_features_kindmutations_annotations(loaded_database_connection_a
         mutations_df.loc['NC_011083:140658:C:A'])
 
     ## inframe deletion
-    assert ['NC_011083', 4465400, 'GGCCGAA', 'G', 'INDEL', 1, 1, 100,
+    assert ['NC_011083', 4465400, 'GGCCGAA', 'G', 'INDEL', 1, 0, 1, 1, 100, 0, 100,
             'conservative_inframe_deletion', 'MODERATE', 'tyrB', 'SEHA_RS22180', 'transcript', 'protein_coding',
             'c.157_162delGAAGCC', 'p.Glu53_Ala54del',
             'hgvs:NC_011083:SEHA_RS22180:c.157_162delGAAGCC', 'hgvs:NC_011083:SEHA_RS22180:p.Glu53_Ala54del',
@@ -3487,7 +3634,7 @@ def test_summary_features_kindmutations_annotations(loaded_database_connection_a
         mutations_df.loc['NC_011083:4465400:GGCCGAA:G'])
 
     ## Intergenic variant (with some NA values in fields)
-    assert ['NC_011083', 4555461, 'T', 'TC', 'INDEL', 1, 1, 100,
+    assert ['NC_011083', 4555461, 'T', 'TC', 'INDEL', 1, 0, 1, 1, 100, 0, 100,
             'intergenic_region', 'MODIFIER', 'SEHA_RS22510-SEHA_RS26685', 'SEHA_RS22510-SEHA_RS26685',
             'intergenic_region', 'NA',
             'n.4555461_4555462insC', 'NA',
@@ -3496,19 +3643,27 @@ def test_summary_features_kindmutations_annotations(loaded_database_connection_a
         mutations_df.loc['NC_011083:4555461:T:TC'].fillna('NA'))
 
     # 3 samples
-    mutations_df = q.isin(['SH10-014', 'SH14-001', 'SH14-014']).features_summary(ignore_annotations=False)
+    mutations_df = q.isin(['SH10-014', 'SH14-001', 'SH14-014']).features_summary(ignore_annotations=False,
+                                                                                 include_unknown_samples=True)
 
     ## Convert percent to int to make it easier to compare in assert statements
     mutations_df['Percent'] = mutations_df['Percent'].astype(int)
+    mutations_df = mutations_df.fillna('NA')
+    mutations_df['Unknown Count'] = mutations_df['Unknown Count'].astype(int)
+    mutations_df['Unknown Percent'] = mutations_df['Unknown Percent'].astype(int)
+    mutations_df['Present and Unknown Count'] = mutations_df['Present and Unknown Count'].astype(int)
+    mutations_df['Present and Unknown Percent'] = mutations_df['Present and Unknown Percent'].astype(int)
 
     assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type',
-            'Count', 'Total', 'Percent', 'Annotation', 'Annotation_Impact',
+            'Count', 'Unknown Count', 'Present and Unknown Count', 'Total',
+            'Percent', 'Unknown Percent', 'Present and Unknown Percent',
+            'Annotation', 'Annotation_Impact',
             'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
             'HGVS.c', 'HGVS.p', 'ID_HGVS.c', 'ID_HGVS.p', 'ID_HGVS_GN.c', 'ID_HGVS_GN.p'] == list(mutations_df.columns)
     assert 177 == len(mutations_df)
 
     ## missense variant (3/3)
-    assert ['NC_011083', 140658, 'C', 'A', 'SNP', 3, 3, 100,
+    assert ['NC_011083', 140658, 'C', 'A', 'SNP', 3, 0, 3, 3, 100, 0, 100,
             'missense_variant', 'MODERATE', 'murF', 'SEHA_RS01180', 'transcript', 'protein_coding',
             'c.497C>A', 'p.Ala166Glu',
             'hgvs:NC_011083:SEHA_RS01180:c.497C>A', 'hgvs:NC_011083:SEHA_RS01180:p.Ala166Glu',
@@ -3516,7 +3671,7 @@ def test_summary_features_kindmutations_annotations(loaded_database_connection_a
         mutations_df.loc['NC_011083:140658:C:A'])
 
     ## Intergenic variant (1/3)
-    assert ['NC_011083', 4555461, 'T', 'TC', 'INDEL', 1, 3, 33,
+    assert ['NC_011083', 4555461, 'T', 'TC', 'INDEL', 1, 2, 3, 3, 33, 66, 100,
             'intergenic_region', 'MODIFIER', 'SEHA_RS22510-SEHA_RS26685', 'SEHA_RS22510-SEHA_RS26685',
             'intergenic_region', 'NA',
             'n.4555461_4555462insC', 'NA',
@@ -3525,31 +3680,82 @@ def test_summary_features_kindmutations_annotations(loaded_database_connection_a
         mutations_df.loc['NC_011083:4555461:T:TC'].fillna('NA'))
 
     # Test ignore annotations
-    mutations_df = q.isin(['SH10-014', 'SH14-001', 'SH14-014']).features_summary(ignore_annotations=True)
+    mutations_df = q.isin(['SH10-014', 'SH14-001', 'SH14-014']).features_summary(ignore_annotations=True,
+                                                                                 include_unknown_samples=True)
 
     assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type',
-            'Count', 'Total', 'Percent'] == list(mutations_df.columns)
+            'Count', 'Unknown Count', 'Present and Unknown Count', 'Total',
+            'Percent', 'Unknown Percent', 'Present and Unknown Percent'] == list(mutations_df.columns)
     assert 177 == len(mutations_df)
 
-    ## Test unique
-    mutations_df = q.isa('SH10-014').features_summary(selection='unique', ignore_annotations=False)
+    # Test unique, not including unknown with no present samples
+    mutations_df = q.isa('SH10-014').features_summary(selection='unique', ignore_annotations=False,
+                                                      include_unknown_samples=True)
 
     ## Convert percent to int to make it easier to compare in assert statements
     mutations_df['Percent'] = mutations_df['Percent'].astype(int)
+    mutations_df = mutations_df.fillna('NA')
+    mutations_df['Unknown Count'] = mutations_df['Unknown Count'].astype(int)
+    mutations_df['Unknown Percent'] = mutations_df['Unknown Percent'].astype(int)
+    mutations_df['Present and Unknown Count'] = mutations_df['Present and Unknown Count'].astype(int)
+    mutations_df['Present and Unknown Percent'] = mutations_df['Present and Unknown Percent'].astype(int)
 
     assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type',
-            'Count', 'Total', 'Percent', 'Annotation', 'Annotation_Impact',
+            'Count', 'Unknown Count', 'Present and Unknown Count', 'Total',
+            'Percent', 'Unknown Percent', 'Present and Unknown Percent',
+            'Annotation', 'Annotation_Impact',
             'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
             'HGVS.c', 'HGVS.p', 'ID_HGVS.c', 'ID_HGVS.p', 'ID_HGVS_GN.c', 'ID_HGVS_GN.p'] == list(mutations_df.columns)
     assert 60 == len(mutations_df)
 
     ## missense variant
-    assert ['NC_011083', 2049576, 'A', 'C', 'SNP', 1, 1, 100,
+    assert ['NC_011083', 2049576, 'A', 'C', 'SNP', 1, 0, 1, 1, 100, 0, 100,
             'missense_variant', 'MODERATE', 'cutC', 'SEHA_RS10675', 'transcript', 'protein_coding',
             'c.536T>G', 'p.Val179Gly',
             'hgvs:NC_011083:SEHA_RS10675:c.536T>G', 'hgvs:NC_011083:SEHA_RS10675:p.Val179Gly',
             'hgvs_gn:NC_011083:cutC:c.536T>G', 'hgvs_gn:NC_011083:cutC:p.Val179Gly'] == list(
         mutations_df.loc['NC_011083:2049576:A:C'])
+
+    ## variant that's present in one (SH10-014) and unknown in others
+    assert ['NC_011083', 4555461, 'T', 'TC', 'INDEL', 1, 0, 1, 1, 100, 0, 100,
+            'intergenic_region', 'MODIFIER', 'SEHA_RS22510-SEHA_RS26685', 'SEHA_RS22510-SEHA_RS26685',
+            'intergenic_region', 'NA',
+            'n.4555461_4555462insC', 'NA',
+            'hgvs:NC_011083:n.4555461_4555462insC', 'NA',
+            'hgvs_gn:NC_011083:n.4555461_4555462insC', 'NA'] == list(
+        mutations_df.loc['NC_011083:4555461:T:TC'].fillna('NA'))
+
+    # Test unique, including unknown with no present samples
+    mutations_df = q.isa('SH10-014').features_summary(selection='unique', ignore_annotations=False,
+                                                      include_unknown_no_present_samples=True,
+                                                      include_unknown_samples=True)
+
+    ## Convert percent to int to make it easier to compare in assert statements
+    mutations_df['Percent'] = mutations_df['Percent'].astype(int)
+    mutations_df = mutations_df.fillna('NA')
+    mutations_df['Unknown Count'] = mutations_df['Unknown Count'].astype(int)
+    mutations_df['Unknown Percent'] = mutations_df['Unknown Percent'].astype(int)
+    mutations_df['Present and Unknown Count'] = mutations_df['Present and Unknown Count'].astype(int)
+    mutations_df['Present and Unknown Percent'] = mutations_df['Present and Unknown Percent'].astype(int)
+
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type',
+            'Count', 'Unknown Count', 'Present and Unknown Count', 'Total',
+            'Percent', 'Unknown Percent', 'Present and Unknown Percent',
+            'Annotation', 'Annotation_Impact',
+            'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
+            'HGVS.c', 'HGVS.p', 'ID_HGVS.c', 'ID_HGVS.p', 'ID_HGVS_GN.c', 'ID_HGVS_GN.p'] == list(mutations_df.columns)
+    assert 59 == len(mutations_df)
+
+    ## missense variant
+    assert ['NC_011083', 2049576, 'A', 'C', 'SNP', 1, 0, 1, 1, 100, 0, 100,
+            'missense_variant', 'MODERATE', 'cutC', 'SEHA_RS10675', 'transcript', 'protein_coding',
+            'c.536T>G', 'p.Val179Gly',
+            'hgvs:NC_011083:SEHA_RS10675:c.536T>G', 'hgvs:NC_011083:SEHA_RS10675:p.Val179Gly',
+            'hgvs_gn:NC_011083:cutC:c.536T>G', 'hgvs_gn:NC_011083:cutC:p.Val179Gly'] == list(
+        mutations_df.loc['NC_011083:2049576:A:C'])
+
+    ## variant that's present in one (SH10-014) and unknown in others
+    assert 'NC_011083:4555461:T:TC' not in mutations_df
 
 
 def test_summary_features_two(loaded_database_connection: DataIndexConnection):
@@ -3564,76 +3770,155 @@ def test_summary_features_two(loaded_database_connection: DataIndexConnection):
         'Type': 'first',
         'Mutation': 'count',
     }).rename(columns={'Mutation': 'Count'}).sort_index()
+    expected_df['Unknown Count'] = '<NA>'
+    expected_df['Present and Unknown Count'] = '<NA>'
     expected_df['Total'] = 2
     expected_df['Percent'] = 100 * (expected_df['Count'] / expected_df['Total'])
+    expected_df['Unknown Percent'] = '<NA>'
+    expected_df['Present and Unknown Percent'] = '<NA>'
 
     mutations_df = query(loaded_database_connection).hasa(
-        'reference:839:C:G', kind='mutation').features_summary()
+        'reference:839:C:G', kind='mutation').features_summary(include_unknown_samples=False)
+    mutations_df['Unknown Percent'] = mutations_df['Unknown Percent'].fillna('<NA>')
+    mutations_df['Unknown Count'] = mutations_df['Unknown Count'].fillna('<NA>')
+    mutations_df['Present and Unknown Percent'] = mutations_df['Present and Unknown Percent'].fillna('<NA>')
+    mutations_df['Present and Unknown Count'] = mutations_df['Present and Unknown Count'].fillna('<NA>')
     mutations_df = mutations_df.sort_index()
 
     assert len(expected_df) == len(mutations_df)
     assert list(expected_df.index) == list(mutations_df.index)
     assert list(expected_df['Count']) == list(mutations_df['Count'])
+    assert list(expected_df['Unknown Count']) == list(mutations_df['Unknown Count'])
+    assert list(expected_df['Present and Unknown Count']) == list(mutations_df['Present and Unknown Count'])
     assert list(expected_df['Type']) == list(mutations_df['Type'])
     assert list(expected_df['Total']) == list(mutations_df['Total'])
     assert math.isclose(100 * (2 / 2), mutations_df.loc['reference:839:C:G', 'Percent'])
+    assert list(expected_df['Unknown Percent']) == list(mutations_df['Unknown Percent'])
+    assert list(expected_df['Present and Unknown Percent']) == list(mutations_df['Present and Unknown Percent'])
 
 
 def test_summary_features_kindmlst(loaded_database_connection: DataIndexConnection):
     # Test case of summary of single sample
-    summary_df = query(loaded_database_connection).isa('SampleA').features_summary(kind='mlst')
+    summary_df = query(loaded_database_connection).isa('SampleA').features_summary(kind='mlst',
+                                                                                   include_unknown_samples=True)
     summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
+    summary_df['Unknown Percent'] = summary_df['Unknown Percent'].astype(int)
+    summary_df['Present and Unknown Percent'] = summary_df['Present and Unknown Percent'].astype(int)
     assert 7 == len(summary_df)
     assert {'lmonocytogenes'} == set(summary_df['Scheme'].tolist())
     assert 'MLST Feature' == summary_df.index.name
-    assert ['Scheme', 'Locus', 'Allele', 'Count', 'Total', 'Percent'] == list(summary_df.columns)
-    assert ['lmonocytogenes', 'abcZ', '1', 1, 1, 100] == summary_df.loc['mlst:lmonocytogenes:abcZ:1'].tolist()
-    assert ['lmonocytogenes', 'bglA', '51', 1, 1, 100] == summary_df.loc['mlst:lmonocytogenes:bglA:51'].tolist()
+    assert ['Scheme', 'Locus', 'Allele', 'Count', 'Unknown Count', 'Present and Unknown Count',
+            'Total', 'Percent', 'Unknown Percent', 'Present and Unknown Percent'] == list(summary_df.columns)
+    assert ['lmonocytogenes', 'abcZ', '1', 1, 0, 1, 1, 100, 0, 100] == summary_df.loc[
+        'mlst:lmonocytogenes:abcZ:1'].tolist()
+    assert ['lmonocytogenes', 'bglA', '51', 1, 0, 1, 1, 100, 0, 100] == summary_df.loc[
+        'mlst:lmonocytogenes:bglA:51'].tolist()
 
     # Test samples across multiple schemes
     summary_df = query(loaded_database_connection).isin(['SampleA', 'SampleB', 'CFSAN002349',
-                                                         '2014D-0067']).features_summary(kind='mlst')
+                                                         '2014D-0067']).features_summary(kind='mlst',
+                                                                                         include_unknown_samples=True)
     summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
     assert 15 == len(summary_df)
     assert {'lmonocytogenes', 'campylobacter'} == set(summary_df['Scheme'].tolist())
     assert 'MLST Feature' == summary_df.index.name
-    assert ['Scheme', 'Locus', 'Allele', 'Count', 'Total', 'Percent'] == list(summary_df.columns)
-    assert ['lmonocytogenes', 'abcZ', '1', 3, 4, 75] == summary_df.loc['mlst:lmonocytogenes:abcZ:1'].tolist()
-    assert ['lmonocytogenes', 'bglA', '51', 2, 4, 50] == summary_df.loc['mlst:lmonocytogenes:bglA:51'].tolist()
-    assert ['lmonocytogenes', 'bglA', '52', 1, 4, 25] == summary_df.loc['mlst:lmonocytogenes:bglA:52'].tolist()
-    assert ['lmonocytogenes', 'ldh', '5', 2, 4, 50] == summary_df.loc['mlst:lmonocytogenes:ldh:5'].tolist()
-    assert ['lmonocytogenes', 'lhkA', '5', 2, 4, 50] == summary_df.loc['mlst:lmonocytogenes:lhkA:5'].tolist()
-    assert ['lmonocytogenes', 'lhkA', '4', 1, 4, 25] == summary_df.loc['mlst:lmonocytogenes:lhkA:4'].tolist()
-    assert ['campylobacter', 'aspA', '2', 1, 4, 25] == summary_df.loc['mlst:campylobacter:aspA:2'].tolist()
-    assert ['campylobacter', 'glyA', '3', 1, 4, 25] == summary_df.loc['mlst:campylobacter:glyA:3'].tolist()
-    assert 6 == len(summary_df[summary_df['Scheme'] == 'campylobacter'])  # Missing one feature since it's unknown
+    assert ['Scheme', 'Locus', 'Allele', 'Count', 'Unknown Count', 'Present and Unknown Count',
+            'Total', 'Percent', 'Unknown Percent', 'Present and Unknown Percent'] == list(summary_df.columns)
+    assert ['lmonocytogenes', 'abcZ', '1', 3, 0, 3, 4, 75, 0, 75] == summary_df.loc[
+        'mlst:lmonocytogenes:abcZ:1'].tolist()
+    assert ['lmonocytogenes', 'bglA', '51', 2, 0, 2, 4, 50, 0, 50] == summary_df.loc[
+        'mlst:lmonocytogenes:bglA:51'].tolist()
+    assert ['lmonocytogenes', 'bglA', '52', 1, 0, 1, 4, 25, 0, 25] == summary_df.loc[
+        'mlst:lmonocytogenes:bglA:52'].tolist()
+    assert ['lmonocytogenes', 'ldh', '5', 2, 1, 3, 4, 50, 25, 75] == summary_df.loc[
+        'mlst:lmonocytogenes:ldh:5'].tolist()
+    assert ['lmonocytogenes', 'lhkA', '5', 2, 0, 2, 4, 50, 0, 50] == summary_df.loc[
+        'mlst:lmonocytogenes:lhkA:5'].tolist()
+    assert ['lmonocytogenes', 'lhkA', '4', 1, 0, 1, 4, 25, 0, 25] == summary_df.loc[
+        'mlst:lmonocytogenes:lhkA:4'].tolist()
+    assert ['campylobacter', 'aspA', '2', 1, 0, 1, 4, 25, 0, 25] == summary_df.loc['mlst:campylobacter:aspA:2'].tolist()
+    assert ['campylobacter', 'glyA', '3', 1, 0, 1, 4, 25, 0, 25] == summary_df.loc['mlst:campylobacter:glyA:3'].tolist()
+    assert 6 == len(summary_df[summary_df['Scheme'] == 'campylobacter'])
+
+    # Test samples across multiple schemes including unknown with no present samples
+    summary_df = query(loaded_database_connection).isin(['SampleA', 'SampleB', 'CFSAN002349',
+                                                         '2014D-0067']).features_summary(kind='mlst',
+                                                                                         include_unknown_no_present_samples=True,
+                                                                                         include_unknown_samples=True)
+    summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
+    assert 16 == len(summary_df)
+    assert {'lmonocytogenes', 'campylobacter'} == set(summary_df['Scheme'].tolist())
+    assert 'MLST Feature' == summary_df.index.name
+    assert ['Scheme', 'Locus', 'Allele', 'Count', 'Unknown Count', 'Present and Unknown Count',
+            'Total', 'Percent', 'Unknown Percent', 'Present and Unknown Percent'] == list(summary_df.columns)
+    assert ['lmonocytogenes', 'abcZ', '1', 3, 0, 3, 4, 75, 0, 75] == summary_df.loc[
+        'mlst:lmonocytogenes:abcZ:1'].tolist()
+    assert ['lmonocytogenes', 'bglA', '51', 2, 0, 2, 4, 50, 0, 50] == summary_df.loc[
+        'mlst:lmonocytogenes:bglA:51'].tolist()
+    assert ['lmonocytogenes', 'bglA', '52', 1, 0, 1, 4, 25, 0, 25] == summary_df.loc[
+        'mlst:lmonocytogenes:bglA:52'].tolist()
+    assert ['lmonocytogenes', 'ldh', '5', 2, 1, 3, 4, 50, 25, 75] == summary_df.loc[
+        'mlst:lmonocytogenes:ldh:5'].tolist()
+    assert ['lmonocytogenes', 'lhkA', '5', 2, 0, 2, 4, 50, 0, 50] == summary_df.loc[
+        'mlst:lmonocytogenes:lhkA:5'].tolist()
+    assert ['lmonocytogenes', 'lhkA', '4', 1, 0, 1, 4, 25, 0, 25] == summary_df.loc[
+        'mlst:lmonocytogenes:lhkA:4'].tolist()
+    assert ['campylobacter', 'aspA', '2', 1, 0, 1, 4, 25, 0, 25] == summary_df.loc['mlst:campylobacter:aspA:2'].tolist()
+    assert ['campylobacter', 'glyA', '3', 1, 0, 1, 4, 25, 0, 25] == summary_df.loc['mlst:campylobacter:glyA:3'].tolist()
+    assert ['campylobacter', 'uncA', '6', 0, 1, 1, 4, 0, 25, 25] == summary_df.loc['mlst:campylobacter:uncA:6'].tolist()
+    assert 7 == len(summary_df[summary_df['Scheme'] == 'campylobacter'])
 
     # Test only unknown
     summary_df = query(loaded_database_connection).isin(
         ['SampleA', 'SampleB', 'CFSAN002349', '2014D-0067']).features_summary(
-        kind='mlst', include_present_features=False, include_unknown_features=True)
+        kind='mlst', include_present_features=False, include_unknown_features=True, include_unknown_samples=True)
     summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
+    summary_df['Unknown Count'] = summary_df['Unknown Count'].fillna(-1)
+    summary_df['Unknown Count'] = summary_df['Unknown Count'].astype(int)
+    summary_df['Present and Unknown Count'] = summary_df['Present and Unknown Count'].fillna(-1)
+    summary_df['Present and Unknown Count'] = summary_df['Present and Unknown Count'].astype(int)
+    summary_df['Unknown Percent'] = summary_df['Unknown Percent'].fillna(-1)
+    summary_df['Unknown Percent'] = summary_df['Unknown Percent'].astype(int)
+    summary_df['Present and Unknown Percent'] = summary_df['Present and Unknown Percent'].fillna(-1)
+    summary_df['Present and Unknown Percent'] = summary_df['Present and Unknown Percent'].astype(int)
+
     assert 2 == len(summary_df)
     assert {'lmonocytogenes', 'campylobacter'} == set(summary_df['Scheme'].tolist())
     assert 'MLST Feature' == summary_df.index.name
-    assert ['Scheme', 'Locus', 'Allele', 'Count', 'Total', 'Percent'] == list(summary_df.columns)
-    assert ['lmonocytogenes', 'ldh', '?', 1, 4, 25] == summary_df.loc['mlst:lmonocytogenes:ldh:?'].tolist()
-    assert ['campylobacter', 'uncA', '?', 1, 4, 25] == summary_df.loc['mlst:campylobacter:uncA:?'].tolist()
+    assert ['Scheme', 'Locus', 'Allele', 'Count', 'Unknown Count', 'Present and Unknown Count',
+            'Total', 'Percent', 'Unknown Percent', 'Present and Unknown Percent'] == list(summary_df.columns)
+    assert ['lmonocytogenes', 'ldh', '?', 1, -1, -1, 4, 25, -1, -1] == summary_df.loc[
+        'mlst:lmonocytogenes:ldh:?'].tolist()
+    assert ['campylobacter', 'uncA', '?', 1, -1, -1, 4, 25, -1, -1] == summary_df.loc[
+        'mlst:campylobacter:uncA:?'].tolist()
 
     # Test only unknown, restrict scheme
     summary_df = query(loaded_database_connection).isin(
         ['SampleA', 'SampleB', 'CFSAN002349', '2014D-0067']).features_summary(
-        kind='mlst', scheme='lmonocytogenes', include_present_features=False, include_unknown_features=True)
+        kind='mlst', scheme='lmonocytogenes', include_present_features=False, include_unknown_features=True,
+        include_unknown_samples=True)
     summary_df['Percent'] = summary_df['Percent'].astype(int)  # Convert to int for easier comparison
+    summary_df['Unknown Count'] = summary_df['Unknown Count'].fillna(-1)
+    summary_df['Unknown Count'] = summary_df['Unknown Count'].astype(int)
+    summary_df['Present and Unknown Count'] = summary_df['Present and Unknown Count'].fillna(-1)
+    summary_df['Present and Unknown Count'] = summary_df['Present and Unknown Count'].astype(int)
+    summary_df['Unknown Percent'] = summary_df['Unknown Percent'].fillna(-1)
+    summary_df['Unknown Percent'] = summary_df['Unknown Percent'].astype(int)
+    summary_df['Present and Unknown Percent'] = summary_df['Present and Unknown Percent'].fillna(-1)
+    summary_df['Present and Unknown Percent'] = summary_df['Present and Unknown Percent'].astype(int)
+
     assert 1 == len(summary_df)
     assert {'lmonocytogenes'} == set(summary_df['Scheme'].tolist())
     assert 'MLST Feature' == summary_df.index.name
-    assert ['Scheme', 'Locus', 'Allele', 'Count', 'Total', 'Percent'] == list(summary_df.columns)
-    assert ['lmonocytogenes', 'ldh', '?', 1, 4, 25] == summary_df.loc['mlst:lmonocytogenes:ldh:?'].tolist()
+    assert ['Scheme', 'Locus', 'Allele', 'Count', 'Unknown Count', 'Present and Unknown Count',
+            'Total', 'Percent', 'Unknown Percent', 'Present and Unknown Percent'] == list(summary_df.columns)
+    assert ['lmonocytogenes', 'ldh', '?', 1, -1, -1, 4, 25, -1, -1] == summary_df.loc[
+        'mlst:lmonocytogenes:ldh:?'].tolist()
 
 
-def test_features_comparison_kindmutations_annotations(loaded_database_connection_annotations: DataIndexConnection):
-    q = query(loaded_database_connection_annotations)
+def test_features_comparison_kindmutations_annotations(
+        loaded_database_connection_annotations_unknown: DataIndexConnection):
+    q = query(loaded_database_connection_annotations_unknown)
 
     category_10 = q.isin('SH10-014')
     category_14 = q.isin(['SH14-001', 'SH14-014'])
@@ -3641,11 +3926,15 @@ def test_features_comparison_kindmutations_annotations(loaded_database_connectio
     # Test 2 categories counts
     comparison_df = q.features_comparison(sample_categories=[category_10, category_14],
                                           category_prefixes=['10', '14'],
+                                          include_unknown_samples=True,
                                           unit='count')
     comparison_df = comparison_df.sort_index()
+    comparison_df = comparison_df.fillna('<NA>')
     assert comparison_df.index.name == 'Mutation'
     assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type', 'Total',
             '10_count', '14_count',
+            '10_Unknown count', '14_Unknown count',
+            '10_Present and Unknown count', '14_Present and Unknown count',
             '10_total', '14_total',
             'Annotation', 'Annotation_Impact',
             'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
@@ -3656,22 +3945,69 @@ def test_features_comparison_kindmutations_annotations(loaded_database_connectio
     assert {1} == set(comparison_df['10_total'].tolist())
     assert {2} == set(comparison_df['14_total'].tolist())
     assert 1 == comparison_df.loc['NC_011083:140658:C:A', '10_count']
-    assert 'SNP' == comparison_df.loc['NC_011083:140658:C:A', 'Type']
+    assert 0 == comparison_df.loc['NC_011083:140658:C:A', '10_Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:140658:C:A', '10_Present and Unknown count']
     assert 2 == comparison_df.loc['NC_011083:140658:C:A', '14_count']
+    assert 0 == comparison_df.loc['NC_011083:140658:C:A', '14_Unknown count']
+    assert 2 == comparison_df.loc['NC_011083:140658:C:A', '14_Present and Unknown count']
     assert 'hgvs_gn:NC_011083:murF:p.Ala166Glu' == comparison_df.loc[
         'NC_011083:140658:C:A', 'ID_HGVS_GN.p']
     assert 1 == comparison_df.loc['NC_011083:4555461:T:TC', '10_count']
+    assert 0 == comparison_df.loc['NC_011083:4555461:T:TC', '10_Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:4555461:T:TC', '10_Present and Unknown count']
     assert 0 == comparison_df.loc['NC_011083:4555461:T:TC', '14_count']
+    assert 2 == comparison_df.loc['NC_011083:4555461:T:TC', '14_Unknown count']
+    assert 2 == comparison_df.loc['NC_011083:4555461:T:TC', '14_Present and Unknown count']
     assert 'hgvs_gn:NC_011083:n.4555461_4555462insC' == comparison_df.loc[
         'NC_011083:4555461:T:TC', 'ID_HGVS_GN.c']
+    assert 0 == comparison_df.loc['NC_011083:4482211:C:A', '10_count']
+    assert 0 == comparison_df.loc['NC_011083:4482211:C:A', '10_Unknown count']
+    assert 0 == comparison_df.loc['NC_011083:4482211:C:A', '10_Present and Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:4482211:C:A', '14_count']
+    assert 0 == comparison_df.loc['NC_011083:4482211:C:A', '14_Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:4482211:C:A', '14_Present and Unknown count']
+    assert 'hgvs_gn:NC_011083:siiE:p.Arg1263Ser' == comparison_df.loc[
+        'NC_011083:4482211:C:A', 'ID_HGVS_GN.p']
     assert 0 == comparison_df.loc['NC_011083:630556:G:A', '10_count']
+    assert 0 == comparison_df.loc['NC_011083:630556:G:A', '10_Unknown count']
+    assert 0 == comparison_df.loc['NC_011083:630556:G:A', '10_Present and Unknown count']
     assert 2 == comparison_df.loc['NC_011083:630556:G:A', '14_count']
+    assert 0 == comparison_df.loc['NC_011083:630556:G:A', '14_Unknown count']
+    assert 2 == comparison_df.loc['NC_011083:630556:G:A', '14_Present and Unknown count']
     assert 'hgvs_gn:NC_011083:SEHA_RS03545:p.Trp295*' == comparison_df.loc[
         'NC_011083:630556:G:A', 'ID_HGVS_GN.p']
+    assert 0 == comparison_df.loc['NC_011083:3869320:C:A', '10_count']
+    assert 0 == comparison_df.loc['NC_011083:3869320:C:A', '10_Unknown count']
+    assert 0 == comparison_df.loc['NC_011083:3869320:C:A', '10_Present and Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:3869320:C:A', '14_count']
+    assert 1 == comparison_df.loc['NC_011083:3869320:C:A', '14_Unknown count']
+    assert 2 == comparison_df.loc['NC_011083:3869320:C:A', '14_Present and Unknown count']
+    assert 'hgvs_gn:NC_011083:yiaK:p.Gly197Gly' == comparison_df.loc[
+        'NC_011083:3869320:C:A', 'ID_HGVS_GN.p']
+    assert 1 == comparison_df.loc['NC_011083:3535698:GCC:CAT', '10_count']
+    assert 0 == comparison_df.loc['NC_011083:3535698:GCC:CAT', '10_Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:3535698:GCC:CAT', '10_Present and Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:3535698:GCC:CAT', '14_count']
+    assert 1 == comparison_df.loc['NC_011083:3535698:GCC:CAT', '14_Unknown count']
+    assert 2 == comparison_df.loc['NC_011083:3535698:GCC:CAT', '14_Present and Unknown count']
+    assert 'hgvs_gn:NC_011083:oadA:p.Gly182Met' == comparison_df.loc[
+        'NC_011083:3535698:GCC:CAT', 'ID_HGVS_GN.p']
+    assert 0 == comparison_df.loc['NC_011083:1676762:CA:C', '10_count']
+    assert 1 == comparison_df.loc['NC_011083:1676762:CA:C', '10_Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:1676762:CA:C', '10_Present and Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:1676762:CA:C', '14_count']
+    assert 1 == comparison_df.loc['NC_011083:1676762:CA:C', '14_Unknown count']
+    assert 2 == comparison_df.loc['NC_011083:1676762:CA:C', '14_Present and Unknown count']
+    assert '<NA>' == comparison_df.loc[
+        'NC_011083:1676762:CA:C', 'ID_HGVS_GN.p']
+    # All unknown (should not exist in table)
+    assert 'NC_011083:1:A:C' not in comparison_df
+    assert 'SNP' == comparison_df.loc['NC_011083:140658:C:A', 'Type']
 
     # Test 2 categories defaults
-    comparison_df = q.features_comparison(sample_categories=[category_10, category_14])
+    comparison_df = q.features_comparison(sample_categories=[category_10, category_14], include_unknown_samples=True)
     comparison_df = comparison_df.sort_index()
+    comparison_df = comparison_df.fillna('<NA>')
     comparison_df['Category1_percent'] = comparison_df['Category1_percent'].astype(
         int)  # Convert to int for easier comparison
     comparison_df['Category2_percent'] = comparison_df['Category2_percent'].astype(
@@ -3679,6 +4015,8 @@ def test_features_comparison_kindmutations_annotations(loaded_database_connectio
     assert comparison_df.index.name == 'Mutation'
     assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type', 'Total',
             'Category1_percent', 'Category2_percent',
+            'Category1_Unknown percent', 'Category2_Unknown percent',
+            'Category1_Present and Unknown percent', 'Category2_Present and Unknown percent',
             'Category1_total', 'Category2_total',
             'Annotation', 'Annotation_Impact',
             'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
@@ -3689,29 +4027,63 @@ def test_features_comparison_kindmutations_annotations(loaded_database_connectio
     assert {1} == set(comparison_df['Category1_total'].tolist())
     assert {2} == set(comparison_df['Category2_total'].tolist())
     assert 100 == comparison_df.loc['NC_011083:140658:C:A', 'Category1_percent']
+    assert 0 == comparison_df.loc['NC_011083:140658:C:A', 'Category1_Unknown percent']
+    assert 100 == comparison_df.loc['NC_011083:140658:C:A', 'Category1_Present and Unknown percent']
     assert 100 == comparison_df.loc['NC_011083:140658:C:A', 'Category2_percent']
+    assert 0 == comparison_df.loc['NC_011083:140658:C:A', 'Category2_Unknown percent']
+    assert 100 == comparison_df.loc['NC_011083:140658:C:A', 'Category2_Present and Unknown percent']
     assert 'hgvs_gn:NC_011083:murF:p.Ala166Glu' == comparison_df.loc[
         'NC_011083:140658:C:A', 'ID_HGVS_GN.p']
     assert 100 == comparison_df.loc['NC_011083:4555461:T:TC', 'Category1_percent']
+    assert 0 == comparison_df.loc['NC_011083:4555461:T:TC', 'Category1_Unknown percent']
+    assert 100 == comparison_df.loc['NC_011083:4555461:T:TC', 'Category1_Present and Unknown percent']
     assert 0 == comparison_df.loc['NC_011083:4555461:T:TC', 'Category2_percent']
+    assert 100 == comparison_df.loc['NC_011083:4555461:T:TC', 'Category2_Unknown percent']
+    assert 100 == comparison_df.loc['NC_011083:4555461:T:TC', 'Category2_Present and Unknown percent']
     assert 'hgvs_gn:NC_011083:n.4555461_4555462insC' == comparison_df.loc[
         'NC_011083:4555461:T:TC', 'ID_HGVS_GN.c']
+    assert 0 == comparison_df.loc['NC_011083:4482211:C:A', 'Category1_percent']
+    assert 0 == comparison_df.loc['NC_011083:4482211:C:A', 'Category1_Unknown percent']
+    assert 0 == comparison_df.loc['NC_011083:4482211:C:A', 'Category1_Present and Unknown percent']
+    assert 50 == comparison_df.loc['NC_011083:4482211:C:A', 'Category2_percent']
+    assert 0 == comparison_df.loc['NC_011083:4482211:C:A', 'Category2_Unknown percent']
+    assert 50 == comparison_df.loc['NC_011083:4482211:C:A', 'Category2_Present and Unknown percent']
+    assert 'hgvs_gn:NC_011083:siiE:p.Arg1263Ser' == comparison_df.loc[
+        'NC_011083:4482211:C:A', 'ID_HGVS_GN.p']
     assert 0 == comparison_df.loc['NC_011083:630556:G:A', 'Category1_percent']
     assert 100 == comparison_df.loc['NC_011083:630556:G:A', 'Category2_percent']
+    assert 0 == comparison_df.loc['NC_011083:630556:G:A', 'Category1_percent']
+    assert 0 == comparison_df.loc['NC_011083:630556:G:A', 'Category1_Unknown percent']
+    assert 0 == comparison_df.loc['NC_011083:630556:G:A', 'Category1_Present and Unknown percent']
+    assert 100 == comparison_df.loc['NC_011083:630556:G:A', 'Category2_percent']
+    assert 0 == comparison_df.loc['NC_011083:630556:G:A', 'Category2_Unknown percent']
+    assert 100 == comparison_df.loc['NC_011083:630556:G:A', 'Category2_Present and Unknown percent']
     assert 'hgvs_gn:NC_011083:SEHA_RS03545:p.Trp295*' == comparison_df.loc[
         'NC_011083:630556:G:A', 'ID_HGVS_GN.p']
+    assert 0 == comparison_df.loc['NC_011083:1676762:CA:C', 'Category1_percent']
+    assert 100 == comparison_df.loc['NC_011083:1676762:CA:C', 'Category1_Unknown percent']
+    assert 100 == comparison_df.loc['NC_011083:1676762:CA:C', 'Category1_Present and Unknown percent']
+    assert 50 == comparison_df.loc['NC_011083:1676762:CA:C', 'Category2_percent']
+    assert 50 == comparison_df.loc['NC_011083:1676762:CA:C', 'Category2_Unknown percent']
+    assert 100 == comparison_df.loc['NC_011083:1676762:CA:C', 'Category2_Present and Unknown percent']
+    assert '<NA>' == comparison_df.loc[
+        'NC_011083:1676762:CA:C', 'ID_HGVS_GN.p']
 
     # Test 2 categories percents isin subset
     comparison_df = q.isin(['SH14-001', 'SH14-014']).features_comparison(
         sample_categories=[category_10, category_14],
         category_prefixes=['10', '14'],
+        include_unknown_samples=True,
         unit='percent'
     )
     comparison_df = comparison_df.sort_index()
+    comparison_df = comparison_df.fillna('<NA>')
     comparison_df['14_percent'] = comparison_df['14_percent'].astype(int)  # Convert to int for easier comparison
     assert comparison_df.index.name == 'Mutation'
     assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type', 'Total',
             '10_percent', '14_percent',
+            '10_Unknown percent', '14_Unknown percent',
+            '10_Present and Unknown percent', '14_Present and Unknown percent',
             '10_total', '14_total',
             'Annotation', 'Annotation_Impact',
             'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
@@ -3721,18 +4093,58 @@ def test_features_comparison_kindmutations_annotations(loaded_database_connectio
     assert {2} == set(comparison_df['Total'].tolist())
     assert {0} == set(comparison_df['10_total'].tolist())
     assert {2} == set(comparison_df['14_total'].tolist())
-    assert pd.isna(comparison_df.loc['NC_011083:140658:C:A', '10_percent'])
+    assert '<NA>' == comparison_df.loc['NC_011083:140658:C:A', '10_percent']
+    assert '<NA>' == comparison_df.loc['NC_011083:140658:C:A', '10_Unknown percent']
+    assert '<NA>' == comparison_df.loc['NC_011083:140658:C:A', '10_Present and Unknown percent']
     assert 100 == comparison_df.loc['NC_011083:140658:C:A', '14_percent']
+    assert 0 == comparison_df.loc['NC_011083:140658:C:A', '14_Unknown percent']
+    assert 100 == comparison_df.loc['NC_011083:140658:C:A', '14_Present and Unknown percent']
     assert 'hgvs_gn:NC_011083:murF:p.Ala166Glu' == comparison_df.loc[
         'NC_011083:140658:C:A', 'ID_HGVS_GN.p']
-    assert pd.isna(comparison_df.loc['NC_011083:4482211:C:A', '10_percent'])
+    assert 'NC_011083:4555461:T:TC' not in comparison_df
+    assert '<NA>' == comparison_df.loc['NC_011083:4482211:C:A', '10_percent']
+    assert '<NA>' == comparison_df.loc['NC_011083:4482211:C:A', '10_Unknown percent']
+    assert '<NA>' == comparison_df.loc['NC_011083:4482211:C:A', '10_Present and Unknown percent']
     assert 50 == comparison_df.loc['NC_011083:4482211:C:A', '14_percent']
+    assert 0 == comparison_df.loc['NC_011083:4482211:C:A', '14_Unknown percent']
+    assert 50 == comparison_df.loc['NC_011083:4482211:C:A', '14_Present and Unknown percent']
     assert 'hgvs_gn:NC_011083:siiE:p.Arg1263Ser' == comparison_df.loc[
         'NC_011083:4482211:C:A', 'ID_HGVS_GN.p']
-    assert pd.isna(comparison_df.loc['NC_011083:630556:G:A', '10_percent'])
+    assert '<NA>' == comparison_df.loc['NC_011083:630556:G:A', '10_percent']
+    assert '<NA>' == comparison_df.loc['NC_011083:630556:G:A', '10_Unknown percent']
+    assert '<NA>' == comparison_df.loc['NC_011083:630556:G:A', '10_Present and Unknown percent']
     assert 100 == comparison_df.loc['NC_011083:630556:G:A', '14_percent']
+    assert 0 == comparison_df.loc['NC_011083:630556:G:A', '14_Unknown percent']
+    assert 100 == comparison_df.loc['NC_011083:630556:G:A', '14_Present and Unknown percent']
     assert 'hgvs_gn:NC_011083:SEHA_RS03545:p.Trp295*' == comparison_df.loc[
         'NC_011083:630556:G:A', 'ID_HGVS_GN.p']
+    assert '<NA>' == comparison_df.loc['NC_011083:3869320:C:A', '10_percent']
+    assert '<NA>' == comparison_df.loc['NC_011083:3869320:C:A', '10_Unknown percent']
+    assert '<NA>' == comparison_df.loc['NC_011083:3869320:C:A', '10_Present and Unknown percent']
+    assert 50 == comparison_df.loc['NC_011083:3869320:C:A', '14_percent']
+    assert 50 == comparison_df.loc['NC_011083:3869320:C:A', '14_Unknown percent']
+    assert 100 == comparison_df.loc['NC_011083:3869320:C:A', '14_Present and Unknown percent']
+    assert 'hgvs_gn:NC_011083:yiaK:p.Gly197Gly' == comparison_df.loc[
+        'NC_011083:3869320:C:A', 'ID_HGVS_GN.p']
+    assert '<NA>' == comparison_df.loc['NC_011083:3535698:GCC:CAT', '10_percent']
+    assert '<NA>' == comparison_df.loc['NC_011083:3535698:GCC:CAT', '10_Unknown percent']
+    assert '<NA>' == comparison_df.loc['NC_011083:3535698:GCC:CAT', '10_Present and Unknown percent']
+    assert 50 == comparison_df.loc['NC_011083:3535698:GCC:CAT', '14_percent']
+    assert 50 == comparison_df.loc['NC_011083:3535698:GCC:CAT', '14_Unknown percent']
+    assert 100 == comparison_df.loc['NC_011083:3535698:GCC:CAT', '14_Present and Unknown percent']
+    assert 'hgvs_gn:NC_011083:oadA:p.Gly182Met' == comparison_df.loc[
+        'NC_011083:3535698:GCC:CAT', 'ID_HGVS_GN.p']
+    assert '<NA>' == comparison_df.loc['NC_011083:1676762:CA:C', '10_percent']
+    assert '<NA>' == comparison_df.loc['NC_011083:1676762:CA:C', '10_Unknown percent']
+    assert '<NA>' == comparison_df.loc['NC_011083:1676762:CA:C', '10_Present and Unknown percent']
+    assert 50 == comparison_df.loc['NC_011083:1676762:CA:C', '14_percent']
+    assert 50 == comparison_df.loc['NC_011083:1676762:CA:C', '14_Unknown percent']
+    assert 100 == comparison_df.loc['NC_011083:1676762:CA:C', '14_Present and Unknown percent']
+    assert '<NA>' == comparison_df.loc[
+        'NC_011083:1676762:CA:C', 'ID_HGVS_GN.p']
+    # All unknown (should not exist in table)
+    assert 'NC_011083:1:A:C' not in comparison_df
+    assert 'SNP' == comparison_df.loc['NC_011083:140658:C:A', 'Type']
 
 
 def test_features_comparison_kindmlst(loaded_database_connection: DataIndexConnection):
@@ -3746,15 +4158,22 @@ def test_features_comparison_kindmlst(loaded_database_connection: DataIndexConne
     comparison_df = q.features_comparison(sample_categories=[category_lmonocytogenes, category_other],
                                           category_prefixes=['lmonocytogenes', 'other'],
                                           unit='percent',
+                                          include_unknown_samples=True,
                                           kind='mlst')
     assert 24 == len(comparison_df)
     assert 'MLST Feature' == comparison_df.index.name
     assert ['Scheme', 'Locus', 'Allele', 'Total',
             'lmonocytogenes_percent', 'other_percent',
+            'lmonocytogenes_Unknown percent', 'other_Unknown percent',
+            'lmonocytogenes_Present and Unknown percent', 'other_Present and Unknown percent',
             'lmonocytogenes_total', 'other_total'] == list(comparison_df.columns)
-    comparison_df['lmonocytogenes_percent'] = comparison_df['lmonocytogenes_percent'].astype(
-        int)  # Convert to int for easier comparison
-    comparison_df['other_percent'] = comparison_df['other_percent'].astype(int)  # Convert to int for easier comparison
+    comparison_df['lmonocytogenes_percent'] = comparison_df['lmonocytogenes_percent'].astype(int)
+    comparison_df['other_percent'] = comparison_df['other_percent'].astype(int)
+    comparison_df['lmonocytogenes_Unknown percent'] = comparison_df['lmonocytogenes_Unknown percent'].astype(int)
+    comparison_df['other_Unknown percent'] = comparison_df['other_Unknown percent'].astype(int)
+    comparison_df['lmonocytogenes_Present and Unknown percent'] = comparison_df[
+        'lmonocytogenes_Present and Unknown percent'].astype(int)
+    comparison_df['other_Present and Unknown percent'] = comparison_df['other_Present and Unknown percent'].astype(int)
     assert {9} == set(comparison_df['Total'].tolist())
     assert {5} == set(comparison_df['lmonocytogenes_total'].tolist())
     assert {4} == set(comparison_df['other_total'].tolist())
@@ -3768,23 +4187,62 @@ def test_features_comparison_kindmlst(loaded_database_connection: DataIndexConne
     assert 50 == comparison_df.loc['mlst:ecoli:adk:100', 'other_percent']
     assert 0 == comparison_df.loc['mlst:ecoli:recA:7', 'lmonocytogenes_percent']
     assert 50 == comparison_df.loc['mlst:ecoli:recA:7', 'other_percent']
+    assert 80 == comparison_df.loc['mlst:lmonocytogenes:ldh:5', 'lmonocytogenes_percent']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:ldh:5', 'other_percent']
     assert 0 == comparison_df.loc['mlst:campylobacter:uncA:6', 'lmonocytogenes_percent']
     assert 25 == comparison_df.loc['mlst:campylobacter:uncA:6', 'other_percent']
+
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1', 'lmonocytogenes_Unknown percent']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1', 'other_Unknown percent']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:51', 'lmonocytogenes_Unknown percent']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:51', 'other_Unknown percent']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:52', 'lmonocytogenes_Unknown percent']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:52', 'other_Unknown percent']
+    assert 0 == comparison_df.loc['mlst:ecoli:adk:100', 'lmonocytogenes_Unknown percent']
+    assert 0 == comparison_df.loc['mlst:ecoli:adk:100', 'other_Unknown percent']
+    assert 0 == comparison_df.loc['mlst:ecoli:recA:7', 'lmonocytogenes_Unknown percent']
+    assert 0 == comparison_df.loc['mlst:ecoli:recA:7', 'other_Unknown percent']
+    assert 20 == comparison_df.loc['mlst:lmonocytogenes:ldh:5', 'lmonocytogenes_Unknown percent']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:ldh:5', 'other_Unknown percent']
+    assert 0 == comparison_df.loc['mlst:campylobacter:uncA:6', 'lmonocytogenes_Unknown percent']
+    assert 25 == comparison_df.loc['mlst:campylobacter:uncA:6', 'other_Unknown percent']
+
+    assert 100 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1', 'lmonocytogenes_Present and Unknown percent']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1', 'other_Present and Unknown percent']
+    assert 60 == comparison_df.loc['mlst:lmonocytogenes:bglA:51', 'lmonocytogenes_Present and Unknown percent']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:51', 'other_Present and Unknown percent']
+    assert 40 == comparison_df.loc['mlst:lmonocytogenes:bglA:52', 'lmonocytogenes_Present and Unknown percent']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:52', 'other_Present and Unknown percent']
+    assert 0 == comparison_df.loc['mlst:ecoli:adk:100', 'lmonocytogenes_Present and Unknown percent']
+    assert 50 == comparison_df.loc['mlst:ecoli:adk:100', 'other_Present and Unknown percent']
+    assert 0 == comparison_df.loc['mlst:ecoli:recA:7', 'lmonocytogenes_Present and Unknown percent']
+    assert 50 == comparison_df.loc['mlst:ecoli:recA:7', 'other_Present and Unknown percent']
+    assert 100 == comparison_df.loc['mlst:lmonocytogenes:ldh:5', 'lmonocytogenes_Present and Unknown percent']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:ldh:5', 'other_Present and Unknown percent']
+    assert 0 == comparison_df.loc['mlst:campylobacter:uncA:6', 'lmonocytogenes_Present and Unknown percent']
+    assert 50 == comparison_df.loc['mlst:campylobacter:uncA:6', 'other_Present and Unknown percent']
 
     # Test two categories sample_set: one of lmonocytogenes and one of the rest
     comparison_df = q.features_comparison(sample_categories=[category_lmonocytogenes.sample_set,
                                                              category_other.sample_set],
                                           category_prefixes=['lmonocytogenes', 'other'],
                                           unit='percent',
+                                          include_unknown_samples=True,
                                           kind='mlst')
     assert 24 == len(comparison_df)
     assert 'MLST Feature' == comparison_df.index.name
     assert ['Scheme', 'Locus', 'Allele', 'Total',
             'lmonocytogenes_percent', 'other_percent',
+            'lmonocytogenes_Unknown percent', 'other_Unknown percent',
+            'lmonocytogenes_Present and Unknown percent', 'other_Present and Unknown percent',
             'lmonocytogenes_total', 'other_total'] == list(comparison_df.columns)
-    comparison_df['lmonocytogenes_percent'] = comparison_df['lmonocytogenes_percent'].astype(
-        int)  # Convert to int for easier comparison
-    comparison_df['other_percent'] = comparison_df['other_percent'].astype(int)  # Convert to int for easier comparison
+    comparison_df['lmonocytogenes_percent'] = comparison_df['lmonocytogenes_percent'].astype(int)
+    comparison_df['other_percent'] = comparison_df['other_percent'].astype(int)
+    comparison_df['lmonocytogenes_Unknown percent'] = comparison_df['lmonocytogenes_Unknown percent'].astype(int)
+    comparison_df['other_Unknown percent'] = comparison_df['other_Unknown percent'].astype(int)
+    comparison_df['lmonocytogenes_Present and Unknown percent'] = comparison_df[
+        'lmonocytogenes_Present and Unknown percent'].astype(int)
+    comparison_df['other_Present and Unknown percent'] = comparison_df['other_Present and Unknown percent'].astype(int)
     assert {9} == set(comparison_df['Total'].tolist())
     assert {5} == set(comparison_df['lmonocytogenes_total'].tolist())
     assert {4} == set(comparison_df['other_total'].tolist())
@@ -3798,23 +4256,62 @@ def test_features_comparison_kindmlst(loaded_database_connection: DataIndexConne
     assert 50 == comparison_df.loc['mlst:ecoli:adk:100', 'other_percent']
     assert 0 == comparison_df.loc['mlst:ecoli:recA:7', 'lmonocytogenes_percent']
     assert 50 == comparison_df.loc['mlst:ecoli:recA:7', 'other_percent']
+    assert 80 == comparison_df.loc['mlst:lmonocytogenes:ldh:5', 'lmonocytogenes_percent']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:ldh:5', 'other_percent']
     assert 0 == comparison_df.loc['mlst:campylobacter:uncA:6', 'lmonocytogenes_percent']
     assert 25 == comparison_df.loc['mlst:campylobacter:uncA:6', 'other_percent']
+
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1', 'lmonocytogenes_Unknown percent']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1', 'other_Unknown percent']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:51', 'lmonocytogenes_Unknown percent']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:51', 'other_Unknown percent']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:52', 'lmonocytogenes_Unknown percent']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:52', 'other_Unknown percent']
+    assert 0 == comparison_df.loc['mlst:ecoli:adk:100', 'lmonocytogenes_Unknown percent']
+    assert 0 == comparison_df.loc['mlst:ecoli:adk:100', 'other_Unknown percent']
+    assert 0 == comparison_df.loc['mlst:ecoli:recA:7', 'lmonocytogenes_Unknown percent']
+    assert 0 == comparison_df.loc['mlst:ecoli:recA:7', 'other_Unknown percent']
+    assert 20 == comparison_df.loc['mlst:lmonocytogenes:ldh:5', 'lmonocytogenes_Unknown percent']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:ldh:5', 'other_Unknown percent']
+    assert 0 == comparison_df.loc['mlst:campylobacter:uncA:6', 'lmonocytogenes_Unknown percent']
+    assert 25 == comparison_df.loc['mlst:campylobacter:uncA:6', 'other_Unknown percent']
+
+    assert 100 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1', 'lmonocytogenes_Present and Unknown percent']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1', 'other_Present and Unknown percent']
+    assert 60 == comparison_df.loc['mlst:lmonocytogenes:bglA:51', 'lmonocytogenes_Present and Unknown percent']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:51', 'other_Present and Unknown percent']
+    assert 40 == comparison_df.loc['mlst:lmonocytogenes:bglA:52', 'lmonocytogenes_Present and Unknown percent']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:52', 'other_Present and Unknown percent']
+    assert 0 == comparison_df.loc['mlst:ecoli:adk:100', 'lmonocytogenes_Present and Unknown percent']
+    assert 50 == comparison_df.loc['mlst:ecoli:adk:100', 'other_Present and Unknown percent']
+    assert 0 == comparison_df.loc['mlst:ecoli:recA:7', 'lmonocytogenes_Present and Unknown percent']
+    assert 50 == comparison_df.loc['mlst:ecoli:recA:7', 'other_Present and Unknown percent']
+    assert 100 == comparison_df.loc['mlst:lmonocytogenes:ldh:5', 'lmonocytogenes_Present and Unknown percent']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:ldh:5', 'other_Present and Unknown percent']
+    assert 0 == comparison_df.loc['mlst:campylobacter:uncA:6', 'lmonocytogenes_Present and Unknown percent']
+    assert 50 == comparison_df.loc['mlst:campylobacter:uncA:6', 'other_Present and Unknown percent']
 
     # Test two categories subset percent: one of lmonocytogenes and one of the rest
     q_subset = q.isin(['SampleA', 'SampleB', 'SampleC', '2014C-3598', '2014C-3599'])
     comparison_df = q_subset.features_comparison(sample_categories=[category_lmonocytogenes, category_other],
                                                  category_prefixes=['lmonocytogenes', 'other'],
                                                  unit='percent',
+                                                 include_unknown_samples=True,
                                                  kind='mlst')
     assert 16 == len(comparison_df)
     assert 'MLST Feature' == comparison_df.index.name
     assert ['Scheme', 'Locus', 'Allele', 'Total',
             'lmonocytogenes_percent', 'other_percent',
+            'lmonocytogenes_Unknown percent', 'other_Unknown percent',
+            'lmonocytogenes_Present and Unknown percent', 'other_Present and Unknown percent',
             'lmonocytogenes_total', 'other_total'] == list(comparison_df.columns)
-    comparison_df['lmonocytogenes_percent'] = comparison_df['lmonocytogenes_percent'].astype(
-        int)  # Convert to int for easier comparison
-    comparison_df['other_percent'] = comparison_df['other_percent'].astype(int)  # Convert to int for easier comparison
+    comparison_df['lmonocytogenes_percent'] = comparison_df['lmonocytogenes_percent'].astype(int)
+    comparison_df['other_percent'] = comparison_df['other_percent'].astype(int)
+    comparison_df['lmonocytogenes_Unknown percent'] = comparison_df['lmonocytogenes_Unknown percent'].astype(int)
+    comparison_df['other_Unknown percent'] = comparison_df['other_Unknown percent'].astype(int)
+    comparison_df['lmonocytogenes_Present and Unknown percent'] = comparison_df[
+        'lmonocytogenes_Present and Unknown percent'].astype(int)
+    comparison_df['other_Present and Unknown percent'] = comparison_df['other_Present and Unknown percent'].astype(int)
     assert {5} == set(comparison_df['Total'].tolist())
     assert {3} == set(comparison_df['lmonocytogenes_total'].tolist())
     assert {2} == set(comparison_df['other_total'].tolist())
@@ -3828,10 +4325,39 @@ def test_features_comparison_kindmlst(loaded_database_connection: DataIndexConne
     assert 100 == comparison_df.loc['mlst:ecoli:adk:100', 'other_percent']
     assert 0 == comparison_df.loc['mlst:ecoli:recA:7', 'lmonocytogenes_percent']
     assert 100 == comparison_df.loc['mlst:ecoli:recA:7', 'other_percent']
+    assert 66 == comparison_df.loc['mlst:lmonocytogenes:ldh:5', 'lmonocytogenes_percent']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:ldh:5', 'other_percent']
+
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1', 'lmonocytogenes_Unknown percent']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1', 'other_Unknown percent']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:51', 'lmonocytogenes_Unknown percent']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:51', 'other_Unknown percent']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:52', 'lmonocytogenes_Unknown percent']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:52', 'other_Unknown percent']
+    assert 0 == comparison_df.loc['mlst:ecoli:adk:100', 'lmonocytogenes_Unknown percent']
+    assert 0 == comparison_df.loc['mlst:ecoli:adk:100', 'other_Unknown percent']
+    assert 0 == comparison_df.loc['mlst:ecoli:recA:7', 'lmonocytogenes_Unknown percent']
+    assert 0 == comparison_df.loc['mlst:ecoli:recA:7', 'other_Unknown percent']
+    assert 33 == comparison_df.loc['mlst:lmonocytogenes:ldh:5', 'lmonocytogenes_Unknown percent']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:ldh:5', 'other_Unknown percent']
+
+    assert 100 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1', 'lmonocytogenes_Present and Unknown percent']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:abcZ:1', 'other_Present and Unknown percent']
+    assert 33 == comparison_df.loc['mlst:lmonocytogenes:bglA:51', 'lmonocytogenes_Present and Unknown percent']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:51', 'other_Present and Unknown percent']
+    assert 66 == comparison_df.loc['mlst:lmonocytogenes:bglA:52', 'lmonocytogenes_Present and Unknown percent']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:bglA:52', 'other_Present and Unknown percent']
+    assert 0 == comparison_df.loc['mlst:ecoli:adk:100', 'lmonocytogenes_Present and Unknown percent']
+    assert 100 == comparison_df.loc['mlst:ecoli:adk:100', 'other_Present and Unknown percent']
+    assert 0 == comparison_df.loc['mlst:ecoli:recA:7', 'lmonocytogenes_Present and Unknown percent']
+    assert 100 == comparison_df.loc['mlst:ecoli:recA:7', 'other_Present and Unknown percent']
+    assert 100 == comparison_df.loc['mlst:lmonocytogenes:ldh:5', 'lmonocytogenes_Present and Unknown percent']
+    assert 0 == comparison_df.loc['mlst:lmonocytogenes:ldh:5', 'other_Present and Unknown percent']
 
 
-def test_features_comparison_kindmutations_with_dataframe(loaded_database_connection_annotations: DataIndexConnection):
-    db = loaded_database_connection_annotations.database
+def test_features_comparison_kindmutations_with_dataframe(
+        loaded_database_connection_annotations_unknown: DataIndexConnection):
+    db = loaded_database_connection_annotations_unknown.database
     sample_sh14_001 = db.get_session().query(Sample).filter(Sample.name == 'SH14-001').one()
     sample_sh14_014 = db.get_session().query(Sample).filter(Sample.name == 'SH14-014').one()
     sample_sh10_014 = db.get_session().query(Sample).filter(Sample.name == 'SH10-014').one()
@@ -3842,7 +4368,7 @@ def test_features_comparison_kindmutations_with_dataframe(loaded_database_connec
         [sample_sh10_014.id, 'blue']
     ], columns=['Sample ID', 'Color'])
 
-    q = query(loaded_database_connection_annotations, universe='dataframe',
+    q = query(loaded_database_connection_annotations_unknown, universe='dataframe',
               data_frame=df, sample_ids_column='Sample ID')
 
     category_10 = q.isin('SH10-014')
@@ -3851,11 +4377,15 @@ def test_features_comparison_kindmutations_with_dataframe(loaded_database_connec
     # Test 2 categories counts on dataframe query: dataframe column groupby
     comparison_df = q.features_comparison(sample_categories='Color',
                                           categories_kind='dataframe',
+                                          include_unknown_samples=True,
                                           unit='count')
     comparison_df = comparison_df.sort_index()
+    comparison_df = comparison_df.fillna('<NA>')
     assert comparison_df.index.name == 'Mutation'
     assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type', 'Total',
             'blue_count', 'red_count',
+            'blue_Unknown count', 'red_Unknown count',
+            'blue_Present and Unknown count', 'red_Present and Unknown count',
             'blue_total', 'red_total',
             'Annotation', 'Annotation_Impact',
             'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
@@ -3863,32 +4393,77 @@ def test_features_comparison_kindmutations_with_dataframe(loaded_database_connec
             'ID_HGVS_GN.p'] == list(comparison_df.columns)
     assert 177 == len(comparison_df)
     assert {3} == set(comparison_df['Total'].tolist())
-    assert {2} == set(comparison_df['red_total'].tolist())
     assert {1} == set(comparison_df['blue_total'].tolist())
+    assert {2} == set(comparison_df['red_total'].tolist())
     assert 1 == comparison_df.loc['NC_011083:140658:C:A', 'blue_count']
+    assert 0 == comparison_df.loc['NC_011083:140658:C:A', 'blue_Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:140658:C:A', 'blue_Present and Unknown count']
     assert 2 == comparison_df.loc['NC_011083:140658:C:A', 'red_count']
+    assert 0 == comparison_df.loc['NC_011083:140658:C:A', 'red_Unknown count']
+    assert 2 == comparison_df.loc['NC_011083:140658:C:A', 'red_Present and Unknown count']
     assert 'hgvs_gn:NC_011083:murF:p.Ala166Glu' == comparison_df.loc[
         'NC_011083:140658:C:A', 'ID_HGVS_GN.p']
-    assert 'SNP' == comparison_df.loc['NC_011083:140658:C:A', 'Type']
     assert 1 == comparison_df.loc['NC_011083:4555461:T:TC', 'blue_count']
+    assert 0 == comparison_df.loc['NC_011083:4555461:T:TC', 'blue_Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:4555461:T:TC', 'blue_Present and Unknown count']
     assert 0 == comparison_df.loc['NC_011083:4555461:T:TC', 'red_count']
+    assert 2 == comparison_df.loc['NC_011083:4555461:T:TC', 'red_Unknown count']
+    assert 2 == comparison_df.loc['NC_011083:4555461:T:TC', 'red_Present and Unknown count']
     assert 'hgvs_gn:NC_011083:n.4555461_4555462insC' == comparison_df.loc[
         'NC_011083:4555461:T:TC', 'ID_HGVS_GN.c']
-    assert 'INDEL' == comparison_df.loc['NC_011083:4555461:T:TC', 'Type']
+    assert 0 == comparison_df.loc['NC_011083:4482211:C:A', 'blue_count']
+    assert 0 == comparison_df.loc['NC_011083:4482211:C:A', 'blue_Unknown count']
+    assert 0 == comparison_df.loc['NC_011083:4482211:C:A', 'blue_Present and Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:4482211:C:A', 'red_count']
+    assert 0 == comparison_df.loc['NC_011083:4482211:C:A', 'red_Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:4482211:C:A', 'red_Present and Unknown count']
+    assert 'hgvs_gn:NC_011083:siiE:p.Arg1263Ser' == comparison_df.loc[
+        'NC_011083:4482211:C:A', 'ID_HGVS_GN.p']
     assert 0 == comparison_df.loc['NC_011083:630556:G:A', 'blue_count']
+    assert 0 == comparison_df.loc['NC_011083:630556:G:A', 'blue_Unknown count']
+    assert 0 == comparison_df.loc['NC_011083:630556:G:A', 'blue_Present and Unknown count']
     assert 2 == comparison_df.loc['NC_011083:630556:G:A', 'red_count']
+    assert 0 == comparison_df.loc['NC_011083:630556:G:A', 'red_Unknown count']
+    assert 2 == comparison_df.loc['NC_011083:630556:G:A', 'red_Present and Unknown count']
     assert 'hgvs_gn:NC_011083:SEHA_RS03545:p.Trp295*' == comparison_df.loc[
         'NC_011083:630556:G:A', 'ID_HGVS_GN.p']
-    assert 'SNP' == comparison_df.loc['NC_011083:630556:G:A', 'Type']
+    assert 0 == comparison_df.loc['NC_011083:3869320:C:A', 'blue_count']
+    assert 0 == comparison_df.loc['NC_011083:3869320:C:A', 'blue_Unknown count']
+    assert 0 == comparison_df.loc['NC_011083:3869320:C:A', 'blue_Present and Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:3869320:C:A', 'red_count']
+    assert 1 == comparison_df.loc['NC_011083:3869320:C:A', 'red_Unknown count']
+    assert 2 == comparison_df.loc['NC_011083:3869320:C:A', 'red_Present and Unknown count']
+    assert 'hgvs_gn:NC_011083:yiaK:p.Gly197Gly' == comparison_df.loc[
+        'NC_011083:3869320:C:A', 'ID_HGVS_GN.p']
+    assert 1 == comparison_df.loc['NC_011083:3535698:GCC:CAT', 'blue_count']
+    assert 0 == comparison_df.loc['NC_011083:3535698:GCC:CAT', 'blue_Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:3535698:GCC:CAT', 'blue_Present and Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:3535698:GCC:CAT', 'red_count']
+    assert 1 == comparison_df.loc['NC_011083:3535698:GCC:CAT', 'red_Unknown count']
+    assert 2 == comparison_df.loc['NC_011083:3535698:GCC:CAT', 'red_Present and Unknown count']
+    assert 'hgvs_gn:NC_011083:oadA:p.Gly182Met' == comparison_df.loc[
+        'NC_011083:3535698:GCC:CAT', 'ID_HGVS_GN.p']
+    assert 0 == comparison_df.loc['NC_011083:1676762:CA:C', 'blue_count']
+    assert 1 == comparison_df.loc['NC_011083:1676762:CA:C', 'blue_Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:1676762:CA:C', 'blue_Present and Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:1676762:CA:C', 'red_count']
+    assert 1 == comparison_df.loc['NC_011083:1676762:CA:C', 'red_Unknown count']
+    assert 2 == comparison_df.loc['NC_011083:1676762:CA:C', 'red_Present and Unknown count']
+    assert '<NA>' == comparison_df.loc[
+        'NC_011083:1676762:CA:C', 'ID_HGVS_GN.p']
 
     # Test 2 categories counts on dataframe query: sample_query
     comparison_df = q.features_comparison(sample_categories=[category_10, category_14],
                                           category_prefixes=['10', '14'],
+                                          include_unknown_samples=True,
                                           unit='count')
     comparison_df = comparison_df.sort_index()
+    comparison_df = comparison_df.fillna('<NA>')
     assert comparison_df.index.name == 'Mutation'
     assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type', 'Total',
             '10_count', '14_count',
+            '10_Unknown count', '14_Unknown count',
+            '10_Present and Unknown count', '14_Present and Unknown count',
             '10_total', '14_total',
             'Annotation', 'Annotation_Impact',
             'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
@@ -3899,27 +4474,75 @@ def test_features_comparison_kindmutations_with_dataframe(loaded_database_connec
     assert {1} == set(comparison_df['10_total'].tolist())
     assert {2} == set(comparison_df['14_total'].tolist())
     assert 1 == comparison_df.loc['NC_011083:140658:C:A', '10_count']
+    assert 0 == comparison_df.loc['NC_011083:140658:C:A', '10_Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:140658:C:A', '10_Present and Unknown count']
     assert 2 == comparison_df.loc['NC_011083:140658:C:A', '14_count']
+    assert 0 == comparison_df.loc['NC_011083:140658:C:A', '14_Unknown count']
+    assert 2 == comparison_df.loc['NC_011083:140658:C:A', '14_Present and Unknown count']
     assert 'hgvs_gn:NC_011083:murF:p.Ala166Glu' == comparison_df.loc[
         'NC_011083:140658:C:A', 'ID_HGVS_GN.p']
     assert 1 == comparison_df.loc['NC_011083:4555461:T:TC', '10_count']
+    assert 0 == comparison_df.loc['NC_011083:4555461:T:TC', '10_Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:4555461:T:TC', '10_Present and Unknown count']
     assert 0 == comparison_df.loc['NC_011083:4555461:T:TC', '14_count']
+    assert 2 == comparison_df.loc['NC_011083:4555461:T:TC', '14_Unknown count']
+    assert 2 == comparison_df.loc['NC_011083:4555461:T:TC', '14_Present and Unknown count']
     assert 'hgvs_gn:NC_011083:n.4555461_4555462insC' == comparison_df.loc[
         'NC_011083:4555461:T:TC', 'ID_HGVS_GN.c']
+    assert 0 == comparison_df.loc['NC_011083:4482211:C:A', '10_count']
+    assert 0 == comparison_df.loc['NC_011083:4482211:C:A', '10_Unknown count']
+    assert 0 == comparison_df.loc['NC_011083:4482211:C:A', '10_Present and Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:4482211:C:A', '14_count']
+    assert 0 == comparison_df.loc['NC_011083:4482211:C:A', '14_Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:4482211:C:A', '14_Present and Unknown count']
+    assert 'hgvs_gn:NC_011083:siiE:p.Arg1263Ser' == comparison_df.loc[
+        'NC_011083:4482211:C:A', 'ID_HGVS_GN.p']
     assert 0 == comparison_df.loc['NC_011083:630556:G:A', '10_count']
+    assert 0 == comparison_df.loc['NC_011083:630556:G:A', '10_Unknown count']
+    assert 0 == comparison_df.loc['NC_011083:630556:G:A', '10_Present and Unknown count']
     assert 2 == comparison_df.loc['NC_011083:630556:G:A', '14_count']
+    assert 0 == comparison_df.loc['NC_011083:630556:G:A', '14_Unknown count']
+    assert 2 == comparison_df.loc['NC_011083:630556:G:A', '14_Present and Unknown count']
     assert 'hgvs_gn:NC_011083:SEHA_RS03545:p.Trp295*' == comparison_df.loc[
         'NC_011083:630556:G:A', 'ID_HGVS_GN.p']
+    assert 0 == comparison_df.loc['NC_011083:3869320:C:A', '10_count']
+    assert 0 == comparison_df.loc['NC_011083:3869320:C:A', '10_Unknown count']
+    assert 0 == comparison_df.loc['NC_011083:3869320:C:A', '10_Present and Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:3869320:C:A', '14_count']
+    assert 1 == comparison_df.loc['NC_011083:3869320:C:A', '14_Unknown count']
+    assert 2 == comparison_df.loc['NC_011083:3869320:C:A', '14_Present and Unknown count']
+    assert 'hgvs_gn:NC_011083:yiaK:p.Gly197Gly' == comparison_df.loc[
+        'NC_011083:3869320:C:A', 'ID_HGVS_GN.p']
+    assert 1 == comparison_df.loc['NC_011083:3535698:GCC:CAT', '10_count']
+    assert 0 == comparison_df.loc['NC_011083:3535698:GCC:CAT', '10_Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:3535698:GCC:CAT', '10_Present and Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:3535698:GCC:CAT', '14_count']
+    assert 1 == comparison_df.loc['NC_011083:3535698:GCC:CAT', '14_Unknown count']
+    assert 2 == comparison_df.loc['NC_011083:3535698:GCC:CAT', '14_Present and Unknown count']
+    assert 'hgvs_gn:NC_011083:oadA:p.Gly182Met' == comparison_df.loc[
+        'NC_011083:3535698:GCC:CAT', 'ID_HGVS_GN.p']
+    assert 0 == comparison_df.loc['NC_011083:1676762:CA:C', '10_count']
+    assert 1 == comparison_df.loc['NC_011083:1676762:CA:C', '10_Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:1676762:CA:C', '10_Present and Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:1676762:CA:C', '14_count']
+    assert 1 == comparison_df.loc['NC_011083:1676762:CA:C', '14_Unknown count']
+    assert 2 == comparison_df.loc['NC_011083:1676762:CA:C', '14_Present and Unknown count']
+    assert '<NA>' == comparison_df.loc[
+        'NC_011083:1676762:CA:C', 'ID_HGVS_GN.p']
 
     # Test 2 categories counts on dataframe query: dataframe column groupby, lower threshold
     comparison_df = q.features_comparison(sample_categories='Color',
                                           categories_kind='dataframe',
                                           category_samples_threshold=1,
+                                          include_unknown_samples=True,
                                           unit='count')
     comparison_df = comparison_df.sort_index()
+    comparison_df = comparison_df.fillna('<NA>')
     assert comparison_df.index.name == 'Mutation'
     assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type', 'Total',
             'blue_count', 'red_count',
+            'blue_Unknown count', 'red_Unknown count',
+            'blue_Present and Unknown count', 'red_Present and Unknown count',
             'blue_total', 'red_total',
             'Annotation', 'Annotation_Impact',
             'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
@@ -3927,30 +4550,131 @@ def test_features_comparison_kindmutations_with_dataframe(loaded_database_connec
             'ID_HGVS_GN.p'] == list(comparison_df.columns)
     assert 177 == len(comparison_df)
     assert {3} == set(comparison_df['Total'].tolist())
-    assert {2} == set(comparison_df['red_total'].tolist())
     assert {1} == set(comparison_df['blue_total'].tolist())
+    assert {2} == set(comparison_df['red_total'].tolist())
     assert 1 == comparison_df.loc['NC_011083:140658:C:A', 'blue_count']
+    assert 0 == comparison_df.loc['NC_011083:140658:C:A', 'blue_Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:140658:C:A', 'blue_Present and Unknown count']
     assert 2 == comparison_df.loc['NC_011083:140658:C:A', 'red_count']
+    assert 0 == comparison_df.loc['NC_011083:140658:C:A', 'red_Unknown count']
+    assert 2 == comparison_df.loc['NC_011083:140658:C:A', 'red_Present and Unknown count']
     assert 'hgvs_gn:NC_011083:murF:p.Ala166Glu' == comparison_df.loc[
         'NC_011083:140658:C:A', 'ID_HGVS_GN.p']
     assert 1 == comparison_df.loc['NC_011083:4555461:T:TC', 'blue_count']
+    assert 0 == comparison_df.loc['NC_011083:4555461:T:TC', 'blue_Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:4555461:T:TC', 'blue_Present and Unknown count']
     assert 0 == comparison_df.loc['NC_011083:4555461:T:TC', 'red_count']
+    assert 2 == comparison_df.loc['NC_011083:4555461:T:TC', 'red_Unknown count']
+    assert 2 == comparison_df.loc['NC_011083:4555461:T:TC', 'red_Present and Unknown count']
     assert 'hgvs_gn:NC_011083:n.4555461_4555462insC' == comparison_df.loc[
         'NC_011083:4555461:T:TC', 'ID_HGVS_GN.c']
+    assert 0 == comparison_df.loc['NC_011083:4482211:C:A', 'blue_count']
+    assert 0 == comparison_df.loc['NC_011083:4482211:C:A', 'blue_Unknown count']
+    assert 0 == comparison_df.loc['NC_011083:4482211:C:A', 'blue_Present and Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:4482211:C:A', 'red_count']
+    assert 0 == comparison_df.loc['NC_011083:4482211:C:A', 'red_Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:4482211:C:A', 'red_Present and Unknown count']
+    assert 'hgvs_gn:NC_011083:siiE:p.Arg1263Ser' == comparison_df.loc[
+        'NC_011083:4482211:C:A', 'ID_HGVS_GN.p']
     assert 0 == comparison_df.loc['NC_011083:630556:G:A', 'blue_count']
+    assert 0 == comparison_df.loc['NC_011083:630556:G:A', 'blue_Unknown count']
+    assert 0 == comparison_df.loc['NC_011083:630556:G:A', 'blue_Present and Unknown count']
     assert 2 == comparison_df.loc['NC_011083:630556:G:A', 'red_count']
+    assert 0 == comparison_df.loc['NC_011083:630556:G:A', 'red_Unknown count']
+    assert 2 == comparison_df.loc['NC_011083:630556:G:A', 'red_Present and Unknown count']
     assert 'hgvs_gn:NC_011083:SEHA_RS03545:p.Trp295*' == comparison_df.loc[
         'NC_011083:630556:G:A', 'ID_HGVS_GN.p']
+    assert 0 == comparison_df.loc['NC_011083:3869320:C:A', 'blue_count']
+    assert 0 == comparison_df.loc['NC_011083:3869320:C:A', 'blue_Unknown count']
+    assert 0 == comparison_df.loc['NC_011083:3869320:C:A', 'blue_Present and Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:3869320:C:A', 'red_count']
+    assert 1 == comparison_df.loc['NC_011083:3869320:C:A', 'red_Unknown count']
+    assert 2 == comparison_df.loc['NC_011083:3869320:C:A', 'red_Present and Unknown count']
+    assert 'hgvs_gn:NC_011083:yiaK:p.Gly197Gly' == comparison_df.loc[
+        'NC_011083:3869320:C:A', 'ID_HGVS_GN.p']
+    assert 1 == comparison_df.loc['NC_011083:3535698:GCC:CAT', 'blue_count']
+    assert 0 == comparison_df.loc['NC_011083:3535698:GCC:CAT', 'blue_Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:3535698:GCC:CAT', 'blue_Present and Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:3535698:GCC:CAT', 'red_count']
+    assert 1 == comparison_df.loc['NC_011083:3535698:GCC:CAT', 'red_Unknown count']
+    assert 2 == comparison_df.loc['NC_011083:3535698:GCC:CAT', 'red_Present and Unknown count']
+    assert 'hgvs_gn:NC_011083:oadA:p.Gly182Met' == comparison_df.loc[
+        'NC_011083:3535698:GCC:CAT', 'ID_HGVS_GN.p']
+    assert 0 == comparison_df.loc['NC_011083:1676762:CA:C', 'blue_count']
+    assert 1 == comparison_df.loc['NC_011083:1676762:CA:C', 'blue_Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:1676762:CA:C', 'blue_Present and Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:1676762:CA:C', 'red_count']
+    assert 1 == comparison_df.loc['NC_011083:1676762:CA:C', 'red_Unknown count']
+    assert 2 == comparison_df.loc['NC_011083:1676762:CA:C', 'red_Present and Unknown count']
+    assert '<NA>' == comparison_df.loc[
+        'NC_011083:1676762:CA:C', 'ID_HGVS_GN.p']
 
     # Test 2 categories counts on dataframe query: dataframe column groupby, higher threshold
     comparison_df = q.features_comparison(sample_categories='Color',
                                           categories_kind='dataframe',
                                           category_samples_threshold=2,
+                                          include_unknown_samples=True,
                                           unit='count')
     comparison_df = comparison_df.sort_index()
+    comparison_df = comparison_df.fillna('<NA>')
     assert comparison_df.index.name == 'Mutation'
     assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type', 'Total',
             'red_count',
+            'red_Unknown count',
+            'red_Present and Unknown count',
+            'red_total',
+            'Annotation', 'Annotation_Impact',
+            'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
+            'HGVS.c', 'HGVS.p', 'ID_HGVS.c', 'ID_HGVS.p', 'ID_HGVS_GN.c',
+            'ID_HGVS_GN.p'] == list(comparison_df.columns)
+    assert 117 == len(comparison_df)
+    assert {2} == set(comparison_df['Total'].tolist())
+    assert {2} == set(comparison_df['red_total'].tolist())
+    assert 2 == comparison_df.loc['NC_011083:140658:C:A', 'red_count']
+    assert 0 == comparison_df.loc['NC_011083:140658:C:A', 'red_Unknown count']
+    assert 2 == comparison_df.loc['NC_011083:140658:C:A', 'red_Present and Unknown count']
+    assert 'hgvs_gn:NC_011083:murF:p.Ala166Glu' == comparison_df.loc[
+        'NC_011083:140658:C:A', 'ID_HGVS_GN.p']
+    assert 1 == comparison_df.loc['NC_011083:4482211:C:A', 'red_count']
+    assert 0 == comparison_df.loc['NC_011083:4482211:C:A', 'red_Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:4482211:C:A', 'red_Present and Unknown count']
+    assert 'hgvs_gn:NC_011083:siiE:p.Arg1263Ser' == comparison_df.loc[
+        'NC_011083:4482211:C:A', 'ID_HGVS_GN.p']
+    assert 2 == comparison_df.loc['NC_011083:630556:G:A', 'red_count']
+    assert 0 == comparison_df.loc['NC_011083:630556:G:A', 'red_Unknown count']
+    assert 2 == comparison_df.loc['NC_011083:630556:G:A', 'red_Present and Unknown count']
+    assert 'hgvs_gn:NC_011083:SEHA_RS03545:p.Trp295*' == comparison_df.loc[
+        'NC_011083:630556:G:A', 'ID_HGVS_GN.p']
+    assert 1 == comparison_df.loc['NC_011083:3869320:C:A', 'red_count']
+    assert 1 == comparison_df.loc['NC_011083:3869320:C:A', 'red_Unknown count']
+    assert 2 == comparison_df.loc['NC_011083:3869320:C:A', 'red_Present and Unknown count']
+    assert 'hgvs_gn:NC_011083:yiaK:p.Gly197Gly' == comparison_df.loc[
+        'NC_011083:3869320:C:A', 'ID_HGVS_GN.p']
+    assert 1 == comparison_df.loc['NC_011083:3535698:GCC:CAT', 'red_count']
+    assert 1 == comparison_df.loc['NC_011083:3535698:GCC:CAT', 'red_Unknown count']
+    assert 2 == comparison_df.loc['NC_011083:3535698:GCC:CAT', 'red_Present and Unknown count']
+    assert 'hgvs_gn:NC_011083:oadA:p.Gly182Met' == comparison_df.loc[
+        'NC_011083:3535698:GCC:CAT', 'ID_HGVS_GN.p']
+    assert 1 == comparison_df.loc['NC_011083:1676762:CA:C', 'red_count']
+    assert 1 == comparison_df.loc['NC_011083:1676762:CA:C', 'red_Unknown count']
+    assert 2 == comparison_df.loc['NC_011083:1676762:CA:C', 'red_Present and Unknown count']
+    assert '<NA>' == comparison_df.loc[
+        'NC_011083:1676762:CA:C', 'ID_HGVS_GN.p']
+
+    # Test 2 categories counts on dataframe query: dataframe column groupby, higher threshold, include all selected
+    comparison_df = q.features_comparison(sample_categories='Color',
+                                          categories_kind='dataframe',
+                                          category_samples_threshold=2,
+                                          use_only_samples_in_categories=False,
+                                          include_unknown_samples=True,
+                                          unit='count')
+    comparison_df = comparison_df.sort_index()
+    comparison_df = comparison_df.fillna('<NA>')
+    assert comparison_df.index.name == 'Mutation'
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type', 'Total',
+            'red_count',
+            'red_Unknown count',
+            'red_Present and Unknown count',
             'red_total',
             'Annotation', 'Annotation_Impact',
             'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
@@ -3960,24 +4684,102 @@ def test_features_comparison_kindmutations_with_dataframe(loaded_database_connec
     assert {3} == set(comparison_df['Total'].tolist())
     assert {2} == set(comparison_df['red_total'].tolist())
     assert 2 == comparison_df.loc['NC_011083:140658:C:A', 'red_count']
+    assert 0 == comparison_df.loc['NC_011083:140658:C:A', 'red_Unknown count']
+    assert 2 == comparison_df.loc['NC_011083:140658:C:A', 'red_Present and Unknown count']
     assert 'hgvs_gn:NC_011083:murF:p.Ala166Glu' == comparison_df.loc[
         'NC_011083:140658:C:A', 'ID_HGVS_GN.p']
-    assert 0 == comparison_df.loc['NC_011083:4555461:T:TC', 'red_count']
-    assert 'hgvs_gn:NC_011083:n.4555461_4555462insC' == comparison_df.loc[
-        'NC_011083:4555461:T:TC', 'ID_HGVS_GN.c']
+    assert 1 == comparison_df.loc['NC_011083:4482211:C:A', 'red_count']
+    assert 0 == comparison_df.loc['NC_011083:4482211:C:A', 'red_Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:4482211:C:A', 'red_Present and Unknown count']
+    assert 'hgvs_gn:NC_011083:siiE:p.Arg1263Ser' == comparison_df.loc[
+        'NC_011083:4482211:C:A', 'ID_HGVS_GN.p']
     assert 2 == comparison_df.loc['NC_011083:630556:G:A', 'red_count']
+    assert 0 == comparison_df.loc['NC_011083:630556:G:A', 'red_Unknown count']
+    assert 2 == comparison_df.loc['NC_011083:630556:G:A', 'red_Present and Unknown count']
     assert 'hgvs_gn:NC_011083:SEHA_RS03545:p.Trp295*' == comparison_df.loc[
         'NC_011083:630556:G:A', 'ID_HGVS_GN.p']
+    assert 1 == comparison_df.loc['NC_011083:3869320:C:A', 'red_count']
+    assert 1 == comparison_df.loc['NC_011083:3869320:C:A', 'red_Unknown count']
+    assert 2 == comparison_df.loc['NC_011083:3869320:C:A', 'red_Present and Unknown count']
+    assert 'hgvs_gn:NC_011083:yiaK:p.Gly197Gly' == comparison_df.loc[
+        'NC_011083:3869320:C:A', 'ID_HGVS_GN.p']
+    assert 1 == comparison_df.loc['NC_011083:3535698:GCC:CAT', 'red_count']
+    assert 1 == comparison_df.loc['NC_011083:3535698:GCC:CAT', 'red_Unknown count']
+    assert 2 == comparison_df.loc['NC_011083:3535698:GCC:CAT', 'red_Present and Unknown count']
+    assert 'hgvs_gn:NC_011083:oadA:p.Gly182Met' == comparison_df.loc[
+        'NC_011083:3535698:GCC:CAT', 'ID_HGVS_GN.p']
+    assert 1 == comparison_df.loc['NC_011083:1676762:CA:C', 'red_count']
+    assert 1 == comparison_df.loc['NC_011083:1676762:CA:C', 'red_Unknown count']
+    assert 2 == comparison_df.loc['NC_011083:1676762:CA:C', 'red_Present and Unknown count']
+    assert '<NA>' == comparison_df.loc[
+        'NC_011083:1676762:CA:C', 'ID_HGVS_GN.p']
 
     # Test 2 categories counts on dataframe query: sample_query with threshold
     comparison_df = q.features_comparison(sample_categories=[category_10, category_14],
                                           category_prefixes=['10', '14'],
                                           category_samples_threshold=2,
+                                          include_unknown_samples=True,
                                           unit='count')
     comparison_df = comparison_df.sort_index()
+    comparison_df = comparison_df.fillna('<NA>')
     assert comparison_df.index.name == 'Mutation'
     assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type', 'Total',
             '14_count',
+            '14_Unknown count',
+            '14_Present and Unknown count',
+            '14_total',
+            'Annotation', 'Annotation_Impact',
+            'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
+            'HGVS.c', 'HGVS.p', 'ID_HGVS.c', 'ID_HGVS.p', 'ID_HGVS_GN.c',
+            'ID_HGVS_GN.p'] == list(comparison_df.columns)
+    assert 117 == len(comparison_df)
+    assert {2} == set(comparison_df['Total'].tolist())
+    assert {2} == set(comparison_df['14_total'].tolist())
+    assert 2 == comparison_df.loc['NC_011083:140658:C:A', '14_count']
+    assert 0 == comparison_df.loc['NC_011083:140658:C:A', '14_Unknown count']
+    assert 2 == comparison_df.loc['NC_011083:140658:C:A', '14_Present and Unknown count']
+    assert 'hgvs_gn:NC_011083:murF:p.Ala166Glu' == comparison_df.loc[
+        'NC_011083:140658:C:A', 'ID_HGVS_GN.p']
+    assert 1 == comparison_df.loc['NC_011083:4482211:C:A', '14_count']
+    assert 0 == comparison_df.loc['NC_011083:4482211:C:A', '14_Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:4482211:C:A', '14_Present and Unknown count']
+    assert 'hgvs_gn:NC_011083:siiE:p.Arg1263Ser' == comparison_df.loc[
+        'NC_011083:4482211:C:A', 'ID_HGVS_GN.p']
+    assert 2 == comparison_df.loc['NC_011083:630556:G:A', '14_count']
+    assert 0 == comparison_df.loc['NC_011083:630556:G:A', '14_Unknown count']
+    assert 2 == comparison_df.loc['NC_011083:630556:G:A', '14_Present and Unknown count']
+    assert 'hgvs_gn:NC_011083:SEHA_RS03545:p.Trp295*' == comparison_df.loc[
+        'NC_011083:630556:G:A', 'ID_HGVS_GN.p']
+    assert 1 == comparison_df.loc['NC_011083:3869320:C:A', '14_count']
+    assert 1 == comparison_df.loc['NC_011083:3869320:C:A', '14_Unknown count']
+    assert 2 == comparison_df.loc['NC_011083:3869320:C:A', '14_Present and Unknown count']
+    assert 'hgvs_gn:NC_011083:yiaK:p.Gly197Gly' == comparison_df.loc[
+        'NC_011083:3869320:C:A', 'ID_HGVS_GN.p']
+    assert 1 == comparison_df.loc['NC_011083:3535698:GCC:CAT', '14_count']
+    assert 1 == comparison_df.loc['NC_011083:3535698:GCC:CAT', '14_Unknown count']
+    assert 2 == comparison_df.loc['NC_011083:3535698:GCC:CAT', '14_Present and Unknown count']
+    assert 'hgvs_gn:NC_011083:oadA:p.Gly182Met' == comparison_df.loc[
+        'NC_011083:3535698:GCC:CAT', 'ID_HGVS_GN.p']
+    assert 1 == comparison_df.loc['NC_011083:1676762:CA:C', '14_count']
+    assert 1 == comparison_df.loc['NC_011083:1676762:CA:C', '14_Unknown count']
+    assert 2 == comparison_df.loc['NC_011083:1676762:CA:C', '14_Present and Unknown count']
+    assert '<NA>' == comparison_df.loc[
+        'NC_011083:1676762:CA:C', 'ID_HGVS_GN.p']
+
+    # Test 2 categories counts on dataframe query: sample_query with threshold, include all selected samples
+    comparison_df = q.features_comparison(sample_categories=[category_10, category_14],
+                                          category_prefixes=['10', '14'],
+                                          category_samples_threshold=2,
+                                          use_only_samples_in_categories=False,
+                                          include_unknown_samples=True,
+                                          unit='count')
+    comparison_df = comparison_df.sort_index()
+    comparison_df = comparison_df.fillna('<NA>')
+    assert comparison_df.index.name == 'Mutation'
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type', 'Total',
+            '14_count',
+            '14_Unknown count',
+            '14_Present and Unknown count',
             '14_total',
             'Annotation', 'Annotation_Impact',
             'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
@@ -3987,14 +4789,35 @@ def test_features_comparison_kindmutations_with_dataframe(loaded_database_connec
     assert {3} == set(comparison_df['Total'].tolist())
     assert {2} == set(comparison_df['14_total'].tolist())
     assert 2 == comparison_df.loc['NC_011083:140658:C:A', '14_count']
+    assert 0 == comparison_df.loc['NC_011083:140658:C:A', '14_Unknown count']
+    assert 2 == comparison_df.loc['NC_011083:140658:C:A', '14_Present and Unknown count']
     assert 'hgvs_gn:NC_011083:murF:p.Ala166Glu' == comparison_df.loc[
         'NC_011083:140658:C:A', 'ID_HGVS_GN.p']
-    assert 0 == comparison_df.loc['NC_011083:4555461:T:TC', '14_count']
-    assert 'hgvs_gn:NC_011083:n.4555461_4555462insC' == comparison_df.loc[
-        'NC_011083:4555461:T:TC', 'ID_HGVS_GN.c']
+    assert 1 == comparison_df.loc['NC_011083:4482211:C:A', '14_count']
+    assert 0 == comparison_df.loc['NC_011083:4482211:C:A', '14_Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:4482211:C:A', '14_Present and Unknown count']
+    assert 'hgvs_gn:NC_011083:siiE:p.Arg1263Ser' == comparison_df.loc[
+        'NC_011083:4482211:C:A', 'ID_HGVS_GN.p']
     assert 2 == comparison_df.loc['NC_011083:630556:G:A', '14_count']
+    assert 0 == comparison_df.loc['NC_011083:630556:G:A', '14_Unknown count']
+    assert 2 == comparison_df.loc['NC_011083:630556:G:A', '14_Present and Unknown count']
     assert 'hgvs_gn:NC_011083:SEHA_RS03545:p.Trp295*' == comparison_df.loc[
         'NC_011083:630556:G:A', 'ID_HGVS_GN.p']
+    assert 1 == comparison_df.loc['NC_011083:3869320:C:A', '14_count']
+    assert 1 == comparison_df.loc['NC_011083:3869320:C:A', '14_Unknown count']
+    assert 2 == comparison_df.loc['NC_011083:3869320:C:A', '14_Present and Unknown count']
+    assert 'hgvs_gn:NC_011083:yiaK:p.Gly197Gly' == comparison_df.loc[
+        'NC_011083:3869320:C:A', 'ID_HGVS_GN.p']
+    assert 1 == comparison_df.loc['NC_011083:3535698:GCC:CAT', '14_count']
+    assert 1 == comparison_df.loc['NC_011083:3535698:GCC:CAT', '14_Unknown count']
+    assert 2 == comparison_df.loc['NC_011083:3535698:GCC:CAT', '14_Present and Unknown count']
+    assert 'hgvs_gn:NC_011083:oadA:p.Gly182Met' == comparison_df.loc[
+        'NC_011083:3535698:GCC:CAT', 'ID_HGVS_GN.p']
+    assert 1 == comparison_df.loc['NC_011083:1676762:CA:C', '14_count']
+    assert 1 == comparison_df.loc['NC_011083:1676762:CA:C', '14_Unknown count']
+    assert 2 == comparison_df.loc['NC_011083:1676762:CA:C', '14_Present and Unknown count']
+    assert '<NA>' == comparison_df.loc[
+        'NC_011083:1676762:CA:C', 'ID_HGVS_GN.p']
 
     # Test 3 categories counts on dataframe query: dataframe column groupby
     df = pd.DataFrame([
@@ -4002,15 +4825,19 @@ def test_features_comparison_kindmutations_with_dataframe(loaded_database_connec
         [sample_sh14_014.id, 'red'],
         [sample_sh10_014.id, 'blue']
     ], columns=['Sample ID', 'Color'])
-    q = query(loaded_database_connection_annotations, universe='dataframe',
+    q = query(loaded_database_connection_annotations_unknown, universe='dataframe',
               data_frame=df, sample_ids_column='Sample ID')
     comparison_df = q.features_comparison(sample_categories='Color',
                                           categories_kind='dataframe',
+                                          include_unknown_samples=True,
                                           unit='count')
     comparison_df = comparison_df.sort_index()
+    comparison_df = comparison_df.fillna('<NA>')
     assert comparison_df.index.name == 'Mutation'
     assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type', 'Total',
             'blue_count', 'green_count', 'red_count',
+            'blue_Unknown count', 'green_Unknown count', 'red_Unknown count',
+            'blue_Present and Unknown count', 'green_Present and Unknown count', 'red_Present and Unknown count',
             'blue_total', 'green_total', 'red_total',
             'Annotation', 'Annotation_Impact',
             'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
@@ -4022,20 +4849,38 @@ def test_features_comparison_kindmutations_with_dataframe(loaded_database_connec
     assert {1} == set(comparison_df['green_total'].tolist())
     assert {1} == set(comparison_df['blue_total'].tolist())
     assert 1 == comparison_df.loc['NC_011083:140658:C:A', 'blue_count']
+    assert 0 == comparison_df.loc['NC_011083:140658:C:A', 'blue_Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:140658:C:A', 'blue_Present and Unknown count']
     assert 1 == comparison_df.loc['NC_011083:140658:C:A', 'red_count']
+    assert 0 == comparison_df.loc['NC_011083:140658:C:A', 'red_Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:140658:C:A', 'red_Present and Unknown count']
     assert 1 == comparison_df.loc['NC_011083:140658:C:A', 'green_count']
+    assert 0 == comparison_df.loc['NC_011083:140658:C:A', 'green_Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:140658:C:A', 'green_Present and Unknown count']
     assert 'hgvs_gn:NC_011083:murF:p.Ala166Glu' == comparison_df.loc[
         'NC_011083:140658:C:A', 'ID_HGVS_GN.p']
     assert 1 == comparison_df.loc['NC_011083:4555461:T:TC', 'blue_count']
+    assert 0 == comparison_df.loc['NC_011083:4555461:T:TC', 'blue_Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:4555461:T:TC', 'blue_Present and Unknown count']
     assert 0 == comparison_df.loc['NC_011083:4555461:T:TC', 'red_count']
+    assert 1 == comparison_df.loc['NC_011083:4555461:T:TC', 'red_Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:4555461:T:TC', 'red_Present and Unknown count']
     assert 0 == comparison_df.loc['NC_011083:4555461:T:TC', 'green_count']
+    assert 1 == comparison_df.loc['NC_011083:4555461:T:TC', 'green_Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:4555461:T:TC', 'green_Present and Unknown count']
     assert 'hgvs_gn:NC_011083:n.4555461_4555462insC' == comparison_df.loc[
         'NC_011083:4555461:T:TC', 'ID_HGVS_GN.c']
-    assert 0 == comparison_df.loc['NC_011083:630556:G:A', 'blue_count']
-    assert 1 == comparison_df.loc['NC_011083:630556:G:A', 'red_count']
-    assert 1 == comparison_df.loc['NC_011083:630556:G:A', 'green_count']
-    assert 'hgvs_gn:NC_011083:SEHA_RS03545:p.Trp295*' == comparison_df.loc[
-        'NC_011083:630556:G:A', 'ID_HGVS_GN.p']
+    assert 0 == comparison_df.loc['NC_011083:1676762:CA:C', 'blue_count']
+    assert 1 == comparison_df.loc['NC_011083:1676762:CA:C', 'blue_Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:1676762:CA:C', 'blue_Present and Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:1676762:CA:C', 'red_count']
+    assert 0 == comparison_df.loc['NC_011083:1676762:CA:C', 'red_Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:1676762:CA:C', 'red_Present and Unknown count']
+    assert 0 == comparison_df.loc['NC_011083:1676762:CA:C', 'green_count']
+    assert 1 == comparison_df.loc['NC_011083:1676762:CA:C', 'green_Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:1676762:CA:C', 'green_Present and Unknown count']
+    assert '<NA>' == comparison_df.loc[
+        'NC_011083:1676762:CA:C', 'ID_HGVS_GN.p']
 
     # Test 3 categories counts on dataframe query: one category has NA
     df = pd.DataFrame([
@@ -4043,15 +4888,66 @@ def test_features_comparison_kindmutations_with_dataframe(loaded_database_connec
         [sample_sh14_014.id, 'red'],
         [sample_sh10_014.id, pd.NA]
     ], columns=['Sample ID', 'Color'])
-    q = query(loaded_database_connection_annotations, universe='dataframe',
+    q = query(loaded_database_connection_annotations_unknown, universe='dataframe',
               data_frame=df, sample_ids_column='Sample ID')
     comparison_df = q.features_comparison(sample_categories='Color',
                                           categories_kind='dataframe',
+                                          include_unknown_samples=True,
                                           unit='count')
     comparison_df = comparison_df.sort_index()
+    comparison_df = comparison_df.fillna('<NA>')
     assert comparison_df.index.name == 'Mutation'
     assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type', 'Total',
             'green_count', 'red_count',
+            'green_Unknown count', 'red_Unknown count',
+            'green_Present and Unknown count', 'red_Present and Unknown count',
+            'green_total', 'red_total',
+            'Annotation', 'Annotation_Impact',
+            'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
+            'HGVS.c', 'HGVS.p', 'ID_HGVS.c', 'ID_HGVS.p', 'ID_HGVS_GN.c',
+            'ID_HGVS_GN.p'] == list(comparison_df.columns)
+    assert 117 == len(comparison_df)
+    assert {2} == set(comparison_df['Total'].tolist())
+    assert {1} == set(comparison_df['green_total'].tolist())
+    assert {1} == set(comparison_df['red_total'].tolist())
+    assert 1 == comparison_df.loc['NC_011083:140658:C:A', 'red_count']
+    assert 0 == comparison_df.loc['NC_011083:140658:C:A', 'red_Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:140658:C:A', 'red_Present and Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:140658:C:A', 'green_count']
+    assert 0 == comparison_df.loc['NC_011083:140658:C:A', 'green_Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:140658:C:A', 'green_Present and Unknown count']
+    assert 'hgvs_gn:NC_011083:murF:p.Ala166Glu' == comparison_df.loc[
+        'NC_011083:140658:C:A', 'ID_HGVS_GN.p']
+    assert 'NC_011083:4555461:T:TC' not in comparison_df
+    assert 1 == comparison_df.loc['NC_011083:1676762:CA:C', 'red_count']
+    assert 0 == comparison_df.loc['NC_011083:1676762:CA:C', 'red_Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:1676762:CA:C', 'red_Present and Unknown count']
+    assert 0 == comparison_df.loc['NC_011083:1676762:CA:C', 'green_count']
+    assert 1 == comparison_df.loc['NC_011083:1676762:CA:C', 'green_Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:1676762:CA:C', 'green_Present and Unknown count']
+    assert '<NA>' == comparison_df.loc[
+        'NC_011083:1676762:CA:C', 'ID_HGVS_GN.p']
+
+    # Test 3 categories counts on dataframe query: one category has NA, include all selected
+    df = pd.DataFrame([
+        [sample_sh14_001.id, 'green'],
+        [sample_sh14_014.id, 'red'],
+        [sample_sh10_014.id, pd.NA]
+    ], columns=['Sample ID', 'Color'])
+    q = query(loaded_database_connection_annotations_unknown, universe='dataframe',
+              data_frame=df, sample_ids_column='Sample ID')
+    comparison_df = q.features_comparison(sample_categories='Color',
+                                          categories_kind='dataframe',
+                                          use_only_samples_in_categories=False,
+                                          include_unknown_samples=True,
+                                          unit='count')
+    comparison_df = comparison_df.sort_index()
+    comparison_df = comparison_df.fillna('<NA>')
+    assert comparison_df.index.name == 'Mutation'
+    assert ['Sequence', 'Position', 'Deletion', 'Insertion', 'Type', 'Total',
+            'green_count', 'red_count',
+            'green_Unknown count', 'red_Unknown count',
+            'green_Present and Unknown count', 'red_Present and Unknown count',
             'green_total', 'red_total',
             'Annotation', 'Annotation_Impact',
             'Gene_Name', 'Gene_ID', 'Feature_Type', 'Transcript_BioType',
@@ -4059,20 +4955,25 @@ def test_features_comparison_kindmutations_with_dataframe(loaded_database_connec
             'ID_HGVS_GN.p'] == list(comparison_df.columns)
     assert 177 == len(comparison_df)
     assert {3} == set(comparison_df['Total'].tolist())
-    assert {1} == set(comparison_df['red_total'].tolist())
     assert {1} == set(comparison_df['green_total'].tolist())
+    assert {1} == set(comparison_df['red_total'].tolist())
     assert 1 == comparison_df.loc['NC_011083:140658:C:A', 'red_count']
+    assert 0 == comparison_df.loc['NC_011083:140658:C:A', 'red_Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:140658:C:A', 'red_Present and Unknown count']
     assert 1 == comparison_df.loc['NC_011083:140658:C:A', 'green_count']
+    assert 0 == comparison_df.loc['NC_011083:140658:C:A', 'green_Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:140658:C:A', 'green_Present and Unknown count']
     assert 'hgvs_gn:NC_011083:murF:p.Ala166Glu' == comparison_df.loc[
         'NC_011083:140658:C:A', 'ID_HGVS_GN.p']
-    assert 0 == comparison_df.loc['NC_011083:4555461:T:TC', 'red_count']
-    assert 0 == comparison_df.loc['NC_011083:4555461:T:TC', 'green_count']
-    assert 'hgvs_gn:NC_011083:n.4555461_4555462insC' == comparison_df.loc[
-        'NC_011083:4555461:T:TC', 'ID_HGVS_GN.c']
-    assert 1 == comparison_df.loc['NC_011083:630556:G:A', 'red_count']
-    assert 1 == comparison_df.loc['NC_011083:630556:G:A', 'green_count']
-    assert 'hgvs_gn:NC_011083:SEHA_RS03545:p.Trp295*' == comparison_df.loc[
-        'NC_011083:630556:G:A', 'ID_HGVS_GN.p']
+    assert 'NC_011083:4555461:T:TC' not in comparison_df
+    assert 1 == comparison_df.loc['NC_011083:1676762:CA:C', 'red_count']
+    assert 0 == comparison_df.loc['NC_011083:1676762:CA:C', 'red_Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:1676762:CA:C', 'red_Present and Unknown count']
+    assert 0 == comparison_df.loc['NC_011083:1676762:CA:C', 'green_count']
+    assert 1 == comparison_df.loc['NC_011083:1676762:CA:C', 'green_Unknown count']
+    assert 1 == comparison_df.loc['NC_011083:1676762:CA:C', 'green_Present and Unknown count']
+    assert '<NA>' == comparison_df.loc[
+        'NC_011083:1676762:CA:C', 'ID_HGVS_GN.p']
 
 
 def test_tofeaturesset_all(loaded_database_only_snippy: DataIndexConnection):

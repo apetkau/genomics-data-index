@@ -17,7 +17,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setup(name='genomics-data-index',
-      version='0.4.0',
+      version='0.5.0.dev8',
       description='Indexes genomics data (mutations, kmers, MLST) for fast querying of features.',
       long_description=long_description,
       long_description_content_type="text/markdown",
@@ -59,6 +59,12 @@ setup(name='genomics-data-index',
           'Jinja2',
           'pathvalidate',
           'pytest',
+
+          # I do not know exactly why these two statements are required and aren't 
+          # picked up by the dependency resolver, but they seem to be necessary now.
+          # 'tomli' required by 'black' and the wrong version is being installed. This fixes it.
+          'tomli<2.0.0,>=0.2.6',
+          'zipp',
       ],
       python_requires="<3.9",
       packages=find_packages(),

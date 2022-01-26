@@ -91,10 +91,13 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
 
     def features_summary(self, kind: str = 'mutations', selection: str = 'all',
                          include_present_features: bool = True, include_unknown_features: bool = False,
+                         include_unknown_samples: bool = False, include_unknown_no_present_samples: bool = False,
                          **kwargs) -> pd.DataFrame:
         return self._wrapped_query.features_summary(kind=kind, selection=selection,
                                                     include_present_features=include_present_features,
                                                     include_unknown_features=include_unknown_features,
+                                                    include_unknown_samples=include_unknown_samples,
+                                                    include_unknown_no_present_samples=include_unknown_no_present_samples,
                                                     **kwargs)
 
     def features_comparison(self, sample_categories: Union[List[SamplesQuery], List[SampleSet], str],
@@ -103,6 +106,8 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
                             kind: str = 'mutations',
                             unit: str = 'percent',
                             category_samples_threshold: int = None,
+                            include_unknown_samples: bool = False, include_unknown_no_present_samples: bool = False,
+                            use_only_samples_in_categories: bool = True,
                             **kwargs) -> pd.DataFrame:
         return self._wrapped_query.features_comparison(sample_categories=sample_categories,
                                                        category_prefixes=category_prefixes,
@@ -110,6 +115,9 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
                                                        kind=kind,
                                                        unit=unit,
                                                        category_samples_threshold=category_samples_threshold,
+                                                       include_unknown_samples=include_unknown_samples,
+                                                       include_unknown_no_present_samples=include_unknown_no_present_samples,
+                                                       use_only_samples_in_categories=use_only_samples_in_categories,
                                                        **kwargs)
 
     def tofeaturesset(self, kind: str = 'mutations', selection: str = 'all',
@@ -128,7 +136,8 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
         return self._wrap_create(self._wrapped_query.subsample(k=k, include_unknown=include_unknown,
                                                                seed=seed))
 
-    def hasa(self, property: Union[QueryFeature, str, pd.Series], kind='mutation') -> SamplesQuery:
+    def hasa(self, property: Union[QueryFeature, str, pd.Series, List[QueryFeature], List[str]],
+             kind='mutation') -> SamplesQuery:
         return self._wrap_create(self._wrapped_query.hasa(property=property, kind=kind))
 
     def _get_has_kinds(self) -> List[str]:

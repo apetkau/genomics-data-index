@@ -55,3 +55,6 @@ class QueryFeature(abc.ABC):
 
     def __str__(self) -> str:
         return self.id
+
+    def __repr__(self) -> str:
+        return self.__str__()

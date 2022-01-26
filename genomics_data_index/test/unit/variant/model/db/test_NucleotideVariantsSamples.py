@@ -135,3 +135,19 @@ def test_update_sample_ids_feature_id_mismatch():
 
     assert 'Cannot merge other' in str(execinfo.value)
     assert 'since identifiers are not equal' in str(execinfo.value)
+
+
+def test_samples_is_unknown():
+    s1 = SampleSet([1])
+    v1 = NucleotideVariantsSamples(spdi='ref:10:1:A', var_type='SNP', sample_ids=s1)
+
+    s2 = SampleSet([2])
+    v2 = NucleotideVariantsSamples(spdi='ref:10:1:?', var_type='UNKNOWN_MISSING', sample_ids=s2)
+
+    # v1 should not be unknown
+    assert v1.id == 'ref:10:1:A'
+    assert not v1.is_unknown
+
+    # v2 should be unknown
+    assert v2.id == 'ref:10:1:?'
+    assert v2.is_unknown

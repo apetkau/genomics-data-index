@@ -152,6 +152,7 @@ class SamplesQuery(abc.ABC):
     @abc.abstractmethod
     def features_summary(self, kind: str = 'mutations', selection: str = 'all',
                          include_present_features: bool = True, include_unknown_features: bool = False,
+                         include_unknown_samples: bool = False, include_unknown_no_present_samples: bool = False,
                          **kwargs) -> pd.DataFrame:
         """
         Summarizes the selected features in a DataFrame. Please specify the kind of features with the kind parameter.
@@ -177,6 +178,10 @@ class SamplesQuery(abc.ABC):
                           (and nowhere else in the universe of samples).
         :param include_present_features: Will determine if present (i.e., not unknown) features should be included.
         :param include_unknown_features: Will determine if unknown features should be included.
+        :param include_unknown_samples: Whether or not counts for those samples where it is unknown if they have a
+                                        a feature should be included.
+        :param include_unknown_no_present_samples: Whether or not counts for features where there are some unknowns but
+                                                   no present samples should be included.
         :param **kwargs: Additional keyword arguments. Please see the documentation for the underlying implementation.
 
         :return: A DataFrame summarizing the features within the selected samples.
@@ -190,6 +195,8 @@ class SamplesQuery(abc.ABC):
                             kind: str = 'mutations',
                             unit: str = 'percent',
                             category_samples_threshold: int = None,
+                            include_unknown_samples: bool = False, include_unknown_no_present_samples: bool = False,
+                            use_only_samples_in_categories: bool = True,
                             **kwargs) -> pd.DataFrame:
         """
         Creates a dataframe which compares different categories of samples with each other with respect to features.
@@ -209,6 +216,11 @@ class SamplesQuery(abc.ABC):
         "Category1_total" and "Category2_total" are the total samples in each category. "Total" is the total
         samples in the overall query that form the universe from which we are defining "Category1" and "Category2".
 
+        Additional columns "Category1_Unknown percent" and "Category1_Present and Unknown percent" will be filled in if
+        include_unknown_samples=True, which represents the number of samples where this feature is "Unknown/Missing"
+        or where the feature is either "Present" or "Unknown" respectively. If include_unknown_samples=False these
+        will all be NA.
+
         Note: since categories are defined based on sample queries, there is no enforcement that categories are
         mutually exclusive (that is, "Category1_total" + "Category2_total" will not always equal "Total"). This
         is done on purpose in case the categories you wish to compare are not mutually exclusive.
@@ -218,8 +230,16 @@ class SamplesQuery(abc.ABC):
         :param kind: The kind of features to compare.
         :param categories_kind: The kind of category to use ("sample_set", or "dataframe").
         :param category_prefixes: The prefixes to use for the different categories (defaults to 1, 2, 3, ...).
+        :param use_only_samples_in_categories: Whether or not to only use samples in categories for comparison
+                                               or to use all selected samples. If all selected samples are used
+                                               then it's possible to include features in the comparison table
+                                               where no samples are found in any category.
         :param unit: The type of data to compare in each category (either 'percent', 'proportion', or 'count').
         :param category_samples_threshold: A threshold on the number of samples in a category for it to be considered.
+        :param include_unknown_samples: Whether or not counts for those samples where it is unknown if they have a
+                                        a feature should be included.
+        :param include_unknown_no_present_samples: Whether or not counts for features where there are some unknowns but
+                                                   no present samples should be included.
         :param **kwargs: Additional keyword arguments. Please see the documentation for the underlying implementation.
         :return: A dataframe comparing each category with respect to the differences in features.
         """
@@ -346,21 +366,24 @@ class SamplesQuery(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def hasa(self, property: Union[QueryFeature, str, pd.Series], kind='mutation') -> SamplesQuery:
+    def hasa(self, property: Union[QueryFeature, str, pd.Series, List[QueryFeature], List[str]],
+             kind='mutation') -> SamplesQuery:
         """
         Queries for samples that have a (**hasa**) particular feature/property. That is if `A` is a SamplesQuery
         and `m` is a mutation, then A.hasa(m) selects all those samples of A that have the mutation m.
 
         :param property: The particular property/feature to query by. This can be either QueryFeature defining
         the particular feature, a string defining the feature, or a pandas Series consisting of boolean values
-        which is the result of a DataFrame selection expression.
+        which is the result of a DataFrame selection expression. A list of QueryFeature or strings can also be
+        passed, which will be interpreted as hasa(feature1) AND hasa(feature2) AND ...
         :param kind: The kind of *property* that was passed.
 
         :return: A new SamplesQuery consisting of those samples that have the passed property.
         """
         pass
 
-    def has(self, property: Union[QueryFeature, str, pd.Series], kind='mutation') -> SamplesQuery:
+    def has(self, property: Union[QueryFeature, str, pd.Series, List[QueryFeature], List[str]],
+             kind='mutation') -> SamplesQuery:
         """
         Queries for samples that have a particular property. Synonym for hasa().
         """

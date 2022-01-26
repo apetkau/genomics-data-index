@@ -104,6 +104,129 @@ def test_create_input_sample_files_reads_and_assemblies_duplicate_sample_names_2
     assert 'Duplicate sample with name [SampleA]' in str(execinfo.value)
 
 
+def test_skip_samples_from_input_files():
+    input_samples = pd.DataFrame([
+        ['A', Path('file.fasta'), pd.NA, pd.NA],
+        ['B', Path('file2.fasta'), pd.NA, pd.NA],
+        ['C', pd.NA, Path('file_1.fastq'), Path('file_2.fastq')]
+    ], columns=['Sample', 'Assemblies', 'Reads1', 'Reads2'])
+
+    executor = SnakemakePipelineExecutor()
+
+    df = executor.skip_samples_from_input_files(input_samples, skip_samples=None)
+    df = df.fillna('NA')
+    assert ['Sample', 'Assemblies', 'Reads1', 'Reads2'] == df.columns.tolist()
+    assert 3 == len(df)
+    assert ['A', Path('file.fasta'), 'NA', 'NA'] == df.iloc[0].tolist()
+    assert ['B', Path('file2.fasta'), 'NA', 'NA'] == df.iloc[1].tolist()
+    assert ['C', 'NA', Path('file_1.fastq'), Path('file_2.fastq')] == df.iloc[2].tolist()
+
+    df = executor.skip_samples_from_input_files(input_samples, skip_samples=set())
+    df = df.fillna('NA')
+    assert ['Sample', 'Assemblies', 'Reads1', 'Reads2'] == df.columns.tolist()
+    assert 3 == len(df)
+    assert ['A', Path('file.fasta'), 'NA', 'NA'] == df.iloc[0].tolist()
+    assert ['B', Path('file2.fasta'), 'NA', 'NA'] == df.iloc[1].tolist()
+    assert ['C', 'NA', Path('file_1.fastq'), Path('file_2.fastq')] == df.iloc[2].tolist()
+
+    df = executor.skip_samples_from_input_files(input_samples, skip_samples={'A'})
+    df = df.fillna('NA')
+    assert ['Sample', 'Assemblies', 'Reads1', 'Reads2'] == df.columns.tolist()
+    assert 2 == len(df)
+    assert ['B', Path('file2.fasta'), 'NA', 'NA'] == df.iloc[0].tolist()
+    assert ['C', 'NA', Path('file_1.fastq'), Path('file_2.fastq')] == df.iloc[1].tolist()
+
+    df = executor.skip_samples_from_input_files(input_samples, skip_samples=set('B'))
+    df = df.fillna('NA')
+    assert ['Sample', 'Assemblies', 'Reads1', 'Reads2'] == df.columns.tolist()
+    assert 2 == len(df)
+    assert ['A', Path('file.fasta'), 'NA', 'NA'] == df.iloc[0].tolist()
+    assert ['C', 'NA', Path('file_1.fastq'), Path('file_2.fastq')] == df.iloc[1].tolist()
+
+    df = executor.skip_samples_from_input_files(input_samples, skip_samples={'A', 'C', 'invalid'})
+    df = df.fillna('NA')
+    assert ['Sample', 'Assemblies', 'Reads1', 'Reads2'] == df.columns.tolist()
+    assert 1 == len(df)
+    assert ['B', Path('file2.fasta'), 'NA', 'NA'] == df.iloc[0].tolist()
+
+    df = executor.skip_samples_from_input_files(input_samples, skip_samples={'A', 'B', 'C'})
+    df = df.fillna('NA')
+    assert ['Sample', 'Assemblies', 'Reads1', 'Reads2'] == df.columns.tolist()
+    assert 0 == len(df)
+
+
+def test_skip_missing_sample_files():
+    with tempfile.NamedTemporaryFile() as f1_tmp:
+        f1 = Path(f1_tmp.name)
+
+        executor = SnakemakePipelineExecutor()
+
+        input_samples = pd.DataFrame([
+            ['A', f1, pd.NA, pd.NA],
+            ['B', f1, pd.NA, pd.NA],
+            ['C', pd.NA, f1, f1]
+        ], columns=['Sample', 'Assemblies', 'Reads1', 'Reads2'])
+
+        df = executor.skip_missing_sample_files(input_samples)
+        df = df.fillna('NA')
+        assert ['Sample', 'Assemblies', 'Reads1', 'Reads2'] == df.columns.tolist()
+        assert 3 == len(df)
+        assert ['A', f1, 'NA', 'NA'] == df.iloc[0].tolist()
+        assert ['B', f1, 'NA', 'NA'] == df.iloc[1].tolist()
+        assert ['C', 'NA', f1, f1] == df.iloc[2].tolist()
+
+        input_samples = pd.DataFrame([
+            ['A', f1, pd.NA, pd.NA],
+            ['B', Path('file2.fasta'), pd.NA, pd.NA],
+            ['C', pd.NA, Path('file_1.fastq'), Path('file_2.fastq')]
+        ], columns=['Sample', 'Assemblies', 'Reads1', 'Reads2'])
+
+        df = executor.skip_missing_sample_files(input_samples)
+        df = df.fillna('NA')
+        assert ['Sample', 'Assemblies', 'Reads1', 'Reads2'] == df.columns.tolist()
+        assert 1 == len(df)
+        assert ['A', f1, 'NA', 'NA'] == df.iloc[0].tolist()
+
+        input_samples = pd.DataFrame([
+            ['A', f1, pd.NA, pd.NA],
+            ['B', f1, pd.NA, pd.NA],
+            ['C', pd.NA, Path('file_1.fastq'), Path('file_2.fastq')]
+        ], columns=['Sample', 'Assemblies', 'Reads1', 'Reads2'])
+
+        df = executor.skip_missing_sample_files(input_samples)
+        df = df.fillna('NA')
+        assert ['Sample', 'Assemblies', 'Reads1', 'Reads2'] == df.columns.tolist()
+        assert 2 == len(df)
+        assert ['A', f1, 'NA', 'NA'] == df.iloc[0].tolist()
+        assert ['B', f1, 'NA', 'NA'] == df.iloc[1].tolist()
+
+        input_samples = pd.DataFrame([
+            ['A', f1, pd.NA, pd.NA],
+            ['B', f1, pd.NA, pd.NA],
+            ['C', pd.NA, f1, Path('file_2.fastq')]
+        ], columns=['Sample', 'Assemblies', 'Reads1', 'Reads2'])
+
+        df = executor.skip_missing_sample_files(input_samples)
+        df = df.fillna('NA')
+        assert ['Sample', 'Assemblies', 'Reads1', 'Reads2'] == df.columns.tolist()
+        assert 2 == len(df)
+        assert ['A', f1, 'NA', 'NA'] == df.iloc[0].tolist()
+        assert ['B', f1, 'NA', 'NA'] == df.iloc[1].tolist()
+
+        input_samples = pd.DataFrame([
+            ['A', f1, pd.NA, pd.NA],
+            ['B', Path('file2.fasta'), pd.NA, pd.NA],
+            ['C', pd.NA, f1, f1]
+        ], columns=['Sample', 'Assemblies', 'Reads1', 'Reads2'])
+
+        df = executor.skip_missing_sample_files(input_samples)
+        df = df.fillna('NA')
+        assert ['Sample', 'Assemblies', 'Reads1', 'Reads2'] == df.columns.tolist()
+        assert 2 == len(df)
+        assert ['A', f1, 'NA', 'NA'] == df.iloc[0].tolist()
+        assert ['C', 'NA', f1, f1] == df.iloc[1].tolist()
+
+
 def test_validate_input_sample_files():
     input_samples = pd.DataFrame([
         ['A', Path('file.fasta'), pd.NA, pd.NA],

@@ -116,6 +116,9 @@ class AllSampleSet(SampleSet):
     def intersection(self, other: Union[Set[int], SampleSet]) -> SampleSet:
         return other
 
+    def union(self, other: Union[Set[int], SampleSet]) -> SampleSet:
+        return self
+
     def is_empty(self) -> bool:
         return False
 

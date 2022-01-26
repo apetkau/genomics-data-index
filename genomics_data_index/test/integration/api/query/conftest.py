@@ -15,7 +15,7 @@ from genomics_data_index.api.query.GenomicsDataIndex import GenomicsDataIndex
 from genomics_data_index.test.integration import sample_dirs, reference_file, basic_mlst_file, tree_file, \
     mlst_snippy_file
 from genomics_data_index.test.integration import sourmash_signatures, snpeff_sample_vcfs, snpeff_sample_vcfs_fake_dup, \
-    reference_file_snpeff
+    reference_file_snpeff, snpeff_sample_beds
 from genomics_data_index.test.integration import snippy_sample2_vcfs_dict, snippy_sample2_mask_sequences_dict
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
 from genomics_data_index.storage.io.mutation.NucleotideSampleDataPackage import NucleotideSampleDataPackage
@@ -99,6 +99,24 @@ def loaded_database_connection_annotations() -> DataIndexConnection:
 
 
 @pytest.fixture
+def loaded_database_connection_annotations_unknown() -> DataIndexConnection:
+    tmp_dir = Path(tempfile.mkdtemp())
+    database_connection = DataIndexConnection.connect(database_connection='sqlite:///:memory:',
+                                                      database_dir=tmp_dir)
+
+    # Load Nucleotide variation
+    database_connection.reference_service.add_reference_genome(reference_file_snpeff)
+    vcf_tmp_dir = Path(tempfile.mkdtemp())
+    data_package = NucleotideSampleDataPackage.create_from_vcf_masks(sample_vcf_map=snpeff_sample_vcfs,
+                                                                     masked_genomic_files_map=snpeff_sample_beds,
+                                                                     sample_files_processor=SerialSampleFilesProcessor(
+                                                                         vcf_tmp_dir))
+    database_connection.variation_service.insert(data_package, feature_scope_name='NC_011083')
+
+    return database_connection
+
+
+@pytest.fixture
 def loaded_database_connection_annotations_duplicate_genes() -> DataIndexConnection:
     tmp_dir = Path(tempfile.mkdtemp())
     database_connection = DataIndexConnection.connect(database_connection='sqlite:///:memory:',
@@ -124,6 +142,11 @@ def loaded_database_genomic_data_store(loaded_database_connection):
 @pytest.fixture
 def loaded_database_genomic_data_store_annotations(loaded_database_connection_annotations):
     return GenomicsDataIndex(connection=loaded_database_connection_annotations)
+
+
+@pytest.fixture
+def loaded_database_genomic_data_store_annotations_include_unknown(loaded_database_connection_annotations_unknown):
+    return GenomicsDataIndex(connection=loaded_database_connection_annotations_unknown)
 
 
 @pytest.fixture
