@@ -90,7 +90,7 @@ class WrappedSamplesQuery(SamplesQuery, abc.ABC):
         return self._wrapped_query.summary()
 
     def features_summary(self, kind: str = 'mutations', selection: str = 'all',
-                         include_present_features: bool = False, include_unknown_features: bool = False,
+                         include_present_features: bool = True, include_unknown_features: bool = False,
                          include_unknown_samples: bool = False, include_unknown_no_present_samples: bool = False,
                          **kwargs) -> pd.DataFrame:
         return self._wrapped_query.features_summary(kind=kind, selection=selection,
