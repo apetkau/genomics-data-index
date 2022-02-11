@@ -1,3 +1,7 @@
+# 0.6.0
+
+* [analysis]: Fixed bug where multiple contigs weren't being written properly in a reference genome BED file (0.6.0.dev1).
+
 # 0.5.0
 
 * [cli]: Support for skipping non-existent paths in input file (0.5.0.dev1).

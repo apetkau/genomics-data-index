@@ -16,4 +16,4 @@ output_file = snakemake.output.genome_bedtools
 with open(output_file, 'w') as oh:
     with open(input_fasta, 'r') as fh:
         for record in SeqIO.parse(fh, 'fasta'):
-            oh.write(f'{record.id}\t{len(record)}')
+            oh.write(f'{record.id}\t{len(record)}\n')
