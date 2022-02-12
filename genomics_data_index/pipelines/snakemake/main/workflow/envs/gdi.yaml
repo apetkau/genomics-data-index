@@ -5,6 +5,7 @@ channels:
 dependencies:
   - python=3.8
   - bedtools
+  - setuptools=57
   - pip
   - pip:
     # I install a separate copy of my software here so that I have access to classes I've written
