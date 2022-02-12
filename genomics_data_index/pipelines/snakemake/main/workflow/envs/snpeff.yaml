@@ -7,6 +7,7 @@ dependencies:
   - biopython
   - htslib
   - python=3.8
+  - setuptools=57
   - pip
   - pip:
     - genomics-data-index==0.5.0
