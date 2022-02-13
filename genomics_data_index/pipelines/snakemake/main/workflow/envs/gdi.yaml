@@ -5,8 +5,10 @@ channels:
 dependencies:
   - python=3.8
   - bedtools
+  - setuptools=57
+  - numpy
   - pip
   - pip:
     # I install a separate copy of my software here so that I have access to classes I've written
     # In my project, but within a conda environment for the Snakemake pipeline.
-    - genomics-data-index==0.3.0
+    - genomics-data-index==0.5.0
