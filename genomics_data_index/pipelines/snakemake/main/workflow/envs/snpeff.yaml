@@ -3,7 +3,7 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - snpeff
+  - snpeff==5.0
   - biopython
   - htslib
   - python=3.8
