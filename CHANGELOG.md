@@ -2,6 +2,7 @@
 
 * [analysis]: Fixed bug where multiple contigs weren't being written properly in a reference genome BED file (0.6.0.dev1).
 * [analysis]: Updated specific gdi dependency version (0.6.0.dev1).
+* [analysis]: Fix snpEff in conda environments to be 5.0 (0.6.0.dev2).
 
 # 0.5.0
 
