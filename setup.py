@@ -17,7 +17,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setup(name='genomics-data-index',
-      version='0.6.0.dev2',
+      version='0.6.0',
       description='Indexes genomics data (mutations, kmers, MLST) for fast querying of features.',
       long_description=long_description,
       long_description_content_type="text/markdown",
