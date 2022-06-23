@@ -12,8 +12,8 @@ class NucleotideMutationTranslater:
             if deletion.isdigit():
                 deletion = int(deletion)
             else:
-                if not set(deletion).issubset({'A', 'T', 'C', 'G'}):
-                    raise Exception('Deletion must either be an integer or a string with alphabet {A,T,C,G}'
+                if not set(deletion).issubset({'A', 'T', 'C', 'G', 'N'}):
+                    raise Exception('Deletion must either be an integer or a string with alphabet {A,T,C,G,N}'
                                     f': {deletion}')
                 deletion = len(deletion)
         elif isinstance(deletion, int):
