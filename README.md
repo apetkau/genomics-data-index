@@ -132,7 +132,9 @@ This would be read as:
 
 # 2. Background
 
-This is still an ongoing project. A lot of background material is found in my [Thesis proposal][thesis-proposal].
+A paper on this project is in progress. A detailed description is found in my [Thesis][].
+
+Additionally, a poster on this project can be found at [immem2022][].
 
 # 3. Installation
 
@@ -299,7 +301,8 @@ and the [VADA Program][] for providing me with the opportunity, resources and tr
 Some icons used in this documentation are provided by [Font Awesome][] and licensed under a 
 [Creative Commons Attribution 4.0][] license.
 
-[thesis-proposal]: https://drive.google.com/file/d/1sd0WjmwO_KU5wacfpUiPGT20xVOwBc8i/view?usp=sharing
+[Thesis]: http://hdl.handle.net/1993/36768
+[immem2022]: https://drive.google.com/file/d/1eClfIMu7iCqIf1WlLveWrLEbo2qopom_/view?usp=sharing
 [gdi-examples]: https://github.com/apetkau/genomics-data-index-examples
 [BIGSI]: https://bigsi.readme.io/
 [COBS]: https://github.com/bingmann/cobs
