@@ -1,3 +1,7 @@
+# 0.7.0
+
+* [installation]: Downgraded scipy (`scipy<1.9`) in order to handle (https://github.com/biocore/scikit-bio/issues/1818) for installation of `scikit-bio`
+
 # 0.6.0
 
 * [analysis]: Fixed bug where multiple contigs weren't being written properly in a reference genome BED file (0.6.0.dev1).
