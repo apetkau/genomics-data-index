@@ -1,6 +1,7 @@
 # 0.7.0
 
 * [installation]: Downgraded scipy (`scipy<1.9`) in order to handle (https://github.com/biocore/scikit-bio/issues/1818) for installation of `scikit-bio`
+* [installation]: Fix sourmash to be `sourmash<4.4` due to issues with `sourmash search` poducing empty CSV files in some cases.
 * [installation]: Fixed `bcftools==1.13` and `htslib==1.13` so that appropriate command-line parameters (filling tags with `-t TYPE`) work. This restriction could later be removed.
 
 # 0.6.0
