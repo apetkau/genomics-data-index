@@ -4,4 +4,5 @@ channels:
   - defaults
 dependencies:
   - bcftools >= 1.13
+  - htslib >= 1.13
   - gzip

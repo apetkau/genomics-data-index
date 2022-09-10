@@ -7,5 +7,5 @@ dependencies:
   - biopython
   - samtools
   - bcftools >= 1.13
-  - htslib
+  - htslib >= 1.13
   - cat
