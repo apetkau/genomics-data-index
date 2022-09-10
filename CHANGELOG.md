@@ -1,3 +1,11 @@
+# 0.7.0
+
+* [installation]: Downgraded scipy (`scipy<1.9`) in order to handle (https://github.com/biocore/scikit-bio/issues/1818) for installation of `scikit-bio`
+* [installation]: Fix sourmash to be `sourmash<4.4` due to issues with `sourmash search` poducing empty CSV files in some cases.
+* [installation]: Fixed `bcftools==1.13` and `htslib==1.13` so that appropriate command-line parameters (filling tags with `-t TYPE`) work. This restriction could later be removed.
+* [analysis]: Fixed up order of conda channels for Snakemake pipeline dependencies (was causing installation issues).
+* [analysis]: Fixed bug with ambiguous character (N) in indel and adjusted `iqtree` parameters to just use the maximum specified threads instead of measuring optimal threads.
+
 # 0.6.0
 
 * [analysis]: Fixed bug where multiple contigs weren't being written properly in a reference genome BED file (0.6.0.dev1).

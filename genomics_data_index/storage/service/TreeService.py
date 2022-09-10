@@ -58,7 +58,7 @@ class TreeService:
                 return tree, out
             elif tree_build_type == 'iqtree':
                 output_file = f'{str(input_file)}.treefile'
-                command = ['iqtree', '--terrace', '--threads-max', str(num_cores), '-T', 'AUTO',
+                command = ['iqtree', '--terrace', '-T', str(num_cores),
                            '-s', str(input_file)]
 
                 extra_params_list = None
