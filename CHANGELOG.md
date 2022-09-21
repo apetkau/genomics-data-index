@@ -1,3 +1,7 @@
+# 0.8.0
+
+* [ci]: Fixed GitHub integration tests.
+
 # 0.7.0
 
 * [installation]: Downgraded scipy (`scipy<1.9`) in order to handle (https://github.com/biocore/scikit-bio/issues/1818) for installation of `scikit-bio`

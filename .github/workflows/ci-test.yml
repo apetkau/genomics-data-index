@@ -34,15 +34,16 @@ jobs:
           conda config --add channels defaults
           conda config --add channels bioconda
           conda config --add channels conda-forge
-          conda install conda-libmamba-solver
-          conda install setuptools=57 'htslib==1.13' 'bcftools==1.13' 'samtools==1.13' bamtools minimap2 bedtools fasttree iqtree perl==5.22.0.1 mlst pyqt snpeff==5.0 -y
+          conda config --set channel_priority strict
+          conda install mamba -y
+          mamba install pip setuptools=57 'htslib==1.13' 'bcftools==1.13' 'samtools==1.13' bamtools minimap2 bedtools fasttree iqtree perl==5.22.0.1 mlst pyqt snpeff==5.0 -y
           conda list
 
       - name: Setup python packages
         shell: bash -l {0}
         run: |
           python --version
-          python setup.py -q install
+          python -m pip install .
 
       - name: Run Tests
         shell: bash -l {0}
