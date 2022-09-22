@@ -1,6 +1,7 @@
 # 0.8.0
 
 * [ci]: Fixed GitHub integration tests.
+* [installation]: Switch to the [vcfpy](https://vcfpy.readthedocs.io/) library for parsing VCFs.
 
 # 0.7.0
 
