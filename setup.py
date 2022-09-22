@@ -56,14 +56,9 @@ setup(name='genomics-data-index',
           'Jinja2',
           'pathvalidate',
           'pytest',
-
-          # I do not know exactly why these two statements are required and aren't 
-          # picked up by the dependency resolver, but they seem to be necessary now.
-          # 'tomli' required by 'black' and the wrong version is being installed. This fixes it.
-          'tomli<2.0.0,>=0.2.6',
           'zipp',
       ],
-      python_requires=">3.6",
+      python_requires=">=3.6",
       packages=find_packages(),
       include_package_data=True,
       entry_points={
