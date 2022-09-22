@@ -3,7 +3,7 @@ from tempfile import TemporaryDirectory
 from typing import List, Union
 
 import pandas as pd
-import vcf
+import vcfpy
 from pybedtools import BedTool
 
 from genomics_data_index.pipelines.SnakemakePipelineExecutor import SnakemakePipelineExecutor
@@ -16,9 +16,9 @@ from genomics_data_index.test.integration.pipelines import snpeff_reads_paired, 
 
 
 def vcf_to_mutations_list(vcf_file: Path) -> List[str]:
-    reader = vcf.Reader(filename=str(vcf_file))
+    reader = vcfpy.Reader.from_path(path=str(vcf_file))
     df = pd.DataFrame([vars(r) for r in reader])
-    df['ALT'] = df['ALT'].apply(lambda x: x[0])
+    df['ALT'] = df['ALT'].apply(lambda x: x[0].value)
     mutations = df.apply(lambda x: f'{x["CHROM"]}:{x["POS"]}:{x["REF"]}:{x["ALT"]}', axis='columns')
 
     return mutations.tolist()
@@ -416,8 +416,8 @@ def test_create_fofn_file_snpeff_no_conda():
         assert actual_mask_file == actual_mask_file_from_df
 
         # snpeff annotations should be added in headers
-        reader = vcf.Reader(filename=str(actual_mutations_snpeff_file))
-        assert 'ANN' in reader.infos
+        reader = vcfpy.Reader.from_path(path=str(actual_mutations_snpeff_file))
+        assert 'ANN' in reader.header.info_ids()
 
 
 def test_create_fofn_file_snpeff_with_conda():
@@ -456,8 +456,8 @@ def test_create_fofn_file_snpeff_with_conda():
         assert actual_mask_file == actual_mask_file_from_df
 
         # snpeff annotations should be added in headers
-        reader = vcf.Reader(filename=str(actual_mutations_snpeff_file))
-        assert 'ANN' in reader.infos
+        reader = vcfpy.Reader.from_path(path=str(actual_mutations_snpeff_file))
+        assert 'ANN' in reader.header.info_ids()
 
 
 def test_create_fofn_file_snpeff_reads_with_conda():
@@ -508,11 +508,11 @@ def test_create_fofn_file_snpeff_reads_with_conda():
         assert actual_mask_file_single == actual_mask_file_single_from_df
 
         # snpeff annotations should be added in headers
-        reader = vcf.Reader(filename=str(actual_mutations_snpeff_file_paired))
-        assert 'ANN' in reader.infos
+        reader = vcfpy.Reader.from_path(path=str(actual_mutations_snpeff_file_paired))
+        assert 'ANN' in reader.header.info_ids()
 
-        reader = vcf.Reader(filename=str(actual_mutations_snpeff_file_single))
-        assert 'ANN' in reader.infos
+        reader = vcfpy.Reader.from_path(path=str(actual_mutations_snpeff_file_single))
+        assert 'ANN' in reader.header.info_ids()
 
 
 def test_split_input_sequence_files_single_record():

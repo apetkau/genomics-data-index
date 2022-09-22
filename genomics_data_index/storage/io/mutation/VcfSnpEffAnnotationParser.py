@@ -3,6 +3,7 @@ from typing import Dict, Any, List
 
 import pandas as pd
 from pandas.api.types import CategoricalDtype
+import vcfpy
 
 from genomics_data_index.storage.util import TRACE_LEVEL
 
@@ -74,11 +75,12 @@ class VcfSnpEffAnnotationParser:
     def __init__(self):
         pass
 
-    def parse_annotation_headers(self, vcf_info: Dict[str, Any]) -> List[str]:
+    def parse_annotation_headers(self, vcf_header: vcfpy.header.Header) -> List[str]:
         expected_start_str = "Functional annotations: '"
 
-        if 'ANN' in vcf_info:
-            ann_info = vcf_info['ANN'].desc
+        vcf_header_info_ids = vcf_header.info_ids()
+        if 'ANN' in vcf_header_info_ids:
+            ann_info = vcf_header.get_info_field_info('ANN').description
             if not ann_info.startswith(expected_start_str):
                 raise InvalidSnpEffVcfError(f"Found 'ANN' in VCF information but description does "
                                             f"not start with [{expected_start_str}]. desc=[{ann_info}]")
@@ -90,7 +92,7 @@ class VcfSnpEffAnnotationParser:
 
                 return [x.strip() for x in ann_info.split('|')]
         else:
-            logger.log(TRACE_LEVEL, f"VCF does not contain 'ANN' in vcf_info, keys=[{vcf_info.keys()}]")
+            logger.log(TRACE_LEVEL, f"VCF does not contain 'ANN' in vcf_header, keys=[{vcf_header_info_ids}]")
             return []
 
     def _setup_vcf_df_index(self, vcf_df: pd.DataFrame) -> pd.DataFrame:
