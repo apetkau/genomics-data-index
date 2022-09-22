@@ -63,7 +63,7 @@ setup(name='genomics-data-index',
           'tomli<2.0.0,>=0.2.6',
           'zipp',
       ],
-      python_requires="<3.9",
+      python_requires=">3.6",
       packages=find_packages(),
       include_package_data=True,
       entry_points={
