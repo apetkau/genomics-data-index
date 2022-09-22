@@ -42,8 +42,8 @@ setup(name='genomics-data-index',
           'PyQt5',
 
           # ga4gh cannot use recent versions of jsonschema
-          'jsonschema==3.2.0',
-          'ga4gh.vrs[extras]==0.6.2',
+          'jsonschema',
+          'ga4gh.vrs[extras]',
           'biocommons.seqrepo',
           'click',
           'click-config-file',
