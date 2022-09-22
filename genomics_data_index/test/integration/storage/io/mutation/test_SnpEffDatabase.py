@@ -1,7 +1,7 @@
 import tempfile
 from pathlib import Path
 
-import vcf
+import vcfpy
 
 from genomics_data_index.storage.io.mutation.SequenceFile import SequenceFile
 from genomics_data_index.storage.io.mutation.SnpEffDatabase import SnpEffDatabase
@@ -43,5 +43,5 @@ def test_annotate_vcf_file():
         assert output_vcf_file == returned_output
 
         # snpeff annotations should be added in headers
-        reader = vcf.Reader(filename=str(output_vcf_file))
-        assert 'ANN' in reader.infos
+        reader = vcfpy.Reader.from_path(path=str(output_vcf_file))
+        assert 'ANN' in reader.header.info_ids()

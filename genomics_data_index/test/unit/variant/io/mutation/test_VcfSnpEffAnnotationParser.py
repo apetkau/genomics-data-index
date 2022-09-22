@@ -11,19 +11,26 @@ def vcf_snpeff_annotation_parser() -> VcfSnpEffAnnotationParser:
 
 
 @pytest.fixture
-def mock_snpeff_infos():
+def mock_snpeff_headers():
     class MockAnn():
         def __init__(self):
             pass
 
-        desc = ("Functional annotations: 'Allele | Annotation | Annotation_Impact | Gene_Name | Gene_ID"
-                " | Feature_Type | Feature_ID | Transcript_BioType | Rank | HGVS.c | HGVS.p"
-                " | cDNA.pos / cDNA.length | CDS.pos / CDS.length | AA.pos / AA.length | Distance"
-                " | ERRORS / WARNINGS / INFO'")
+        def info_ids(self):
+            return ['ANN']
 
-    return {
-        'ANN': MockAnn()
-    }
+        def get_info_field_info(self, field: str):
+            if field == 'ANN':
+                obj = type('', (), {})()
+                obj.description = ("Functional annotations: 'Allele | Annotation | Annotation_Impact | Gene_Name | Gene_ID"
+                    " | Feature_Type | Feature_ID | Transcript_BioType | Rank | HGVS.c | HGVS.p"
+                    " | cDNA.pos / cDNA.length | CDS.pos / CDS.length | AA.pos / AA.length | Distance"
+                    " | ERRORS / WARNINGS / INFO'")
+                return obj
+            else:
+                return None
+
+    return MockAnn()
 
 
 @pytest.fixture
@@ -82,8 +89,18 @@ def mock_vcf_df_empty() -> pd.DataFrame:
 
 
 @pytest.fixture
-def mock_snpeff_infos_empty():
-    return {}
+def mock_snpeff_headers_empty():
+    class MockAnn():
+        def __init__(self):
+            pass
+
+        def info_ids(self):
+            return []
+
+        def get_info_field_info(self, field: str):
+            return None
+
+    return MockAnn()
 
 
 @pytest.fixture
@@ -282,20 +299,27 @@ def mock_vcf_df_with_ann_multiple_entries_multiple_samples() -> pd.DataFrame:
 
 
 @pytest.fixture
-def mock_snpeff_infos_invalid():
+def mock_snpeff_headers_invalid():
     class MockAnn():
         def __init__(self):
             pass
 
-        desc = 'invalid'
+        def info_ids(self):
+            return ['ANN']
 
-    return {
-        'ANN': MockAnn()
-    }
+        def get_info_field_info(self, field: str):
+            if field == 'ANN':
+                obj = type('', (), {})()
+                obj.description = "invalid"
+                return obj
+            else:
+                return None
+
+    return MockAnn()
 
 
-def test_parse_annotation_headers(vcf_snpeff_annotation_parser: VcfSnpEffAnnotationParser, mock_snpeff_infos):
-    headers_list = vcf_snpeff_annotation_parser.parse_annotation_headers(mock_snpeff_infos)
+def test_parse_annotation_headers(vcf_snpeff_annotation_parser: VcfSnpEffAnnotationParser, mock_snpeff_headers):
+    headers_list = vcf_snpeff_annotation_parser.parse_annotation_headers(mock_snpeff_headers)
 
     assert ['Allele', 'Annotation', 'Annotation_Impact', 'Gene_Name', 'Gene_ID', 'Feature_Type', 'Feature_ID',
             'Transcript_BioType', 'Rank', 'HGVS.c', 'HGVS.p', 'cDNA.pos / cDNA.length', 'CDS.pos / CDS.length',
@@ -303,22 +327,22 @@ def test_parse_annotation_headers(vcf_snpeff_annotation_parser: VcfSnpEffAnnotat
 
 
 def test_parse_annotation_headers_invalid(vcf_snpeff_annotation_parser: VcfSnpEffAnnotationParser,
-                                          mock_snpeff_infos_invalid):
+                                          mock_snpeff_headers_invalid):
     with pytest.raises(InvalidSnpEffVcfError) as execinfo:
-        vcf_snpeff_annotation_parser.parse_annotation_headers(mock_snpeff_infos_invalid)
+        vcf_snpeff_annotation_parser.parse_annotation_headers(mock_snpeff_headers_invalid)
     assert "Found 'ANN' in VCF information but description" in str(execinfo.value)
 
 
 def test_parse_annotation_headers_no_annotation(vcf_snpeff_annotation_parser: VcfSnpEffAnnotationParser,
-                                                mock_snpeff_infos_empty):
-    headers_list = vcf_snpeff_annotation_parser.parse_annotation_headers(mock_snpeff_infos_empty)
+                                                mock_snpeff_headers_empty):
+    headers_list = vcf_snpeff_annotation_parser.parse_annotation_headers(mock_snpeff_headers_empty)
 
     assert [] == headers_list
 
 
 def test_parse_annotation_entries_single(vcf_snpeff_annotation_parser: VcfSnpEffAnnotationParser,
-                                         mock_snpeff_infos, mock_vcf_df_with_ann_single: pd.DataFrame):
-    headers_list = vcf_snpeff_annotation_parser.parse_annotation_headers(mock_snpeff_infos)
+                                         mock_snpeff_headers, mock_vcf_df_with_ann_single: pd.DataFrame):
+    headers_list = vcf_snpeff_annotation_parser.parse_annotation_headers(mock_snpeff_headers)
     ann_entries_df = vcf_snpeff_annotation_parser.parse_annotation_entries(vcf_ann_headers=headers_list,
                                                                            vcf_df=mock_vcf_df_with_ann_single)
 
@@ -334,8 +358,8 @@ def test_parse_annotation_entries_single(vcf_snpeff_annotation_parser: VcfSnpEff
 
 def test_parse_annotation_entries_multiple_entries_single_sample(
         vcf_snpeff_annotation_parser: VcfSnpEffAnnotationParser,
-        mock_snpeff_infos, mock_vcf_df_with_ann_multiple_entries_single_sample: pd.DataFrame):
-    headers_list = vcf_snpeff_annotation_parser.parse_annotation_headers(mock_snpeff_infos)
+        mock_snpeff_headers, mock_vcf_df_with_ann_multiple_entries_single_sample: pd.DataFrame):
+    headers_list = vcf_snpeff_annotation_parser.parse_annotation_headers(mock_snpeff_headers)
     ann_entries_df = vcf_snpeff_annotation_parser.parse_annotation_entries(vcf_ann_headers=headers_list,
                                                                            vcf_df=mock_vcf_df_with_ann_multiple_entries_single_sample)
 
@@ -356,8 +380,8 @@ def test_parse_annotation_entries_multiple_entries_single_sample(
 
 def test_parse_annotation_entries_multiple_entries_multiple_samples(
         vcf_snpeff_annotation_parser: VcfSnpEffAnnotationParser,
-        mock_snpeff_infos, mock_vcf_df_with_ann_multiple_entries_multiple_samples: pd.DataFrame):
-    headers_list = vcf_snpeff_annotation_parser.parse_annotation_headers(mock_snpeff_infos)
+        mock_snpeff_headers, mock_vcf_df_with_ann_multiple_entries_multiple_samples: pd.DataFrame):
+    headers_list = vcf_snpeff_annotation_parser.parse_annotation_headers(mock_snpeff_headers)
     ann_entries_df = vcf_snpeff_annotation_parser.parse_annotation_entries(vcf_ann_headers=headers_list,
                                                                            vcf_df=mock_vcf_df_with_ann_multiple_entries_multiple_samples)
 
@@ -417,9 +441,9 @@ def test_parse_annotation_entries_no_annotation_multiple_sample(vcf_snpeff_annot
 
 def test_parse_annotation_entries_some_with_some_without_annotations(
         vcf_snpeff_annotation_parser: VcfSnpEffAnnotationParser,
-        mock_snpeff_infos,
+        mock_snpeff_headers,
         mock_vcf_df_with_and_without_ann: pd.DataFrame):
-    headers_list = vcf_snpeff_annotation_parser.parse_annotation_headers(mock_snpeff_infos)
+    headers_list = vcf_snpeff_annotation_parser.parse_annotation_headers(mock_snpeff_headers)
     ann_entries_df = vcf_snpeff_annotation_parser.parse_annotation_entries(vcf_ann_headers=headers_list,
                                                                            vcf_df=mock_vcf_df_with_and_without_ann)
 
