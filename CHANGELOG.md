@@ -2,7 +2,7 @@
 
 * [ci]: Fixed GitHub integration tests.
 * [installation]: Switch to the [vcfpy](https://vcfpy.readthedocs.io/) library for parsing VCFs.
-* [installation]: GDI now works with Python >= 3.7.
+* [installation]: GDI now works with Python >= 3.8.
 
 # 0.7.0
 
