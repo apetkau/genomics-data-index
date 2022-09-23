@@ -58,7 +58,10 @@ setup(name='genomics-data-index',
           'pytest',
           'zipp',
       ],
-      python_requires=">=3.8",
+      # I need to restrict to less then 3.10 now due to this issue in ete3
+      # https://github.com/etetoolkit/ete/issues/635
+      # This stems from issues in PyQt5
+      python_requires=">=3.8,<3.10",
       packages=find_packages(),
       include_package_data=True,
       entry_points={
