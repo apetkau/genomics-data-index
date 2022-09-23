@@ -31,7 +31,10 @@ setup(name='genomics-data-index',
           'pandas>=1.0.0',
           'numpy',
           'scikit-bio',
+
+          # Need to restrict scipy due to this issue in scikit-bio (https://github.com/biocore/scikit-bio/issues/1818)
           'scipy<1.9',
+
           'vcfpy',
           'sqlalchemy',
           'pymysql',
@@ -41,9 +44,8 @@ setup(name='genomics-data-index',
           'ete3',
           'PyQt5',
 
-          # ga4gh cannot use recent versions of jsonschema
-          'jsonschema==3.2.0',
-          'ga4gh.vrs[extras]==0.6.2',
+          'jsonschema',
+          'ga4gh.vrs[extras]',
           'biocommons.seqrepo',
           'click',
           'click-config-file',
@@ -56,14 +58,12 @@ setup(name='genomics-data-index',
           'Jinja2',
           'pathvalidate',
           'pytest',
-
-          # I do not know exactly why these two statements are required and aren't 
-          # picked up by the dependency resolver, but they seem to be necessary now.
-          # 'tomli' required by 'black' and the wrong version is being installed. This fixes it.
-          'tomli<2.0.0,>=0.2.6',
           'zipp',
       ],
-      python_requires="<3.9",
+      # I need to restrict to less then 3.10 now due to this issue in ete3
+      # https://github.com/etetoolkit/ete/issues/635
+      # This stems from issues in PyQt5
+      python_requires=">=3.8,<3.10",
       packages=find_packages(),
       include_package_data=True,
       entry_points={
