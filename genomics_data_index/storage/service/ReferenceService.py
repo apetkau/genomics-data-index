@@ -1,7 +1,23 @@
+import warnings
+
+import os
+import sys
 from pathlib import Path
 from typing import List, Dict, Iterable
 
+# Used to filter out jsonschema warnings found in dependency libraries
+warnings.filterwarnings("ignore", category=UserWarning)
+
+# Importing dataproxy prints text on stderr which I do not want
+# So I an redirecting sdtderr momentarily to devnull
+devnull = open(os.devnull, "w")
+old_stderr = sys.stderr
+sys.stderr = devnull
 import ga4gh.vrs.dataproxy as dataproxy
+sys.stderr = old_stderr
+devnull.close()
+warnings.resetwarnings()
+
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from biocommons.seqrepo import SeqRepo
