@@ -3,11 +3,10 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - snpeff==5.0
+  - snpeff
   - biopython
   - htslib
   - python=3.8
-  - setuptools=57
   - pip
   - pip:
     - genomics-data-index==0.5.0

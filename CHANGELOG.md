@@ -4,6 +4,7 @@
 * [installation]: Switch to the [vcfpy](https://vcfpy.readthedocs.io/) library for parsing VCFs.
 * [installation]: GDI now works with Python >= 3.8, < 3.10.
     * GDI will not currently work in Python 3.10 due in particular to this issue (https://github.com/etetoolkit/ete/issues/635), which does not exist below 3.10.
+* [installation]: Removed restriction on version of snpeff.
 
 # 0.7.0
 
