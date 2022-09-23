@@ -31,7 +31,10 @@ setup(name='genomics-data-index',
           'pandas>=1.0.0',
           'numpy',
           'scikit-bio',
+
+          # Need to restrict scipy due to this issue in scikit-bio (https://github.com/biocore/scikit-bio/issues/1818)
           'scipy<1.9',
+
           'vcfpy',
           'sqlalchemy',
           'pymysql',
@@ -41,7 +44,6 @@ setup(name='genomics-data-index',
           'ete3',
           'PyQt5',
 
-          # ga4gh cannot use recent versions of jsonschema
           'jsonschema',
           'ga4gh.vrs[extras]',
           'biocommons.seqrepo',
