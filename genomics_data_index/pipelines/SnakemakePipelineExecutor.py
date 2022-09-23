@@ -26,7 +26,8 @@ class SnakemakePipelineExecutor(PipelineExecutor):
                  kmer_sizes: List[int] = None, kmer_scaled: int = 1000,
                  snakemake_input_batch_size: int = 5000,
                  reads_mincov: int = 10, reads_minqual: float = 100,
-                 reads_subsample: float = 1):
+                 reads_subsample: float = 1,
+                 snpeff_no_check: bool = False):
         super().__init__()
         if kmer_sizes is None:
             kmer_sizes = [31]
@@ -41,6 +42,10 @@ class SnakemakePipelineExecutor(PipelineExecutor):
         self._reads_mincov = reads_mincov
         self._reads_minqual = reads_minqual
         self._reads_subsample = reads_subsample
+        self._snpeff = {
+            'no_check_protein': snpeff_no_check,
+            'no_check_cds': snpeff_no_check,
+        }
 
     def _prepare_sourmash_params(self, kmer_sizes: List[int], kmer_scaled: int) -> str:
         params = ','.join([f'k={v}' for v in kmer_sizes])
@@ -79,6 +84,7 @@ class SnakemakePipelineExecutor(PipelineExecutor):
                 'reads_mincov': self._reads_mincov,
                 'reads_minqual': self._reads_minqual,
                 'reads_subsample': self._reads_subsample,
+                'snpeff': self._snpeff,
             }
             yaml.dump(config, fh)
             logger.debug(f'Snakemake config={config}')
