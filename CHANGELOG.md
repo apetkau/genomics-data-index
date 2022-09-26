@@ -6,6 +6,7 @@
     * GDI will not currently work in Python 3.10 due in particular to this issue (https://github.com/etetoolkit/ete/issues/635), which does not exist below 3.10.
 * [installation]: Removed restriction on version of snpeff.
 * [analysis]: Added option `--no-snpeff-reference-check` to disable reference genome CDS and Protein checking when building snpeff database. To support building snpeff genome databases with problematic genomes (see https://github.com/pcingola/SnpEff/issues/388).
+* [installation]: Removed requirement exact version of bcftools and htslib. Now only needs `bcftools>=1.13` and `htslib>=1.13`.
 
 # 0.7.0
 
