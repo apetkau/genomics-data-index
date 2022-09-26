@@ -36,7 +36,8 @@ def test_annotate_vcf_file():
         database_dir = Path(out_dir)
         output_vcf_file = database_dir / 'output.vcf.gz'
 
-        snpeff_database = SequenceFile(reference_file_5000_snpeff).create_snpeff_database(database_dir)
+        snpeff_database = SequenceFile(reference_file_5000_snpeff).create_snpeff_database(database_dir,
+                no_check_protein=True)
 
         returned_output = snpeff_database.annotate(input_vcf_file=snpeff_vcf_file, output_vcf_file=output_vcf_file)
 

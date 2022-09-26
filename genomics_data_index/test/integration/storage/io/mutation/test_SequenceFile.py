@@ -166,7 +166,7 @@ def test_create_snpeff_database():
         database_dir = Path(out_dir)
         snpeff_database_dir = database_dir / 'db'
         sequence_file = SequenceFile(reference_file_5000_snpeff)
-        snpeff_database = sequence_file.create_snpeff_database(database_dir)
+        snpeff_database = sequence_file.create_snpeff_database(database_dir, no_check_protein=True)
 
         expected_genbank_path = snpeff_database_dir / 'NC_011083-5000' / 'genes.gbk.gz'
         expected_snpeff_bin_file = snpeff_database_dir / 'NC_011083-5000' / 'snpEffectPredictor.bin'
@@ -199,7 +199,8 @@ def test_create_snpeff_database_multiple_contigs():
         snpeff_database_dir = database_dir / 'db'
         sequence_file = SequenceFile(reference_file_5000_snpeff_2)
 
-        snpeff_database = sequence_file.create_snpeff_database(database_dir, codon_type='Bacterial_and_Plant_Plastid')
+        snpeff_database = sequence_file.create_snpeff_database(database_dir, codon_type='Bacterial_and_Plant_Plastid',
+                no_check_protein=True)
 
         expected_genbank_path = snpeff_database_dir / 'NC_011083_CP001602-5000' / 'genes.gbk.gz'
         expected_snpeff_bin_file = snpeff_database_dir / 'NC_011083_CP001602-5000' / 'snpEffectPredictor.bin'
