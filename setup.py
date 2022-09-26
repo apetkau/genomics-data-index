@@ -59,6 +59,7 @@ setup(name='genomics-data-index',
           'pathvalidate',
           'pytest',
           'zipp',
+          'packaging',
       ],
       # I need to restrict to less then 3.10 now due to this issue in ete3
       # https://github.com/etetoolkit/ete/issues/635
