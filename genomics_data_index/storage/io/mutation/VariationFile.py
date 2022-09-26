@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import List, Tuple, Optional
 
 import pandas as pd
-import vcf
+import vcfpy
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 
@@ -66,7 +66,7 @@ class VariationFile:
         :param element: The element to fix.
         :return: The fixed element.
         """
-        return str(element[0])
+        return str(element[0].value)
 
     def _fix_ref(self, element: List[str]) -> str:
         """
@@ -83,7 +83,7 @@ class VariationFile:
         return vcf_df.drop('INFO', axis='columns')
 
     def read_features(self, sample_name: str, snpeff_parser: VcfSnpEffAnnotationParser) -> pd.DataFrame:
-        reader = vcf.Reader(filename=str(self.file))
+        reader = vcfpy.Reader.from_path(path=str(self.file))
         df = pd.DataFrame([vars(r) for r in reader])
         out = self._fix_df_columns(df)
 
@@ -91,7 +91,7 @@ class VariationFile:
         out['REF'] = out['REF'].map(self._fix_ref)
         out['TYPE'] = self._get_type(out)
 
-        snpeff_headers = snpeff_parser.parse_annotation_headers(vcf_info=reader.infos)
+        snpeff_headers = snpeff_parser.parse_annotation_headers(vcf_header=reader.header)
         ann_df = snpeff_parser.parse_annotation_entries(vcf_ann_headers=snpeff_headers, vcf_df=out)
         out = out.merge(ann_df, how='left', left_index=True, right_index=True)
 

@@ -231,7 +231,8 @@ class SequenceFile:
             genbank_path = reference_dir / 'genes.gbk'
         symlink(self._file, genbank_path)
 
-    def create_snpeff_database(self, database_dir: Path, codon_type: str = 'Standard') -> SnpEffDatabase:
+    def create_snpeff_database(self, database_dir: Path, codon_type: str = 'Standard',
+            no_check_protein: bool = False, no_check_cds: bool = False) -> SnpEffDatabase:
         if not self.is_genbank():
             raise Exception(f'Sequence file [{self._file}] is not a genbank file. '
                             f'Can only build snpeff databases for genbank files.')
@@ -249,7 +250,11 @@ class SequenceFile:
         self._setup_snpeff_files(snpeff_database_dir=snpeff_database_dir,
                                  reference_name=genome_name)
 
-        command = ['snpEff', 'build', '-v', '-c', str(snpeff_config_path), '-genbank', genome_name]
+        command = ['snpEff', 'build', '-v', '-noLog', '-c', str(snpeff_config_path), '-genbank', genome_name]
+        if no_check_protein:
+            command.append('-noCheckProtein')
+        if no_check_cds:
+            command.append('-noCheckCds')
         execute_commands([command])
 
         return SnpEffDatabase(snpeff_config=snpeff_config_path,

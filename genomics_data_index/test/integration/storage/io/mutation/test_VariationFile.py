@@ -619,7 +619,8 @@ def test_annotate(snpeff_parser):
         output_vcf_file = database_dir / 'output.vcf.gz'
         variation_file = VariationFile(snpeff_vcf_file)
 
-        snpeff_database = SequenceFile(reference_file_5000_snpeff).create_snpeff_database(database_dir)
+        snpeff_database = SequenceFile(reference_file_5000_snpeff).create_snpeff_database(database_dir,
+                no_check_protein=True)
         annotated_variation_file = variation_file.annotate(snpeff_database=snpeff_database,
                                                            annotated_vcf=output_vcf_file)
 

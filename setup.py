@@ -17,7 +17,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setup(name='genomics-data-index',
-      version='0.7.0',
+      version='0.8.0.dev0',
       description='Indexes genomics data (mutations, kmers, MLST) for fast querying of features.',
       long_description=long_description,
       long_description_content_type="text/markdown",
@@ -27,15 +27,15 @@ setup(name='genomics-data-index',
       license='Apache v2.0',
       classifiers=classifiers,
       install_requires=[
-          # pyvcf uses the option use_2to3 which is not compatible with setuptools>=58
-          'setuptools<58',
-
           'biopython>=1.70',
           'pandas>=1.0.0',
           'numpy',
           'scikit-bio',
+
+          # Need to restrict scipy due to this issue in scikit-bio (https://github.com/biocore/scikit-bio/issues/1818)
           'scipy<1.9',
-          'pyvcf',
+
+          'vcfpy',
           'sqlalchemy',
           'pymysql',
           'requests',
@@ -44,29 +44,27 @@ setup(name='genomics-data-index',
           'ete3',
           'PyQt5',
 
-          # ga4gh cannot use recent versions of jsonschema
-          'jsonschema==3.2.0',
-          'ga4gh.vrs[extras]==0.6.2',
+          'jsonschema',
+          'ga4gh.vrs[extras]',
           'biocommons.seqrepo',
           'click',
           'click-config-file',
           'coloredlogs',
           'pyyaml',
           'pyroaring',
-          'sourmash<4.4',
+          'sourmash',
           'pybedtools',
           'snakemake',
           'Jinja2',
           'pathvalidate',
           'pytest',
-
-          # I do not know exactly why these two statements are required and aren't 
-          # picked up by the dependency resolver, but they seem to be necessary now.
-          # 'tomli' required by 'black' and the wrong version is being installed. This fixes it.
-          'tomli<2.0.0,>=0.2.6',
           'zipp',
+          'packaging',
       ],
-      python_requires="<3.9",
+      # I need to restrict to less then 3.10 now due to this issue in ete3
+      # https://github.com/etetoolkit/ete/issues/635
+      # This stems from issues in PyQt5
+      python_requires=">=3.8,<3.10",
       packages=find_packages(),
       include_package_data=True,
       entry_points={

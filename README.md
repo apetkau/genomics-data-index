@@ -145,7 +145,7 @@ Additionally, a poster on this project can be found at [immem2022][].
 To install this software, we will first, create a conda environment with the necessary dependencies as follows (a full conda package is not available yet https://github.com/apetkau/genomics-data-index/issues/51 ).
 
 ```bash
-conda create -c bioconda -c conda-forge -c defaults --name gdi python=3.8 pyqt bedtools iqtree 'bcftools==1.13' 'htslib==1.13'
+conda create -c conda-forge -c bioconda -c defaults --name gdi python=3.8 pyqt bedtools iqtree 'bcftools>=1.13' 'htslib>=1.13'
 
 # Activate environment. Needed to install additional Python dependencies below.
 conda activate gdi
