@@ -1,6 +1,7 @@
 import logging
 import tempfile
 import time
+import os
 from pathlib import Path
 from typing import List, Tuple
 
@@ -34,7 +35,11 @@ class KmerSearchManagerSourmash:
             end_time = time.time()
             logger.debug(f'Finished search for matches. Took {end_time - start_time:0.2f} seconds')
 
-            return pd.read_csv(out_file)
+            if os.path.getsize(out_file) == 0:
+                return pd.DataFrame([], columns=['similarity', 'name', 'filename', 'md5',
+                    'query_filename', 'query_name', 'query_md5', 'ani'])
+            else:
+                return pd.read_csv(out_file)
 
     def distances(self, kmer_size: int, signature_files: List[Path]) -> Tuple[np.ndarray, List[str]]:
         sigs_to_file_threshold = 1000
