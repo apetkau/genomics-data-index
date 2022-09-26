@@ -389,7 +389,8 @@ def test_create_fofn_file_snpeff_no_conda():
         input_samples = [snpeff_input_sampleA]
 
         pipeline_executor = SnakemakePipelineExecutor(working_directory=tmp_dir, use_conda=False,
-                                                      include_mlst=False, include_kmer=False)
+                                                      include_mlst=False, include_kmer=False,
+                                                      snpeff_no_check=True)
 
         sample_files = pipeline_executor.create_input_sample_files(input_samples)
         results = pipeline_executor.execute(sample_files=sample_files,
@@ -429,7 +430,8 @@ def test_create_fofn_file_snpeff_with_conda():
         input_samples = [snpeff_input_sampleA]
 
         pipeline_executor = SnakemakePipelineExecutor(working_directory=tmp_dir, use_conda=True,
-                                                      include_mlst=False, include_kmer=False)
+                                                      include_mlst=False, include_kmer=False,
+                                                      snpeff_no_check=True)
 
         sample_files = pipeline_executor.create_input_sample_files(input_samples)
         results = pipeline_executor.execute(sample_files=sample_files,
@@ -472,7 +474,7 @@ def test_create_fofn_file_snpeff_reads_with_conda():
 
         pipeline_executor = SnakemakePipelineExecutor(working_directory=tmp_dir, use_conda=True,
                                                       include_mlst=False, include_kmer=False,
-                                                      reads_mincov=5)
+                                                      reads_mincov=5, snpeff_no_check=True)
 
         sample_files = pipeline_executor.create_input_sample_files(input_samples)
         results = pipeline_executor.execute(sample_files=sample_files,
