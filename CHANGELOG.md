@@ -1,3 +1,7 @@
+# 0.8.1
+
+* [analysis]: Updated conda environments for analysis to use gdi `0.8.0` (required me to release this version first).
+
 # 0.8.0
 
 * [ci]: Fixed GitHub integration tests.
