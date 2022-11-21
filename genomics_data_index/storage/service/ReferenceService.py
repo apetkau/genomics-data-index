@@ -8,16 +8,6 @@ from typing import List, Dict, Iterable
 # Used to filter out jsonschema warnings found in dependency libraries
 warnings.filterwarnings("ignore", category=UserWarning)
 
-# Importing dataproxy prints text on stderr which I do not want
-# So I an redirecting sdtderr momentarily to devnull
-devnull = open(os.devnull, "w")
-old_stderr = sys.stderr
-sys.stderr = devnull
-import ga4gh.vrs.dataproxy as dataproxy
-sys.stderr = old_stderr
-devnull.close()
-warnings.resetwarnings()
-
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from biocommons.seqrepo import SeqRepo
@@ -40,7 +30,7 @@ class ReferenceService:
 
         if seq_repo_dir is not None:
             self._seq_repo_updatable = SeqRepo(seq_repo_dir, writeable=True)
-            self._seq_repo_proxy = dataproxy.SeqRepoDataProxy(SeqRepo(seq_repo_dir))
+            self._seq_repo_readonly = SeqRepo(seq_repo_dir, writeable=False)
 
     def add_reference_genome(self, genome_file: Path):
         (genome_name, sequences) = SequenceFile(genome_file).parse_sequence_file()
@@ -61,7 +51,7 @@ class ReferenceService:
 
     def get_sequence(self, sequence_name: str) -> SeqRecord:
         namespace = self._seq_repo_namespace
-        seq_string = self._seq_repo_proxy.get_sequence(f'{namespace}:{sequence_name}')
+        seq_string = str(self._seq_repo_readonly[sequence_name])
         return SeqRecord(Seq(seq_string), id=sequence_name)
 
     def get_reference_genome_records(self, reference_name: str) -> List[SeqRecord]:
@@ -119,7 +109,7 @@ class ReferenceService:
 
         # Create map of seq name to sequences so I don't have to re-generate them for every spdi_id
         namespace = self._seq_repo_namespace
-        name_sequence_map = {n: self._seq_repo_proxy.get_sequence(f'{namespace}:{n}') for n in sequence_names}
+        name_sequence_map = {n: str(self._seq_repo_readonly[n]) for n in sequence_names}
 
         spdi_ids_map = {}
         for f in spdi_features:

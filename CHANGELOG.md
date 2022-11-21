@@ -1,3 +1,7 @@
+# 0.9.0
+
+* [api]: Switch to using SeqRepo proxy from `biocommons.seqrepo` and removing dependency on `ga4gh.vrs`.
+
 # 0.8.1
 
 * [analysis]: Updated conda environments for analysis to use gdi `0.8.0` (required me to release this version first).
