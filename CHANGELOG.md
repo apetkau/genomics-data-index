@@ -1,6 +1,7 @@
 # 0.9.0
 
 * [api]: Switch to using SeqRepo proxy from `biocommons.seqrepo` and removing dependency on `ga4gh.vrs`.
+* [installation]: Remove fixed version of Perl when installing `mlst` as it now leads to package dependency issues.
 
 # 0.8.1
 

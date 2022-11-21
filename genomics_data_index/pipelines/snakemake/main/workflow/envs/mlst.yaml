@@ -4,4 +4,3 @@ channels:
   - defaults
 dependencies:
   - mlst
-  - perl==5.22.0.1
