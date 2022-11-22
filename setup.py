@@ -44,7 +44,6 @@ setup(name='genomics-data-index',
           'ete3',
           'PyQt5',
 
-          'jsonschema',
           'biocommons.seqrepo',
           'click',
           'click-config-file',
