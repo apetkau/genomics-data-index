@@ -1,12 +1,7 @@
-import warnings
-
 import os
 import sys
 from pathlib import Path
 from typing import List, Dict, Iterable
-
-# Used to filter out jsonschema warnings found in dependency libraries
-warnings.filterwarnings("ignore", category=UserWarning)
 
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord

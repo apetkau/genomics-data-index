@@ -1,10 +1,7 @@
 import tempfile
-import warnings
 from pathlib import Path
 
 import pytest
-
-warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 from genomics_data_index.test.integration import sample_dirs, reference_file, regular_vcf_dir, data_dir
 from genomics_data_index.test.integration import sample_dirs_AB, sample_dirs_C

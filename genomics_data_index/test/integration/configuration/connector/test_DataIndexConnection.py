@@ -1,8 +1,5 @@
-import warnings
 from pathlib import Path
 from tempfile import TemporaryDirectory
-
-warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 from genomics_data_index.configuration.connector.DataIndexConnection import DataIndexConnection
 from genomics_data_index.test.integration import sample_dirs, reference_file

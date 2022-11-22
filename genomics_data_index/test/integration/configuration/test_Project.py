@@ -1,11 +1,8 @@
 import shutil
-import warnings
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import pytest
-
-warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 from genomics_data_index.test.integration import test_project_dir
 from genomics_data_index.configuration.Project import Project

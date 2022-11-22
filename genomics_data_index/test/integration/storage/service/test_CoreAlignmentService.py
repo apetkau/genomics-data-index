@@ -1,10 +1,7 @@
-import warnings
 from typing import Union, Set
 
 import pytest
 from pybedtools import BedTool
-
-warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 from Bio import AlignIO
 from Bio.Align import MultipleSeqAlignment
