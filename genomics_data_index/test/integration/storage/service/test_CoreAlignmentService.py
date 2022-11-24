@@ -1,13 +1,11 @@
-import warnings
 from typing import Union, Set
 
 import pytest
 from pybedtools import BedTool
 
-warnings.filterwarnings("ignore", category=DeprecationWarning)
-
 from Bio import AlignIO
 from Bio.Align import MultipleSeqAlignment
+from Bio.Seq import MutableSeq, Seq
 
 from genomics_data_index.test.integration import data_dir, masked_positions_snippy_bed
 from genomics_data_index.storage.service.CoreAlignmentService import CoreAlignmentService
@@ -64,7 +62,7 @@ def replace_ref_name(alignment):
 def replace_gap_with_n_and_upper(alignment: MultipleSeqAlignment,
                                  position_set: Set[int] = None) -> MultipleSeqAlignment:
     for record in alignment:
-        seq = record.seq.tomutable()
+        seq = MutableSeq(record.seq)
         for index, character in enumerate(seq):
             if position_set is None or (index + 1) in position_set:
                 if character.upper() == '-' or character.upper() == 'X':
@@ -72,14 +70,14 @@ def replace_gap_with_n_and_upper(alignment: MultipleSeqAlignment,
                 else:
                     seq[index] = seq[index].upper()
 
-        record.seq = seq.toseq()
+        record.seq = Seq(seq)
     return alignment
 
 
 def replace_n_with_gap_and_upper(alignment: MultipleSeqAlignment,
                                  position_set: Set[int] = None) -> MultipleSeqAlignment:
     for record in alignment:
-        seq = record.seq.tomutable()
+        seq = MutableSeq(record.seq)
         for index, character in enumerate(seq):
             if position_set is None or (index + 1) in position_set:
                 if character.upper() == 'N':
@@ -87,7 +85,7 @@ def replace_n_with_gap_and_upper(alignment: MultipleSeqAlignment,
                 else:
                     seq[index] = seq[index].upper()
 
-        record.seq = seq.toseq()
+        record.seq = Seq(seq)
     return alignment
 
 

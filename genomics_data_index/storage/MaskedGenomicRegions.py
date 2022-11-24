@@ -59,7 +59,7 @@ class MaskedGenomicRegions:
             self._mask.mask_fasta(fi=str(genome_file), fo=str(output_fasta), mc=mask_char)
             for record in SeqIO.parse(output_fasta, 'fasta'):
                 if remove:
-                    record.seq = record.seq.ungap(mask_char)
+                    record.seq = record.seq.replace(mask_char, "")
                 seq_records[record.id] = record
             return seq_records
 

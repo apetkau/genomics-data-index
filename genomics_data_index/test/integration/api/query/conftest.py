@@ -1,11 +1,8 @@
 import tempfile
-import warnings
 from pathlib import Path
 
 import pytest
 from ete3 import Tree
-
-warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 from genomics_data_index.configuration.Project import Project
 from genomics_data_index.storage.io.mlst.MLSTSampleDataPackage import MLSTSampleDataPackage

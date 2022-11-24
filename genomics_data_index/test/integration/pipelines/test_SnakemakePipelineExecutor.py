@@ -305,7 +305,7 @@ def test_create_fofn_file_single_sketch_mlst():
         actual_mlst_file = tmp_dir / 'mlst.tsv'
         input_samples = [assemblies_samples['SampleA']]
 
-        pipeline_executor = SnakemakePipelineExecutor(working_directory=tmp_dir, use_conda=False,
+        pipeline_executor = SnakemakePipelineExecutor(working_directory=tmp_dir, use_conda=True,
                                                       include_mlst=True)
 
         sample_files = pipeline_executor.create_input_sample_files(input_samples)
@@ -348,7 +348,7 @@ def test_create_fofn_file_single_no_sketch_with_mlst():
         actual_mlst_file = tmp_dir / 'mlst.tsv'
         input_samples = [assemblies_samples['SampleA']]
 
-        pipeline_executor = SnakemakePipelineExecutor(working_directory=tmp_dir, use_conda=False,
+        pipeline_executor = SnakemakePipelineExecutor(working_directory=tmp_dir, use_conda=True,
                                                       include_mlst=True, include_kmer=False)
 
         sample_files = pipeline_executor.create_input_sample_files(input_samples)

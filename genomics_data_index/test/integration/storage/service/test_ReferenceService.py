@@ -170,6 +170,9 @@ def test_get_sequence(reference_service_with_data):
     assert 'reference' == seq_record.id
     assert isinstance(seq_record.seq, Seq)
 
+    assert 'AGAGATTACG' == seq_record[0:10].seq
+    assert 'AAATACCCTT' == seq_record[-10:].seq
+
 
 def test_get_reference_genome_records(reference_service_with_data):
     records = reference_service_with_data.get_reference_genome_records('genome')

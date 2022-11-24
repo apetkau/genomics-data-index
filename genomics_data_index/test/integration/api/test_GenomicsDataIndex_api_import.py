@@ -1,10 +1,7 @@
 import tempfile
-import warnings
 from pathlib import Path
 
 import pytest
-
-warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 import genomics_data_index.api as gdi
 
