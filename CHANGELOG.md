@@ -3,6 +3,7 @@
 * [api]: Switch to using SeqRepo proxy from `biocommons.seqrepo` and removing dependency on `ga4gh.vrs`.
 * [installation]: Remove fixed version of Perl when installing `mlst` as it now leads to package dependency issues.
 * [developer]: Removing filtering of warnings.
+* [developer]: Moved project metadata into `myproject.toml`.
 
 # 0.8.1
 
