@@ -28,9 +28,10 @@ except ImportError:
 
     # If cannot import appropriate modules, create dummy/mock objects
     if create_mock_classes:
-        error_msg = ("Could not properly import {}. Error message {}.\n"
-                "This is likely due to a missing or improperly installed X server, which is required for graphical functionality "
-                "within the ETE toolkit (see <https://github.com/etetoolkit/ete/issues/101>).\n"
+        error_msg = ("Could not properly import {}. Error message: [{}]. "
+                "If the ete3 package is found, then this is likely due to a missing or improperly installed X server, "
+                "which is required for graphical functionality "
+                "within the ETE toolkit (see <https://github.com/etetoolkit/ete/issues/101>). "
                 "Please either install an X server or attempt to run the application within a virtual framebuffer (like 'xvfb')")
 
         class TreeStyle:
@@ -38,8 +39,8 @@ except ImportError:
             # Force class to raise an exception on creation of an instance
             # so that errors are only returned to a user when this is used
             def __init__(cls):
-                try
-                    from ete3 import TreeStyle as TreeStyle1
+                try:
+                    from ete3 import TreeStyle
                 except ImportError as e:
                     raise Exception(error_msg.format('TreeStyle', str(e)), e)
 
@@ -51,8 +52,8 @@ except ImportError:
             # Force class to raise an exception on creation of an instance
             # so that errors are only returned to a user when this is used
             def __init__(cls):
-                try
-                    from ete3 import NodeStyle as NodeStyle1
+                try:
+                    from ete3 import NodeStyle
                 except ImportError as e:
                     raise Exception(error_msg.format('NodeStyle', str(e)), e)
 
@@ -64,8 +65,8 @@ except ImportError:
             # Force class to raise an exception on creation of an instance
             # so that errors are only returned to a user when this is used
             def __init__(cls):
-                try
-                    from ete3 import Face as Face1
+                try:
+                    from ete3 import Face
                 except ImportError as e:
                     raise Exception(error_msg.format('Face', str(e)), e)
 
@@ -77,8 +78,8 @@ except ImportError:
             # Force class to raise an exception on creation of an instance
             # so that errors are only returned to a user when this is used
             def __init__(cls):
-                try
-                    from ete3 import RectFace as RectFace1
+                try:
+                    from ete3 import RectFace
                 except ImportError as e:
                     raise Exception(error_msg.format('RectFace', str(e)), e)
 
@@ -90,8 +91,8 @@ except ImportError:
             # Force class to raise an exception on creation of an instance
             # so that errors are only returned to a user when this is used
             def __init__(cls):
-                try
-                    from ete3 import CircleFace as CircleFace1
+                try:
+                    from ete3 import CircleFace
                 except ImportError as e:
                     raise Exception(error_msg.format('CircleFace', str(e)), e)
 
@@ -103,8 +104,8 @@ except ImportError:
             # Force class to raise an exception on creation of an instance
             # so that errors are only returned to a user when this is used
             def __init__(cls):
-                try
-                    from ete3 import TextFace as TextFace1
+                try:
+                    from ete3 import TextFace
                 except ImportError as e:
                     raise Exception(error_msg.format('TextFace', str(e)), e)
 
