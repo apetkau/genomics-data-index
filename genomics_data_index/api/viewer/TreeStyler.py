@@ -5,8 +5,9 @@ import logging
 from typing import List, Dict, Any, Union, Iterable, Tuple, Callable
 
 import pandas as pd
-from ete3 import Tree, TreeNode, NodeStyle, TreeStyle, TextFace, RectFace
+from ete3 import Tree, TreeNode
 
+from genomics_data_index.ete3treeview import NodeStyle, TreeStyle, TextFace, RectFace
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.api.viewer.TreeSamplesVisual import TreeSamplesVisual
 from genomics_data_index.api.viewer.samples_visuals.AnnotateTreeSamplesVisual import AnnotateTreeSamplesVisual

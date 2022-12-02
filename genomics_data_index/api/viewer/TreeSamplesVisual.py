@@ -1,8 +1,9 @@
 import abc
 from typing import Union, Iterable, Tuple, Set, Dict
 
-from ete3 import Tree, TreeStyle, Face, RectFace, CircleFace, TextFace
+from ete3 import Tree
 
+from genomics_data_index.ete3treeview import TreeStyle, Face, RectFace, CircleFace, TextFace
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 
 

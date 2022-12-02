@@ -5,8 +5,9 @@ import logging
 from typing import Union, List, cast, Callable
 
 import pandas as pd
-from ete3 import Tree, TreeStyle, NodeStyle
+from ete3 import Tree
 
+from genomis_data_index.ete3treeview import TreeStyle, NodeStyle
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.api.query.impl.WrappedSamplesQuery import WrappedSamplesQuery
 from genomics_data_index.api.viewer.TreeStyler import TreeStyler, HighlightStyle
