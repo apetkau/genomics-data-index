@@ -1,3 +1,7 @@
+# 0.9.1
+
+* [api]: Restructured importing of ete3 graphics libraries so that they return an error message only on first use of the particular class (likely due to a missing installation of an X server). This is to allow other portions of GDI to function without installing an X server.
+
 # 0.9.0
 
 * [api]: Switch to using SeqRepo proxy from `biocommons.seqrepo` and removing dependency on `ga4gh.vrs`.
