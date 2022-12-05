@@ -9,19 +9,27 @@
 # into a separate Python package which can be skipped for those who do not wish to use 
 # GDI in a graphical environment.
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 try:
     from ete3 import TreeStyle, NodeStyle, Face, RectFace, CircleFace, TextFace
-except ImportError:
+except ImportError as e:
+    logger.warning("Could not import ete3 package. Visualization of dendrograms is unavailable.", e)
+
     import os
 
     create_mock_classes = True
 
     # Try to set 'QT_QPA_PLATFORM' as specified in https://github.com/etetoolkit/ete/issues/500
     if 'QT_QPA_PLATFORM' not in os.environ:
+        logger.warning("QT_QPA_PLATFORM unset. Attempting to set QT_QPA_PLATFORM='offscreen' and import ete3 package")
         os.environ['QT_QPA_PLATFORM'] = 'offscreen'
 
         try:
             from ete3 import TreeStyle, NodeStyle, Face, RectFace, CircleFace, TextFace
+            logger.warning("Could not import ete3 package after adjusting QT_QPA_PLATFORM. Visualization of dendrograms is unavailable")
             create_mock_classes = False
         except ImportError:
             pass
