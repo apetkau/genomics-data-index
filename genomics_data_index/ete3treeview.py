@@ -29,10 +29,9 @@ except ImportError as e:
 
         try:
             from ete3 import TreeStyle, NodeStyle, Face, RectFace, CircleFace, TextFace
-            logger.warning("Could not import ete3 package after adjusting QT_QPA_PLATFORM. Visualization of dendrograms is unavailable")
             create_mock_classes = False
         except ImportError:
-            pass
+            logger.warning("Could not import ete3 package after adjusting QT_QPA_PLATFORM. Visualization of dendrograms is unavailable")
 
     # If cannot import appropriate modules, create dummy/mock objects
     if create_mock_classes:
