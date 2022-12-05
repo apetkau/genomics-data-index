@@ -1,8 +1,9 @@
 import logging
 from typing import Union, Iterable, Dict
 
-from ete3 import Tree, TreeStyle, NodeStyle
+from ete3 import Tree
 
+from genomics_data_index.ete3treeview import TreeStyle, NodeStyle
 from genomics_data_index.api.query.SamplesQuery import SamplesQuery
 from genomics_data_index.api.viewer.TreeSamplesVisual import TreeSamplesVisual
 

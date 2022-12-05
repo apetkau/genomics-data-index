@@ -1,7 +1,8 @@
 import logging
 
-from ete3 import Tree, TreeStyle
+from ete3 import Tree
 
+from genomics_data_index.ete3treeview import TreeStyle
 from genomics_data_index.api.viewer.samples_visuals.AbstractAnnotationTreeSamplesVisual import \
     AbstractAnnotationTreeSamplesVisual
 
