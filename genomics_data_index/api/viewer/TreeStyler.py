@@ -17,8 +17,12 @@ from genomics_data_index.api.viewer.samples_visuals.HighlightTreeSamplesVisual i
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_NODE_STYLE = NodeStyle()
-DEFAULT_NODE_STYLE['size'] = 0
+try:
+    DEFAULT_NODE_STYLE = NodeStyle()
+    DEFAULT_NODE_STYLE['size'] = 0
+except Exception as e:
+    logger.warning(e)
+    DEFAULT_NODE_STYLE = None
 
 
 class TreeStyler:
