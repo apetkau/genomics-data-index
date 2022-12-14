@@ -71,7 +71,8 @@ You can see more examples of this software in action in the provided [Tutorials]
 - [3. Installation](#3-installation)
   * [3.1. Conda](#31-conda)
   * [3.2. PyPI/pip](#32-pypipip)
-  * [3.3. From GitHub](#33-from-github)
+  * [3.3. From GitHub for development](#33-from-github-for-development)
+  * [3.4. Dependencies](#34-dependencies)
 - [4. Usage](#4-usage)
   * [4.1. Indexing](#41-indexing)
   * [4.2. Querying](#42-querying)
@@ -142,32 +143,26 @@ Additionally, a poster on this project can be found at [immem2022][].
 
 [Conda][conda] is a package and environment management software which makes it very easy to install and maintain dependencies of software without requiring administrator/root access. Packages from conda are provided using different *channels* and the [bioconda][] channel contains a very large collection of bioinformatics software which can be automatically installed. To make use of conda you will have to first download and [install conda][]. Once installed you can use the command `conda` to install software/manage conda environments.
 
-To install this software, we will first, create a conda environment with the necessary dependencies as follows (a full conda package is not available yet https://github.com/apetkau/genomics-data-index/issues/51 ).
+To install this software, you can run the following:
 
 ```bash
-conda create -c conda-forge -c bioconda -c defaults --name gdi python=3.8 pyqt bedtools iqtree 'bcftools>=1.13' 'htslib>=1.13'
+conda create -c conda-forge -c bioconda -c defaults --name gdi genomics-data-index
+```
 
-# Activate environment. Needed to install additional Python dependencies below.
+If everything installed properly, you can activate the conda environment and test out with the below commands:
+
+```bash
+# Activate environment
 conda activate gdi
-```
 
-Now, you can install with:
-
-```bash
-pip install genomics-data-index
-```
-
-If everything is working you should be able to run:
-
-```bash
 gdi --version
 ```
 
-You should see `gdi, version 0.1.0` printed out.
+You should see `gdi, version 0.9.2` printed out.
 
-### Additional dependencies
+### Additional instructions
 
-For snpeff to work you will need to install the package `mkisofs` on Ubuntu (e.g., `sudo apt install mkisofs`).
+For snpeff to work you may need to install the package `mkisofs` on Ubuntu (e.g., `sudo apt install mkisofs`).
 I do not know the exact package name on other systems.
 
 ## 3.2. PyPI/pip
@@ -178,11 +173,11 @@ To install just the Python component of this project from [PyPI][gdi-pypi] you c
 pip install genomics-data-index
 ```
 
-Note that you will have to install some additional dependencies separately. Please see the [conda-env.yaml][] environment file for details.
+Note that you will have to install some [additional dependencies](#34-dependencies) separately in order to fully run `gdi`. 
 
-## 3.3. From GitHub
+## 3.3. From GitHub for development
 
-To install the project from the source on GitHub please first clone the git repository:
+To install the project from the source on GitHub for development please first clone the git repository:
 
 ```bash
 git clone https://github.com/apetkau/genomics-data-index.git
@@ -192,15 +187,31 @@ cd genomics-data-index
 Now install all the dependencies using [conda][] and [bioconda][] with:
 
 ```bash
-conda env create -f conda-env.yaml
-conda activate gdi
+conda create -c conda-forge -c bioconda -c defaults --name gdi genomics-data-index
 ```
 
 Once these are installed you can setup the Python package with:
 
 ```bash
-pip install .
+conda activate gdi
+pip install -e .
 ```
+
+Using `-e` here means that any changes you make to the code will be reflected in the application when run using the `gdi` command.
+
+## 3.4. Dependencies
+
+The following non-Python dependencies are required if you do not install via conda.
+
+* htslib >=1.13
+* bcftools >=1.13
+* samtools >=1.13
+* bamtools
+* minimap2
+* bedtools
+* fasttree
+* iqtree
+* snpeff
 
 # 4. Usage
 
@@ -285,10 +296,7 @@ conda install jupyterlab
 To run Jupyter you can run the following:
 
 ```bash
-# QT_QPA_PLATFORM The below is useful to avoid having to set the DISPLAY env variable for Qt
-# You can ignore setting this environment variable if you are running on a machine with an X server installed and configured
-
-QT_QPA_PLATFORM="offscreen" jupyter lab
+jupyter lab
 ```
 
 Please see the instructions for [Jupyter Lab][jupyter-docs] for details.
