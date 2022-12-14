@@ -162,8 +162,17 @@ You should see `gdi, version 0.9.2` printed out.
 
 ### Additional instructions
 
-For snpeff to work you may need to install the package `mkisofs` on Ubuntu (e.g., `sudo apt install mkisofs`).
-I do not know the exact package name on other systems.
+#### Use Mamba as an alternative
+
+If installation with `conda` does not work, you could also try installing with [Mamba](https://mamba.readthedocs.io/en/latest/), which functions nearly identically to conda (except replace `conda` with `mamba`). For example:
+
+```bash
+mamba create -c conda-forge -c bioconda -c defaults --name gdi genomics-data-index
+```
+
+#### Additional packages for snpeff
+
+For one of the dependencies, [snpeff](http://pcingola.github.io/SnpEff/), to work you may need to install the package `mkisofs` on Ubuntu (e.g., `sudo apt install mkisofs`). I do not know the exact package name on other systems.
 
 ## 3.2. PyPI/pip
 
