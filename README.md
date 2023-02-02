@@ -6,6 +6,8 @@
 This project is to design a system which can index large amounts of genomics data and enable rapid querying of this
 data.
 
+This is a test.
+
 **Indexing** breaks genomes up into individual features (*nucleotide mutations*, *k-mers*, or *genes/MLST*)
 and stores the index in a directory which can easily be shared with other people. Indexes can be generated 
 direct from sequence data or loaded from existing intermediate files (e.g., VCF files, MLST results).
